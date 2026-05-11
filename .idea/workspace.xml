@@ -4,9 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="003c9edc-7279-49b0-9b05-c3723b7e096c" name="変更" comment="">
-      <change afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/BattingBehavior.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+    <list default="true" id="003c9edc-7279-49b0-9b05-c3723b7e096c" name="変更" comment="gradleの雛形">
+      <change afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/behavior/BattingBehavior.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/behavior/LongDistanceBattingBehavior.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/behavior/MiddleDistanceBattingBehavior.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/behavior/ShortDistanceBattingBehavior.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/code/BattingResult.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/player/Batter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/player/Player.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,6 +50,13 @@
       </state>
     </system>
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Enum" />
+      </list>
+    </option>
+  </component>
   <component name="FormatOnSaveOptions">
     <option name="myRunOnSave" value="true" />
   </component>
@@ -54,6 +68,18 @@
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "midetaro"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/midetaro/baseball-orders.git",
+    "accountId": "3727f716-8bee-4bbd-934d-a05f1ca63176"
+  }
+}]]></component>
   <component name="OptimizeOnSaveOptions">
     <option name="myRunOnSave" value="true" />
   </component>
@@ -72,6 +98,7 @@
     "Gradle.baseball-orders [clean].executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "code.cleanup.on.save": "true",
     "git-widget-placeholder": "develop",
     "ignore.virus.scanning.warn.message": "true",
@@ -161,12 +188,25 @@
       <workItem from="1778511244248" duration="2000" />
       <workItem from="1778511636941" duration="4237000" />
       <workItem from="1778517315791" duration="496000" />
-      <workItem from="1778540032581" duration="74000" />
+      <workItem from="1778540032581" duration="1445000" />
     </task>
+    <task id="LOCAL-00001" summary="gradleの雛形">
+      <option name="closed" value="true" />
+      <created>1778540132835</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1778540132835</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="gradleの雛形" />
+    <option name="LAST_COMMIT_MESSAGE" value="gradleの雛形" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
