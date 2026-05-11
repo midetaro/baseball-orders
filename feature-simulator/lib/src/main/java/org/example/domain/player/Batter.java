@@ -26,7 +26,7 @@ public class Batter extends Player {
         this.hitAverage = hitAverage;
     }
 
-    public BattingResult atBat() {
+    public BattingResult swing() {
         return battingBehavior.batting(this.hitAverage, this.sluggish);
     }
 }
