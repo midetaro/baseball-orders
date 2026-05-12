@@ -1,9 +1,9 @@
-package org.example.domain.state;
+package org.example.domain.model.state;
 
-import org.example.domain.game.GameContext;
-import org.example.domain.player.Batter;
+import org.example.domain.model.GameContext;
+import org.example.domain.model.player.Batter;
 
-public class FullBasesState implements BasesState {
+public class NoBasesState implements BasesState {
 
     @Override
     public void out(GameContext context, Batter batter) {
@@ -12,25 +12,21 @@ public class FullBasesState implements BasesState {
 
     @Override
     public void singleHit(GameContext context, Batter batter) {
-        context.addScore(1);
+        context.updateBaseState(new SingleBasesState());
     }
 
     @Override
     public void hitDouble(GameContext context, Batter batter) {
-        context.addScore(2);
-        context.updateBaseState(new FullBasesState());
+        context.updateBaseState(new NoBasesState());
     }
 
     @Override
     public void hitTriple(GameContext context, Batter batter) {
-        context.addScore(3);
         context.updateBaseState(new ThirdBaseState());
     }
 
     @Override
     public void hitHomer(GameContext context, Batter batter) {
-        // 走者満塁の状態での処理
-        context.addScore(4);
-        context.updateBaseState(new NoBasesState());
+        context.addScore(1);
     }
 }

@@ -5,7 +5,7 @@
 /// **
 // * 長距離バッター
 // */
-//public class LongDistanceBattingBehavior implements BattingBehavior {
+//public class LongDistanceBattingBehavior implements AtBatBehavior {
 //
 //    @Override
 //    public BattingResult batting(float hitAverage, float sluggish) {

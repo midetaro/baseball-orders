@@ -1,4 +1,4 @@
-package org.example.domain.player;
+package org.example.domain.model.player;
 
 public abstract class Player {
 

@@ -1,7 +1,7 @@
-package org.example.domain.player;
+package org.example.domain.model.player;
 
-import org.example.domain.behavior.BattingBehavior;
 import org.example.domain.code.BattingResult;
+import org.example.domain.model.behavior.AtBatBehavior;
 
 /**
  * 打者
@@ -18,7 +18,7 @@ public class Batter extends Player {
      */
     private final float sluggish;
 
-    private BattingBehavior battingBehavior;
+    private AtBatBehavior atBatBehavior;
 
     public Batter(String name, float hitAverage, float sluggish) {
         this.sluggish = sluggish;
@@ -27,6 +27,6 @@ public class Batter extends Player {
     }
 
     public BattingResult swing() {
-        return battingBehavior.batting(this.hitAverage, this.sluggish);
+        return atBatBehavior.batting(this.hitAverage, this.sluggish);
     }
 }

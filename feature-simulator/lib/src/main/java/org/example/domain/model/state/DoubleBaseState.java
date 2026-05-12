@@ -1,9 +1,9 @@
-package org.example.domain.state;
+package org.example.domain.model.state;
 
-import org.example.domain.game.GameContext;
-import org.example.domain.player.Batter;
+import org.example.domain.model.GameContext;
+import org.example.domain.model.player.Batter;
 
-public class ThirdBaseState implements BasesState {
+public class DoubleBaseState implements BasesState {
     @Override
     public void out(GameContext context, Batter batter) {
         context.addOut(1);
@@ -11,7 +11,6 @@ public class ThirdBaseState implements BasesState {
 
     @Override
     public void singleHit(GameContext context, Batter batter) {
-        context.addScore(1);
         context.updateBaseState(new SingleBasesState());
     }
 

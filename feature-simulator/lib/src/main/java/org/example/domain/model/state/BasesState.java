@@ -1,7 +1,7 @@
-package org.example.domain.state;
+package org.example.domain.model.state;
 
-import org.example.domain.game.GameContext;
-import org.example.domain.player.Batter;
+import org.example.domain.model.GameContext;
+import org.example.domain.model.player.Batter;
 
 public interface BasesState {
 
