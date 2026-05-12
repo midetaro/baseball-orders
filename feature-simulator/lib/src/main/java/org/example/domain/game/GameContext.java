@@ -1,53 +1,53 @@
 package org.example.domain.game;
 
-import org.example.domain.player.Batter;
+import org.example.domain.player.Player;
 import org.example.domain.state.BasesState;
 import org.example.domain.state.NoBasesState;
+
+import java.util.List;
 
 public class GameContext {
 
     private int inning = 1;
     private int totalScore = 0;
-    private int outs = 0;
-    private final boolean[] bases = new boolean[3]; // [1塁, 2塁, 3塁]
-    private BasesState currentState = new NoBasesState(); // 初期状態
+    private int outCounts = 0;
+    private BasesState currentBaseState = new NoBasesState(); // 初期状態
 
-    // 状態を切り替えるメソッド
-    public void setState(BasesState state) {
-        currentState = state;
+    public void updateBaseState(BasesState state) {
+        currentBaseState = state;
     }
 
-    // スコアを加算するメソッド
     public void addScore(int runs) {
         totalScore += runs;
     }
 
     public void addOut(int diff) {
-        outs += diff;
-        if (outs == 3) {
-            this.refreshInning();
+        outCounts += diff;
+
+        if (outCounts >= 3) {
+            this.goToNextInning();
         }
     }
 
-    private void refreshInning() {
+    private void goToNextInning() {
         inning++;
-        currentState = new NoBasesState();
-        this.cleanAllBases();
-
+        currentBaseState = new NoBasesState();
+        outCounts = 0;
+        if (inning == 9) {
+            currentBaseState = new NoBasesState();
+        }
     }
 
-    private void cleanAllBases() {
-        updateBases(false, false, false);
+    public boolean isGameOver() {
+        return inning == 9;
     }
 
-    private void updateBases(boolean first, boolean second, boolean third) {
-        bases[0] = first;
-        bases[1] = second;
-        bases[2] = third;
+    public GameResult simulate(List<Player> lineup) {
+        GameContext ctx = new GameContext(lineup);
+        while (!ctx.isGameOver()) {
+            ctx.processAtBat(ctx.getCurrentBatter());
+        }
+        return ctx.toResult(); // 最終スコアだけを返す
     }
 
-    // 1打席実行
-    public void processAtBat(Batter batter) {
-        currentState.handle(this, batter);
-    }
 }

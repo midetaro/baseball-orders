@@ -1,27 +1,32 @@
 package org.example.domain.state;
 
-import org.example.domain.code.BattingResult;
 import org.example.domain.game.GameContext;
 import org.example.domain.player.Batter;
 
 public class NoBasesState implements BasesState {
+
     @Override
-    public void handle(GameContext context, Batter batter) {
-        // 走者なしの状態での処理
-        System.out.println("走者なしの状態で打席を処理します。");
-        // ここで打撃結果に応じた処理を行う
-        var result = batter.swing();
-        if (result == BattingResult.OUT) {
-            context.addScore(0);
-            context.addOut(1);
-        } else if (result == BattingResult.HIT_SINGLE) {
-            context.addScore(0);
-        } else if (result == BattingResult.HIT_DOUBLE) {
-            context.addScore(0);
-        } else if (result == BattingResult.HIT_TRIPLE) {
-            context.addScore(1);
-        } else if (result == BattingResult.HIT_HOMER) {
-            context.addScore(1);
-        }
+    public void out(GameContext context, Batter batter) {
+        context.addOut(1);
+    }
+
+    @Override
+    public void singleHit(GameContext context, Batter batter) {
+        context.updateBaseState(new SingleBasesState());
+    }
+
+    @Override
+    public void hitDouble(GameContext context, Batter batter) {
+        context.updateBaseState(new NoBasesState());
+    }
+
+    @Override
+    public void hitTriple(GameContext context, Batter batter) {
+        context.updateBaseState(new ThirdBaseState());
+    }
+
+    @Override
+    public void hitHomer(GameContext context, Batter batter) {
+        context.addScore(1);
     }
 }
