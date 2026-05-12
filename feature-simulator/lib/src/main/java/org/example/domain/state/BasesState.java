@@ -5,6 +5,13 @@ import org.example.domain.player.Batter;
 
 public interface BasesState {
 
-    void handle(GameContext context, Batter batter);
+    void out(GameContext context, Batter batter);
 
+    void singleHit(GameContext context, Batter batter);
+
+    void hitDouble(GameContext context, Batter batter);
+
+    void hitTriple(GameContext context, Batter batter);
+
+    void hitHomer(GameContext context, Batter batter);
 }

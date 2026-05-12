@@ -13,7 +13,7 @@ public class GameContext {
     private BasesState currentState = new NoBasesState(); // 初期状態
 
     // 状態を切り替えるメソッド
-    public void setState(BasesState state) {
+    public void updateState(BasesState state) {
         currentState = state;
     }
 
@@ -48,6 +48,6 @@ public class GameContext {
 
     // 1打席実行
     public void processAtBat(Batter batter) {
-        currentState.handle(this, batter);
+        currentState.singleHit(this, batter);
     }
 }

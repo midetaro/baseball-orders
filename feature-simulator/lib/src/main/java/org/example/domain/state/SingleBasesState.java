@@ -3,7 +3,7 @@ package org.example.domain.state;
 import org.example.domain.game.GameContext;
 import org.example.domain.player.Batter;
 
-public class NoBasesState implements BasesState {
+public class SingleBasesState implements BasesState {
 
     @Override
     public void out(GameContext context, Batter batter) {
@@ -12,21 +12,22 @@ public class NoBasesState implements BasesState {
 
     @Override
     public void singleHit(GameContext context, Batter batter) {
-        context.updateState(new SingleBasesState());
+        context.updateState(new FirstDoubleBaseState());
     }
 
     @Override
     public void hitDouble(GameContext context, Batter batter) {
-        context.updateState(new NoBasesState());
+        context.updateState(new DoubleThirdBaseState());
     }
 
     @Override
     public void hitTriple(GameContext context, Batter batter) {
+        context.addOut(1);
         context.updateState(new ThirdBaseState());
     }
 
     @Override
     public void hitHomer(GameContext context, Batter batter) {
-        context.addScore(1);
+        context.addOut(2);
     }
 }
