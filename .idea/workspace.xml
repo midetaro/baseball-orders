@@ -5,7 +5,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="003c9edc-7279-49b0-9b05-c3723b7e096c" name="変更" comment="game context and BasesState">
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/NoBasesState.java" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/NoBasesState.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/code/BattingResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/code/BattingResult.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/game/GameContext.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/GameContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/GameContext.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/BasesState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/DoubleBaseState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/DoubleThirdBaseState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/FirstDoubleBaseState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/FirstThirdBaseState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/FullBasesState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/NoBasesState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/SingleBasesState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/ThirdBaseState.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/usecase/GameSimulatorService.java" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/usecase/GameSimulatorService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

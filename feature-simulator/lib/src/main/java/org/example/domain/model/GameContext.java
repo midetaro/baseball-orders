@@ -7,6 +7,7 @@ import org.example.domain.model.state.NoBasesState;
 
 import java.util.List;
 
+@Slf4j
 public class GameContext {
 
     private int inning = 1;
