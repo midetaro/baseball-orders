@@ -7,7 +7,7 @@ public class DoubleThirdBaseState implements BasesState {
 
     @Override
     public void out(GameContext context, Batter batter) {
-        context.addOut(1);
+        context.addOutCounts(1);
     }
 
     @Override

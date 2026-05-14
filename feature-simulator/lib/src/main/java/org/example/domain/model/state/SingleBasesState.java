@@ -7,7 +7,7 @@ public class SingleBasesState implements BasesState {
 
     @Override
     public void out(GameContext context, Batter batter) {
-        context.addOut(1);
+        context.addOutCounts(1);
     }
 
     @Override
@@ -22,13 +22,13 @@ public class SingleBasesState implements BasesState {
 
     @Override
     public void hitTriple(GameContext context, Batter batter) {
-        context.addOut(1);
+        context.addOutCounts(1);
         context.updateBaseState(new ThirdBaseState());
     }
 
     @Override
     public void hitHomer(GameContext context, Batter batter) {
-        context.addOut(2);
+        context.addOutCounts(2);
         context.updateBaseState(new NoBasesState());
     }
 }

@@ -6,7 +6,7 @@ import org.example.domain.model.player.Batter;
 public class FirstThirdBaseState implements BasesState {
     @Override
     public void out(GameContext context, Batter batter) {
-        context.addOut(1);
+        context.addOutCounts(1);
     }
 
     @Override

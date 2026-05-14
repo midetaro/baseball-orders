@@ -18,12 +18,16 @@ public class Batter extends Player {
      */
     private final float sluggish;
 
-    private AtBatBehavior atBatBehavior;
+    /**
+     * 打撃戦略
+     */
+    private final AtBatBehavior atBatBehavior;
 
-    public Batter(String name, float hitAverage, float sluggish) {
+    public Batter(String name, float hitAverage, float sluggish, AtBatBehavior atBatBehavior) {
         this.sluggish = sluggish;
         this.name = name;
         this.hitAverage = hitAverage;
+        this.atBatBehavior = atBatBehavior;
     }
 
     public BattingResult swing() {
