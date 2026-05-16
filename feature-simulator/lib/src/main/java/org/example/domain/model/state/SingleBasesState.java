@@ -3,32 +3,32 @@ package org.example.domain.model.state;
 import org.example.domain.model.GameContext;
 import org.example.domain.model.player.Batter;
 
-public class SingleBasesState implements BasesState {
+import java.util.Optional;
+
+public class SingleBasesState implements BasesState, StealableToDoubleBase {
 
     @Override
-    public void out(GameContext context, Batter batter) {
-        context.addOutCounts(1);
-    }
-
-    @Override
-    public void singleHit(GameContext context, Batter batter) {
-        context.updateBaseState(new FirstDoubleBaseState());
+    public void hitSingle(GameContext context, Batter batter) {
+        context.moveRunnerNthBase(1);
+        context.setRunnerOnFirstBase(Optional.of(batter));
     }
 
     @Override
     public void hitDouble(GameContext context, Batter batter) {
-        context.updateBaseState(new DoubleThirdBaseState());
+        context.moveRunnerNthBase(2);
+        context.setRunnerOnSecondBase(Optional.of(batter));
     }
 
     @Override
     public void hitTriple(GameContext context, Batter batter) {
-        context.addOutCounts(1);
-        context.updateBaseState(new ThirdBaseState());
+        context.moveRunnerNthBase(3);
+        context.addScore(1);
+        context.setRunnerOnThirdBase(Optional.of(batter));
     }
 
     @Override
     public void hitHomer(GameContext context, Batter batter) {
-        context.addOutCounts(2);
-        context.updateBaseState(new NoBasesState());
+        context.moveRunnerNthBase(4);
+        context.addScore(2);
     }
 }

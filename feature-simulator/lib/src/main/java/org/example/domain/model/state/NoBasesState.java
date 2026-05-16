@@ -3,26 +3,26 @@ package org.example.domain.model.state;
 import org.example.domain.model.GameContext;
 import org.example.domain.model.player.Batter;
 
+import java.util.Optional;
+
 public class NoBasesState implements BasesState {
 
     @Override
-    public void out(GameContext context, Batter batter) {
-        context.addOutCounts(1);
-    }
-
-    @Override
-    public void singleHit(GameContext context, Batter batter) {
-        context.updateBaseState(new SingleBasesState());
+    public void hitSingle(GameContext context, Batter batter) {
+        context.moveRunnerNthBase(1);
+        context.setRunnerOnFirstBase(Optional.of(batter));
     }
 
     @Override
     public void hitDouble(GameContext context, Batter batter) {
-        context.updateBaseState(new NoBasesState());
+        context.moveRunnerNthBase(2);
+        context.setRunnerOnSecondBase(Optional.of(batter));
     }
 
     @Override
     public void hitTriple(GameContext context, Batter batter) {
-        context.updateBaseState(new ThirdBaseState());
+        context.moveRunnerNthBase(3);
+        context.setRunnerOnThirdBase(Optional.of(batter));
     }
 
     @Override

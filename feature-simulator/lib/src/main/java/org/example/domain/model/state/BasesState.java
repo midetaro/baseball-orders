@@ -5,9 +5,11 @@ import org.example.domain.model.player.Batter;
 
 public interface BasesState {
 
-    void out(GameContext context, Batter batter);
+    default void out(GameContext context) {
+        context.addOutCounts(1);
+    }
 
-    void singleHit(GameContext context, Batter batter);
+    void hitSingle(GameContext context, Batter batter);
 
     void hitDouble(GameContext context, Batter batter);
 
