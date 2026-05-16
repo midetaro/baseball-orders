@@ -28,7 +28,7 @@ public class MiddleStealBehavior implements StealStrategy {
     @Override
     public StealResult runToTriple() {
         float random = (float) Math.random();
-        if (random < TO_TRIPLE_TRY_AVERAGE) {
+        if (random < TO_TRIPLE_NOT_TRY) {
             return StealResult.NOT_TRY;
         } else if (TO_TRIPLE_NOT_TRY < random && random < TO_TRIPLE_SUCCESS_PROBABILITY) {
             return StealResult.SUCCESS;
