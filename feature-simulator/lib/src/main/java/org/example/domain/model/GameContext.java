@@ -138,7 +138,6 @@ public class GameContext {
             stealResult = getRunnerIndexOf(targetBaseOfSteal - 1).get().stealToTriple();
         }
         switch (stealResult) {
-            case NOT_TRY -> this.addOutCounts(0);
             case FAILURE -> {
                 System.out.printf("[%s]塁への盗塁が失敗しました。%n", targetBaseOfSteal);
                 this.setRunnerTo(currentBase, Optional.empty());
