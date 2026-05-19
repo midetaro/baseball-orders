@@ -19,7 +19,6 @@ public class GameSimulatorService {
         if (batters.size() != 9) {
             throw new IllegalArgumentException("Batters size must be 9");
         }
-        // 1. 試合開始前にIDを確定
 
         // 2. Stateパターンで試合実行（gameIdをコンテキストに保持）
         GameContext ctx = new GameContext(batters);

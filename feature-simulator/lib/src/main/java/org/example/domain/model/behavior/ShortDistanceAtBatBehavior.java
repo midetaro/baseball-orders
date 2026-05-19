@@ -12,7 +12,7 @@ public class ShortDistanceAtBatBehavior implements AtBatBehavior {
     @Override
     public BattingResult batting(float hitAverage, float sluggish) {
 
-        float random = (float) Math.random();
+        float random = RandomProvider.nextFloat();
         float singleProbability = hitAverage * (1 - sluggish);
         float doubleProbability = hitAverage * sluggish;
 

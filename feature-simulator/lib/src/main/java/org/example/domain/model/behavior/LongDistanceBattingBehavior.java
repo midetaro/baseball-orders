@@ -9,7 +9,7 @@ public class LongDistanceBattingBehavior implements AtBatBehavior {
 
     @Override
     public BattingResult batting(float hitAverage, float sluggish) {
-        float random = (float) Math.random();
+        float random = RandomProvider.nextFloat();
         float singleProbability = hitAverage * (1 - sluggish);
         float doubleProbability = hitAverage * (sluggish / 2);
         float homerProbability = hitAverage * (sluggish / 2);
