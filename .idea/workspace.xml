@@ -4,45 +4,24 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="003c9edc-7279-49b0-9b05-c3723b7e096c" name="変更" comment="game context and BasesState">
-      <change afterPath="$PROJECT_DIR$/docs/architecture.md" afterDir="false" />
+    <list default="true" id="003c9edc-7279-49b0-9b05-c3723b7e096c" name="変更" comment="remove: removed old feature files">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/build.gradle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/Library.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/code/BattingResult.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/code/StealResult.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/GameContext.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/behavior/AggressiveStealBehavior.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/behavior/AtBatBehavior.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/behavior/LongDistanceBattingBehavior.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/behavior/MiddleDistanceBattingBehavior.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/behavior/MiddleStealBehavior.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/behavior/NowayStealBehavior.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/behavior/ShortDistanceAtBatBehavior.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/behavior/StealStrategy.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/player/Batter.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/player/Player.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/BasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/DoubleBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/DoubleThirdBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/FirstDoubleBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/FirstThirdBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/FullBasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/NoBasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/SingleBasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/StealableToDoubleBase.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/StealableToTripleBase.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/state/ThirdBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/usecase/GameSimulatorService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/main.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/test/java/org/example/LibraryTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/test/java/org/example/domain/game/GameContextTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/test/java/org/example/domain/mock/Mock_Batters.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/test/java/org/example/domain/usecase/GameSimulatorService_simulationGameTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/test/test.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/.idea/compiler.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/.idea/gradle.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/.idea/modules/lib/feature-simulator.lib.main.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/gradle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/gradle/libs.versions.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/gradle/wrapper/gradle-wrapper.jar" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/gradlew" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/gradlew.bat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature-simulator/settings.gradle" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -115,61 +94,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
+      <entry key="MS100" value="2.0021773717531235E-6" />
+      <entry key="MS500" value="0.08330667289588754" />
+      <entry key="S2" value="1.4961044715714535" />
+      <entry key="S5" value="3.342320586655009" />
+      <entry key="S10" value="4.458450411116058" />
+      <entry key="S30" value="6.1187346736425265" />
+      <entry key="S60" value="9.80912000498404" />
+      <entry key="M2" value="17.72950397299369" />
+      <entry key="M5" value="30.418475199367222" />
+      <entry key="M10" value="38.58444836605964" />
+      <entry key="M15" value="43.43413059338004" />
+      <entry key="M30" value="52.3911715869099" />
+      <entry key="H1" value="60.4625446206251" />
+      <entry key="H2" value="66.24093415619723" />
+      <entry key="H4" value="69.80594011309954" />
+      <entry key="D1" value="73.24893812196811" />
+      <entry key="W1" value="73.89129459106454" />
+    </decayedCancelled>
+    <decayedSelected>
       <entry key="MS100" value="1.0" />
       <entry key="MS500" value="1.0" />
       <entry key="S2" value="1.0" />
       <entry key="S5" value="1.0" />
       <entry key="S10" value="1.0" />
-      <entry key="S30" value="1.000000000000275" />
-      <entry key="S60" value="1.0000023763269734" />
-      <entry key="M2" value="1.0074294085890232" />
-      <entry key="M5" value="1.9605488815826342" />
-      <entry key="M10" value="5.890973639535081" />
-      <entry key="M15" value="9.421652803831988" />
-      <entry key="M30" value="15.52093940411908" />
-      <entry key="H1" value="20.162243724834948" />
-      <entry key="H2" value="23.16437931126013" />
-      <entry key="H4" value="24.943111785009858" />
-      <entry key="D1" value="26.633302060275494" />
-      <entry key="W1" value="26.946954277561485" />
-    </decayedCancelled>
-    <decayedSelected>
-      <entry key="MS100" value="0.0" />
-      <entry key="MS500" value="0.0" />
-      <entry key="S2" value="0.0" />
-      <entry key="S5" value="0.0" />
-      <entry key="S10" value="0.0" />
-      <entry key="S30" value="0.0" />
-      <entry key="S60" value="0.0" />
-      <entry key="M2" value="0.0" />
-      <entry key="M5" value="0.0" />
-      <entry key="M10" value="0.0" />
-      <entry key="M15" value="0.0" />
-      <entry key="M30" value="0.0" />
-      <entry key="H1" value="0.0" />
-      <entry key="H2" value="0.0" />
-      <entry key="H4" value="0.0" />
-      <entry key="D1" value="0.0" />
-      <entry key="W1" value="0.0" />
+      <entry key="S30" value="1.0" />
+      <entry key="S60" value="1.0" />
+      <entry key="M2" value="1.0" />
+      <entry key="M5" value="1.0" />
+      <entry key="M10" value="1.0" />
+      <entry key="M15" value="1.0" />
+      <entry key="M30" value="1.0" />
+      <entry key="H1" value="1.0" />
+      <entry key="H2" value="1.0" />
+      <entry key="H4" value="1.0" />
+      <entry key="D1" value="1.0" />
+      <entry key="W1" value="1.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9659363289248455" />
-      <entry key="MS500" value="0.9930924954370359" />
-      <entry key="S2" value="0.9982686325973925" />
-      <entry key="S5" value="0.9993070929904525" />
-      <entry key="S10" value="0.9996534864594093" />
-      <entry key="S30" value="0.9998844821428832" />
-      <entry key="S60" value="0.9999446156160807" />
-      <entry key="M2" value="1.007400353270383" />
-      <entry key="M5" value="1.9605284386369948" />
-      <entry key="M10" value="5.890945356378923" />
-      <entry key="M15" value="9.421623165481304" />
-      <entry key="M30" value="15.520915241824612" />
-      <entry key="H1" value="20.162227929229843" />
-      <entry key="H2" value="23.164370075177974" />
-      <entry key="H4" value="24.943106723455802" />
-      <entry key="D1" value="26.633301139399578" />
-      <entry key="W1" value="26.946954143840777" />
+      <entry key="MS100" value="0.002707225905764478" />
+      <entry key="MS500" value="0.38923994668602285" />
+      <entry key="S2" value="2.2375788747727237" />
+      <entry key="S5" value="4.228477768090998" />
+      <entry key="S10" value="5.3994941474085945" />
+      <entry key="S30" value="7.098530959807348" />
+      <entry key="S60" value="10.798809899744674" />
+      <entry key="M2" value="18.72417875680154" />
+      <entry key="M5" value="31.416246018457436" />
+      <entry key="M10" value="39.58330208501956" />
+      <entry key="M15" value="44.433353147829756" />
+      <entry key="M30" value="53.39077000955787" />
+      <entry key="H1" value="61.46233775653069" />
+      <entry key="H2" value="67.24082839602927" />
+      <entry key="H4" value="70.80588646051521" />
+      <entry key="D1" value="74.2489290467376" />
+      <entry key="W1" value="74.89129329089936" />
     </decayedShown>
   </component>
   <component name="OptimizeOnSaveOptions">
@@ -193,7 +172,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "code.cleanup.on.save": "true",
-    "git-widget-placeholder": "develop",
+    "git-widget-placeholder": "feature/20260825-1",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "/Users/hidetaro.murakami/ghq/github.com/midetaro/baseball-orders",
@@ -318,11 +297,56 @@
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="HEAD" />
+                </option>
+              </RecentGroup>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="origin/main" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="gradleの雛形" />
     <MESSAGE value="batter and behavior" />
     <MESSAGE value="game context and BasesState" />
-    <option name="LAST_COMMIT_MESSAGE" value="game context and BasesState" />
+    <MESSAGE value="add: docs" />
+    <MESSAGE value="remove: removed old feature files" />
+    <option name="LAST_COMMIT_MESSAGE" value="remove: removed old feature files" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
