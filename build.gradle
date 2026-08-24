@@ -1,27 +1,13 @@
-plugins {
-    id 'org.springframework.boot' version '4.0.0' apply false
-    id 'io.spring.dependency-management' version '1.1.7' apply false
+tasks.register('build') {
+    group = 'build'
+    description = 'Builds both applications in the composite.'
+    dependsOn gradle.includedBuild('backend').task(':build')
+    dependsOn gradle.includedBuild('simulator').task(':build')
 }
 
-allprojects {
-    group = 'com.example.baseballorders'
-    version = '0.1.0-SNAPSHOT'
-
-    repositories {
-        mavenCentral()
-    }
-}
-
-subprojects {
-    plugins.withType(JavaPlugin).configureEach {
-        java {
-            toolchain {
-                languageVersion = JavaLanguageVersion.of(25)
-            }
-        }
-
-        tasks.withType(Test).configureEach {
-            useJUnitPlatform()
-        }
-    }
+tasks.register('clean') {
+    group = 'build'
+    description = 'Cleans both applications in the composite.'
+    dependsOn gradle.includedBuild('backend').task(':clean')
+    dependsOn gradle.includedBuild('simulator').task(':clean')
 }

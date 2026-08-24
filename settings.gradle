@@ -1,9 +1,4 @@
-plugins {
-    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
-}
-
 rootProject.name = 'baseball-orders'
 
-include 'apps:backend'
-include 'apps:simulator'
-include 'libs:messaging-contract'
+includeBuild 'apps/backend'
+includeBuild 'apps/simulator'
