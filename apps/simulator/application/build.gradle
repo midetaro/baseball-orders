@@ -4,6 +4,8 @@ plugins {
 
 dependencies {
     api project(':domain')
+    implementation project(':domain')
+    implementation project(':infrastructure')
     implementation 'org.springframework:spring-context:7.0.1'
     compileOnly 'org.projectlombok:lombok:1.18.42'
     annotationProcessor 'org.projectlombok:lombok:1.18.42'

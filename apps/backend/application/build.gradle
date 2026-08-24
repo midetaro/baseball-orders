@@ -4,4 +4,6 @@ plugins {
 
 dependencies {
     api project(':domain')
+    implementation project(':infrastructure')
+    implementation project(':domain')
 }
