@@ -14,6 +14,10 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.main.iml" filepath="$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.test.iml" filepath="$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/feature-simulator/lib/src/main/main.iml" filepath="$PROJECT_DIR$/feature-simulator/lib/src/main/main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/apps/simulator/application/simulator.application.main.iml" filepath="$PROJECT_DIR$/.idea/modules/apps/simulator/application/simulator.application.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/apps/simulator/domain/simulator.domain.main.iml" filepath="$PROJECT_DIR$/.idea/modules/apps/simulator/domain/simulator.domain.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/apps/simulator/domain/simulator.domain.test.iml" filepath="$PROJECT_DIR$/.idea/modules/apps/simulator/domain/simulator.domain.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/apps/simulator/domain/simulator.domain.testFixtures.iml" filepath="$PROJECT_DIR$/.idea/modules/apps/simulator/domain/simulator.domain.testFixtures.iml" />
       <module fileurl="file://$PROJECT_DIR$/feature-simulator/lib/src/test/test.iml" filepath="$PROJECT_DIR$/feature-simulator/lib/src/test/test.iml" />
     </modules>
   </component>
