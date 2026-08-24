@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="003c9edc-7279-49b0-9b05-c3723b7e096c" name="変更" comment="マルチモジュール &amp;&amp; composite build構成">
+    <list default="true" id="003c9edc-7279-49b0-9b05-c3723b7e096c" name="変更" comment="build.gradleの依存関係を逆転">
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules/list/baseball-orders.list.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/backend/application/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/apps/backend/application/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/backend/infrastructure/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/apps/backend/infrastructure/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/simulator/application/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/apps/simulator/application/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/apps/simulator/infrastructure/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/apps/simulator/infrastructure/build.gradle" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -22,6 +22,7 @@
     </persistenceIdMap>
   </component>
   <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="82" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="ExternalProjectsData">
@@ -36,6 +37,9 @@
     <system id="GRADLE">
       <state>
         <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
+        <task path="$PROJECT_DIR$/apps/backend">
           <activation />
         </task>
         <projects_view>
@@ -85,61 +89,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="2.002166948064232E-52" />
-      <entry key="MS500" value="7.931953034043687E-11" />
-      <entry key="S2" value="0.0052361351384221065" />
-      <entry key="S5" value="0.25577236970815387" />
-      <entry key="S10" value="1.1389706936613706" />
-      <entry key="S30" value="3.381594570436417" />
-      <entry key="S60" value="4.493573844412084" />
-      <entry key="M2" value="5.189351776556832" />
-      <entry key="M5" value="5.660755078481735" />
-      <entry key="M10" value="5.827789289675939" />
-      <entry key="M15" value="5.886972108489611" />
-      <entry key="M30" value="6.351195653085334" />
-      <entry key="H1" value="11.92623035150733" />
-      <entry key="H2" value="29.452070869584254" />
-      <entry key="H4" value="53.02821962677114" />
-      <entry key="D1" value="90.44596682208768" />
-      <entry key="W1" value="99.4137156482957" />
+      <entry key="MS100" value="1.000086543959436" />
+      <entry key="MS500" value="1.2406662918854876" />
+      <entry key="S2" value="2.9123522304262286" />
+      <entry key="S5" value="4.610046911755312" />
+      <entry key="S10" value="5.61796259781862" />
+      <entry key="S30" value="7.113406713352692" />
+      <entry key="S60" value="8.67342597874757" />
+      <entry key="M2" value="10.27409551552753" />
+      <entry key="M5" value="11.730505770128087" />
+      <entry key="M10" value="12.330724653802655" />
+      <entry key="M15" value="12.547986230859957" />
+      <entry key="M30" value="13.166620833311763" />
+      <entry key="H1" value="18.75576959216991" />
+      <entry key="H2" value="36.24421788177327" />
+      <entry key="H4" value="59.841687371172156" />
+      <entry key="D1" value="97.39299818028476" />
+      <entry key="W1" value="106.40539904666085" />
     </decayedCancelled>
     <decayedSelected>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.000000000000002" />
-      <entry key="S2" value="1.0002103384178984" />
-      <entry key="S5" value="1.0338195201414286" />
-      <entry key="S10" value="1.1839008432319673" />
-      <entry key="S30" value="1.5686712078080864" />
-      <entry key="S60" value="1.7541029159259938" />
-      <entry key="M2" value="1.868390992540799" />
-      <entry key="M5" value="1.9451181948415401" />
-      <entry key="M10" value="1.9721726749839141" />
-      <entry key="M15" value="1.9814591816096812" />
-      <entry key="M30" value="2.003995920575546" />
-      <entry key="H1" value="2.1566018623587304" />
-      <entry key="H2" value="2.5636859900976647" />
-      <entry key="H4" value="3.0619001726239947" />
-      <entry key="D1" value="3.7996437794853684" />
-      <entry key="W1" value="3.970063594635985" />
+      <entry key="MS100" value="9.409909678380499E-220" />
+      <entry key="MS500" value="1.565730786161599E-44" />
+      <entry key="S2" value="1.1188467687286096E-11" />
+      <entry key="S5" value="4.304437806088202E-5" />
+      <entry key="S10" value="0.0076392581190766334" />
+      <entry key="S30" value="0.29204103362495004" />
+      <entry key="S60" value="0.7568521452811511" />
+      <entry key="M2" value="1.2272859227188593" />
+      <entry key="M5" value="1.6441339280704037" />
+      <entry key="M10" value="1.8131783918455822" />
+      <entry key="M15" value="1.8734791403324196" />
+      <entry key="M30" value="1.9486269245513888" />
+      <entry key="H1" value="2.1266004862498544" />
+      <entry key="H2" value="2.5457912915275154" />
+      <entry key="H4" value="3.051195326442678" />
+      <entry key="D1" value="3.797426529923296" />
+      <entry key="W1" value="3.969732555182452" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.006045175756024961" />
-      <entry key="MS500" value="0.35998282970733964" />
-      <entry key="S2" value="0.7799572735027116" />
-      <entry key="S5" value="1.1866627527585323" />
-      <entry key="S10" value="2.25560412396015" />
-      <entry key="S30" value="4.913951491307844" />
-      <entry key="S60" value="6.226054471678922" />
-      <entry key="M2" value="7.045849078221478" />
-      <entry key="M5" value="7.6008228533533515" />
-      <entry key="M10" value="7.7973848991661425" />
-      <entry key="M15" value="7.866700922037089" />
-      <entry key="M30" value="8.3542914456299" />
-      <entry key="H1" value="14.0822448095183" />
-      <entry key="H2" value="32.015295147256964" />
-      <entry key="H4" value="56.08979158784986" />
-      <entry key="D1" value="94.24553273310333" />
-      <entry key="W1" value="103.38376736808797" />
+      <entry key="MS100" value="0.9727374268862696" />
+      <entry key="MS500" value="1.2304756727916977" />
+      <entry key="S2" value="2.7906141495586057" />
+      <entry key="S5" value="4.469023082015682" />
+      <entry key="S10" value="5.523978680593518" />
+      <entry key="S30" value="7.355717238198022" />
+      <entry key="S60" value="9.39811902292111" />
+      <entry key="M2" value="11.481801947966465" />
+      <entry key="M5" value="13.365577388493145" />
+      <entry key="M10" value="14.139122432257558" />
+      <entry key="M15" value="14.418218499760084" />
+      <entry key="M30" value="15.11356546553215" />
+      <entry key="H1" value="20.88138691942836" />
+      <entry key="H2" value="38.789348618154996" />
+      <entry key="H4" value="62.89245457518996" />
+      <entry key="D1" value="101.19033004056195" />
+      <entry key="W1" value="110.37511732124325" />
     </decayedShown>
   </component>
   <component name="OptimizeOnSaveOptions">
@@ -153,32 +157,36 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Gradle.Gradle ラッパーのアップグレード.executor": "Run",
-    "Gradle.baseball-orders [:build-logic:clean].executor": "Run",
-    "Gradle.baseball-orders [clean].executor": "Run",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "code.cleanup.on.save": "true",
-    "git-widget-placeholder": "feature/20260825-1",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/Users/hidetaro.murakami/ghq/github.com/midetaro/baseball-orders/apps/backend/src/main/java/com/example/baseballorders/backend",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "モジュール",
-    "project.structure.proportion": "0.20555556",
-    "project.structure.side.proportion": "0.44240838",
-    "settings.editor.selected.configurable": "reference.settingsdialog.project.gradle",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.Gradle ラッパーのアップグレード.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.backend [assemble].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.backend [clean].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.baseball-orders [:build-logic:clean].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.baseball-orders [:simulator:build].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.baseball-orders [:simulator:clean].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.baseball-orders [clean].executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;code.cleanup.on.save&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/20260825-1&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/hidetaro.murakami/ghq/github.com/midetaro/baseball-orders/apps/backend/src/main/java/com/example/baseballorders/backend&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;モジュール&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.20555556&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.44240838&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/apps/backend/src/main/java/com/example/baseballorders/backend" />
@@ -423,7 +431,8 @@
     <MESSAGE value="remove: removed old folders" />
     <MESSAGE value="フォルダ移動" />
     <MESSAGE value="マルチモジュール &amp;&amp; composite build構成" />
-    <option name="LAST_COMMIT_MESSAGE" value="マルチモジュール &amp;&amp; composite build構成" />
+    <MESSAGE value="build.gradleの依存関係を逆転" />
+    <option name="LAST_COMMIT_MESSAGE" value="build.gradleの依存関係を逆転" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
