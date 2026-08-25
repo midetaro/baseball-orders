@@ -5,22 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="003c9edc-7279-49b0-9b05-c3723b7e096c" name="変更" comment="game context and BasesState">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/code/BattingResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/code/BattingResult.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/game/GameContext.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/GameContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/GameContext.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/BasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/DoubleBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/DoubleThirdBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/FirstDoubleBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/FirstThirdBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/FullBasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/NoBasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/SingleBasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/ThirdBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/usecase/GameSimulatorService.java" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/usecase/GameSimulatorService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,6 +36,24 @@
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="baseball-orders" type="f1a62948:ProjectNode" />
               </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="baseball-orders" type="f1a62948:ProjectNode" />
+                <item name="baseball-orders" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="baseball-orders" type="f1a62948:ProjectNode" />
+                <item name="baseball-orders" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="baseball-orders" type="f1a62948:ProjectNode" />
+                <item name="baseball-orders" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="build" type="c8890929:TasksNode$1" />
+              </path>
             </expand>
             <select />
           </tree_state>
@@ -72,7 +76,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="develop" />
+        <entry key="$PROJECT_DIR$" value="feature/20260825-2" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -89,6 +93,69 @@
     &quot;accountId&quot;: &quot;3727f716-8bee-4bbd-934d-a05f1ca63176&quot;
   }
 }</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.9116943635888" />
+      <entry key="MS500" value="4.771448180449035" />
+      <entry key="S2" value="7.427059555608656" />
+      <entry key="S5" value="8.33836133071857" />
+      <entry key="S10" value="8.886532274218352" />
+      <entry key="S30" value="9.998243243112588" />
+      <entry key="S60" value="10.707872623369633" />
+      <entry key="M2" value="11.248881153941749" />
+      <entry key="M5" value="11.668266940589232" />
+      <entry key="M10" value="11.828298743460527" />
+      <entry key="M15" value="11.884185057911843" />
+      <entry key="M30" value="11.941405589506585" />
+      <entry key="H1" value="11.970528531204835" />
+      <entry key="H2" value="11.98522037918996" />
+      <entry key="H4" value="11.99259917764527" />
+      <entry key="D1" value="11.998764996732463" />
+      <entry key="W1" value="11.999823533377066" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="1.8818320889829288" />
+      <entry key="MS500" value="4.737260170385079" />
+      <entry key="S2" value="7.412068108605497" />
+      <entry key="S5" value="8.330695570420232" />
+      <entry key="S10" value="8.87874271438394" />
+      <entry key="S30" value="9.984868298318776" />
+      <entry key="S60" value="10.69408413350261" />
+      <entry key="M2" value="11.238520009109997" />
+      <entry key="M5" value="11.662910381834" />
+      <entry key="M10" value="11.825376110089563" />
+      <entry key="M15" value="11.882178720943806" />
+      <entry key="M30" value="11.940372508610867" />
+      <entry key="H1" value="11.970004328515614" />
+      <entry key="H2" value="11.984956338813967" />
+      <entry key="H4" value="11.992466669736737" />
+      <entry key="D1" value="11.998742844089263" />
+      <entry key="W1" value="11.999820367045345" />
+    </decayedShown>
+  </component>
   <component name="OptimizeOnSaveOptions">
     <option name="myRunOnSave" value="true" />
   </component>
@@ -100,32 +167,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Gradle.Gradle ラッパーのアップグレード.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.baseball-orders [:build-logic:clean].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.baseball-orders [clean].executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;code.cleanup.on.save&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/BSBL-feature-simulation&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/a3123/Documents/Java/baseball-orders&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;モジュール&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;actions.on.save&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.Gradle ラッパーのアップグレード.executor": "Run",
+    "Gradle.baseball-orders [:build-logic:clean].executor": "Run",
+    "Gradle.baseball-orders [build].executor": "Run",
+    "Gradle.baseball-orders [clean].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "code.cleanup.on.save": "true",
+    "git-widget-placeholder": "develop",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/a3123/Documents/Java/baseball-orders",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "モジュール",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "actions.on.save",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
-  <component name="RunManager" selected="Gradle.baseball-orders [:build-logic:clean]">
+}]]></component>
+  <component name="RunManager" selected="Gradle.baseball-orders [build]">
     <configuration name="baseball-orders [:build-logic:clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -144,8 +212,36 @@
       </ExternalSystemSettings>
       <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
       <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
       <DebugAllEnabled>false</DebugAllEnabled>
       <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="baseball-orders [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="build" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
     <configuration name="baseball-orders [clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
@@ -166,14 +262,18 @@
       </ExternalSystemSettings>
       <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
       <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
       <DebugAllEnabled>false</DebugAllEnabled>
       <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.baseball-orders [:build-logic:clean]" />
+        <item itemvalue="Gradle.baseball-orders [build]" />
         <item itemvalue="Gradle.baseball-orders [clean]" />
+        <item itemvalue="Gradle.baseball-orders [:build-logic:clean]" />
       </list>
     </recent_temporary>
   </component>

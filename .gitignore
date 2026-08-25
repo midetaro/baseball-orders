@@ -6,3 +6,9 @@ build
 
 # Ignore Kotlin plugin data
 .kotlin
+
+build/
+.idea/
+
+.env
+.DS_Store
