@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.game;
+package com.example.baseballorders.simulator.domain.model;
 
 import com.example.baseballorders.simulator.domain.model.behavior.AggressiveStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.MiddleStealBehavior;

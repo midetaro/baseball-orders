@@ -1,6 +1,5 @@
-package com.example.baseballorders.simulator.domain.game;
+package com.example.baseballorders.simulator.domain.model;
 
-import com.example.baseballorders.simulator.domain.model.GameContext;
 import com.example.baseballorders.simulator.domain.model.state.NoBasesState;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import lombok.Getter;
@@ -34,7 +33,7 @@ public class GameContextTest {
                 gameContext.addOutCounts(3);
             }
         }
-        
+
         // when
         gameContext.addOutCounts(addOutCount);
 
