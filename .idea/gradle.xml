@@ -4,12 +4,51 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/apps/backend" name="backend">
+                <projects>
+                  <project path="$PROJECT_DIR$/apps/backend" />
+                  <project path="$PROJECT_DIR$/apps/backend/application" />
+                  <project path="$PROJECT_DIR$/apps/backend/domain" />
+                  <project path="$PROJECT_DIR$/apps/backend/infrastructure" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/apps/simulator" name="simulator">
+                <projects>
+                  <project path="$PROJECT_DIR$/apps/simulator" />
+                  <project path="$PROJECT_DIR$/apps/simulator/application" />
+                  <project path="$PROJECT_DIR$/apps/simulator/domain" />
+                  <project path="$PROJECT_DIR$/apps/simulator/infrastructure" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="gradleJvm" value="#JAVA_HOME" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/feature-simulator" />
+            <option value="$PROJECT_DIR$/apps/backend" />
+            <option value="$PROJECT_DIR$/apps/backend/application" />
+            <option value="$PROJECT_DIR$/apps/backend/domain" />
+            <option value="$PROJECT_DIR$/apps/backend/infrastructure" />
+            <option value="$PROJECT_DIR$/apps/simulator" />
+            <option value="$PROJECT_DIR$/apps/simulator/application" />
+            <option value="$PROJECT_DIR$/apps/simulator/domain" />
+            <option value="$PROJECT_DIR$/apps/simulator/infrastructure" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/apps/backend" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/apps/backend" />
+            <option value="$PROJECT_DIR$/apps/backend/application" />
+            <option value="$PROJECT_DIR$/apps/backend/domain" />
+            <option value="$PROJECT_DIR$/apps/backend/infrastructure" />
           </set>
         </option>
       </GradleProjectSettings>
