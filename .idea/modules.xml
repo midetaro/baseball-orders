@@ -4,12 +4,10 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/build-logic/baseball-orders-build-logic.main.iml" filepath="$PROJECT_DIR$/.idea/modules/build-logic/baseball-orders-build-logic.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/build-logic/baseball-orders-build-logic.test.iml" filepath="$PROJECT_DIR$/.idea/modules/build-logic/baseball-orders-build-logic.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/list/baseball-orders.list.iml" filepath="$PROJECT_DIR$/.idea/modules/list/baseball-orders.list.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/list/baseball-orders.list.main.iml" filepath="$PROJECT_DIR$/.idea/modules/list/baseball-orders.list.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/list/baseball-orders.list.test.iml" filepath="$PROJECT_DIR$/.idea/modules/list/baseball-orders.list.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/simulator/baseball-orders.simulator.main.iml" filepath="$PROJECT_DIR$/.idea/modules/simulator/baseball-orders.simulator.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/simulator/baseball-orders.simulator.test.iml" filepath="$PROJECT_DIR$/.idea/modules/simulator/baseball-orders.simulator.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.iml" filepath="$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.main.iml" filepath="$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.test.iml" filepath="$PROJECT_DIR$/.idea/modules/utilities/baseball-orders.utilities.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/apps/simulator/application/simulator.application.main.iml" filepath="$PROJECT_DIR$/.idea/modules/apps/simulator/application/simulator.application.main.iml" />
