@@ -1,27 +1,43 @@
 package com.example.baseballorders.simulator.application;
 
-import com.example.baseballorders.simulator.domain.mock.Mock_Batters;
+import com.example.baseballorders.simulator.domain.model.GameContext;
+import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.player.Batter;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GameSimulatorService_simulationGameTest {
 
     ShortDistanceAtBatBehavior shortDistanceAtBatBehavior = new ShortDistanceAtBatBehavior();
+    Map<String, AtBatBehavior> map = Map.of("shortDistanceAtBat", shortDistanceAtBatBehavior);
 
     GameSimulatorService gameSimulatorService = new GameSimulatorService(
-            Map.of("shortDistanceAtBat", shortDistanceAtBatBehavior)
+            map
     );
 
+    @DisplayName("9人の打順でシミュレーションを実行すると9回で試合が終了する")
     @Test
     public void simulateGame() {
         // given
-        var batters = Mock_Batters.mock();
+        List<Batter> batters = IntStream.rangeClosed(1, 9)
+                .mapToObj(number -> new Batter(
+                        "batter" + number,
+                        0.4f,
+                        0.4f,
+                        shortDistanceAtBatBehavior,
+                        new NowayStealBehavior()
+                ))
+                .toList();
         // when
-        var result = gameSimulatorService.simulateGame(batters);
+        GameContext result = gameSimulatorService.simulateGame(batters);
         // then
         System.out.println("得点：" + result.getTotalScore());
         assertAll(

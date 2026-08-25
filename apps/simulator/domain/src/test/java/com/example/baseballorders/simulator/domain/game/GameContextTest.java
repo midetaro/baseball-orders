@@ -1,13 +1,11 @@
 package com.example.baseballorders.simulator.domain.game;
 
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
-import com.example.baseballorders.simulator.domain.mock.Mock_Batters;
 import com.example.baseballorders.simulator.domain.model.GameContext;
 import com.example.baseballorders.simulator.domain.model.state.NoBasesState;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -15,7 +13,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 @Slf4j
@@ -35,7 +34,7 @@ public class GameContextTest {
                 gameContext.addOutCounts(3);
             }
         }
-
+        
         // when
         gameContext.addOutCounts(addOutCount);
 
