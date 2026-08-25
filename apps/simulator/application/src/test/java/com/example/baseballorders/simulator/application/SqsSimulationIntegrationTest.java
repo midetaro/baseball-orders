@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class SqsSimulationConnectivityTest {
+class SqsSimulationIntegrationTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -34,7 +34,7 @@ class SqsSimulationConnectivityTest {
              var listener = Executors.newSingleThreadExecutor()) {
             String requestQueueUrl = sqs.createQueue(request -> request.queueName("simulation-requests")).queueUrl();
             String resultQueueUrl = sqs.createQueue(request -> request.queueName("simulation-results")).queueUrl();
-            var service = new GameSimulatorService(Map.of(
+            var useCase = new SimulateGameUseCase(Map.of(
                     "shortDistanceAtBat", new ShortDistanceAtBatBehavior()
             ));
 
@@ -51,7 +51,7 @@ class SqsSimulationConnectivityTest {
                         .map(player -> new Batter(
                                 player.name(), player.hitAverage(), player.slugging(), atBatBehavior, stealStrategy))
                         .toList();
-                var game = service.simulateGame(batters);
+                var game = useCase.simulateGame(batters);
                 String resultBody = objectMapper.writeValueAsString(
                         new SimulationResult(request.gameId(), game.getInning(), game.getTotalScore(), game.isGameOver()));
                 sqs.sendMessage(send -> send

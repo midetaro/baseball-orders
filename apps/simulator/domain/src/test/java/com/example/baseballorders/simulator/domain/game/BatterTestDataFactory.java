@@ -8,7 +8,10 @@ import com.example.baseballorders.simulator.domain.model.player.Batter;
 
 import java.util.List;
 
-public class Mock_Batters {
+public final class BatterTestDataFactory {
+
+    private BatterTestDataFactory() {
+    }
 
     static ShortDistanceAtBatBehavior shortDistanceAtBatBehavior = new ShortDistanceAtBatBehavior();
     static AggressiveStealBehavior aggressiveStealBehavior = new AggressiveStealBehavior();

@@ -14,12 +14,12 @@ import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class GameSimulatorService_simulationGameTest {
+class SimulateGameUseCaseTest {
 
     ShortDistanceAtBatBehavior shortDistanceAtBatBehavior = new ShortDistanceAtBatBehavior();
     Map<String, AtBatBehavior> map = Map.of("shortDistanceAtBat", shortDistanceAtBatBehavior);
 
-    GameSimulatorService gameSimulatorService = new GameSimulatorService(
+    SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(
             map
     );
 
@@ -37,7 +37,7 @@ public class GameSimulatorService_simulationGameTest {
                 ))
                 .toList();
         // when
-        GameContext result = gameSimulatorService.simulateGame(batters);
+        GameContext result = simulateGameUseCase.simulateGame(batters);
         // then
         System.out.println("得点：" + result.getTotalScore());
         assertAll(

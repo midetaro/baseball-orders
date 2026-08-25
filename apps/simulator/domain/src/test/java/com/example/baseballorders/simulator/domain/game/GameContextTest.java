@@ -27,7 +27,7 @@ public class GameContextTest {
     public void addOutCountsTest(String description, int initialInning, int addOutCount,
                                  int expectedOutCounts, int expectedInning, boolean expectedGameOver) {
         // given
-        GameContext gameContext = new GameContext(Mock_Batters.mock());
+        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
         if (initialInning > 1) {
             // 設定するためにリフレクションまたは複数回の呼び出しで調整
             for (int i = 1; i < initialInning; i++) {
@@ -77,7 +77,7 @@ public class GameContextTest {
     @MethodSource("addScoreTestCases")
     public void addScoreTest(String description, long initialScore, long addScore, long expectedScore) {
         // given
-        GameContext gameContext = new GameContext(Mock_Batters.mock());
+        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
         // 初期スコア設定
         for (int i = 0; i < initialScore; i++) {
             gameContext.addScore(1);
@@ -117,7 +117,7 @@ public class GameContextTest {
     @MethodSource("updateBaseStateTestCases")
     public void updateBaseStateTest(String description, com.example.baseballorders.simulator.domain.model.state.BasesState newState) {
         // given
-        GameContext gameContext = new GameContext(Mock_Batters.mock());
+        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
 
         // when
         gameContext.updateBaseState(newState);
@@ -144,8 +144,8 @@ public class GameContextTest {
     @MethodSource("setRunnerToTestCases")
     public void setRunnerToTest(String description, int baseNumber, boolean hasBatter, int expectedBaseCount) {
         // given
-        GameContext gameContext = new GameContext(Mock_Batters.mock());
-        Optional<com.example.baseballorders.simulator.domain.model.player.Batter> batter = hasBatter ? Optional.of(Mock_Batters.mock().get(0)) : Optional.empty();
+        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
+        Optional<com.example.baseballorders.simulator.domain.model.player.Batter> batter = hasBatter ? Optional.of(BatterTestDataFactory.mock().get(0)) : Optional.empty();
 
         // when
         gameContext.setRunnerTo(baseNumber, batter);
@@ -195,8 +195,8 @@ public class GameContextTest {
     public void moveRunnerNthBaseTest(String description, int targetBase, boolean expectedFirstEmpty,
                                       boolean expectedSecondEmpty, boolean expectedThirdEmpty) {
         // given
-        GameContext gameContext = new GameContext(Mock_Batters.mock());
-        var batter = Mock_Batters.mock().get(0);
+        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
+        var batter = BatterTestDataFactory.mock().get(0);
         gameContext.setRunnerTo(1, Optional.of(batter));
         gameContext.setRunnerTo(2, Optional.of(batter));
         gameContext.setRunnerTo(3, Optional.of(batter));
@@ -240,7 +240,7 @@ public class GameContextTest {
     @MethodSource("isGameOverTestCases")
     public void isGameOverTest(String description, int addOutCountTimes, boolean expectedGameOver) {
         // given
-        GameContext gameContext = new GameContext(Mock_Batters.mock());
+        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
 
         // when - 9回のアウトカウント満了でゲーム終了
         for (int i = 1; i <= addOutCountTimes; i++) {
@@ -274,8 +274,8 @@ public class GameContextTest {
     public void updateBaseStateOfTest(String description, boolean hasFirst, boolean hasSecond, boolean hasThird,
                                       Class<?> expectedStateClass) {
         // given
-        GameContext gameContext = new GameContext(Mock_Batters.mock());
-        var batter = Mock_Batters.mock().get(0);
+        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
+        var batter = BatterTestDataFactory.mock().get(0);
 
         // 各塁に走者を設定
         if (hasFirst) gameContext.setRunnerTo(1, Optional.of(batter));
@@ -339,7 +339,7 @@ public class GameContextTest {
     @MethodSource("nextAtBatTestCases")
     public void nextAtBatTest(String description, int numberOfNextBatterBefore, int expectedNumberOfNextBatterAfter) {
         // given
-        GameContext gameContext = new GameContext(Mock_Batters.mock());
+        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
         // numberOfNextBatter を設定するためにループで実行
         for (int i = 0; i < numberOfNextBatterBefore; i++) {
             gameContext.nextAtBat();

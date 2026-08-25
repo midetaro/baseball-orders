@@ -11,7 +11,7 @@ import java.util.Map;
 
 @Service
 @AllArgsConstructor
-public class GameSimulatorService {
+public class SimulateGameUseCase {
 
     private final Map<String, AtBatBehavior> behaviors;
 
