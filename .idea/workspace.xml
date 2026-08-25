@@ -4,23 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="003c9edc-7279-49b0-9b05-c3723b7e096c" name="変更" comment="game context and BasesState">
+    <list default="true" id="003c9edc-7279-49b0-9b05-c3723b7e096c" name="変更" comment="chore:modify gitignore">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/code/BattingResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/code/BattingResult.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/game/GameContext.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/GameContext.java" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/model/GameContext.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/BasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/DoubleBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/DoubleThirdBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/FirstDoubleBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/FirstThirdBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/FullBasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/NoBasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/SingleBasesState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/state/ThirdBaseState.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/usecase/GameSimulatorService.java" beforeDir="false" afterPath="$PROJECT_DIR$/feature-simulator/lib/src/main/java/org/example/domain/usecase/GameSimulatorService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,6 +74,10 @@
     &quot;accountId&quot;: &quot;3727f716-8bee-4bbd-934d-a05f1ca63176&quot;
   }
 }</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
   <component name="OptimizeOnSaveOptions">
     <option name="myRunOnSave" value="true" />
   </component>
@@ -100,31 +89,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Gradle.Gradle ラッパーのアップグレード.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.baseball-orders [:build-logic:clean].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.baseball-orders [clean].executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;code.cleanup.on.save&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/BSBL-feature-simulation&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/a3123/Documents/Java/baseball-orders&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;モジュール&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;actions.on.save&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.Gradle ラッパーのアップグレード.executor": "Run",
+    "Gradle.baseball-orders [:build-logic:clean].executor": "Run",
+    "Gradle.baseball-orders [clean].executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "code.cleanup.on.save": "true",
+    "git-widget-placeholder": "feature/20260825-2",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/a3123/Documents/Java/baseball-orders",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "モジュール",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "actions.on.save",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="Gradle.baseball-orders [:build-logic:clean]">
     <configuration name="baseball-orders [:build-logic:clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
@@ -144,8 +133,11 @@
       </ExternalSystemSettings>
       <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
       <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
       <DebugAllEnabled>false</DebugAllEnabled>
       <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
     <configuration name="baseball-orders [clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
@@ -166,8 +158,11 @@
       </ExternalSystemSettings>
       <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
       <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
       <DebugAllEnabled>false</DebugAllEnabled>
       <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
     <recent_temporary>
@@ -233,7 +228,8 @@
     <MESSAGE value="gradleの雛形" />
     <MESSAGE value="batter and behavior" />
     <MESSAGE value="game context and BasesState" />
-    <option name="LAST_COMMIT_MESSAGE" value="game context and BasesState" />
+    <MESSAGE value="chore:modify gitignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="chore:modify gitignore" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>
