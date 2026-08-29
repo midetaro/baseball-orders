@@ -40,7 +40,7 @@ class SimulateGameUseCaseTest {
         // when
         GameContext result = simulateGameUseCase.simulateGame(new LineUpEntity(batterEntities));
         // then
-        System.out.println("得点：" + result.getTotalScore());
+        IO.println("得点：" + result.getTotalScore());
         assertAll(
                 () -> assertTrue(result.isGameOver(), "ゲームが終了していること"),
                 () -> assertEquals(9, result.getInning(), "イニングが9である")
