@@ -8,7 +8,7 @@ import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 /**
  * 打者
  */
-public class Batter extends Player {
+public class BatterEntity extends Player {
 
     /**
      * 打率
@@ -30,7 +30,7 @@ public class Batter extends Player {
      */
     private final StealStrategy stealStrategy;
 
-    public Batter(String name, float hitAverage, float sluggish, AtBatBehavior atBatBehavior, StealStrategy stealStrategy) {
+    public BatterEntity(String name, float hitAverage, float sluggish, AtBatBehavior atBatBehavior, StealStrategy stealStrategy) {
         this.sluggish = sluggish;
         this.name = name;
         this.hitAverage = hitAverage;

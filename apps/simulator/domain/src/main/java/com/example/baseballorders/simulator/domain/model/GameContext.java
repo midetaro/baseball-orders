@@ -1,11 +1,12 @@
 package com.example.baseballorders.simulator.domain.model;
 
+import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
-import com.example.baseballorders.simulator.domain.model.player.Batter;
+import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.state.*;
 
 import java.util.List;
@@ -20,18 +21,18 @@ public class GameContext {
     private long outCounts = 0;
     private BasesState currentBaseState = new NoBasesState();
     @Setter
-    private Optional<Batter> runnerOnFirstBase = Optional.empty();
+    private Optional<BatterEntity> runnerOnFirstBase = Optional.empty();
     @Setter
-    private Optional<Batter> runnerOnSecondBase = Optional.empty();
+    private Optional<BatterEntity> runnerOnSecondBase = Optional.empty();
     @Setter
-    private Optional<Batter> runnerOnThirdBase = Optional.empty();
+    private Optional<BatterEntity> runnerOnThirdBase = Optional.empty();
 
-    private final List<Batter> batterOrders;
+    private final List<BatterEntity> batterEntityOrders;
     private int numberOfNextBatter;
     private boolean isGameOver = false;
 
-    public GameContext(List<Batter> batterOrders) {
-        this.batterOrders = batterOrders;
+    public GameContext(LineUpEntity batterEntityOrders) {
+        this.batterEntityOrders = batterEntityOrders.getBatterEntities();
         this.numberOfNextBatter = 0;
     }
 
@@ -39,7 +40,7 @@ public class GameContext {
         currentBaseState = state;
     }
 
-    public void setRunnerTo(int nameOfBase, Optional<Batter> batter) {
+    public void setRunnerTo(int nameOfBase, Optional<BatterEntity> batter) {
         if (nameOfBase == 1) {
             runnerOnFirstBase = batter;
         } else if (nameOfBase == 2) {
@@ -97,7 +98,7 @@ public class GameContext {
     }
 
     public void nextAtBat() {
-        var batter = batterOrders.get(numberOfNextBatter);
+        var batter = batterEntityOrders.get(numberOfNextBatter);
         // --- Steal ---
         this.trySteal();
         this.updateBaseStateOf();
@@ -152,7 +153,7 @@ public class GameContext {
     }
 
 
-    private Optional<Batter> getRunnerIndexOf(int nameOfBase) {
+    private Optional<BatterEntity> getRunnerIndexOf(int nameOfBase) {
         if (nameOfBase == 1) {
             return runnerOnFirstBase;
         } else if (nameOfBase == 2) {

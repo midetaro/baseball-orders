@@ -1,7 +1,7 @@
 package com.example.baseballorders.simulator.domain.model.state;
 
 import com.example.baseballorders.simulator.domain.model.GameContext;
-import com.example.baseballorders.simulator.domain.model.player.Batter;
+import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 
 public interface BasesState {
 
@@ -9,11 +9,11 @@ public interface BasesState {
         context.addOutCounts(1);
     }
 
-    void hitSingle(GameContext context, Batter batter);
+    void hitSingle(GameContext context, BatterEntity batterEntity);
 
-    void hitDouble(GameContext context, Batter batter);
+    void hitDouble(GameContext context, BatterEntity batterEntity);
 
-    void hitTriple(GameContext context, Batter batter);
+    void hitTriple(GameContext context, BatterEntity batterEntity);
 
-    void hitHomer(GameContext context, Batter batter);
+    void hitHomer(GameContext context, BatterEntity batterEntity);
 }
