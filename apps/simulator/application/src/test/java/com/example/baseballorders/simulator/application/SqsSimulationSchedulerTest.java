@@ -1,5 +1,6 @@
 package com.example.baseballorders.simulator.application;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -14,6 +15,7 @@ import com.example.baseballorders.simulator.domain.usecase.SimulateGameUseCase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,15 +28,22 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 class SqsSimulationSchedulerTest {
 
     @Test
+    @DisplayName("ポーリング処理には60秒の固定遅延が設定されている")
     void pollsEveryMinute() throws NoSuchMethodException {
-        Scheduled scheduled =
-                SqsSimulationScheduler.class.getMethod("poll").getAnnotation(Scheduled.class);
+        // given
+        var pollMethod = SqsSimulationScheduler.class.getMethod("poll");
 
-        assertEquals(60_000L, scheduled.fixedDelay());
+        // when
+        Scheduled result = pollMethod.getAnnotation(Scheduled.class);
+
+        // then
+        assertAll(() -> assertEquals(60_000L, result.fixedDelay()));
     }
 
     @Test
+    @DisplayName("受信したメッセージを打順へ変換すると試合を実行してメッセージを削除する")
     void mapsReceivedMessageAndPassesLineUpToUseCase() throws Exception {
+        // given
         SqsClient sqsClient = mock(SqsClient.class);
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
         AtBatBehavior atBatBehavior = (hitAverage, sluggish) -> BattingResult.OUT;
@@ -53,16 +62,19 @@ class SqsSimulationSchedulerTest {
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
         SqsSimulationScheduler scheduler =
                 new SqsSimulationScheduler(sqsClient, objectMapper, useCase, mapper, "request-url");
-
-        scheduler.poll();
-
         var lineUpCaptor =
                 ArgumentCaptor.forClass(
                         com.example.baseballorders.simulator.domain.model.player.LineUpEntity
                                 .class);
-        verify(useCase).simulateGame(lineUpCaptor.capture());
-        assertEquals(9, lineUpCaptor.getValue().getBatterEntities().size());
-        verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
+
+        // when
+        scheduler.poll();
+
+        // then
+        assertAll(
+                () -> verify(useCase).simulateGame(lineUpCaptor.capture()),
+                () -> assertEquals(9, lineUpCaptor.getValue().getBatterEntities().size()),
+                () -> verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class)));
     }
 
     private static final class FixedStealStrategy implements StealStrategy {
