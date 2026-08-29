@@ -11,4 +11,6 @@ plugins {
 
 rootProject.name = 'simulator'
 
-include 'application', 'domain', 'infrastructure'
+include 'application'
+include 'domain'
+include 'infrastructure'

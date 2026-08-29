@@ -8,8 +8,11 @@ dependencies {
     implementation 'com.google.guava:guava:33.5.0-jre'
     implementation 'org.springframework:spring-context:7.0.1'
     implementation 'org.slf4j:slf4j-api:2.0.17'
+
     compileOnly 'org.projectlombok:lombok:1.18.42'
+
     annotationProcessor 'org.projectlombok:lombok:1.18.42'
+
     testCompileOnly 'org.projectlombok:lombok:1.18.42'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
     testFixturesCompileOnly 'org.projectlombok:lombok:1.18.42'
