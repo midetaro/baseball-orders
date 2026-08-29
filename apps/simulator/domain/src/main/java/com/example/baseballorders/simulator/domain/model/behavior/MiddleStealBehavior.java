@@ -24,7 +24,8 @@ public class MiddleStealBehavior implements StealStrategy {
 
     private final float TO_TRIPLE_TRY_AVERAGE = 0.05f;
     private final float TO_TRIPLE_NOT_TRY = 1 - TO_TRIPLE_TRY_AVERAGE;
-    private final float TO_TRIPLE_SUCCESS_PROBABILITY = TO_TRIPLE_NOT_TRY + 0.9f * TO_TRIPLE_TRY_AVERAGE;
+    private final float TO_TRIPLE_SUCCESS_PROBABILITY =
+            TO_TRIPLE_NOT_TRY + 0.9f * TO_TRIPLE_TRY_AVERAGE;
 
     @Override
     public StealResult runToTriple() {

@@ -3,7 +3,6 @@ package com.example.baseballorders.simulator.domain.model.state;
 import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.model.GameContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-
 import java.util.Optional;
 
 public class NoBasesState implements BasesState {

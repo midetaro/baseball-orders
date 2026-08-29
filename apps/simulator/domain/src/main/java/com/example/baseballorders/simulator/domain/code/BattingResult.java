@@ -1,8 +1,6 @@
 package com.example.baseballorders.simulator.domain.code;
 
-/**
- * 打席結果
- */
+/** 打席結果 */
 public enum BattingResult {
     OUT,
     HIT_SINGLE,

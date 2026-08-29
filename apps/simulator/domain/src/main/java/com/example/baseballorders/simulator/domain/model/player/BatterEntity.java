@@ -5,32 +5,27 @@ import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 
-/**
- * 打者
- */
+/** 打者 */
 public class BatterEntity extends Player {
 
-    /**
-     * 打率
-     */
+    /** 打率 */
     private final float hitAverage;
 
-    /**
-     * 長打率
-     */
+    /** 長打率 */
     private final float sluggish;
 
-    /**
-     * 打撃戦略
-     */
+    /** 打撃戦略 */
     private final AtBatBehavior atBatBehavior;
 
-    /**
-     * 走塁戦略
-     */
+    /** 走塁戦略 */
     private final StealStrategy stealStrategy;
 
-    public BatterEntity(String name, float hitAverage, float sluggish, AtBatBehavior atBatBehavior, StealStrategy stealStrategy) {
+    public BatterEntity(
+            String name,
+            float hitAverage,
+            float sluggish,
+            AtBatBehavior atBatBehavior,
+            StealStrategy stealStrategy) {
         this.sluggish = sluggish;
         this.name = name;
         this.hitAverage = hitAverage;

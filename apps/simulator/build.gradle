@@ -1,3 +1,7 @@
+plugins {
+    id 'com.diffplug.spotless' version '8.2.1' apply false
+}
+
 allprojects {
     group = 'com.example.baseballorders'
     version = '0.1.0-SNAPSHOT'
@@ -8,6 +12,15 @@ allprojects {
 }
 
 subprojects {
+    apply plugin: 'com.diffplug.spotless'
+    spotless {
+        java {
+            googleJavaFormat().aosp()
+            removeUnusedImports()
+            trimTrailingWhitespace()
+            endWithNewline()
+        }
+    }
     plugins.withType(JavaPlugin).configureEach {
         java {
             toolchain {

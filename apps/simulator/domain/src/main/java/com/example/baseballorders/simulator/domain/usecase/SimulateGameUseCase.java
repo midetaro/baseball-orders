@@ -2,13 +2,10 @@ package com.example.baseballorders.simulator.domain.usecase;
 
 import com.example.baseballorders.simulator.domain.model.GameContext;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
 
 @Service
 @AllArgsConstructor

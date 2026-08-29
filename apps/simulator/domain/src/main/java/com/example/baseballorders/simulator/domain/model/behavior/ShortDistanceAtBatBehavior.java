@@ -4,9 +4,7 @@ import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import org.springframework.stereotype.Component;
 
-/**
- * 短距離バッター
- */
+/** 短距離バッター */
 @Component("shortDistanceAtBat")
 public class ShortDistanceAtBatBehavior implements AtBatBehavior {
 
@@ -23,6 +21,5 @@ public class ShortDistanceAtBatBehavior implements AtBatBehavior {
             return BattingResult.HIT_DOUBLE;
         }
         return BattingResult.OUT;
-
     }
 }
