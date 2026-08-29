@@ -4,7 +4,8 @@ import com.example.baseballorders.simulator.domain.model.GameContext;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.player.Batter;
+import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -27,8 +28,8 @@ class SimulateGameUseCaseTest {
     @Test
     public void simulateGame() {
         // given
-        List<Batter> batters = IntStream.rangeClosed(1, 9)
-                .mapToObj(number -> new Batter(
+        List<BatterEntity> batterEntities = IntStream.rangeClosed(1, 9)
+                .mapToObj(number -> new BatterEntity(
                         "batter" + number,
                         0.4f,
                         0.4f,
@@ -37,7 +38,7 @@ class SimulateGameUseCaseTest {
                 ))
                 .toList();
         // when
-        GameContext result = simulateGameUseCase.simulateGame(batters);
+        GameContext result = simulateGameUseCase.simulateGame(new LineUpEntity(batterEntities));
         // then
         System.out.println("得点：" + result.getTotalScore());
         assertAll(

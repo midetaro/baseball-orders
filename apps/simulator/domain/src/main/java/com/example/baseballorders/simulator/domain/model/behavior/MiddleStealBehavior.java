@@ -1,6 +1,7 @@
 package com.example.baseballorders.simulator.domain.model.behavior;
 
 import com.example.baseballorders.simulator.domain.code.StealResult;
+import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 
 public class MiddleStealBehavior implements StealStrategy {
 
@@ -10,7 +11,7 @@ public class MiddleStealBehavior implements StealStrategy {
 
     @Override
     public StealResult runToDouble() {
-        float random = (float) Math.random();
+        float random = RandomGenerator.nextFloat();
 
         if (random < NOT_TRY) {
             return StealResult.NOT_TRY;
@@ -27,7 +28,7 @@ public class MiddleStealBehavior implements StealStrategy {
 
     @Override
     public StealResult runToTriple() {
-        float random = (float) Math.random();
+        float random = RandomGenerator.nextFloat();
         if (random < TO_TRIPLE_NOT_TRY) {
             return StealResult.NOT_TRY;
         } else if (TO_TRIPLE_NOT_TRY < random && random < TO_TRIPLE_SUCCESS_PROBABILITY) {

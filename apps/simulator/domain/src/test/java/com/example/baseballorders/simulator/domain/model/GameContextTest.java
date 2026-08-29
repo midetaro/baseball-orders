@@ -1,5 +1,8 @@
 package com.example.baseballorders.simulator.domain.model;
 
+import com.example.baseballorders.simulator.domain.code.Base;
+import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.state.NoBasesState;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import lombok.Getter;
@@ -26,7 +29,7 @@ public class GameContextTest {
     public void addOutCountsTest(String description, int initialInning, int addOutCount,
                                  int expectedOutCounts, int expectedInning, boolean expectedGameOver) {
         // given
-        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
+        GameContext gameContext = new GameContext(new LineUpEntity(BatterTestDataFactory.mock()));
         if (initialInning > 1) {
             // 設定するためにリフレクションまたは複数回の呼び出しで調整
             for (int i = 1; i < initialInning; i++) {
@@ -76,7 +79,7 @@ public class GameContextTest {
     @MethodSource("addScoreTestCases")
     public void addScoreTest(String description, long initialScore, long addScore, long expectedScore) {
         // given
-        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
+        GameContext gameContext = new GameContext(new LineUpEntity(BatterTestDataFactory.mock()));
         // 初期スコア設定
         for (int i = 0; i < initialScore; i++) {
             gameContext.addScore(1);
@@ -116,7 +119,7 @@ public class GameContextTest {
     @MethodSource("updateBaseStateTestCases")
     public void updateBaseStateTest(String description, com.example.baseballorders.simulator.domain.model.state.BasesState newState) {
         // given
-        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
+        GameContext gameContext = new GameContext(new LineUpEntity(BatterTestDataFactory.mock()));
 
         // when
         gameContext.updateBaseState(newState);
@@ -141,20 +144,19 @@ public class GameContextTest {
     @DisplayName("setRunnerTo() - 分岐網羅テスト")
     @ParameterizedTest(name = "{0}")
     @MethodSource("setRunnerToTestCases")
-    public void setRunnerToTest(String description, int baseNumber, boolean hasBatter, int expectedBaseCount) {
+    public void setRunnerToTest(String description, Base base, boolean hasBatter, int expectedBaseCount) {
         // given
-        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
-        Optional<com.example.baseballorders.simulator.domain.model.player.Batter> batter = hasBatter ? Optional.of(BatterTestDataFactory.mock().get(0)) : Optional.empty();
+        GameContext gameContext = new GameContext(new LineUpEntity(BatterTestDataFactory.mock()));
+        Optional<BatterEntity> batter = hasBatter ? Optional.of(BatterTestDataFactory.mock().get(0)) : Optional.empty();
 
         // when
-        gameContext.setRunnerTo(baseNumber, batter);
+        gameContext.setRunnerTo(base, batter);
 
         // then
-        Optional<com.example.baseballorders.simulator.domain.model.player.Batter> runner = switch (baseNumber) {
-            case 1 -> gameContext.getRunnerOnFirstBase();
-            case 2 -> gameContext.getRunnerOnSecondBase();
-            case 3 -> gameContext.getRunnerOnThirdBase();
-            default -> Optional.empty();
+        Optional<BatterEntity> runner = switch (base) {
+            case FIRST -> gameContext.getRunnerOnFirstBase();
+            case SECOND -> gameContext.getRunnerOnSecondBase();
+            case THIRD -> gameContext.getRunnerOnThirdBase();
         };
         assertEquals(hasBatter, runner.isPresent(), description);
     }
@@ -163,27 +165,27 @@ public class GameContextTest {
         return Stream.of(
                 arguments(
                         "[1塁] 走者を配置",
-                        1, true, 1
+                        Base.FIRST, true, 1
                 ),
                 arguments(
                         "[1塁] 走者を削除",
-                        1, false, 0
+                        Base.FIRST, false, 0
                 ),
                 arguments(
                         "[2塁] 走者を配置",
-                        2, true, 2
+                        Base.SECOND, true, 2
                 ),
                 arguments(
                         "[2塁] 走者を削除",
-                        2, false, 0
+                        Base.SECOND, false, 0
                 ),
                 arguments(
                         "[3塁] 走者を配置",
-                        3, true, 3
+                        Base.THIRD, true, 3
                 ),
                 arguments(
                         "[3塁] 走者を削除",
-                        3, false, 0
+                        Base.THIRD, false, 0
                 )
         );
     }
@@ -191,14 +193,14 @@ public class GameContextTest {
     @DisplayName("moveRunnerNthBase() - 分岐網羅テスト")
     @ParameterizedTest(name = "{0}")
     @MethodSource("moveRunnerNthBaseTestCases")
-    public void moveRunnerNthBaseTest(String description, int targetBase, boolean expectedFirstEmpty,
+    public void moveRunnerNthBaseTest(String description, Base targetBase, boolean expectedFirstEmpty,
                                       boolean expectedSecondEmpty, boolean expectedThirdEmpty) {
         // given
-        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
+        GameContext gameContext = new GameContext(new LineUpEntity(BatterTestDataFactory.mock()));
         var batter = BatterTestDataFactory.mock().get(0);
-        gameContext.setRunnerTo(1, Optional.of(batter));
-        gameContext.setRunnerTo(2, Optional.of(batter));
-        gameContext.setRunnerTo(3, Optional.of(batter));
+        gameContext.setRunnerTo(Base.FIRST, Optional.of(batter));
+        gameContext.setRunnerTo(Base.SECOND, Optional.of(batter));
+        gameContext.setRunnerTo(Base.THIRD, Optional.of(batter));
 
         // when
         gameContext.moveRunnerNthBase(targetBase);
@@ -214,22 +216,17 @@ public class GameContextTest {
                 // targetBase=1: 1塁へ（1-2-3塁→空-1-2）
                 arguments(
                         "[targetBase=1] 1塁へ移動: 全塁走者→1,2塁に配置",
-                        1, true, false, false
+                        Base.FIRST, true, false, false
                 ),
                 // targetBase=2: 2塁へ（1-2-3塁→空-空-2）
                 arguments(
                         "[targetBase=2] 2塁へ移動: 全塁走者→2塁のみ",
-                        2, true, true, false
+                        Base.SECOND, true, true, false
                 ),
                 // targetBase=3: 3塁へ（1-2-3塁→空-空-空）
                 arguments(
                         "[targetBase=3] 3塁へ移動: 全塁走者→全て得点",
-                        3, true, true, true
-                ),
-                // targetBase=4: ホーム（1-2-3塁→空-空-空）
-                arguments(
-                        "[targetBase=4] ホームへ移動: 全塁走者→全て得点",
-                        4, true, true, true
+                        Base.THIRD, true, true, true
                 )
         );
     }
@@ -239,7 +236,7 @@ public class GameContextTest {
     @MethodSource("isGameOverTestCases")
     public void isGameOverTest(String description, int addOutCountTimes, boolean expectedGameOver) {
         // given
-        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
+        GameContext gameContext = new GameContext(new LineUpEntity(BatterTestDataFactory.mock()));
 
         // when - 9回のアウトカウント満了でゲーム終了
         for (int i = 1; i <= addOutCountTimes; i++) {
@@ -273,13 +270,13 @@ public class GameContextTest {
     public void updateBaseStateOfTest(String description, boolean hasFirst, boolean hasSecond, boolean hasThird,
                                       Class<?> expectedStateClass) {
         // given
-        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
+        GameContext gameContext = new GameContext(new LineUpEntity(BatterTestDataFactory.mock()));
         var batter = BatterTestDataFactory.mock().get(0);
 
         // 各塁に走者を設定
-        if (hasFirst) gameContext.setRunnerTo(1, Optional.of(batter));
-        if (hasSecond) gameContext.setRunnerTo(2, Optional.of(batter));
-        if (hasThird) gameContext.setRunnerTo(3, Optional.of(batter));
+        if (hasFirst) gameContext.setRunnerTo(Base.FIRST, Optional.of(batter));
+        if (hasSecond) gameContext.setRunnerTo(Base.SECOND, Optional.of(batter));
+        if (hasThird) gameContext.setRunnerTo(Base.THIRD, Optional.of(batter));
 
         // when
         gameContext.updateBaseStateOf();
@@ -338,7 +335,7 @@ public class GameContextTest {
     @MethodSource("nextAtBatTestCases")
     public void nextAtBatTest(String description, int numberOfNextBatterBefore, int expectedNumberOfNextBatterAfter) {
         // given
-        GameContext gameContext = new GameContext(BatterTestDataFactory.mock());
+        GameContext gameContext = new GameContext(new LineUpEntity(BatterTestDataFactory.mock()));
         // numberOfNextBatter を設定するためにループで実行
         for (int i = 0; i < numberOfNextBatterBefore; i++) {
             gameContext.nextAtBat();
