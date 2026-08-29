@@ -1,6 +1,7 @@
 package com.example.baseballorders.simulator.domain.model.behavior;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import org.springframework.stereotype.Component;
 
 /**
@@ -12,7 +13,7 @@ public class ShortDistanceAtBatBehavior implements AtBatBehavior {
     @Override
     public BattingResult batting(float hitAverage, float sluggish) {
 
-        float random = (float) Math.random();
+        float random = RandomGenerator.nextFloat();
         float singleProbability = hitAverage * (1 - sluggish);
         float doubleProbability = hitAverage * sluggish;
 

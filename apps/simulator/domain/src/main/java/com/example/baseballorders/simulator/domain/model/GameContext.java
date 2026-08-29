@@ -96,10 +96,6 @@ public class GameContext {
         outCounts = 0;
     }
 
-    public boolean isGameOver() {
-        return isGameOver;
-    }
-
     public void nextAtBat() {
         var batter = batterEntityOrders.get(numberOfNextBatter);
         // --- Steal ---
