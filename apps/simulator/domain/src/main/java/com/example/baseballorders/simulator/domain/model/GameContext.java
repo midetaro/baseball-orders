@@ -67,7 +67,7 @@ public class GameContext {
     }
 
     public void addScore(long runs) {
-        IO.println("得点を追加します: " + runs);
+        System.out.println("得点を追加します: " + runs);
         totalScore += runs;
     }
 
@@ -114,7 +114,7 @@ public class GameContext {
             case HIT_HOMER -> currentBaseState.hitHomer(this, batter);
         }
         this.updateBaseStateOf();
-        IO.println("======= currentBaseState:" + currentBaseState);
+        System.out.println("======= currentBaseState:" + currentBaseState);
         this.toNextBatter();
     }
 
@@ -140,12 +140,12 @@ public class GameContext {
         }
         switch (stealResult) {
             case FAILURE -> {
-                IO.printf("[%s]塁への盗塁が失敗しました。%n", targetBaseOfSteal);
+                System.out.printf("[%s]塁への盗塁が失敗しました。%n", targetBaseOfSteal);
                 this.setRunnerTo(currentBase, Optional.empty());
                 this.addOutCounts(1);
             }
             case SUCCESS -> {
-                IO.printf("[%s]塁への盗塁が成功しました。%n", targetBaseOfSteal);
+                System.out.printf("[%s]塁への盗塁が成功しました。%n", targetBaseOfSteal);
                 this.setRunnerTo(targetBaseOfSteal, getRunnerIndexOf(currentBase));
                 this.setRunnerTo(currentBase, Optional.empty());
             }

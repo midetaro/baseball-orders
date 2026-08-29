@@ -13,7 +13,7 @@ public class AggressiveStealBehavior implements StealStrategy {
     @Override
     public StealResult runToDouble() {
         float random = (float) Math.random();
-        IO.println("TO_DOUBLE_NOT_TRY:" + TO_DOUBLE_NOT_TRY + " TO_DOUBLE_SUCCESS_PROBABILITY:" + TO_DOUBLE_SUCCESS_PROBABILITY + " random:" + random);
+        System.out.println("TO_DOUBLE_NOT_TRY:" + TO_DOUBLE_NOT_TRY + " TO_DOUBLE_SUCCESS_PROBABILITY:" + TO_DOUBLE_SUCCESS_PROBABILITY + " random:" + random);
         if (random < TO_DOUBLE_NOT_TRY) {
             return StealResult.NOT_TRY;
         } else if (TO_DOUBLE_NOT_TRY < random && random < TO_DOUBLE_SUCCESS_PROBABILITY) {

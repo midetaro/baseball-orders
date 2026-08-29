@@ -6,6 +6,6 @@
 //public class MiddleDistanceBattingBehavior implements AtBatBehavior {
 //    @Override
 //    public void batting() {
-//        IO.println("Middle Distance Batting");
+//        System.out.println("Middle Distance Batting");
 //    }
 //}
