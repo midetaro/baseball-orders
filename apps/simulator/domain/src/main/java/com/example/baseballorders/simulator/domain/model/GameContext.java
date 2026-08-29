@@ -1,17 +1,16 @@
 package com.example.baseballorders.simulator.domain.model;
 
+import com.example.baseballorders.simulator.domain.code.Base;
+import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.StealResult;
+import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.model.state.*;
+import java.util.List;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import com.example.baseballorders.simulator.domain.code.BattingResult;
-import com.example.baseballorders.simulator.domain.code.Base;
-import com.example.baseballorders.simulator.domain.code.StealResult;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.state.*;
-
-import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Getter
@@ -21,12 +20,9 @@ public class GameContext {
     private long totalScore = 0;
     private long outCounts = 0;
     private BasesState currentBaseState = new NoBasesState();
-    @Setter
-    private Optional<BatterEntity> runnerOnFirstBase = Optional.empty();
-    @Setter
-    private Optional<BatterEntity> runnerOnSecondBase = Optional.empty();
-    @Setter
-    private Optional<BatterEntity> runnerOnThirdBase = Optional.empty();
+    @Setter private Optional<BatterEntity> runnerOnFirstBase = Optional.empty();
+    @Setter private Optional<BatterEntity> runnerOnSecondBase = Optional.empty();
+    @Setter private Optional<BatterEntity> runnerOnThirdBase = Optional.empty();
 
     private final List<BatterEntity> batterEntityOrders;
     private int numberOfNextBatter;
@@ -148,7 +144,6 @@ public class GameContext {
         }
     }
 
-
     private Optional<BatterEntity> getRunnerIndexOf(Base base) {
         return switch (base) {
             case FIRST -> runnerOnFirstBase;
@@ -166,7 +161,9 @@ public class GameContext {
 
     public void updateBaseStateOf() {
 
-        if (runnerOnFirstBase.isPresent() && runnerOnSecondBase.isPresent() && runnerOnThirdBase.isPresent()) {
+        if (runnerOnFirstBase.isPresent()
+                && runnerOnSecondBase.isPresent()
+                && runnerOnThirdBase.isPresent()) {
             this.currentBaseState = new FullBasesState();
         } else if (runnerOnFirstBase.isPresent() && runnerOnSecondBase.isPresent()) {
             this.currentBaseState = new FirstDoubleBaseState();

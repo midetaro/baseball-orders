@@ -3,7 +3,6 @@ package com.example.baseballorders.simulator.domain.model.state;
 import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.model.GameContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-
 import java.util.Optional;
 
 public class FirstThirdBaseState implements BasesState, StealableToDoubleBase {
@@ -26,14 +25,11 @@ public class FirstThirdBaseState implements BasesState, StealableToDoubleBase {
         context.moveRunnerNthBase(Base.THIRD);
         context.setRunnerOnThirdBase(Optional.of(batterEntity));
         context.addScore(2);
-
     }
 
     @Override
     public void hitHomer(GameContext context, BatterEntity batterEntity) {
         context.moveRunnerNthBase(Base.THIRD);
         context.addScore(3);
-
     }
-
 }
