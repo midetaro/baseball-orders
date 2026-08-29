@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.state.*;
@@ -40,29 +41,31 @@ public class GameContext {
         currentBaseState = state;
     }
 
-    public void setRunnerTo(int nameOfBase, Optional<BatterEntity> batter) {
-        if (nameOfBase == 1) {
-            runnerOnFirstBase = batter;
-        } else if (nameOfBase == 2) {
-            runnerOnSecondBase = batter;
-        } else if (nameOfBase == 3) {
-            runnerOnThirdBase = batter;
+    public void setRunnerTo(Base base, Optional<BatterEntity> batter) {
+        switch (base) {
+            case FIRST -> runnerOnFirstBase = batter;
+            case SECOND -> runnerOnSecondBase = batter;
+            case THIRD -> runnerOnThirdBase = batter;
         }
     }
 
-    public void moveRunnerNthBase(int nthBase) {
-        if (nthBase == 1) {
-            runnerOnThirdBase = runnerOnSecondBase;
-            runnerOnSecondBase = runnerOnFirstBase;
-            runnerOnFirstBase = Optional.empty();
-        } else if (nthBase == 2) {
-            runnerOnThirdBase = runnerOnFirstBase;
-            runnerOnSecondBase = Optional.empty();
-            runnerOnFirstBase = Optional.empty();
-        } else if (nthBase == 3 || nthBase == 4) {
-            runnerOnThirdBase = Optional.empty();
-            runnerOnFirstBase = Optional.empty();
-            runnerOnSecondBase = Optional.empty();
+    public void moveRunnerNthBase(Base nthBase) {
+        switch (nthBase) {
+            case FIRST -> {
+                runnerOnThirdBase = runnerOnSecondBase;
+                runnerOnSecondBase = runnerOnFirstBase;
+                runnerOnFirstBase = Optional.empty();
+            }
+            case SECOND -> {
+                runnerOnThirdBase = runnerOnFirstBase;
+                runnerOnSecondBase = Optional.empty();
+                runnerOnFirstBase = Optional.empty();
+            }
+            case THIRD -> {
+                runnerOnThirdBase = Optional.empty();
+                runnerOnFirstBase = Optional.empty();
+                runnerOnSecondBase = Optional.empty();
+            }
         }
     }
 
@@ -120,32 +123,29 @@ public class GameContext {
 
     private void trySteal() {
         if (currentBaseState instanceof StealableToDoubleBase) {
-            stealTo(2);
+            stealTo(Base.SECOND);
         }
         if (currentBaseState instanceof StealableToTripleBase) {
-            stealTo(3);
+            stealTo(Base.THIRD);
         }
     }
 
-    private void stealTo(int targetBaseOfSteal) {
-        int currentBase = targetBaseOfSteal - 1;
-        if (targetBaseOfSteal != 2 && targetBaseOfSteal != 3) {
-            throw new IllegalArgumentException("targetBaseOfSteal > 3");
-        }
+    private void stealTo(Base targetBaseOfSteal) {
+        Base currentBase = targetBaseOfSteal == Base.SECOND ? Base.FIRST : Base.SECOND;
         StealResult stealResult;
-        if (targetBaseOfSteal == 2) {
-            stealResult = getRunnerIndexOf(targetBaseOfSteal - 1).get().stealToDouble();
+        if (targetBaseOfSteal == Base.SECOND) {
+            stealResult = getRunnerIndexOf(currentBase).get().stealToDouble();
         } else {
-            stealResult = getRunnerIndexOf(targetBaseOfSteal - 1).get().stealToTriple();
+            stealResult = getRunnerIndexOf(currentBase).get().stealToTriple();
         }
         switch (stealResult) {
             case FAILURE -> {
-                System.out.printf("[%s]塁への盗塁が失敗しました。%n", targetBaseOfSteal);
+                System.out.printf("[%s]塁への盗塁が失敗しました。%n", targetBaseOfSteal.getNumber());
                 this.setRunnerTo(currentBase, Optional.empty());
                 this.addOutCounts(1);
             }
             case SUCCESS -> {
-                System.out.printf("[%s]塁への盗塁が成功しました。%n", targetBaseOfSteal);
+                System.out.printf("[%s]塁への盗塁が成功しました。%n", targetBaseOfSteal.getNumber());
                 this.setRunnerTo(targetBaseOfSteal, getRunnerIndexOf(currentBase));
                 this.setRunnerTo(currentBase, Optional.empty());
             }
@@ -153,15 +153,12 @@ public class GameContext {
     }
 
 
-    private Optional<BatterEntity> getRunnerIndexOf(int nameOfBase) {
-        if (nameOfBase == 1) {
-            return runnerOnFirstBase;
-        } else if (nameOfBase == 2) {
-            return runnerOnSecondBase;
-        } else if (nameOfBase == 3) {
-            return runnerOnThirdBase;
-        }
-        return Optional.empty();
+    private Optional<BatterEntity> getRunnerIndexOf(Base base) {
+        return switch (base) {
+            case FIRST -> runnerOnFirstBase;
+            case SECOND -> runnerOnSecondBase;
+            case THIRD -> runnerOnThirdBase;
+        };
     }
 
     private void toNextBatter() {
@@ -193,6 +190,6 @@ public class GameContext {
     }
 
     public void cleanAllBases() {
-        this.moveRunnerNthBase(3);
+        this.moveRunnerNthBase(Base.THIRD);
     }
 }

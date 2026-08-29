@@ -1,5 +1,6 @@
 package com.example.baseballorders.simulator.domain.model.state;
 
+import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.model.GameContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 
@@ -9,26 +10,26 @@ public class SingleBasesState implements BasesState, StealableToDoubleBase {
 
     @Override
     public void hitSingle(GameContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(1);
+        context.moveRunnerNthBase(Base.FIRST);
         context.setRunnerOnFirstBase(Optional.of(batterEntity));
     }
 
     @Override
     public void hitDouble(GameContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(2);
+        context.moveRunnerNthBase(Base.SECOND);
         context.setRunnerOnSecondBase(Optional.of(batterEntity));
     }
 
     @Override
     public void hitTriple(GameContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(3);
+        context.moveRunnerNthBase(Base.THIRD);
         context.addScore(1);
         context.setRunnerOnThirdBase(Optional.of(batterEntity));
     }
 
     @Override
     public void hitHomer(GameContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(4);
+        context.moveRunnerNthBase(Base.THIRD);
         context.addScore(2);
     }
 }

@@ -1,5 +1,6 @@
 package com.example.baseballorders.simulator.domain.model.state;
 
+import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.model.GameContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 
@@ -15,7 +16,7 @@ public class FullBasesState implements BasesState {
 
     @Override
     public void hitDouble(GameContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(2);
+        context.moveRunnerNthBase(Base.SECOND);
         context.addScore(2);
         context.setRunnerOnSecondBase(Optional.of(batterEntity));
 
@@ -23,7 +24,7 @@ public class FullBasesState implements BasesState {
 
     @Override
     public void hitTriple(GameContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(3);
+        context.moveRunnerNthBase(Base.THIRD);
         context.addScore(3);
         context.setRunnerOnThirdBase(Optional.of(batterEntity));
 
@@ -31,7 +32,7 @@ public class FullBasesState implements BasesState {
 
     @Override
     public void hitHomer(GameContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(4);
+        context.moveRunnerNthBase(Base.THIRD);
         // 走者満塁の状態での処理
         context.addScore(4);
 
