@@ -1,5 +1,6 @@
 package com.example.baseballorders.simulator.domain.model;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -45,9 +46,10 @@ public class GameContextTest {
         gameContext.addOutCounts(addOutCount);
 
         // then
-        assertEquals(expectedOutCounts, gameContext.getOutCounts(), description);
-        assertEquals(expectedInning, gameContext.getInning(), description);
-        assertEquals(expectedGameOver, gameContext.isGameOver(), description);
+        assertAll(
+                () -> assertEquals(expectedOutCounts, gameContext.getOutCounts(), description),
+                () -> assertEquals(expectedInning, gameContext.getInning(), description),
+                () -> assertEquals(expectedGameOver, gameContext.isGameOver(), description));
     }
 
     static Stream<Arguments> addOutCountsTestCases() {
@@ -108,7 +110,7 @@ public class GameContextTest {
         gameContext.addScore(addScore);
 
         // then
-        assertEquals(expectedScore, gameContext.getTotalScore(), description);
+        assertAll(() -> assertEquals(expectedScore, gameContext.getTotalScore(), description));
     }
 
     static Stream<Arguments> addScoreTestCases() {
@@ -133,7 +135,7 @@ public class GameContextTest {
         gameContext.updateBaseState(newState);
 
         // then
-        assertEquals(newState, gameContext.getCurrentBaseState(), description);
+        assertAll(() -> assertEquals(newState, gameContext.getCurrentBaseState(), description));
     }
 
     static Stream<Arguments> updateBaseStateTestCases() {
@@ -162,7 +164,7 @@ public class GameContextTest {
                     case SECOND -> gameContext.getRunnerOnSecondBase();
                     case THIRD -> gameContext.getRunnerOnThirdBase();
                 };
-        assertEquals(hasBatter, runner.isPresent(), description);
+        assertAll(() -> assertEquals(hasBatter, runner.isPresent(), description));
     }
 
     static Stream<Arguments> setRunnerToTestCases() {
@@ -195,10 +197,22 @@ public class GameContextTest {
         gameContext.moveRunnerNthBase(targetBase);
 
         // then
-        assertEquals(expectedFirstEmpty, gameContext.getRunnerOnFirstBase().isEmpty(), description);
-        assertEquals(
-                expectedSecondEmpty, gameContext.getRunnerOnSecondBase().isEmpty(), description);
-        assertEquals(expectedThirdEmpty, gameContext.getRunnerOnThirdBase().isEmpty(), description);
+        assertAll(
+                () ->
+                        assertEquals(
+                                expectedFirstEmpty,
+                                gameContext.getRunnerOnFirstBase().isEmpty(),
+                                description),
+                () ->
+                        assertEquals(
+                                expectedSecondEmpty,
+                                gameContext.getRunnerOnSecondBase().isEmpty(),
+                                description),
+                () ->
+                        assertEquals(
+                                expectedThirdEmpty,
+                                gameContext.getRunnerOnThirdBase().isEmpty(),
+                                description));
     }
 
     static Stream<Arguments> moveRunnerNthBaseTestCases() {
@@ -224,7 +238,7 @@ public class GameContextTest {
         }
 
         // then
-        assertEquals(expectedGameOver, gameContext.isGameOver(), description);
+        assertAll(() -> assertEquals(expectedGameOver, gameContext.isGameOver(), description));
     }
 
     static Stream<Arguments> isGameOverTestCases() {
@@ -256,7 +270,11 @@ public class GameContextTest {
         gameContext.updateBaseStateOf();
 
         // then
-        assertTrue(expectedStateClass.isInstance(gameContext.getCurrentBaseState()), description);
+        assertAll(
+                () ->
+                        assertTrue(
+                                expectedStateClass.isInstance(gameContext.getCurrentBaseState()),
+                                description));
     }
 
     static Stream<Arguments> updateBaseStateOfTestCases() {
@@ -328,8 +346,12 @@ public class GameContextTest {
         gameContext.nextAtBat();
 
         // then
-        assertEquals(
-                expectedNumberOfNextBatterAfter, gameContext.getNumberOfNextBatter(), description);
+        assertAll(
+                () ->
+                        assertEquals(
+                                expectedNumberOfNextBatterAfter,
+                                gameContext.getNumberOfNextBatter(),
+                                description));
     }
 
     static Stream<Arguments> nextAtBatTestCases() {
