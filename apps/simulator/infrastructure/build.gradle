@@ -3,5 +3,21 @@ plugins {
 }
 
 dependencies {
-    implementation project(':domain')
+    implementation project(':application')
+
+    implementation 'org.springframework:spring-context:7.0.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.20.1'
+    implementation 'software.amazon.awssdk:sqs:2.30.36'
+
+    compileOnly 'org.projectlombok:lombok:1.18.42'
+
+    annotationProcessor 'org.projectlombok:lombok:1.18.42'
+
+    testImplementation testFixtures(project(':domain'))
+    testImplementation project(':domain')
+    testImplementation platform('org.junit:junit-bom:6.0.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.mockito:mockito-core:5.21.0'
+    testImplementation 'org.elasticmq:elasticmq-rest-sqs_2.13:1.4.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
