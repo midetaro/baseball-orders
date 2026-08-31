@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Getter
-public class GameContext {
+public class GameBattingContext {
 
     private long inning = 1;
     private long totalScore = 0;
@@ -28,7 +28,7 @@ public class GameContext {
     private int numberOfNextBatter;
     private boolean isGameOver = false;
 
-    public GameContext(LineUpEntity batterEntityOrders) {
+    public GameBattingContext(LineUpEntity batterEntityOrders) {
         this.batterEntityOrders = batterEntityOrders.getBatterEntities();
         this.numberOfNextBatter = 0;
     }
