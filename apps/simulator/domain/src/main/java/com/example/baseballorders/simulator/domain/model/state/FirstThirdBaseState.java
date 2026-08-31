@@ -7,10 +7,17 @@ import java.util.Optional;
 
 public class FirstThirdBaseState implements BasesState, StealableToDoubleBase {
 
+    /**
+     * Scores the runner on third, advances the runner on first, and places the batter on first.
+     *
+     * @param context game context to update
+     * @param batterEntity batter who hit the single
+     */
     @Override
     public void hitSingle(GameContext context, BatterEntity batterEntity) {
         context.moveRunnerNthBase(Base.FIRST);
         context.setRunnerOnFirstBase(Optional.of(batterEntity));
+        context.addScore(1);
     }
 
     @Override

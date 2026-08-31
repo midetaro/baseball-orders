@@ -7,8 +7,15 @@ import java.util.Optional;
 
 public class ThirdBaseState implements BasesState {
 
+    /**
+     * Scores the runner on third and places the batter on first.
+     *
+     * @param context game context to update
+     * @param batterEntity batter who hit the single
+     */
     @Override
     public void hitSingle(GameContext context, BatterEntity batterEntity) {
+        context.moveRunnerNthBase(Base.FIRST);
         context.addScore(1);
         context.setRunnerOnFirstBase(Optional.of(batterEntity));
     }
