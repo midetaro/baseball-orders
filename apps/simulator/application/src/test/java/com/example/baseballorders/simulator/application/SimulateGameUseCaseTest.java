@@ -2,7 +2,7 @@ package com.example.baseballorders.simulator.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.example.baseballorders.simulator.domain.model.GameContext;
+import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior;
@@ -37,7 +37,7 @@ class SimulateGameUseCaseTest {
                                                 new NowayStealBehavior()))
                         .toList();
         // when
-        GameContext result = simulateGameUseCase.simulateGame(new LineUpEntity(batterEntities));
+        GameBattingContext result = simulateGameUseCase.simulateGame(new LineUpEntity(batterEntities));
         // then
         System.out.println("得点：" + result.getTotalScore());
         assertAll(
