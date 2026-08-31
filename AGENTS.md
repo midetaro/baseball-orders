@@ -1,5 +1,20 @@
 # Development Instructions
 
+## Autonomous execution
+
+- Do not pause to ask the user questions or request confirmation.
+- When a requirement is ambiguous, choose the safest reasonable assumption and continue.
+- If an operation is unavailable, try a safe alternative that remains within the requested scope.
+- Continue through implementation, build, tests, and reasonable fixes until the task is complete.
+- Report assumptions, unresolved blockers, and verification results in the final response.
+
+## Gradle dependency protection
+
+- Do not add, remove, upgrade, downgrade, or otherwise change dependency declarations in `build.gradle` or `build.gradle.kts` files.
+- Do not change dependency versions indirectly through version catalogs, dependency constraints, plugin declarations, `settings.gradle`, or `settings.gradle.kts`.
+- Existing dependencies may be inspected and used as-is.
+- If the requested work appears to require a dependency change, implement the best solution possible with the existing dependencies and report the limitation in the final response.
+
 ## Test-Driven Development
 
 - Implement all changes using test-driven development (TDD).

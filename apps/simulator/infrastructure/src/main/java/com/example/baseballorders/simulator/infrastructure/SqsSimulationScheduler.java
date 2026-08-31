@@ -1,6 +1,8 @@
-package com.example.baseballorders.simulator.application;
+package com.example.baseballorders.simulator.infrastructure;
 
-import com.example.baseballorders.simulator.domain.usecase.SimulateGameUseCase;
+import com.example.baseballorders.simulator.application.LineUpMapper;
+import com.example.baseballorders.simulator.application.SimulateGameUseCase;
+import com.example.baseballorders.simulator.application.SimulationRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.application;
+package com.example.baseballorders.simulator.infrastructure;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -7,11 +7,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.example.baseballorders.simulator.application.LineUpMapper;
+import com.example.baseballorders.simulator.application.PlayerData;
+import com.example.baseballorders.simulator.application.SimulateGameUseCase;
+import com.example.baseballorders.simulator.application.SimulationRequest;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
-import com.example.baseballorders.simulator.domain.usecase.SimulateGameUseCase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.stream.IntStream;

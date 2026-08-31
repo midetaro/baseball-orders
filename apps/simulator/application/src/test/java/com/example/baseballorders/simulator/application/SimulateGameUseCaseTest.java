@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.usecase;
+package com.example.baseballorders.simulator.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
