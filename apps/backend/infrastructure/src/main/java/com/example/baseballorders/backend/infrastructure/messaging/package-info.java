@@ -1,4 +1,2 @@
-/**
- * Messaging adapters for simulations.
- */
+/** Messaging adapters for simulations. */
 package com.example.baseballorders.backend.simulation.infrastructure.messaging;
