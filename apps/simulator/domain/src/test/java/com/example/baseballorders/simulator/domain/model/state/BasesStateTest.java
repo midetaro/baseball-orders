@@ -7,7 +7,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
-import com.example.baseballorders.simulator.domain.model.GameContext;
+import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import java.util.List;
@@ -41,7 +41,7 @@ class BasesStateTest {
             BatterEntity expectedSecond,
             BatterEntity expectedThird) {
         // given
-        GameContext context = contextWithRunners(hasFirst, hasSecond, hasThird);
+        GameBattingContext context = contextWithRunners(hasFirst, hasSecond, hasThird);
 
         // when
         hit.apply(state, context, BATTER);
@@ -427,7 +427,7 @@ class BasesStateTest {
     void addsOneOut() {
         // given
         BasesState state = new NoBasesState();
-        GameContext context = contextWithRunners(false, false, false);
+        GameBattingContext context = contextWithRunners(false, false, false);
 
         // when
         state.out(context);
@@ -436,9 +436,9 @@ class BasesStateTest {
         assertAll(() -> assertEquals(1, context.getOutCounts()));
     }
 
-    private static GameContext contextWithRunners(
+    private static GameBattingContext contextWithRunners(
             boolean hasFirst, boolean hasSecond, boolean hasThird) {
-        GameContext context = new GameContext(new LineUpEntity(List.of(BATTER)));
+        GameBattingContext context = new GameBattingContext(new LineUpEntity(List.of(BATTER)));
         context.setRunnerOnFirstBase(optionalRunner(hasFirst, FIRST_RUNNER));
         context.setRunnerOnSecondBase(optionalRunner(hasSecond, SECOND_RUNNER));
         context.setRunnerOnThirdBase(optionalRunner(hasThird, THIRD_RUNNER));
@@ -461,30 +461,30 @@ class BasesStateTest {
     private enum Hit {
         SINGLE {
             @Override
-            void apply(BasesState state, GameContext context, BatterEntity batter) {
+            void apply(BasesState state, GameBattingContext context, BatterEntity batter) {
                 state.hitSingle(context, batter);
             }
         },
         DOUBLE {
             @Override
-            void apply(BasesState state, GameContext context, BatterEntity batter) {
+            void apply(BasesState state, GameBattingContext context, BatterEntity batter) {
                 state.hitDouble(context, batter);
             }
         },
         TRIPLE {
             @Override
-            void apply(BasesState state, GameContext context, BatterEntity batter) {
+            void apply(BasesState state, GameBattingContext context, BatterEntity batter) {
                 state.hitTriple(context, batter);
             }
         },
         HOMER {
             @Override
-            void apply(BasesState state, GameContext context, BatterEntity batter) {
+            void apply(BasesState state, GameBattingContext context, BatterEntity batter) {
                 state.hitHomer(context, batter);
             }
         };
 
-        abstract void apply(BasesState state, GameContext context, BatterEntity batter);
+        abstract void apply(BasesState state, GameBattingContext context, BatterEntity batter);
     }
 
     private static final class StealStrategyStub
