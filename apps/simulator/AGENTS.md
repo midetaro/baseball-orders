@@ -64,7 +64,8 @@ void registersPlayerWhenBattingOrderIsValid() {
 
 ## Javadoc
 
-- Add Javadoc to every public method in production Java code.
+- Add Javadoc to every public method in production Java code, except overridden methods.
+- Do not add Javadoc to public methods annotated with `@Override`.
 - Describe the method's purpose and observable behavior.
 - Document every parameter with `@param`, non-void return values with `@return`, and declared exceptions with `@throws`.
 - Update the Javadoc whenever a public method's behavior or signature changes.

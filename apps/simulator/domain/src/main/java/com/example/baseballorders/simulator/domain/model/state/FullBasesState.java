@@ -9,6 +9,7 @@ public class FullBasesState implements BasesState {
 
     @Override
     public void hitSingle(GameContext context, BatterEntity batterEntity) {
+        context.moveRunnerNthBase(Base.FIRST);
         context.setRunnerOnFirstBase(Optional.of(batterEntity));
         context.addScore(1);
     }
