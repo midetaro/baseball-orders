@@ -7,10 +7,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.example.baseballorders.simulator.application.LineUpMapper;
-import com.example.baseballorders.simulator.application.PlayerData;
-import com.example.baseballorders.simulator.application.SimulateGameUseCase;
-import com.example.baseballorders.simulator.application.SimulationRequest;
+import com.example.baseballorders.simulator.application.mapper.LineUpMapper;
+import com.example.baseballorders.simulator.application.dto.PlayerData;
+import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
+import com.example.baseballorders.simulator.application.dto.SimulationRequest;
 import com.example.baseballorders.simulator.application.dto.SimulationResponse;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;

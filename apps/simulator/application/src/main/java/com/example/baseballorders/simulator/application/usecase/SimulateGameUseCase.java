@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.application;
+package com.example.baseballorders.simulator.application.usecase;
 
 import com.example.baseballorders.simulator.application.dto.SimulationResponse;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;

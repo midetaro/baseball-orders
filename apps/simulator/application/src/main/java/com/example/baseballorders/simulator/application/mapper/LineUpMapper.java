@@ -1,5 +1,6 @@
-package com.example.baseballorders.simulator.application;
+package com.example.baseballorders.simulator.application.mapper;
 
+import com.example.baseballorders.simulator.application.dto.PlayerData;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;

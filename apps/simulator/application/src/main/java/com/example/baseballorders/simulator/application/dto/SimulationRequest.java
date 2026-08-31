@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.application;
+package com.example.baseballorders.simulator.application.dto;
 
 import java.util.List;
 
