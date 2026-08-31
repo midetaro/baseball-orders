@@ -3,6 +3,7 @@ package com.example.baseballorders.simulator.infrastructure;
 import com.example.baseballorders.simulator.application.LineUpMapper;
 import com.example.baseballorders.simulator.application.SimulateGameUseCase;
 import com.example.baseballorders.simulator.application.SimulationRequest;
+import com.example.baseballorders.simulator.application.dto.SimulationResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 /** Polls SQS for simulation requests and invokes the game simulation use case. */
 @Component
@@ -47,7 +49,10 @@ public class SqsSimulationScheduler {
         this.requestQueueUrl = requestQueueUrl;
     }
 
-    /** Receives pending requests from SQS once per minute and simulates each valid request. */
+    /**
+     * Receives pending requests from SQS, sends each simulation response to its requested result
+     * queue, and deletes the source message after a successful send.
+     */
     @Scheduled(fixedDelay = 60_000L)
     public void poll() {
         var response =
@@ -62,7 +67,14 @@ public class SqsSimulationScheduler {
                 .forEach(
                         message -> {
                             SimulationRequest request = deserialize(message.body());
-                            simulateGameUseCase.simulateGame(lineUpMapper.map(request.players()));
+                            SimulationResponse result =
+                                    simulateGameUseCase.simulateGame(
+                                            lineUpMapper.map(request.players()));
+                            sqsClient.sendMessage(
+                                    SendMessageRequest.builder()
+                                            .queueUrl(request.resultQueueUrl())
+                                            .messageBody(serialize(result))
+                                            .build());
                             sqsClient.deleteMessage(
                                     DeleteMessageRequest.builder()
                                             .queueUrl(requestQueueUrl)
@@ -77,6 +89,15 @@ public class SqsSimulationScheduler {
         } catch (JsonProcessingException exception) {
             throw new IllegalArgumentException(
                     "Failed to deserialize an SQS simulation request", exception);
+        }
+    }
+
+    private String serialize(SimulationResponse response) {
+        try {
+            return objectMapper.writeValueAsString(response);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalArgumentException(
+                    "Failed to serialize an SQS simulation response", exception);
         }
     }
 }

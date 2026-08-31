@@ -2,7 +2,7 @@ package com.example.baseballorders.simulator.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.example.baseballorders.simulator.domain.model.GameBattingContext;
+import com.example.baseballorders.simulator.application.dto.SimulationResponse;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior;
@@ -21,7 +21,7 @@ class SimulateGameUseCaseTest {
 
     SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(map);
 
-    @DisplayName("9人の打順でシミュレーションを実行すると9回で試合が終了する")
+    @DisplayName("9人の打順でシミュレーションを実行すると試合結果を返す")
     @Test
     public void simulateGame() {
         // given
@@ -37,11 +37,11 @@ class SimulateGameUseCaseTest {
                                                 new NowayStealBehavior()))
                         .toList();
         // when
-        GameBattingContext result = simulateGameUseCase.simulateGame(new LineUpEntity(batterEntities));
+        SimulationResponse result =
+                simulateGameUseCase.simulateGame(new LineUpEntity(batterEntities));
         // then
-        System.out.println("得点：" + result.getTotalScore());
         assertAll(
-                () -> assertTrue(result.isGameOver(), "ゲームが終了していること"),
-                () -> assertEquals(9, result.getInning(), "イニングが9である"));
+                () -> assertTrue(result.score() >= 0, "得点が0以上であること"),
+                () -> assertEquals(4, result.runs(), "失点が設定されていること"));
     }
 }

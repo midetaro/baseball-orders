@@ -86,7 +86,6 @@ public class GameBattingContext {
             return;
         }
         inning++;
-        log.info("{}:回に移動します", inning);
         this.cleanAllBases();
         updateBaseStateOf();
         outCounts = 0;
@@ -100,7 +99,6 @@ public class GameBattingContext {
 
         // --- 打撃 ---
         BattingResult battingResult = batter.swing();
-        log.info("BattingResult: {}", battingResult);
         switch (battingResult) {
             case OUT -> currentBaseState.out(this);
             case HIT_SINGLE -> currentBaseState.hitSingle(this, batter);
@@ -109,7 +107,6 @@ public class GameBattingContext {
             case HIT_HOMER -> currentBaseState.hitHomer(this, batter);
         }
         this.updateBaseStateOf();
-        System.out.println("======= currentBaseState:" + currentBaseState);
         this.toNextBatter();
     }
 
@@ -132,12 +129,10 @@ public class GameBattingContext {
         }
         switch (stealResult) {
             case FAILURE -> {
-                System.out.printf("[%s]塁への盗塁が失敗しました。%n", targetBaseOfSteal.getNumber());
                 this.setRunnerTo(currentBase, Optional.empty());
                 this.addOutCounts(1);
             }
             case SUCCESS -> {
-                System.out.printf("[%s]塁への盗塁が成功しました。%n", targetBaseOfSteal.getNumber());
                 this.setRunnerTo(targetBaseOfSteal, getRunnerIndexOf(currentBase));
                 this.setRunnerTo(currentBase, Optional.empty());
             }

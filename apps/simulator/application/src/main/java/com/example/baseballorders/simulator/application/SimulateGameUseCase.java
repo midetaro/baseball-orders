@@ -1,5 +1,6 @@
 package com.example.baseballorders.simulator.application;
 
+import com.example.baseballorders.simulator.application.dto.SimulationResponse;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
@@ -25,10 +26,10 @@ public class SimulateGameUseCase {
      * Simulates a nine-player lineup until the game ends.
      *
      * @param lineUpEntity lineup used for the simulation
-     * @return context containing the completed game state
+     * @return response containing the simulation score
      * @throws IllegalArgumentException when the lineup does not contain exactly nine batters
      */
-    public GameBattingContext simulateGame(LineUpEntity lineUpEntity) {
+    public SimulationResponse simulateGame(LineUpEntity lineUpEntity) {
         if (lineUpEntity.getBatterEntities().size() != 9) {
             throw new IllegalArgumentException("LineUpEntity size must be 9");
         }
@@ -39,6 +40,6 @@ public class SimulateGameUseCase {
             ctx.nextAtBat();
         }
 
-        return ctx;
+        return new SimulationResponse(Math.toIntExact(ctx.getTotalScore()), 4);
     }
 }

@@ -34,7 +34,8 @@ public class GameBattingContextTest {
             int expectedInning,
             boolean expectedGameOver) {
         // given
-        GameBattingContext gameBattingContext = new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
+        GameBattingContext gameBattingContext =
+                new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
         if (initialInning > 1) {
             // 設定するためにリフレクションまたは複数回の呼び出しで調整
             for (int i = 1; i < initialInning; i++) {
@@ -47,7 +48,9 @@ public class GameBattingContextTest {
 
         // then
         assertAll(
-                () -> assertEquals(expectedOutCounts, gameBattingContext.getOutCounts(), description),
+                () ->
+                        assertEquals(
+                                expectedOutCounts, gameBattingContext.getOutCounts(), description),
                 () -> assertEquals(expectedInning, gameBattingContext.getInning(), description),
                 () -> assertEquals(expectedGameOver, gameBattingContext.isGameOver(), description));
     }
@@ -100,7 +103,8 @@ public class GameBattingContextTest {
     public void addScoreTest(
             String description, long initialScore, long addScore, long expectedScore) {
         // given
-        GameBattingContext gameBattingContext = new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
+        GameBattingContext gameBattingContext =
+                new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
         // 初期スコア設定
         for (int i = 0; i < initialScore; i++) {
             gameBattingContext.addScore(1);
@@ -110,7 +114,8 @@ public class GameBattingContextTest {
         gameBattingContext.addScore(addScore);
 
         // then
-        assertAll(() -> assertEquals(expectedScore, gameBattingContext.getTotalScore(), description));
+        assertAll(
+                () -> assertEquals(expectedScore, gameBattingContext.getTotalScore(), description));
     }
 
     static Stream<Arguments> addScoreTestCases() {
@@ -129,13 +134,17 @@ public class GameBattingContextTest {
             String description,
             com.example.baseballorders.simulator.domain.model.state.BasesState newState) {
         // given
-        GameBattingContext gameBattingContext = new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
+        GameBattingContext gameBattingContext =
+                new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
 
         // when
         gameBattingContext.updateBaseState(newState);
 
         // then
-        assertAll(() -> assertEquals(newState, gameBattingContext.getCurrentBaseState(), description));
+        assertAll(
+                () ->
+                        assertEquals(
+                                newState, gameBattingContext.getCurrentBaseState(), description));
     }
 
     static Stream<Arguments> updateBaseStateTestCases() {
@@ -150,7 +159,8 @@ public class GameBattingContextTest {
     public void setRunnerToTest(
             String description, Base base, boolean hasBatter, int expectedBaseCount) {
         // given
-        GameBattingContext gameBattingContext = new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
+        GameBattingContext gameBattingContext =
+                new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
         Optional<BatterEntity> batter =
                 hasBatter ? Optional.of(BatterTestDataFactory.mock().get(0)) : Optional.empty();
 
@@ -187,7 +197,8 @@ public class GameBattingContextTest {
             boolean expectedSecondEmpty,
             boolean expectedThirdEmpty) {
         // given
-        GameBattingContext gameBattingContext = new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
+        GameBattingContext gameBattingContext =
+                new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
         var batter = BatterTestDataFactory.mock().get(0);
         gameBattingContext.setRunnerTo(Base.FIRST, Optional.of(batter));
         gameBattingContext.setRunnerTo(Base.SECOND, Optional.of(batter));
@@ -230,7 +241,8 @@ public class GameBattingContextTest {
     @MethodSource("isGameOverTestCases")
     public void isGameOverTest(String description, int addOutCountTimes, boolean expectedGameOver) {
         // given
-        GameBattingContext gameBattingContext = new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
+        GameBattingContext gameBattingContext =
+                new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
 
         // when - 9回のアウトカウント満了でゲーム終了
         for (int i = 1; i <= addOutCountTimes; i++) {
@@ -238,7 +250,8 @@ public class GameBattingContextTest {
         }
 
         // then
-        assertAll(() -> assertEquals(expectedGameOver, gameBattingContext.isGameOver(), description));
+        assertAll(
+                () -> assertEquals(expectedGameOver, gameBattingContext.isGameOver(), description));
     }
 
     static Stream<Arguments> isGameOverTestCases() {
@@ -258,7 +271,8 @@ public class GameBattingContextTest {
             boolean hasThird,
             Class<?> expectedStateClass) {
         // given
-        GameBattingContext gameBattingContext = new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
+        GameBattingContext gameBattingContext =
+                new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
         var batter = BatterTestDataFactory.mock().get(0);
 
         // 各塁に走者を設定
@@ -273,7 +287,8 @@ public class GameBattingContextTest {
         assertAll(
                 () ->
                         assertTrue(
-                                expectedStateClass.isInstance(gameBattingContext.getCurrentBaseState()),
+                                expectedStateClass.isInstance(
+                                        gameBattingContext.getCurrentBaseState()),
                                 description));
     }
 
@@ -336,7 +351,8 @@ public class GameBattingContextTest {
     public void nextAtBatTest(
             String description, int numberOfNextBatterBefore, int expectedNumberOfNextBatterAfter) {
         // given
-        GameBattingContext gameBattingContext = new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
+        GameBattingContext gameBattingContext =
+                new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
         // numberOfNextBatter を設定するためにループで実行
         for (int i = 0; i < numberOfNextBatterBefore; i++) {
             gameBattingContext.nextAtBat();
