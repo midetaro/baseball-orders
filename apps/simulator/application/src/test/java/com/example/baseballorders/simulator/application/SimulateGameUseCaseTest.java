@@ -3,6 +3,7 @@ package com.example.baseballorders.simulator.application;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.simulator.application.dto.SimulationResponse;
+import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior;

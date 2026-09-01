@@ -1,4 +1,6 @@
-package com.example.baseballorders.simulator.application;
+package com.example.baseballorders.simulator.application.contract;
+
+import com.example.baseballorders.simulator.application.PlayerData;
 
 import java.util.List;
 
