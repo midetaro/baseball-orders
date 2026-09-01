@@ -20,9 +20,9 @@ class SimulateGameUseCaseTest {
     ShortDistanceAtBatBehavior shortDistanceAtBatBehavior = new ShortDistanceAtBatBehavior();
     Map<String, AtBatBehavior> map = Map.of("shortDistanceAtBat", shortDistanceAtBatBehavior);
 
-    SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(map);
+    SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(map, 3);
 
-    @DisplayName("9人の打順でシミュレーションを実行すると試合結果を返す")
+    @DisplayName("9人の打順でシミュレーションを実行すると設定された試合数分の結果を返す")
     @Test
     public void invoke() {
         // given
@@ -38,11 +38,18 @@ class SimulateGameUseCaseTest {
                                                 new NowayStealBehavior()))
                         .toList();
         // when
-        SimulationResponse result =
+        List<SimulationResponse> results =
                 simulateGameUseCase.invoke(new LineUpEntity(batterEntities));
         // then
         assertAll(
-                () -> assertTrue(result.score() >= 0, "得点が0以上であること"),
-                () -> assertEquals(4, result.runs(), "失点が設定されていること"));
+                () -> assertEquals(3, results.size(), "設定された3試合分の結果であること"),
+                () ->
+                        assertTrue(
+                                results.stream().allMatch(result -> result.score() >= 0),
+                                "すべての得点が0以上であること"),
+                () ->
+                        assertTrue(
+                                results.stream().allMatch(result -> result.runs() == 4),
+                                "すべての失点が設定されていること"));
     }
 }

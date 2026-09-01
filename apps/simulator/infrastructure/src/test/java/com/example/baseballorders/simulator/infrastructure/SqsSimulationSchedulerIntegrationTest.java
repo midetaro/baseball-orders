@@ -16,6 +16,7 @@ import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
@@ -43,9 +44,13 @@ class SqsSimulationSchedulerIntegrationTest {
         // given
         ObjectMapper objectMapper = new ObjectMapper();
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
-        var simulationResult = new SimulationResponse(5, 4);
-        var expectedResponse = new SimulationResponse("simulation-1", 5, 4);
-        when(useCase.invoke(any(LineUpEntity.class))).thenReturn(simulationResult);
+        List<SimulationResponse> simulationResults =
+                IntStream.range(0, 10).mapToObj(index -> new SimulationResponse(index, 4)).toList();
+        List<SimulationResponse> expectedResponses =
+                IntStream.range(0, 10)
+                        .mapToObj(index -> new SimulationResponse("simulation-1", index, 4))
+                        .toList();
+        when(useCase.invoke(any(LineUpEntity.class))).thenReturn(simulationResults);
         LineUpMapper mapper =
                 new LineUpMapper(
                         (hitAverage, slugging) -> BattingResult.OUT, new FixedStealStrategy());
@@ -80,10 +85,10 @@ class SqsSimulationSchedulerIntegrationTest {
                         () -> assertEquals(1, resultMessages.size()),
                         () ->
                                 assertEquals(
-                                        expectedResponse,
+                                        expectedResponses,
                                         objectMapper.readValue(
                                                 resultMessages.getFirst().body(),
-                                                SimulationResponse.class)),
+                                                new TypeReference<List<SimulationResponse>>() {})),
                         () -> assertTrue(requestMessages.isEmpty()));
             } finally {
                 deleteQueue(sqsClient, requestQueueUrl);
