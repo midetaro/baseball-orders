@@ -2,7 +2,8 @@ package com.example.baseballorders.simulator.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.example.baseballorders.simulator.application.dto.SimulationResponse;
+import com.example.baseballorders.simulator.application.contract.SimulationResponse;
+import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior;
@@ -23,7 +24,7 @@ class SimulateGameUseCaseTest {
 
     @DisplayName("9人の打順でシミュレーションを実行すると試合結果を返す")
     @Test
-    public void simulateGame() {
+    public void invoke() {
         // given
         List<BatterEntity> batterEntities =
                 IntStream.rangeClosed(1, 9)
@@ -38,7 +39,7 @@ class SimulateGameUseCaseTest {
                         .toList();
         // when
         SimulationResponse result =
-                simulateGameUseCase.simulateGame(new LineUpEntity(batterEntities));
+                simulateGameUseCase.invoke(new LineUpEntity(batterEntities));
         // then
         assertAll(
                 () -> assertTrue(result.score() >= 0, "得点が0以上であること"),
