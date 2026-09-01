@@ -12,8 +12,11 @@ build
 
 /apps/backend/.ai
 /apps/backend/.idea
+/apps/backend/build
+
 /apps/simulator/.ai
 /apps/simulator/.idea
+/apps/simulator/build
 
 .env
 .DS_Store
