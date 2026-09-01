@@ -1,44 +1,38 @@
 package com.example.baseballorders.backend.simulation.infrastructure.api;
 
-import com.example.baseballorders.backend.simulation.infrastructure.messaging.PlayerData;
-import com.example.baseballorders.backend.simulation.infrastructure.messaging.SimulatorRequestSender;
+import com.example.baseballorders.backend.simulation.domain.SimulationResult;
+import com.example.baseballorders.backend.simulation.infrastructure.messaging.SimulationCoordinator;
 import java.util.List;
 import java.util.Objects;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** シミュレーション要求をHTTP APIから受け付けるController。 */
+/** シミュレーション要求を同期HTTP APIとして受け付けるController。 */
 @RestController
 @RequestMapping("/simulations")
 public final class SimulatorRequestController {
 
-    private final SimulatorRequestSender sender;
+    private final SimulationCoordinator coordinator;
 
     /**
-     * simulatorへの送信機能を使用するControllerを作成する。
+     * 同期要求を調整するCoordinatorを指定してControllerを作成する。
      *
-     * @param sender simulatorへ選手データを送信する機能
-     * @throws NullPointerException senderがnullの場合
+     * @param coordinator シミュレーションCoordinator
      */
-    public SimulatorRequestController(SimulatorRequestSender sender) {
-        this.sender = Objects.requireNonNull(sender, "sender must not be null");
+    public SimulatorRequestController(SimulationCoordinator coordinator) {
+        this.coordinator = Objects.requireNonNull(coordinator, "coordinator must not be null");
     }
 
     /**
-     * API本文から9人の選手データを受け取り、simulatorへのメッセージとして送信する。
+     * player IDを受け取り、SQS結果を受信するまでHTTP要求を待機して結果を返す。
      *
-     * @param players 打順どおりに並んだ9人の選手データ
-     * @return SQS要求へ付与したsimulation ID
-     * @throws NullPointerException playersまたはその要素がnullの場合
-     * @throws IllegalArgumentException 選手データが9人分ではない場合
+     * @param players 打順どおりに並んだ9人のplayer ID
+     * @return simulatorから返されたシミュレーション結果
      */
     @PostMapping
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public String send(@RequestBody List<PlayerData> players) {
-        return sender.send(players);
+    public SimulationResult send(@RequestBody List<PlayerIdRequest> players) {
+        return coordinator.simulate(players.stream().map(PlayerIdRequest::playerId).toList());
     }
 }
