@@ -1,4 +1,2 @@
-/**
- * Backend-owned simulation domain concepts.
- */
+/** Backend-owned simulation domain concepts. */
 package com.example.baseballorders.backend.simulation.domain;

@@ -1,9 +1,9 @@
 package com.example.baseballorders.simulator.infrastructure;
 
 import com.example.baseballorders.simulator.application.LineUpMapper;
-import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.application.contract.SimulationRequest;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
+import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,10 +70,13 @@ public class SqsSimulationScheduler {
                             SimulationResponse result =
                                     simulateGameUseCase.simulateGame(
                                             lineUpMapper.map(request.players()));
+                            SimulationResponse identifiedResult =
+                                    new SimulationResponse(
+                                            request.simulationId(), result.score(), result.runs());
                             sqsClient.sendMessage(
                                     SendMessageRequest.builder()
                                             .queueUrl(request.resultQueueUrl())
-                                            .messageBody(serialize(result))
+                                            .messageBody(serialize(identifiedResult))
                                             .build());
                             sqsClient.deleteMessage(
                                     DeleteMessageRequest.builder()

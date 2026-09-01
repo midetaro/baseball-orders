@@ -9,9 +9,9 @@ import static org.mockito.Mockito.when;
 
 import com.example.baseballorders.simulator.application.LineUpMapper;
 import com.example.baseballorders.simulator.application.contract.PlayerData;
-import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.application.contract.SimulationRequest;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
+import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
@@ -43,8 +43,9 @@ class SqsSimulationSchedulerIntegrationTest {
         // given
         ObjectMapper objectMapper = new ObjectMapper();
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
-        var expectedResponse = new SimulationResponse(5, 4);
-        when(useCase.simulateGame(any(LineUpEntity.class))).thenReturn(expectedResponse);
+        var simulationResult = new SimulationResponse(5, 4);
+        var expectedResponse = new SimulationResponse("simulation-1", 5, 4);
+        when(useCase.simulateGame(any(LineUpEntity.class))).thenReturn(simulationResult);
         LineUpMapper mapper =
                 new LineUpMapper(
                         (hitAverage, slugging) -> BattingResult.OUT, new FixedStealStrategy());
@@ -58,7 +59,8 @@ class SqsSimulationSchedulerIntegrationTest {
             String requestQueueUrl = createQueue(sqsClient, "simulation-requests-" + suffix);
             String resultQueueUrl = createQueue(sqsClient, "simulation-results-" + suffix);
             try {
-                var request = new SimulationRequest("game-1", resultQueueUrl, players);
+                var request =
+                        new SimulationRequest("simulation-1", "game-1", resultQueueUrl, players);
                 sqsClient.sendMessage(
                         SendMessageRequest.builder()
                                 .queueUrl(requestQueueUrl)
@@ -95,7 +97,8 @@ class SqsSimulationSchedulerIntegrationTest {
                 .endpointOverride(URI.create(System.getenv("ELASTICMQ_ENDPOINT_URL")))
                 .region(Region.US_EAST_1)
                 .credentialsProvider(
-                        StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test")))
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create("test", "test")))
                 .build();
     }
 
