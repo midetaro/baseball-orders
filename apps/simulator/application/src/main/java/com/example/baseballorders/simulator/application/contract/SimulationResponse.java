@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.application.dto;
+package com.example.baseballorders.simulator.application.contract;
 
 /**
  * Result of a completed game simulation.

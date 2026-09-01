@@ -8,10 +8,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.example.baseballorders.simulator.application.LineUpMapper;
-import com.example.baseballorders.simulator.application.PlayerData;
+import com.example.baseballorders.simulator.application.contract.PlayerData;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.application.contract.SimulationRequest;
-import com.example.baseballorders.simulator.application.dto.SimulationResponse;
+import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;

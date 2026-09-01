@@ -1,5 +1,6 @@
 package com.example.baseballorders.simulator.application;
 
+import com.example.baseballorders.simulator.application.contract.PlayerData;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
