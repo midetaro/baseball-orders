@@ -10,8 +10,14 @@ permissions:
 
 jobs:
   test:
-    name: Run all tests
+    name: Test ${{ matrix.application }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        application:
+          - backend
+          - simulator
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -26,4 +32,5 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Run all tests
+        working-directory: apps/${{ matrix.application }}
         run: ./gradlew --no-daemon :domain:test :application:test :infrastructure:test
