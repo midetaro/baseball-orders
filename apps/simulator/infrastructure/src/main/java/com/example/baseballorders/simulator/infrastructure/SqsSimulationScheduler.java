@@ -6,6 +6,7 @@ import com.example.baseballorders.simulator.application.contract.SimulationRespo
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -67,16 +68,21 @@ public class SqsSimulationScheduler {
                 .forEach(
                         message -> {
                             SimulationRequest request = deserialize(message.body());
-                            SimulationResponse result =
-                                    simulateGameUseCase.invoke(
-                                            lineUpMapper.map(request.players()));
-                            SimulationResponse identifiedResult =
-                                    new SimulationResponse(
-                                            request.simulationId(), result.score(), result.runs());
+                            List<SimulationResponse> results =
+                                    simulateGameUseCase.invoke(lineUpMapper.map(request.players()));
+                            List<SimulationResponse> identifiedResults =
+                                    results.stream()
+                                            .map(
+                                                    result ->
+                                                            new SimulationResponse(
+                                                                    request.simulationId(),
+                                                                    result.score(),
+                                                                    result.runs()))
+                                            .toList();
                             sqsClient.sendMessage(
                                     SendMessageRequest.builder()
                                             .queueUrl(request.resultQueueUrl())
-                                            .messageBody(serialize(identifiedResult))
+                                            .messageBody(serialize(identifiedResults))
                                             .build());
                             sqsClient.deleteMessage(
                                     DeleteMessageRequest.builder()
@@ -95,9 +101,9 @@ public class SqsSimulationScheduler {
         }
     }
 
-    private String serialize(SimulationResponse response) {
+    private String serialize(List<SimulationResponse> responses) {
         try {
-            return objectMapper.writeValueAsString(response);
+            return objectMapper.writeValueAsString(responses);
         } catch (JsonProcessingException exception) {
             throw new IllegalArgumentException(
                     "Failed to serialize an SQS simulation response", exception);

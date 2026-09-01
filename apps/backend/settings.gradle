@@ -12,3 +12,5 @@ plugins {
 rootProject.name = 'backend'
 
 include 'application', 'domain', 'infrastructure'
+include 'messaging-contract'
+project(':messaging-contract').projectDir = file('../../libs/messaging-contract')
