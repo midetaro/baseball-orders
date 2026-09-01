@@ -14,7 +14,7 @@ public class PlayerEntity {
 
     @Id
     @Column(name = "player_id", nullable = false)
-    private String playerId;
+    private Long playerId;
 
     @Column(nullable = false)
     private String name;
@@ -28,7 +28,7 @@ public class PlayerEntity {
     /** JPAがEntityを復元するために使用する。 */
     protected PlayerEntity() {}
 
-    PlayerEntity(String playerId, String name, float hitAverage, float sluggish) {
+    PlayerEntity(Long playerId, String name, float hitAverage, float sluggish) {
         this.playerId = playerId;
         this.name = name;
         this.hitAverage = hitAverage;

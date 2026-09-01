@@ -7,4 +7,4 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @param playerId 選手を識別するID
  */
-public record PlayerIdRequest(@JsonProperty("player_id") String playerId) {}
+public record PlayerIdRequest(@JsonProperty("player_id") Long playerId) {}

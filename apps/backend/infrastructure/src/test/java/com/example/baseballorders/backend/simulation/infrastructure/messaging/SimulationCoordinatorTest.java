@@ -187,9 +187,9 @@ class SimulationCoordinatorTest {
                                 exception.getMessage()));
     }
 
-    private static List<String> playerIds(int size) {
+    private static List<Long> playerIds(int size) {
         return java.util.stream.IntStream.rangeClosed(1, size)
-                .mapToObj(number -> "player-" + number)
+                .mapToObj(number -> (long) number)
                 .toList();
     }
 }
