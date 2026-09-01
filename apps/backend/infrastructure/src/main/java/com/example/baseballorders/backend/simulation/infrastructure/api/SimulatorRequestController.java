@@ -32,12 +32,13 @@ public final class SimulatorRequestController {
      * API本文から9人の選手データを受け取り、simulatorへのメッセージとして送信する。
      *
      * @param players 打順どおりに並んだ9人の選手データ
+     * @return SQS要求へ付与したsimulation ID
      * @throws NullPointerException playersまたはその要素がnullの場合
      * @throws IllegalArgumentException 選手データが9人分ではない場合
      */
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public void send(@RequestBody List<PlayerData> players) {
-        sender.send(players);
+    public String send(@RequestBody List<PlayerData> players) {
+        return sender.send(players);
     }
 }

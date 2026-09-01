@@ -68,7 +68,7 @@ public class SqsSimulationScheduler {
                         message -> {
                             SimulationRequest request = deserialize(message.body());
                             SimulationResponse result =
-                                    simulateGameUseCase.simulateGame(
+                                    simulateGameUseCase.invoke(
                                             lineUpMapper.map(request.players()));
                             SimulationResponse identifiedResult =
                                     new SimulationResponse(

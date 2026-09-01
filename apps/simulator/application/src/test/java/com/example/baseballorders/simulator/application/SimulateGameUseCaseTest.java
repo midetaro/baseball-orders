@@ -24,7 +24,7 @@ class SimulateGameUseCaseTest {
 
     @DisplayName("9人の打順でシミュレーションを実行すると試合結果を返す")
     @Test
-    public void simulateGame() {
+    public void invoke() {
         // given
         List<BatterEntity> batterEntities =
                 IntStream.rangeClosed(1, 9)
@@ -39,7 +39,7 @@ class SimulateGameUseCaseTest {
                         .toList();
         // when
         SimulationResponse result =
-                simulateGameUseCase.simulateGame(new LineUpEntity(batterEntities));
+                simulateGameUseCase.invoke(new LineUpEntity(batterEntities));
         // then
         assertAll(
                 () -> assertTrue(result.score() >= 0, "得点が0以上であること"),

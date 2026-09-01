@@ -45,7 +45,7 @@ class SqsSimulationSchedulerIntegrationTest {
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
         var simulationResult = new SimulationResponse(5, 4);
         var expectedResponse = new SimulationResponse("simulation-1", 5, 4);
-        when(useCase.simulateGame(any(LineUpEntity.class))).thenReturn(simulationResult);
+        when(useCase.invoke(any(LineUpEntity.class))).thenReturn(simulationResult);
         LineUpMapper mapper =
                 new LineUpMapper(
                         (hitAverage, slugging) -> BattingResult.OUT, new FixedStealStrategy());

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.example.baseballorders.backend.simulation.infrastructure.messaging.PlayerData;
+import com.example.baseballorders.backend.simulation.infrastructure.messaging.SimulationRequest;
 import com.example.baseballorders.backend.simulation.infrastructure.messaging.SimulatorRequestSender;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,16 +24,18 @@ class SimulatorRequestControllerTest {
     @DisplayName("シミュレーションAPIに9人の選手データを送るとsimulatorへ送信される")
     void sendsApiRequestToSimulator() {
         // given
-        var publishedMessages = new ArrayList<List<PlayerData>>();
+        var publishedMessages = new ArrayList<SimulationRequest>();
         var controller =
                 new SimulatorRequestController(new SimulatorRequestSender(publishedMessages::add));
         var players = players();
 
         // when
-        controller.send(players);
+        String simulationId = controller.send(players);
 
         // then
-        assertAll(() -> assertEquals(List.of(players), publishedMessages));
+        assertAll(
+                () -> assertEquals(simulationId, publishedMessages.getFirst().simulationId()),
+                () -> assertEquals(players, publishedMessages.getFirst().players()));
     }
 
     @Test

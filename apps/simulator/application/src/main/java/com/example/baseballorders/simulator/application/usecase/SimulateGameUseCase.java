@@ -29,7 +29,7 @@ public class SimulateGameUseCase {
      * @return response containing the simulation score
      * @throws IllegalArgumentException when the lineup does not contain exactly nine batters
      */
-    public SimulationResponse simulateGame(LineUpEntity lineUpEntity) {
+    public SimulationResponse invoke(LineUpEntity lineUpEntity) {
         if (lineUpEntity.getBatterEntities().size() != 9) {
             throw new IllegalArgumentException("LineUpEntity size must be 9");
         }

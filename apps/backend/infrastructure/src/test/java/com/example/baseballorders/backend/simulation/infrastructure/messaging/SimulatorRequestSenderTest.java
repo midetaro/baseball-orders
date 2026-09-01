@@ -2,14 +2,29 @@ package com.example.baseballorders.backend.simulation.infrastructure.messaging;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class SimulatorRequestSenderTest {
+
+    @Test
+    @DisplayName("SQS要求のsimulation IDはsimulation_idとして送信される")
+    void mapsSimulationIdToSnakeCase() throws NoSuchMethodException {
+        // given
+        var simulationIdAccessor = SimulationRequest.class.getMethod("simulationId");
+
+        // when
+        var jsonProperty = simulationIdAccessor.getAnnotation(JsonProperty.class);
+
+        // then
+        assertAll(() -> assertEquals("simulation_id", jsonProperty.value()));
+    }
 
     @Test
     @DisplayName("メッセージ発行処理がnullの場合は送信機能を作成できない")
@@ -28,27 +43,38 @@ class SimulatorRequestSenderTest {
     @DisplayName("APIから9人の選手データを受け取るとsimulatorへメッセージを送信する")
     void sendsNinePlayersToSimulator() {
         // given
-        var publishedMessages = new ArrayList<List<PlayerData>>();
+        var publishedMessages = new ArrayList<SimulationRequest>();
         var sender = new SimulatorRequestSender(publishedMessages::add);
         var players = players(9);
 
         // when
-        sender.send(players);
+        String simulationId = sender.send(players);
 
         // then
         assertAll(
                 () -> assertEquals(1, publishedMessages.size()),
-                () -> assertEquals(players, publishedMessages.getFirst()),
-                () -> assertEquals("player-1", publishedMessages.getFirst().getFirst().name()),
-                () -> assertEquals(0.301f, publishedMessages.getFirst().getFirst().hitAverage()),
-                () -> assertEquals(0.401f, publishedMessages.getFirst().getFirst().sluggish()));
+                () -> assertFalse(simulationId.isBlank()),
+                () -> assertEquals(simulationId, publishedMessages.getFirst().simulationId()),
+                () -> assertEquals(players, publishedMessages.getFirst().players()),
+                () ->
+                        assertEquals(
+                                "player-1",
+                                publishedMessages.getFirst().players().getFirst().name()),
+                () ->
+                        assertEquals(
+                                0.301f,
+                                publishedMessages.getFirst().players().getFirst().hitAverage()),
+                () ->
+                        assertEquals(
+                                0.401f,
+                                publishedMessages.getFirst().players().getFirst().sluggish()));
     }
 
     @Test
     @DisplayName("APIから8人の選手データを受け取るとメッセージを送信せず拒否する")
     void rejectsFewerThanNinePlayers() {
         // given
-        var publishedMessages = new ArrayList<List<PlayerData>>();
+        var publishedMessages = new ArrayList<SimulationRequest>();
         var sender = new SimulatorRequestSender(publishedMessages::add);
 
         // when
@@ -67,7 +93,7 @@ class SimulatorRequestSenderTest {
     @DisplayName("APIから10人の選手データを受け取るとメッセージを送信せず拒否する")
     void rejectsMoreThanNinePlayers() {
         // given
-        var publishedMessages = new ArrayList<List<PlayerData>>();
+        var publishedMessages = new ArrayList<SimulationRequest>();
         var sender = new SimulatorRequestSender(publishedMessages::add);
 
         // when
@@ -86,7 +112,7 @@ class SimulatorRequestSenderTest {
     @DisplayName("APIからnullの選手データを受け取るとメッセージを送信せず拒否する")
     void rejectsNullPlayers() {
         // given
-        var publishedMessages = new ArrayList<List<PlayerData>>();
+        var publishedMessages = new ArrayList<SimulationRequest>();
         var sender = new SimulatorRequestSender(publishedMessages::add);
 
         // when
@@ -103,7 +129,7 @@ class SimulatorRequestSenderTest {
     @DisplayName("9人の選手データにnullが含まれるとメッセージを送信せず拒否する")
     void rejectsNullPlayer() {
         // given
-        var publishedMessages = new ArrayList<List<PlayerData>>();
+        var publishedMessages = new ArrayList<SimulationRequest>();
         var sender = new SimulatorRequestSender(publishedMessages::add);
         var players = new ArrayList<>(players(9));
         players.set(8, null);
@@ -122,7 +148,7 @@ class SimulatorRequestSenderTest {
     @DisplayName("送信後にAPI側のリストを変更しても送信メッセージは変更されない")
     void publishesSnapshotOfPlayers() {
         // given
-        var publishedMessages = new ArrayList<List<PlayerData>>();
+        var publishedMessages = new ArrayList<SimulationRequest>();
         var sender = new SimulatorRequestSender(publishedMessages::add);
         var players = new ArrayList<>(players(9));
 
@@ -131,7 +157,7 @@ class SimulatorRequestSenderTest {
         players.clear();
 
         // then
-        assertAll(() -> assertEquals(9, publishedMessages.getFirst().size()));
+        assertAll(() -> assertEquals(9, publishedMessages.getFirst().players().size()));
     }
 
     private static List<PlayerData> players(int size) {

@@ -1,7 +1,5 @@
 package com.example.baseballorders.backend.simulation.infrastructure.messaging;
 
-import java.util.List;
-
 /** simulatorのメッセージチャネルへシミュレーション要求を発行するポート。 */
 @FunctionalInterface
 public interface SimulatorMessagePublisher {
@@ -9,7 +7,7 @@ public interface SimulatorMessagePublisher {
     /**
      * 指定された打順をsimulatorのメッセージチャネルへ発行する。
      *
-     * @param players 打順どおりに並んだ9人の選手データ
+     * @param request シミュレーションIDと9人の選手データを含む要求
      */
-    void publish(List<PlayerData> players);
+    void publish(SimulationRequest request);
 }

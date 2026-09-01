@@ -73,7 +73,7 @@ class SqsSimulationSchedulerTest {
         when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
         var simulationResponse = new SimulationResponse(5, 4);
-        when(useCase.simulateGame(any(LineUpEntity.class))).thenReturn(simulationResponse);
+        when(useCase.invoke(any(LineUpEntity.class))).thenReturn(simulationResponse);
         SqsSimulationScheduler scheduler =
                 new SqsSimulationScheduler(sqsClient, objectMapper, useCase, mapper, "request-url");
         var lineUpCaptor = ArgumentCaptor.forClass(LineUpEntity.class);
@@ -85,11 +85,19 @@ class SqsSimulationSchedulerTest {
 
         // then
         assertAll(
-                () -> ordered.verify(useCase).simulateGame(lineUpCaptor.capture()),
+                () -> ordered.verify(useCase).invoke(lineUpCaptor.capture()),
                 () -> ordered.verify(sqsClient).sendMessage(sendMessageCaptor.capture()),
                 () -> ordered.verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class)),
                 () -> assertEquals(9, lineUpCaptor.getValue().getBatterEntities().size()),
                 () -> assertEquals("result-url", sendMessageCaptor.getValue().queueUrl()),
+                () ->
+                        assertEquals(
+                                "simulation-1",
+                                objectMapper
+                                        .readValue(
+                                                sendMessageCaptor.getValue().messageBody(),
+                                                SimulationResponse.class)
+                                        .simulationId()),
                 () ->
                         assertEquals(
                                 objectMapper.writeValueAsString(
@@ -111,7 +119,7 @@ class SqsSimulationSchedulerTest {
         when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
         when(objectMapper.readValue("request-body", SimulationRequest.class)).thenReturn(request);
-        when(useCase.simulateGame(any())).thenReturn(response);
+        when(useCase.invoke(any())).thenReturn(response);
         when(objectMapper.writeValueAsString(any(SimulationResponse.class)))
                 .thenThrow(new JsonProcessingException("serialization failed") {});
         SqsSimulationScheduler scheduler =
@@ -148,7 +156,7 @@ class SqsSimulationSchedulerTest {
                         .build();
         when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
-        when(useCase.simulateGame(any())).thenReturn(response);
+        when(useCase.invoke(any())).thenReturn(response);
         when(sqsClient.sendMessage(any(SendMessageRequest.class)))
                 .thenThrow(SqsException.builder().message("send failed").build());
         SqsSimulationScheduler scheduler =
