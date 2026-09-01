@@ -62,7 +62,7 @@ public final class SimulationCoordinator {
      * @return simulatorから受信した結果
      * @throws SimulationTimeoutException timeout内に結果を受信できなかった場合
      */
-    public SimulationResult simulate(List<String> playerIds) {
+    public SimulationResult simulate(List<Long> playerIds) {
         if (playerIds.size() != LINEUP_SIZE) {
             throw new IllegalArgumentException("playerIds must contain exactly 9 entries");
         }

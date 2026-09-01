@@ -25,12 +25,12 @@ public class JpaPlayerDataRepository implements PlayerDataRepository {
 
     /** {@inheritDoc} */
     @Override
-    public List<PlayerData> findAllByIds(List<String> playerIds) {
+    public List<PlayerData> findAllByIds(List<Long> playerIds) {
         Objects.requireNonNull(playerIds, "playerIds must not be null");
         return playerIds.stream().map(this::findById).toList();
     }
 
-    private PlayerData findById(String playerId) {
+    private PlayerData findById(Long playerId) {
         PlayerEntity player = entityManager.find(PlayerEntity.class, playerId);
         if (player == null) {
             throw new IllegalArgumentException("player not found: " + playerId);

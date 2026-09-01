@@ -14,5 +14,5 @@ public interface PlayerDataRepository {
      * @return IDの入力順に並んだ選手データ
      * @throws IllegalArgumentException 存在しないplayer IDが含まれる場合
      */
-    List<PlayerData> findAllByIds(List<String> playerIds);
+    List<PlayerData> findAllByIds(List<Long> playerIds);
 }

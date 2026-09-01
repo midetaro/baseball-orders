@@ -18,17 +18,17 @@ class JpaPlayerDataRepositoryTest {
     @DisplayName("Player Entityの各項目をgetterで取得できる")
     void exposesPlayerPropertiesWithGetters() {
         // given
-        var player = new PlayerEntity("player-1", "山田", 0.301f, 0.501f);
+        var player = new PlayerEntity(1L, "山田", 0.301f, 0.501f);
 
         // when
-        String playerId = player.getPlayerId();
+        Long playerId = player.getPlayerId();
         String name = player.getName();
         float hitAverage = player.getHitAverage();
         float sluggish = player.getSluggish();
 
         // then
         assertAll(
-                () -> assertEquals("player-1", playerId),
+                () -> assertEquals(1L, playerId),
                 () -> assertEquals("山田", name),
                 () -> assertEquals(0.301f, hitAverage),
                 () -> assertEquals(0.501f, sluggish));
@@ -40,12 +40,12 @@ class JpaPlayerDataRepositoryTest {
         // given
         try (EntityManagerFactory factory = entityManagerFactory();
                 EntityManager entityManager = factory.createEntityManager()) {
-            persist(entityManager, new PlayerEntity("player-1", "山田", 0.301f, 0.501f));
-            persist(entityManager, new PlayerEntity("player-2", "鈴木", 0.302f, 0.502f));
+            persist(entityManager, new PlayerEntity(1L, "山田", 0.301f, 0.501f));
+            persist(entityManager, new PlayerEntity(2L, "鈴木", 0.302f, 0.502f));
             var repository = new JpaPlayerDataRepository(entityManager);
 
             // when
-            var players = repository.findAllByIds(List.of("player-2", "player-1"));
+            var players = repository.findAllByIds(List.of(2L, 1L));
 
             // then
             assertAll(
@@ -70,10 +70,10 @@ class JpaPlayerDataRepositoryTest {
             var exception =
                     assertThrows(
                             IllegalArgumentException.class,
-                            () -> repository.findAllByIds(List.of("unknown")));
+                            () -> repository.findAllByIds(List.of(999L)));
 
             // then
-            assertAll(() -> assertEquals("player not found: unknown", exception.getMessage()));
+            assertAll(() -> assertEquals("player not found: 999", exception.getMessage()));
         }
     }
 
