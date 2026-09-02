@@ -1,28 +1,19 @@
-package com.example.baseballorders.backend.simulation.infrastructure.messaging;
+package com.example.baseballorders.backend.simulation.application;
 
 import com.example.baseballorders.backend.simulation.domain.SimulationResult;
-import com.example.baseballorders.backend.simulation.infrastructure.persistence.PlayerDataRepository;
-import com.example.baseballorders.messaging.SimulationPlayerMessage;
-import com.example.baseballorders.messaging.SimulationRequestMessage;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
-/** H2読込、SQS送信、相関結果待機を同期HTTP要求として調整する。 */
-@Service
+/** シミュレーションユースケースのデータ取得、要求送信、結果待機を調整する。 */
 public final class SimulationCoordinator {
 
     private static final int LINEUP_SIZE = 9;
     private static final String MESSAGE_VERSION = "1";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
-    private static final Logger LOGGER = LoggerFactory.getLogger(SimulationCoordinator.class);
 
     private final PlayerDataRepository playerDataRepository;
     private final SimulatorMessagePublisher publisher;
@@ -36,7 +27,6 @@ public final class SimulationCoordinator {
      * @param publisher SQS要求Publisher
      * @param registry HTTPとSQS結果の待機レジストリ
      */
-    @Autowired
     public SimulationCoordinator(
             PlayerDataRepository playerDataRepository,
             SimulatorMessagePublisher publisher,
@@ -44,7 +34,15 @@ public final class SimulationCoordinator {
         this(playerDataRepository, publisher, registry, DEFAULT_TIMEOUT);
     }
 
-    SimulationCoordinator(
+    /**
+     * 指定したtimeoutでCoordinatorを作成する。
+     *
+     * @param playerDataRepository player IDから選手データを取得するRepository
+     * @param publisher シミュレーション要求の送信ポート
+     * @param registry HTTPと結果を相関するレジストリ
+     * @param timeout 結果を待機する時間
+     */
+    public SimulationCoordinator(
             PlayerDataRepository playerDataRepository,
             SimulatorMessagePublisher publisher,
             WaitingResultRegistry registry,
@@ -69,25 +67,11 @@ public final class SimulationCoordinator {
         var players = playerDataRepository.findAllByIds(playerIds);
         UUID simulationId = UUID.randomUUID();
         var waiting = registry.register(simulationId);
-        LOGGER.info("simulation request accepted simulationId={}", simulationId);
         try {
-            publisher.publish(
-                    new SimulationRequestMessage(
-                            simulationId,
-                            MESSAGE_VERSION,
-                            players.stream()
-                                    .map(
-                                            player ->
-                                                    new SimulationPlayerMessage(
-                                                            player.name(),
-                                                            player.hitAverage(),
-                                                            player.sluggish()))
-                                    .toList()));
+            publisher.publish(new SimulationRequest(simulationId, MESSAGE_VERSION, players));
             SimulationResult result = waiting.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-            LOGGER.info("simulation completed simulationId={}", simulationId);
             return result;
         } catch (TimeoutException exception) {
-            LOGGER.warn("simulation timeout simulationId={}", simulationId);
             throw new SimulationTimeoutException(simulationId);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
@@ -96,7 +80,6 @@ public final class SimulationCoordinator {
         } catch (ExecutionException exception) {
             throw new IllegalStateException("simulation result failed: " + simulationId, exception);
         } catch (RuntimeException exception) {
-            LOGGER.error("simulation request send failed simulationId={}", simulationId, exception);
             throw new SimulationSendException(simulationId, exception);
         } finally {
             registry.remove(simulationId);

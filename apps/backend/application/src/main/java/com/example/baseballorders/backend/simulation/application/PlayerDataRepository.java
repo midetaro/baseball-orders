@@ -1,6 +1,6 @@
-package com.example.baseballorders.backend.simulation.infrastructure.persistence;
+package com.example.baseballorders.backend.simulation.application;
 
-import com.example.baseballorders.backend.simulation.infrastructure.messaging.PlayerData;
+import com.example.baseballorders.backend.simulation.domain.PlayerData;
 import java.util.List;
 
 /** player IDに対応する選手の打撃データを取得するRepository。 */

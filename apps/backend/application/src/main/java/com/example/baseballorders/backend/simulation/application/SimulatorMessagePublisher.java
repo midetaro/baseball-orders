@@ -1,6 +1,5 @@
-package com.example.baseballorders.backend.simulation.infrastructure.messaging;
+package com.example.baseballorders.backend.simulation.application;
 
-import com.example.baseballorders.messaging.SimulationRequestMessage;
 
 /** simulatorのメッセージチャネルへシミュレーション要求を発行するポート。 */
 @FunctionalInterface
@@ -11,5 +10,5 @@ public interface SimulatorMessagePublisher {
      *
      * @param request シミュレーションIDと9人の選手データを含む要求
      */
-    void publish(SimulationRequestMessage request);
+    void publish(SimulationRequest request);
 }
