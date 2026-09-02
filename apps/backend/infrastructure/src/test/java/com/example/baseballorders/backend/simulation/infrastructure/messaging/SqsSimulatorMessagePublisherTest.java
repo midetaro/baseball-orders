@@ -17,6 +17,7 @@ class SqsSimulatorMessagePublisherTest {
     @DisplayName("共有要求contractをsimulation-requestキューへ送信する")
     void sendsRequestToSimulationRequestQueue() {
         // given
+        // SqsTemplateをモックする
         SqsTemplate sqsTemplate = mock(SqsTemplate.class);
         var publisher = new SqsSimulatorMessagePublisher(sqsTemplate);
         var request = new SimulationRequestMessage(UUID.randomUUID(), "1", List.of());

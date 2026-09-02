@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.example.baseballorders.backend.simulation.domain.SimulationResult;
-import com.example.baseballorders.backend.simulation.infrastructure.messaging.SimulationCoordinator;
-import com.example.baseballorders.backend.simulation.infrastructure.messaging.WaitingResultRegistry;
+import com.example.baseballorders.backend.simulation.application.SimulationCoordinator;
+import com.example.baseballorders.backend.simulation.application.WaitingResultRegistry;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

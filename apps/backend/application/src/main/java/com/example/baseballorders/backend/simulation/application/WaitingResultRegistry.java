@@ -1,14 +1,12 @@
-package com.example.baseballorders.backend.simulation.infrastructure.messaging;
+package com.example.baseballorders.backend.simulation.application;
 
 import com.example.baseballorders.backend.simulation.domain.SimulationResult;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.springframework.stereotype.Component;
 
 /** HTTP要求とSQS結果をsimulation IDで相関するthread-safeな待機レジストリ。 */
-@Component
 public final class WaitingResultRegistry {
 
     private final ConcurrentMap<UUID, CompletableFuture<SimulationResult>> pending =

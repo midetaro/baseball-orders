@@ -1,4 +1,4 @@
-package com.example.baseballorders.backend.simulation.infrastructure.messaging;
+package com.example.baseballorders.backend.simulation.application;
 
 import java.util.UUID;
 
