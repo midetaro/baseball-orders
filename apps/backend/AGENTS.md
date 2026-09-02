@@ -48,6 +48,7 @@
 - Wrap assertions in `assertAll`, including when a test currently contains only one assertion. Use `org.junit.jupiter.api.Assertions.assertAll`.
 - When verifying an exception, perform the action with `assertThrows` in the `// when` section and verify the captured exception inside `assertAll` in the `// then` section.
 - Keep each test focused on one behavior. Multiple assertions are allowed only when they jointly verify that behavior.
+- Comment on what is mocked.
 
 Example:
 
