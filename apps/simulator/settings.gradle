@@ -14,3 +14,5 @@ rootProject.name = 'simulator'
 include 'application'
 include 'domain'
 include 'infrastructure'
+include 'messaging-contract'
+project(':messaging-contract').projectDir = file('../../libs/messaging-contract')

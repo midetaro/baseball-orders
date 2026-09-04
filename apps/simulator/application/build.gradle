@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     api project(':domain')
+    api project(':messaging-contract')
 
     implementation 'org.springframework:spring-context:7.0.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.20.1'

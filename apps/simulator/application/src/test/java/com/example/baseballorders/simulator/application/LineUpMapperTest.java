@@ -3,7 +3,7 @@ package com.example.baseballorders.simulator.application;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.example.baseballorders.simulator.application.contract.PlayerData;
+import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
@@ -28,9 +28,12 @@ class LineUpMapperTest {
                         atBatBehavior,
                         stealStrategy,
                         (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
-        List<PlayerData> players =
+        List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
-                        .mapToObj(number -> new PlayerData("player-" + number, 1.0f, 0.0f, 0.8f))
+                        .mapToObj(
+                                number ->
+                                        new SimulationPlayerMessage(
+                                                "player-" + number, 1.0f, 0.0f, 0.8f))
                         .toList();
 
         // when
