@@ -1,7 +1,7 @@
 package com.example.baseballorders.backend.simulation.infrastructure.api;
 
-import com.example.baseballorders.backend.simulation.domain.SimulationResult;
 import com.example.baseballorders.backend.simulation.application.SimulationCoordinator;
+import com.example.baseballorders.backend.simulation.domain.SimulationResult;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.web.bind.annotation.PostMapping;

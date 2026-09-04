@@ -1,7 +1,7 @@
 package com.example.baseballorders.backend.simulation.infrastructure.messaging;
 
-import com.example.baseballorders.backend.simulation.domain.SimulationResult;
 import com.example.baseballorders.backend.simulation.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.simulation.domain.SimulationResult;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import org.slf4j.Logger;
