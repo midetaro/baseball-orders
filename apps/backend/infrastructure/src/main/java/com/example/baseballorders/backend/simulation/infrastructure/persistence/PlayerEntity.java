@@ -4,10 +4,15 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /** playersテーブルへJPAでマッピングする選手Entity。 */
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 @Entity
 @Table(name = "players")
 public class PlayerEntity {
@@ -24,14 +29,4 @@ public class PlayerEntity {
 
     @Column(nullable = false)
     private float sluggish;
-
-    /** JPAがEntityを復元するために使用する。 */
-    protected PlayerEntity() {}
-
-    PlayerEntity(Long playerId, String name, float hitAverage, float sluggish) {
-        this.playerId = playerId;
-        this.name = name;
-        this.hitAverage = hitAverage;
-        this.sluggish = sluggish;
-    }
 }

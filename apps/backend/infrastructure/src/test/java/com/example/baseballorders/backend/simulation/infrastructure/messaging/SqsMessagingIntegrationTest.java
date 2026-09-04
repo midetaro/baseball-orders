@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.example.baseballorders.backend.simulation.application.WaitingResultRegistry;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
+import com.example.baseballorders.messaging.SimulationResultMessage;
+import io.awspring.cloud.sqs.operations.SqsTemplate;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -48,6 +50,7 @@ class SqsMessagingIntegrationTest {
 
     @Autowired private SqsSimulatorMessagePublisher publisher;
     @Autowired private WaitingResultRegistry registry;
+    @Autowired private SqsTemplate sqsTemplate;
 
     @DynamicPropertySource
     static void configureSqs(DynamicPropertyRegistry registry) {
@@ -71,11 +74,12 @@ class SqsMessagingIntegrationTest {
         publisher.publish(request);
         List<Message> messages;
         try (var client = sqsClient()) {
+            String queueUrl = queueUrl(client, REQUEST_QUEUE);
             messages =
                     client.receiveMessage(
                                     requestBuilder ->
                                             requestBuilder
-                                                    .queueUrl(queueUrl(REQUEST_QUEUE))
+                                                    .queueUrl(queueUrl)
                                                     .waitTimeSeconds(5)
                                                     .maxNumberOfMessages(1))
                             .messages();
@@ -94,16 +98,10 @@ class SqsMessagingIntegrationTest {
         // given
         UUID simulationId = UUID.randomUUID();
         var waiting = registry.register(simulationId);
-        String body =
-                "{\"simulation_id\":\"%s\",\"version\":\"1\",\"score\":5,\"runs\":4}"
-                        .formatted(simulationId);
+        var message = new SimulationResultMessage(simulationId, "1", 5, 4);
 
         // when
-        try (var client = sqsClient()) {
-            client.sendMessage(
-                    requestBuilder ->
-                            requestBuilder.queueUrl(queueUrl(RESULT_QUEUE)).messageBody(body));
-        }
+        sqsTemplate.send(RESULT_QUEUE, message);
         var result = waiting.get(10, TimeUnit.SECONDS);
 
         // then
@@ -128,7 +126,7 @@ class SqsMessagingIntegrationTest {
         return URI.create("http://" + ELASTIC_MQ.getHost() + ":" + ELASTIC_MQ.getMappedPort(9324));
     }
 
-    private static String queueUrl(String queueName) {
-        return endpoint() + "/000000000000/" + queueName;
+    private static String queueUrl(SqsClient client, String queueName) {
+        return client.getQueueUrl(request -> request.queueName(queueName)).queueUrl();
     }
 }

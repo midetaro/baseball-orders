@@ -5,24 +5,16 @@ import com.example.baseballorders.backend.simulation.domain.PlayerData;
 import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Objects;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 /** JPAを使用してplayersテーブルから選手の打撃データを取得するRepository。 */
 @Repository
+@RequiredArgsConstructor
 public class JpaPlayerDataRepository implements PlayerDataRepository {
 
-    private final EntityManager entityManager;
-
-    /**
-     * 選手Entityを検索するEntityManagerを指定してRepositoryを作成する。
-     *
-     * @param entityManager JPAのEntityManager
-     * @throws NullPointerException entityManagerがnullの場合
-     */
-    public JpaPlayerDataRepository(EntityManager entityManager) {
-        this.entityManager =
-                Objects.requireNonNull(entityManager, "entityManager must not be null");
-    }
+    @NonNull private final EntityManager entityManager;
 
     /** {@inheritDoc} */
     @Override
