@@ -45,7 +45,8 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
                                                 new SimulationPlayerMessage(
                                                         player.name(),
                                                         player.hitAverage(),
-                                                        player.sluggish()))
+                                                        player.sluggish(),
+                                                        player.buntSuccessRate()))
                                 .toList());
         sqsTemplate.send(requestQueueName, message);
         LOGGER.info("simulation request sent simulationId={}", request.simulationId());
