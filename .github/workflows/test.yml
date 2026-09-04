@@ -12,6 +12,11 @@ jobs:
   test:
     name: Test ${{ matrix.application }}
     runs-on: ubuntu-latest
+    services:
+      elasticmq:
+        image: softwaremill/elasticmq-native:1.6.16
+        ports:
+          - 9324:9324
     strategy:
       fail-fast: false
       matrix:
@@ -33,4 +38,6 @@ jobs:
 
       - name: Run all tests
         working-directory: apps/${{ matrix.application }}
+        env:
+          SQS_ENDPOINT: ${{ matrix.application == 'backend' && 'http://localhost:9324' || '' }}
         run: ./gradlew --no-daemon :domain:test :application:test :infrastructure:test

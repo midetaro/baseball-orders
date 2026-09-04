@@ -11,42 +11,28 @@ import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import java.net.URI;
-import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 
-@Testcontainers(disabledWithoutDocker = true)
+@EnabledIfEnvironmentVariable(named = "SQS_ENDPOINT", matches = ".+")
 @SpringBootTest
 class SqsMessagingIntegrationTest {
 
     private static final String REQUEST_QUEUE = "simulation-request";
     private static final String RESULT_QUEUE = "simulation-result";
-
-    @Container
-    static final GenericContainer<?> ELASTIC_MQ =
-            new GenericContainer<>(DockerImageName.parse("softwaremill/elasticmq-native:1.6.16"))
-                    .withExposedPorts(9324)
-                    .withCopyFileToContainer(
-                            MountableFile.forClasspathResource("elasticmq.conf"),
-                            "/opt/elasticmq.conf")
-                    .withStartupTimeout(Duration.ofSeconds(30));
 
     @Autowired private SqsSimulatorMessagePublisher publisher;
     @Autowired private WaitingResultRegistry registry;
@@ -54,9 +40,11 @@ class SqsMessagingIntegrationTest {
 
     @DynamicPropertySource
     static void configureSqs(DynamicPropertyRegistry registry) {
-        registry.add("spring.cloud.aws.sqs.endpoint", SqsMessagingIntegrationTest::endpoint);
+        createQueues();
+        registry.add("spring.cloud.aws.sqs.endpoint", () -> endpoint().toString());
         registry.add("spring.cloud.aws.credentials.access-key", () -> "test");
         registry.add("spring.cloud.aws.credentials.secret-key", () -> "test");
+        registry.add("spring.datasource.url", () -> "jdbc:h2:mem:sqs-messaging");
     }
 
     @Test
@@ -123,7 +111,18 @@ class SqsMessagingIntegrationTest {
     }
 
     private static URI endpoint() {
-        return URI.create("http://" + ELASTIC_MQ.getHost() + ":" + ELASTIC_MQ.getMappedPort(9324));
+        return URI.create(System.getenv("SQS_ENDPOINT"));
+    }
+
+    private static void createQueues() {
+        try (var client = sqsClient()) {
+            String requestQueueUrl =
+                    client.createQueue(request -> request.queueName(REQUEST_QUEUE)).queueUrl();
+            String resultQueueUrl =
+                    client.createQueue(request -> request.queueName(RESULT_QUEUE)).queueUrl();
+            client.purgeQueue(request -> request.queueUrl(requestQueueUrl));
+            client.purgeQueue(request -> request.queueUrl(resultQueueUrl));
+        }
     }
 
     private static String queueUrl(SqsClient client, String queueName) {
