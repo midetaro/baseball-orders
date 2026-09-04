@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import com.example.baseballorders.backend.simulation.application.SimulationRequest;
+import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.simulation.domain.PlayerData;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import io.awspring.cloud.sqs.operations.SqsTemplate;

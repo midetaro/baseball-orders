@@ -3,8 +3,8 @@ package com.example.baseballorders.backend.simulation.infrastructure.api;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.example.baseballorders.backend.simulation.application.SimulationSendException;
-import com.example.baseballorders.backend.simulation.application.SimulationTimeoutException;
+import com.example.baseballorders.backend.application.exception.SimulationSendException;
+import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

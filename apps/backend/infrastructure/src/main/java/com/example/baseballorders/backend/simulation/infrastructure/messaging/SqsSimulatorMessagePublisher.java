@@ -1,7 +1,7 @@
 package com.example.baseballorders.backend.simulation.infrastructure.messaging;
 
-import com.example.baseballorders.backend.simulation.application.SimulationRequest;
-import com.example.baseballorders.backend.simulation.application.SimulatorMessagePublisher;
+import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
+import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import io.awspring.cloud.sqs.operations.SqsTemplate;

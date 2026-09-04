@@ -3,8 +3,8 @@ package com.example.baseballorders.backend.simulation.infrastructure.api;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.example.baseballorders.backend.simulation.application.SimulationCoordinator;
-import com.example.baseballorders.backend.simulation.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.application.SimulationCoordinator;
+import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.simulation.domain.SimulationResult;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
