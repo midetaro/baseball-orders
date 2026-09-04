@@ -1,11 +1,7 @@
-# AWS Terraform (Go generator)
+# AWS Terraform
 
 This directory manages the AWS messaging resources used by `baseball-orders`.
-The Go program uses only the standard library and emits native Terraform HCL.
-
-CDK for Terraform is intentionally not used because HashiCorp ended support for
-CDKTF on December 10, 2025. The generated file can be managed with the regular
-Terraform CLI without a CDKTF runtime dependency.
+The infrastructure is declared directly in native Terraform HCL.
 
 ## Managed resources
 
@@ -21,19 +17,16 @@ application configuration is changed at the same time.
 
 ## Prerequisites
 
-- Go 1.23 or newer
 - Terraform 1.8 or newer
 - AWS credentials available through the standard AWS credential chain
 
 ## Usage
 
-Generate the native Terraform configuration:
-
 ```sh
-go run . > main.tf
 terraform fmt -check
 terraform init
 terraform validate
+terraform test
 terraform plan -var='environment=dev'
 terraform apply -var='environment=dev'
 ```
@@ -42,11 +35,5 @@ For a shared or production environment, configure a remote Terraform backend
 before the first apply. Backend settings are deployment-specific and are not
 hard-coded here, so credentials and state bucket details are never committed.
 
-Run the generator tests with:
-
-```sh
-go test ./...
-```
-
-Regenerate `main.tf` whenever `generator.go` changes. Do not manually edit the
-generated file.
+Edit `main.tf` directly and run `terraform fmt -check`, `terraform validate`, and
+`terraform test` before committing changes.
