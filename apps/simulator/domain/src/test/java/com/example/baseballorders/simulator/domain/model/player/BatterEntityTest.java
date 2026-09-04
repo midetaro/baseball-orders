@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
@@ -61,7 +62,7 @@ class BatterEntityTest {
                         });
 
         // when
-        BuntResult result = batter.bunt(0, new SingleBasesState());
+        BuntResult result = batter.bunt(OutCount.NO_OUT, new SingleBasesState());
 
         // then
         assertAll(

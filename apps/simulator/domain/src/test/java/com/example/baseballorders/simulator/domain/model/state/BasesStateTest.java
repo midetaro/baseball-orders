@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
@@ -433,7 +434,7 @@ class BasesStateTest {
         state.out(context);
 
         // then
-        assertAll(() -> assertEquals(1, context.getOutCounts()));
+        assertAll(() -> assertEquals(OutCount.ONE_OUT, context.getOutCount()));
     }
 
     private static GameBattingContext contextWithRunners(

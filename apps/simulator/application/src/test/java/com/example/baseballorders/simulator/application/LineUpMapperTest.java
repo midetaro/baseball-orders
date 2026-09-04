@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
@@ -55,7 +56,7 @@ class LineUpMapperTest {
                                 BuntResult.SUCCESS,
                                 result.getBatterEntities()
                                         .getFirst()
-                                        .bunt(0, new SingleBasesState())));
+                                        .bunt(OutCount.NO_OUT, new SingleBasesState())));
     }
 
     private static final class FixedStealStrategy implements StealStrategy {

@@ -6,6 +6,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
 import com.example.baseballorders.simulator.domain.model.state.DoubleBaseState;
 import com.example.baseballorders.simulator.domain.model.state.FirstDoubleBaseState;
@@ -26,7 +27,7 @@ class StandardBuntStrategyTest {
     @MethodSource("buntTestCases")
     void determinesBuntResult(
             String description,
-            long outCounts,
+            OutCount outCount,
             BasesState basesState,
             float random,
             BuntResult expectedResult) {
@@ -37,7 +38,7 @@ class StandardBuntStrategyTest {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
 
             // when
-            BuntResult result = strategy.bunt(0.7f, outCounts, basesState);
+            BuntResult result = strategy.bunt(0.7f, outCount, basesState);
 
             // then
             assertAll(() -> assertEquals(expectedResult, result, description));
@@ -46,12 +47,41 @@ class StandardBuntStrategyTest {
 
     static Stream<Arguments> buntTestCases() {
         return Stream.of(
-                arguments("無死一塁で成功率未満なら成功する", 0, new SingleBasesState(), 0.69f, BuntResult.SUCCESS),
                 arguments(
-                        "無死一塁で成功率と等しければ失敗する", 0, new SingleBasesState(), 0.7f, BuntResult.FAILURE),
-                arguments("無死一二塁ならバントする", 0, new FirstDoubleBaseState(), 0.1f, BuntResult.SUCCESS),
-                arguments("一死一塁ならバントしない", 1, new SingleBasesState(), 0.1f, BuntResult.NOT_TRY),
-                arguments("無死二塁ならバントしない", 0, new DoubleBaseState(), 0.1f, BuntResult.NOT_TRY),
-                arguments("無死走者なしならバントしない", 0, new NoBasesState(), 0.1f, BuntResult.NOT_TRY));
+                        "無死一塁で成功率未満なら成功する",
+                        OutCount.NO_OUT,
+                        new SingleBasesState(),
+                        0.69f,
+                        BuntResult.SUCCESS),
+                arguments(
+                        "無死一塁で成功率と等しければ失敗する",
+                        OutCount.NO_OUT,
+                        new SingleBasesState(),
+                        0.7f,
+                        BuntResult.FAILURE),
+                arguments(
+                        "無死一二塁ならバントする",
+                        OutCount.NO_OUT,
+                        new FirstDoubleBaseState(),
+                        0.1f,
+                        BuntResult.SUCCESS),
+                arguments(
+                        "一死一塁ならバントしない",
+                        OutCount.ONE_OUT,
+                        new SingleBasesState(),
+                        0.1f,
+                        BuntResult.NOT_TRY),
+                arguments(
+                        "無死二塁ならバントしない",
+                        OutCount.NO_OUT,
+                        new DoubleBaseState(),
+                        0.1f,
+                        BuntResult.NOT_TRY),
+                arguments(
+                        "無死走者なしならバントしない",
+                        OutCount.NO_OUT,
+                        new NoBasesState(),
+                        0.1f,
+                        BuntResult.NOT_TRY));
     }
 }

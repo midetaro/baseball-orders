@@ -6,10 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.code.Base;
+import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
+import com.example.baseballorders.simulator.domain.code.StealResult;
+import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.state.NoBasesState;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.Getter;
@@ -30,7 +36,7 @@ public class GameBattingContextTest {
             String description,
             int initialInning,
             int addOutCount,
-            int expectedOutCounts,
+            OutCount expectedOutCount,
             int expectedInning,
             boolean expectedGameOver) {
         // given
@@ -48,9 +54,7 @@ public class GameBattingContextTest {
 
         // then
         assertAll(
-                () ->
-                        assertEquals(
-                                expectedOutCounts, gameBattingContext.getOutCounts(), description),
+                () -> assertEquals(expectedOutCount, gameBattingContext.getOutCount(), description),
                 () -> assertEquals(expectedInning, gameBattingContext.getInning(), description),
                 () -> assertEquals(expectedGameOver, gameBattingContext.isGameOver(), description));
     }
@@ -62,14 +66,14 @@ public class GameBattingContextTest {
                         "[分岐1-1] addOutCounts(1) → outCounts=1（goToNextInning スキップ）",
                         1,
                         1,
-                        1,
+                        OutCount.ONE_OUT,
                         1,
                         false),
                 arguments(
                         "[分岐1-2] addOutCounts(2) → outCounts=2（goToNextInning スキップ）",
                         1,
                         2,
-                        2,
+                        OutCount.TWO_OUT,
                         1,
                         false),
                 // 分岐2a: outCounts >= 3 かつ inning != 9（イニング進行）
@@ -77,14 +81,14 @@ public class GameBattingContextTest {
                         "[分岐2a] addOutCounts(3)、inning=1 → inning=2, outCounts=0（リセット）",
                         1,
                         3,
-                        0,
+                        OutCount.NO_OUT,
                         2,
                         false),
                 arguments(
                         "[分岐2a] addOutCounts(3)、inning=2 → inning=3, outCounts=0（リセット）",
                         2,
                         3,
-                        0,
+                        OutCount.NO_OUT,
                         3,
                         false),
                 // 分岐2b: outCounts >= 3 かつ inning == 9（ゲーム終了）
@@ -92,7 +96,7 @@ public class GameBattingContextTest {
                         "[分岐2b] addOutCounts(3)、inning=9 → isGameOver=true, outCounts=0",
                         9,
                         3,
-                        0,
+                        OutCount.NO_OUT,
                         9,
                         true));
     }
@@ -383,5 +387,112 @@ public class GameBattingContextTest {
                 arguments("[打者交代] 7番目 → 8番目", 7, 8),
                 // 順番が一周して最初に戻る（8番目 → 0 → 1）
                 arguments("[打者交代・周回] 8番目 → 1番目", 8, 1));
+    }
+
+    @DisplayName("打席結果に応じた進塁処理を実行する")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("battingResultTestCases")
+    void appliesEveryBattingResult(
+            String description,
+            BattingResult battingResult,
+            Class<?> expectedState,
+            long expectedScore,
+            OutCount expectedOutCount) {
+        // given
+        BatterEntity batter = batter(battingResult, StealResult.NOT_TRY);
+        GameBattingContext context =
+                new GameBattingContext(new LineUpEntity(Collections.nCopies(9, batter)));
+
+        // when
+        context.nextAtBat();
+
+        // then
+        assertAll(
+                () ->
+                        assertTrue(
+                                expectedState.isInstance(context.getCurrentBaseState()),
+                                description),
+                () -> assertEquals(expectedScore, context.getTotalScore(), description),
+                () -> assertEquals(expectedOutCount, context.getOutCount(), description));
+    }
+
+    static Stream<Arguments> battingResultTestCases() {
+        return Stream.of(
+                arguments(
+                        "アウトならアウトカウントが増える",
+                        BattingResult.OUT,
+                        NoBasesState.class,
+                        0,
+                        OutCount.ONE_OUT),
+                arguments(
+                        "単打なら打者が一塁へ進む",
+                        BattingResult.HIT_SINGLE,
+                        SingleBasesState.class,
+                        0,
+                        OutCount.NO_OUT),
+                arguments(
+                        "二塁打なら打者が二塁へ進む",
+                        BattingResult.HIT_DOUBLE,
+                        com.example.baseballorders.simulator.domain.model.state.DoubleBaseState
+                                .class,
+                        0,
+                        OutCount.NO_OUT),
+                arguments(
+                        "三塁打なら打者が三塁へ進む",
+                        BattingResult.HIT_TRIPLE,
+                        com.example.baseballorders.simulator.domain.model.state.ThirdBaseState
+                                .class,
+                        0,
+                        OutCount.NO_OUT),
+                arguments(
+                        "本塁打なら一点入る",
+                        BattingResult.HIT_HOMER,
+                        NoBasesState.class,
+                        1,
+                        OutCount.NO_OUT));
+    }
+
+    @DisplayName("一塁走者が盗塁に失敗すると走者が消えてアウトが増える")
+    @org.junit.jupiter.api.Test
+    void appliesFailedStealResult() {
+        // given
+        BatterEntity runner = batter(BattingResult.OUT, StealResult.FAILURE);
+        BatterEntity hitter = batter(BattingResult.HIT_SINGLE, StealResult.NOT_TRY);
+        GameBattingContext context =
+                new GameBattingContext(new LineUpEntity(Collections.nCopies(9, hitter)));
+        context.setRunnerOnFirstBase(Optional.of(runner));
+        context.updateBaseStateOf();
+
+        // when
+        context.nextAtBat();
+
+        // then
+        assertAll(
+                () -> assertEquals(OutCount.ONE_OUT, context.getOutCount()),
+                () -> assertEquals(Optional.of(hitter), context.getRunnerOnFirstBase()));
+    }
+
+    private static BatterEntity batter(BattingResult battingResult, StealResult stealResult) {
+        return new BatterEntity(
+                "batter",
+                0.0f,
+                0.0f,
+                0.0f,
+                (hitAverage, sluggish) -> battingResult,
+                new FixedStealStrategy(stealResult),
+                (successRate, outCount, basesState) -> BuntResult.NOT_TRY);
+    }
+
+    private record FixedStealStrategy(StealResult result) implements StealStrategy {
+
+        @Override
+        public StealResult runToDouble() {
+            return result;
+        }
+
+        @Override
+        public StealResult runToTriple() {
+            return result;
+        }
     }
 }
