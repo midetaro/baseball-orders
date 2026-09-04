@@ -9,6 +9,7 @@ import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
+import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +24,10 @@ class LineUpMapperTest {
         AtBatBehavior atBatBehavior = (hitAverage, sluggish) -> BattingResult.HIT_SINGLE;
         StealStrategy stealStrategy = new FixedStealStrategy();
         LineUpMapper mapper =
-                new LineUpMapper(atBatBehavior, stealStrategy, successRate -> BuntResult.SUCCESS);
+                new LineUpMapper(
+                        atBatBehavior,
+                        stealStrategy,
+                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
         List<PlayerData> players =
                 IntStream.rangeClosed(1, 9)
                         .mapToObj(number -> new PlayerData("player-" + number, 1.0f, 0.0f, 0.8f))
@@ -45,7 +49,10 @@ class LineUpMapperTest {
                                 result.getBatterEntities().getFirst().stealToDouble()),
                 () ->
                         assertEquals(
-                                BuntResult.SUCCESS, result.getBatterEntities().getFirst().bunt()));
+                                BuntResult.SUCCESS,
+                                result.getBatterEntities()
+                                        .getFirst()
+                                        .bunt(0, new SingleBasesState())));
     }
 
     private static final class FixedStealStrategy implements StealStrategy {

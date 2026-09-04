@@ -63,7 +63,10 @@ class SqsSimulationSchedulerTest {
         AtBatBehavior atBatBehavior = (hitAverage, sluggish) -> BattingResult.OUT;
         StealStrategy stealStrategy = new FixedStealStrategy();
         LineUpMapper mapper =
-                new LineUpMapper(atBatBehavior, stealStrategy, successRate -> BuntResult.SUCCESS);
+                new LineUpMapper(
+                        atBatBehavior,
+                        stealStrategy,
+                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
         ObjectMapper objectMapper = new ObjectMapper();
         List<PlayerData> players =
                 IntStream.rangeClosed(1, 9)

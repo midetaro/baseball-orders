@@ -37,7 +37,7 @@ class SimulateGameUseCaseTest {
                                                 0.7f,
                                                 shortDistanceAtBatBehavior,
                                                 new NowayStealBehavior(),
-                                                successRate ->
+                                                (successRate, outCounts, basesState) ->
                                                         com.example.baseballorders.simulator.domain
                                                                 .code.BuntResult.SUCCESS))
                         .toList();

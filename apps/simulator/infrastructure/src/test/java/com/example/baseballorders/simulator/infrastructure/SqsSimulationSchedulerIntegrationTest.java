@@ -56,7 +56,7 @@ class SqsSimulationSchedulerIntegrationTest {
                 new LineUpMapper(
                         (hitAverage, slugging) -> BattingResult.OUT,
                         new FixedStealStrategy(),
-                        successRate -> BuntResult.SUCCESS);
+                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
         List<PlayerData> players =
                 IntStream.rangeClosed(1, 9)
                         .mapToObj(number -> new PlayerData("player-" + number, 0.3f, 0.4f, 0.7f))

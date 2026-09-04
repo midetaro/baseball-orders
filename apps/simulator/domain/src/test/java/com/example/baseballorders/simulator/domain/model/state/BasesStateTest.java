@@ -457,7 +457,8 @@ class BasesStateTest {
                 0.0f,
                 (hitAverage, sluggish) -> BattingResult.OUT,
                 new StealStrategyStub(),
-                successRate -> com.example.baseballorders.simulator.domain.code.BuntResult.FAILURE);
+                (successRate, outCounts, basesState) ->
+                        com.example.baseballorders.simulator.domain.code.BuntResult.FAILURE);
     }
 
     private enum Hit {

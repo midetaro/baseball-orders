@@ -6,6 +6,7 @@ import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
+import com.example.baseballorders.simulator.domain.model.state.BasesState;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -63,11 +64,13 @@ public class BatterEntity extends Player {
     }
 
     /**
-     * バント戦略に従ってバントする。
+     * アウト数と塁状態を考慮し、バント戦略に従ってバントする。
      *
+     * @param outCounts アウト数
+     * @param basesState 現在の塁状態
      * @return バント結果
      */
-    public BuntResult bunt() {
-        return buntStrategy.bunt(buntSuccessRate);
+    public BuntResult bunt(long outCounts, BasesState basesState) {
+        return buntStrategy.bunt(buntSuccessRate, outCounts, basesState);
     }
 }

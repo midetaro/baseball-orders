@@ -7,6 +7,7 @@ import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
+import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,7 @@ class BatterEntityTest {
                         0.75f,
                         (hitAverage, slugging) -> BattingResult.OUT,
                         new NeverStealStrategy(),
-                        successRate -> BuntResult.SUCCESS);
+                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
 
         // when
         String name = batter.getName();
@@ -54,13 +55,13 @@ class BatterEntityTest {
                         0.75f,
                         (hitAverage, slugging) -> BattingResult.OUT,
                         new NeverStealStrategy(),
-                        successRate -> {
+                        (successRate, outCounts, basesState) -> {
                             receivedRate.set(successRate);
                             return BuntResult.SUCCESS;
                         });
 
         // when
-        BuntResult result = batter.bunt();
+        BuntResult result = batter.bunt(0, new SingleBasesState());
 
         // then
         assertAll(
