@@ -1,4 +1,6 @@
-package com.example.baseballorders.backend.simulation.application;
+package com.example.baseballorders.backend.application.adapter;
+
+import com.example.baseballorders.backend.application.dto.SimulationRequest;
 
 /** simulatorのメッセージチャネルへシミュレーション要求を発行するポート。 */
 @FunctionalInterface

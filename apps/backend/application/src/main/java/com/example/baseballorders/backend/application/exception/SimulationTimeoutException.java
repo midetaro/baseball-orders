@@ -1,4 +1,4 @@
-package com.example.baseballorders.backend.simulation.application;
+package com.example.baseballorders.backend.application.exception;
 
 import java.util.UUID;
 

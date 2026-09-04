@@ -1,4 +1,4 @@
-package com.example.baseballorders.backend.simulation.application;
+package com.example.baseballorders.backend.application;
 
 import com.example.baseballorders.backend.simulation.domain.SimulationResult;
 import java.util.UUID;
