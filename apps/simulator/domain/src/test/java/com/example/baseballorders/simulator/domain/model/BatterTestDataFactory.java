@@ -1,6 +1,6 @@
 package com.example.baseballorders.simulator.domain.model;
 
-import com.example.baseballorders.simulator.domain.model.behavior.AggressiveStealBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.MiddleStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior;
@@ -14,15 +14,15 @@ public final class BatterTestDataFactory {
     private BatterTestDataFactory() {}
 
     static ShortDistanceAtBatBehavior shortDistanceAtBatBehavior = new ShortDistanceAtBatBehavior();
-    static AggressiveStealBehavior aggressiveStealBehavior = new AggressiveStealBehavior();
+    static EagerStealBehavior eagerStealBehavior = new EagerStealBehavior();
     static MiddleStealBehavior middleStealBehavior = new MiddleStealBehavior();
     static NowayStealBehavior nowayStealBehavior = new NowayStealBehavior();
     static StandardBuntStrategy standardBuntStrategy = new StandardBuntStrategy();
 
     public static List<BatterEntity> mock() {
         return List.of(
-                batter("batter1", 0.4f, 0.4f, aggressiveStealBehavior),
-                batter("batter2", 0.4f, 0.2f, aggressiveStealBehavior),
+                batter("batter1", 0.4f, 0.4f, eagerStealBehavior),
+                batter("batter2", 0.4f, 0.2f, eagerStealBehavior),
                 batter("batter3", 0.25f, 0.5f, middleStealBehavior),
                 batter("batter1", 0.2f, 0.7f, nowayStealBehavior),
                 batter("batter2", 0.4f, 0.5f, middleStealBehavior),
