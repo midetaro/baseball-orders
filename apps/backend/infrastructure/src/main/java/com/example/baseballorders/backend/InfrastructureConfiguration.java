@@ -1,9 +1,9 @@
 package com.example.baseballorders.backend;
 
+import com.example.baseballorders.backend.simulation.application.PlayerDataRepository;
 import com.example.baseballorders.backend.simulation.application.SimulationCoordinator;
 import com.example.baseballorders.backend.simulation.application.SimulatorMessagePublisher;
 import com.example.baseballorders.backend.simulation.application.WaitingResultRegistry;
-import com.example.baseballorders.backend.simulation.application.PlayerDataRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

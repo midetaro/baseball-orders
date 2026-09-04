@@ -1,6 +1,5 @@
 package com.example.baseballorders.backend.simulation.application;
 
-
 /** simulatorのメッセージチャネルへシミュレーション要求を発行するポート。 */
 @FunctionalInterface
 public interface SimulatorMessagePublisher {

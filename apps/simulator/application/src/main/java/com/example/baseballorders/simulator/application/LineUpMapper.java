@@ -2,6 +2,7 @@ package com.example.baseballorders.simulator.application;
 
 import com.example.baseballorders.simulator.application.contract.PlayerData;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
@@ -15,18 +16,22 @@ public class LineUpMapper {
 
     private final AtBatBehavior atBatBehavior;
     private final StealStrategy stealStrategy;
+    private final BuntStrategy buntStrategy;
 
     /**
      * Creates a mapper using the default batting and stealing strategies.
      *
      * @param atBatBehavior behavior assigned to each batter
      * @param stealStrategy stealing strategy assigned to each batter
+     * @param buntStrategy bunt strategy assigned to each batter
      */
     public LineUpMapper(
             @Qualifier("shortDistanceAtBat") AtBatBehavior atBatBehavior,
-            @Qualifier("nowayStealBehavior") StealStrategy stealStrategy) {
+            @Qualifier("nowayStealBehavior") StealStrategy stealStrategy,
+            @Qualifier("standardBuntStrategy") BuntStrategy buntStrategy) {
         this.atBatBehavior = atBatBehavior;
         this.stealStrategy = stealStrategy;
+        this.buntStrategy = buntStrategy;
     }
 
     /**
@@ -44,8 +49,10 @@ public class LineUpMapper {
                                                 player.name(),
                                                 player.hitAverage(),
                                                 player.slugging(),
+                                                player.buntSuccessRate(),
                                                 atBatBehavior,
-                                                stealStrategy))
+                                                stealStrategy,
+                                                buntStrategy))
                         .toList();
         return new LineUpEntity(batters);
     }

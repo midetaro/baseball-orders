@@ -17,6 +17,7 @@ import com.example.baseballorders.simulator.application.contract.SimulationReque
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
@@ -61,11 +62,15 @@ class SqsSimulationSchedulerTest {
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
         AtBatBehavior atBatBehavior = (hitAverage, sluggish) -> BattingResult.OUT;
         StealStrategy stealStrategy = new FixedStealStrategy();
-        LineUpMapper mapper = new LineUpMapper(atBatBehavior, stealStrategy);
+        LineUpMapper mapper =
+                new LineUpMapper(
+                        atBatBehavior,
+                        stealStrategy,
+                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
         ObjectMapper objectMapper = new ObjectMapper();
         List<PlayerData> players =
                 IntStream.rangeClosed(1, 9)
-                        .mapToObj(number -> new PlayerData("player-" + number, 0.3f, 0.4f))
+                        .mapToObj(number -> new PlayerData("player-" + number, 0.3f, 0.4f, 0.7f))
                         .toList();
         String body =
                 objectMapper.writeValueAsString(

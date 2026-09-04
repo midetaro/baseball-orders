@@ -3,8 +3,8 @@ package com.example.baseballorders.backend;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.example.baseballorders.backend.simulation.infrastructure.api.SimulatorRequestController;
 import com.example.baseballorders.backend.simulation.application.SimulationCoordinator;
+import com.example.baseballorders.backend.simulation.infrastructure.api.SimulatorRequestController;
 import com.example.baseballorders.backend.simulation.infrastructure.messaging.SimulationResultListener;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import org.junit.jupiter.api.DisplayName;

@@ -1,29 +1,22 @@
 package com.example.baseballorders.backend.simulation.infrastructure.messaging;
 
-import com.example.baseballorders.backend.simulation.domain.SimulationResult;
 import com.example.baseballorders.backend.simulation.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.simulation.domain.SimulationResult;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import io.awspring.cloud.sqs.annotation.SqsListener;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /** simulation-result SQSから結果を受け取りHTTP待機要求を完了する。 */
 @Component
+@RequiredArgsConstructor
 public final class SimulationResultListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimulationResultListener.class);
 
     private final WaitingResultRegistry registry;
-
-    /**
-     * 結果の相関に使用するレジストリを指定してListenerを作成する。
-     *
-     * @param registry 待機結果レジストリ
-     */
-    public SimulationResultListener(WaitingResultRegistry registry) {
-        this.registry = registry;
-    }
 
     /**
      * SQS結果をbackend結果へ変換し、同じsimulation IDの待機を完了する。
