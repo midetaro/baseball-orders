@@ -45,8 +45,8 @@ import software.amazon.awssdk.services.sqs.model.SqsException;
 class SqsSimulationSchedulerTest {
 
     @Test
-    @DisplayName("ポーリング処理には60秒の固定遅延が設定されている")
-    void pollsEveryMinute() throws NoSuchMethodException {
+    @DisplayName("ポーリング処理の固定遅延は設定プロパティから取得する")
+    void obtainsPollingDelayFromProperty() throws NoSuchMethodException {
         // given
         var pollMethod = SqsSimulationScheduler.class.getMethod("poll");
 
@@ -54,7 +54,10 @@ class SqsSimulationSchedulerTest {
         Scheduled result = pollMethod.getAnnotation(Scheduled.class);
 
         // then
-        assertAll(() -> assertEquals(60_000L, result.fixedDelay()));
+        assertAll(
+                () ->
+                        assertEquals(
+                                "${simulation.sqs.poll-fixed-delay}", result.fixedDelayString()));
     }
 
     @Test
