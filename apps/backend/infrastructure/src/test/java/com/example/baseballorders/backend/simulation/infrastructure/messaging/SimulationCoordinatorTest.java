@@ -38,7 +38,7 @@ class SimulationCoordinatorTest {
                 new SimulationCoordinator(
                         ids ->
                                 ids.stream()
-                                        .map(id -> new PlayerData("山田", 0.301f, 0.501f))
+                                        .map(id -> new PlayerData("山田", 0.301f, 0.501f, 0.701f))
                                         .toList(),
                         publisher,
                         registry,

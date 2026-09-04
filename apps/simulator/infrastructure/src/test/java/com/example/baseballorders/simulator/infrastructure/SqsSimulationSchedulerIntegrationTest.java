@@ -7,9 +7,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.example.baseballorders.messaging.SimulationPlayerMessage;
+import com.example.baseballorders.messaging.SimulationRequestMessage;
+import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.LineUpMapper;
-import com.example.baseballorders.simulator.application.contract.PlayerData;
-import com.example.baseballorders.simulator.application.contract.SimulationRequest;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
@@ -17,7 +18,6 @@ import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
@@ -47,9 +47,16 @@ class SqsSimulationSchedulerIntegrationTest {
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
         List<SimulationResponse> simulationResults =
                 IntStream.range(0, 10).mapToObj(index -> new SimulationResponse(index, 4)).toList();
-        List<SimulationResponse> expectedResponses =
+        List<SimulationResultMessage> expectedResponses =
                 IntStream.range(0, 10)
-                        .mapToObj(index -> new SimulationResponse("simulation-1", index, 4))
+                        .mapToObj(
+                                index ->
+                                        new SimulationResultMessage(
+                                                UUID.fromString(
+                                                        "00000000-0000-0000-0000-000000000001"),
+                                                "1",
+                                                index,
+                                                4))
                         .toList();
         when(useCase.invoke(any(LineUpEntity.class))).thenReturn(simulationResults);
         LineUpMapper mapper =
@@ -57,9 +64,12 @@ class SqsSimulationSchedulerIntegrationTest {
                         (hitAverage, slugging) -> BattingResult.OUT,
                         new FixedStealStrategy(),
                         (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
-        List<PlayerData> players =
+        List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
-                        .mapToObj(number -> new PlayerData("player-" + number, 0.3f, 0.4f, 0.7f))
+                        .mapToObj(
+                                number ->
+                                        new SimulationPlayerMessage(
+                                                "player-" + number, 0.3f, 0.4f, 0.7f))
                         .toList();
 
         try (SqsClient sqsClient = createClient()) {
@@ -68,7 +78,10 @@ class SqsSimulationSchedulerIntegrationTest {
             String resultQueueUrl = createQueue(sqsClient, "simulation-results-" + suffix);
             try {
                 var request =
-                        new SimulationRequest("simulation-1", "game-1", resultQueueUrl, players);
+                        new SimulationRequestMessage(
+                                UUID.fromString("00000000-0000-0000-0000-000000000001"),
+                                "1",
+                                players);
                 sqsClient.sendMessage(
                         SendMessageRequest.builder()
                                 .queueUrl(requestQueueUrl)
@@ -76,7 +89,12 @@ class SqsSimulationSchedulerIntegrationTest {
                                 .build());
                 var scheduler =
                         new SqsSimulationScheduler(
-                                sqsClient, objectMapper, useCase, mapper, requestQueueUrl);
+                                sqsClient,
+                                objectMapper,
+                                useCase,
+                                mapper,
+                                "simulation-requests-" + suffix,
+                                "simulation-results-" + suffix);
 
                 // when
                 scheduler.poll();
@@ -85,13 +103,24 @@ class SqsSimulationSchedulerIntegrationTest {
                 List<Message> resultMessages = receive(sqsClient, resultQueueUrl);
                 List<Message> requestMessages = receive(sqsClient, requestQueueUrl);
                 assertAll(
-                        () -> assertEquals(1, resultMessages.size()),
+                        () -> assertEquals(10, resultMessages.size()),
                         () ->
                                 assertEquals(
                                         expectedResponses,
-                                        objectMapper.readValue(
-                                                resultMessages.getFirst().body(),
-                                                new TypeReference<List<SimulationResponse>>() {})),
+                                        resultMessages.stream()
+                                                .map(
+                                                        message -> {
+                                                            try {
+                                                                return objectMapper.readValue(
+                                                                        message.body(),
+                                                                        SimulationResultMessage
+                                                                                .class);
+                                                            } catch (Exception exception) {
+                                                                throw new IllegalArgumentException(
+                                                                        exception);
+                                                            }
+                                                        })
+                                                .toList()),
                         () -> assertTrue(requestMessages.isEmpty()));
             } finally {
                 deleteQueue(sqsClient, requestQueueUrl);

@@ -44,7 +44,11 @@ class SimulationResultListenerTest {
         var annotation = method.getAnnotation(SqsListener.class);
 
         // then
-        assertAll(() -> assertEquals(List.of("simulation-result"), List.of(annotation.value())));
+        assertAll(
+                () ->
+                        assertEquals(
+                                List.of("${simulation.sqs.result-queue-name}"),
+                                List.of(annotation.value())));
     }
 
     @Test

@@ -1,12 +1,4 @@
-package main
-
-// RenderTerraform returns the native Terraform configuration used to manage the
-// AWS resources for baseball-orders.
-func RenderTerraform() string {
-	return terraformConfiguration
-}
-
-const terraformConfiguration = `terraform {
+terraform {
   required_version = ">= 1.8.0"
 
   required_providers {
@@ -181,7 +173,7 @@ resource "aws_iam_policy" "simulator_sqs" {
 }
 
 output "simulation_request_queue_url" {
-  description = "Set this value as simulation.sqs.request-queue-url for the simulator."
+  description = "URL of the simulation request queue."
   value       = aws_sqs_queue.simulation_request.url
 }
 
@@ -204,4 +196,3 @@ output "backend_sqs_policy_arn" {
 output "simulator_sqs_policy_arn" {
   value = aws_iam_policy.simulator_sqs.arn
 }
-`

@@ -28,6 +28,10 @@ public class JpaPlayerDataRepository implements PlayerDataRepository {
         if (player == null) {
             throw new IllegalArgumentException("player not found: " + playerId);
         }
-        return new PlayerData(player.getName(), player.getHitAverage(), player.getSluggish());
+        return new PlayerData(
+                player.getName(),
+                player.getHitAverage(),
+                player.getSluggish(),
+                player.getBuntSuccessRate());
     }
 }

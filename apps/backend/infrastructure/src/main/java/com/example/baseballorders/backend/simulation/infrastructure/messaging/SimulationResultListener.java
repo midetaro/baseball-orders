@@ -23,7 +23,7 @@ public final class SimulationResultListener {
      *
      * @param message simulatorから受信した結果メッセージ
      */
-    @SqsListener("simulation-result")
+    @SqsListener("${simulation.sqs.result-queue-name}")
     public void receive(SimulationResultMessage message) {
         LOGGER.info("simulation result received simulationId={}", message.simulationId());
         boolean completed =

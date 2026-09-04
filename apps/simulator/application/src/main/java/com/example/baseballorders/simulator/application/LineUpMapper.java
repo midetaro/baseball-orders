@@ -1,6 +1,6 @@
 package com.example.baseballorders.simulator.application;
 
-import com.example.baseballorders.simulator.application.contract.PlayerData;
+import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
@@ -40,7 +40,7 @@ public class LineUpMapper {
      * @param players players contained in a simulation request
      * @return lineup containing mapped batter entities in request order
      */
-    public LineUpEntity map(List<PlayerData> players) {
+    public LineUpEntity map(List<SimulationPlayerMessage> players) {
         List<BatterEntity> batters =
                 players.stream()
                         .map(
@@ -48,7 +48,7 @@ public class LineUpMapper {
                                         new BatterEntity(
                                                 player.name(),
                                                 player.hitAverage(),
-                                                player.slugging(),
+                                                player.sluggish(),
                                                 player.buntSuccessRate(),
                                                 atBatBehavior,
                                                 stealStrategy,

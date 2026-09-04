@@ -1,2 +1,5 @@
 simulation:
   game-count: 10
+  sqs:
+    request-queue-name: ${SIMULATION_REQUEST_QUEUE_NAME:simulation-request}
+    result-queue-name: ${SIMULATION_RESULT_QUEUE_NAME:simulation-result}

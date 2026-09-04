@@ -17,6 +17,11 @@ spring.cloud.aws:
   region:
     static: ap-northeast-1
 
+simulation:
+  sqs:
+    request-queue-name: ${SIMULATION_REQUEST_QUEUE_NAME:simulation-request}
+    result-queue-name: ${SIMULATION_RESULT_QUEUE_NAME:simulation-result}
+
 logging:
   level:
     com.example.baseballorders.backend: INFO

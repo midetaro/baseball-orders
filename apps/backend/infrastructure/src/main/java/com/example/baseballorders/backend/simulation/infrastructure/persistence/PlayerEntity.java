@@ -29,4 +29,7 @@ public class PlayerEntity {
 
     @Column(nullable = false)
     private float sluggish;
+
+    @Column(name = "bunt_success_rate", nullable = false)
+    private float buntSuccessRate;
 }
