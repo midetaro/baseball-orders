@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.example.baseballorders.simulator.application.contract.PlayerData;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
@@ -21,10 +22,11 @@ class LineUpMapperTest {
         // given
         AtBatBehavior atBatBehavior = (hitAverage, sluggish) -> BattingResult.HIT_SINGLE;
         StealStrategy stealStrategy = new FixedStealStrategy();
-        LineUpMapper mapper = new LineUpMapper(atBatBehavior, stealStrategy);
+        LineUpMapper mapper =
+                new LineUpMapper(atBatBehavior, stealStrategy, successRate -> BuntResult.SUCCESS);
         List<PlayerData> players =
                 IntStream.rangeClosed(1, 9)
-                        .mapToObj(number -> new PlayerData("player-" + number, 1.0f, 0.0f))
+                        .mapToObj(number -> new PlayerData("player-" + number, 1.0f, 0.0f, 0.8f))
                         .toList();
 
         // when
@@ -40,7 +42,10 @@ class LineUpMapperTest {
                 () ->
                         assertEquals(
                                 StealResult.NOT_TRY,
-                                result.getBatterEntities().getFirst().stealToDouble()));
+                                result.getBatterEntities().getFirst().stealToDouble()),
+                () ->
+                        assertEquals(
+                                BuntResult.SUCCESS, result.getBatterEntities().getFirst().bunt()));
     }
 
     private static final class FixedStealStrategy implements StealStrategy {

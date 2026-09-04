@@ -34,8 +34,12 @@ class SimulateGameUseCaseTest {
                                                 "batter" + number,
                                                 0.4f,
                                                 0.4f,
+                                                0.7f,
                                                 shortDistanceAtBatBehavior,
-                                                new NowayStealBehavior()))
+                                                new NowayStealBehavior(),
+                                                successRate ->
+                                                        com.example.baseballorders.simulator.domain
+                                                                .code.BuntResult.SUCCESS))
                         .toList();
         // when
         List<SimulationResponse> results =

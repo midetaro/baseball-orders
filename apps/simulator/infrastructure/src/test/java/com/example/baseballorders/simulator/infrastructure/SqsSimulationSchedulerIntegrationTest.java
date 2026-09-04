@@ -13,6 +13,7 @@ import com.example.baseballorders.simulator.application.contract.SimulationReque
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
@@ -53,10 +54,12 @@ class SqsSimulationSchedulerIntegrationTest {
         when(useCase.invoke(any(LineUpEntity.class))).thenReturn(simulationResults);
         LineUpMapper mapper =
                 new LineUpMapper(
-                        (hitAverage, slugging) -> BattingResult.OUT, new FixedStealStrategy());
+                        (hitAverage, slugging) -> BattingResult.OUT,
+                        new FixedStealStrategy(),
+                        successRate -> BuntResult.SUCCESS);
         List<PlayerData> players =
                 IntStream.rangeClosed(1, 9)
-                        .mapToObj(number -> new PlayerData("player-" + number, 0.3f, 0.4f))
+                        .mapToObj(number -> new PlayerData("player-" + number, 0.3f, 0.4f, 0.7f))
                         .toList();
 
         try (SqsClient sqsClient = createClient()) {
