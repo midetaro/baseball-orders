@@ -15,6 +15,17 @@ The default queue names match the names currently used by the backend Java
 application. Override `request_queue_name` and `result_queue_name` only when the
 application configuration is changed at the same time.
 
+Set the same queue names for both local applications when overriding the
+Terraform defaults:
+
+```sh
+export SIMULATION_REQUEST_QUEUE_NAME=my-simulation-request
+export SIMULATION_RESULT_QUEUE_NAME=my-simulation-result
+```
+
+Both applications default to `simulation-request` and `simulation-result` when
+these environment variables are absent.
+
 ## Prerequisites
 
 - Terraform 1.8 or newer

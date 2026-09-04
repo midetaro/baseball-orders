@@ -173,7 +173,7 @@ resource "aws_iam_policy" "simulator_sqs" {
 }
 
 output "simulation_request_queue_url" {
-  description = "Set this value as simulation.sqs.request-queue-url for the simulator."
+  description = "URL of the simulation request queue."
   value       = aws_sqs_queue.simulation_request.url
 }
 

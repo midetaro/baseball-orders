@@ -19,13 +19,13 @@ class SqsSimulatorMessagePublisherTest {
         // given
         // SqsTemplateをモックする
         SqsTemplate sqsTemplate = mock(SqsTemplate.class);
-        var publisher = new SqsSimulatorMessagePublisher(sqsTemplate);
+        var publisher = new SqsSimulatorMessagePublisher(sqsTemplate, "test-request-queue");
         var request = new SimulationRequestMessage(UUID.randomUUID(), "1", List.of());
 
         // when
         publisher.publish(request);
 
         // then
-        assertAll(() -> verify(sqsTemplate).send("simulation-request", request));
+        assertAll(() -> verify(sqsTemplate).send("test-request-queue", request));
     }
 }
