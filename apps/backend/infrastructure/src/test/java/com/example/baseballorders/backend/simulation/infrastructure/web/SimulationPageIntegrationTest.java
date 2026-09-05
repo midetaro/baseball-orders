@@ -45,7 +45,7 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("打者一覧")),
-                () -> assertTrue(response.body().contains("青い地球")),
+                () -> assertTrue(response.body().contains("ルンバ")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
                 () -> assertTrue(response.body().contains("fetch('/simulations'")));
     }
