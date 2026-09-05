@@ -1,32 +1,43 @@
-# Development Instructions
+# Baseball Orders Development Guide
 
-## Autonomous execution
+## Repository map
 
-- Do not pause to ask the user questions or request confirmation.
-- When a requirement is ambiguous, choose the safest reasonable assumption and continue.
-- If an operation is unavailable, try a safe alternative that remains within the requested scope.
-- Continue through implementation, build, tests, and reasonable fixes until the task is complete.
-- Report assumptions, unresolved blockers, and verification results in the final response.
+- `apps/backend`: synchronous HTTP API, persistence, and SQS producer/consumer.
+- `apps/simulator`: asynchronous simulation worker and SQS producer/consumer.
+- `libs/messaging-contract`: the single source of truth for messages exchanged through SQS.
+- `infra/aws-terraform`: native HCL for AWS messaging resources.
+- `.agents/skills/baseball-orders-development`: task workflow and verification commands.
 
-## Gradle dependency protection
+Read the nearest nested `AGENTS.md` before changing an application. Use the
+`baseball-orders-development` skill for Java, SQS-contract, cross-application, or
+Terraform changes.
 
-- Do not add, remove, upgrade, downgrade, or otherwise change dependency declarations in `build.gradle` or `build.gradle.kts` files.
-- Do not change dependency versions indirectly through version catalogs, dependency constraints, plugin declarations, `settings.gradle`, or `settings.gradle.kts`.
-- Existing dependencies may be inspected and used as-is.
-- If the requested work appears to require a dependency change, implement the best solution possible with the existing dependencies and report the limitation in the final response.
+## Working agreement
 
-## Test-Driven Development
+- Inspect `git status` first and preserve unrelated user changes.
+- Make the safest in-scope assumption when ambiguity does not materially alter behavior; report it.
+- Do not wait on interactive commands, foreground servers, credentials, or selectors.
+- Keep SQS wire types in `libs/messaging-contract`; do not create application-local copies.
+- Keep domain and application models independent from transport types unless the boundary mapper itself consumes a shared message.
+- Change dependencies or module relationships only when the requested behavior requires it. Keep the change minimal and report it.
+- Do not change dependency versions unless explicitly requested or required by the task.
 
-- Implement all changes using test-driven development (TDD).
-- Write or update a failing test that describes the expected behavior before changing production code.
-- Implement the minimum production code required to make the test pass.
-- Refactor only after the tests pass, and keep the test suite passing throughout the refactoring.
-- Run the relevant tests after each change and run the full test suite before completing the task.
+## Test-driven changes
 
-## Javadoc
+1. Add or update the narrowest test that expresses the requested behavior.
+2. Run it and confirm it fails for the expected behavioral reason. Environment or permission failures do not count as a red test.
+3. Implement the minimum change, rerun the focused test, then refactor.
+4. Run the owning application's full verification before completion.
+5. For shared contracts, run verification for both applications.
 
-- Add Javadoc to every public method in production Java code, except overridden methods.
-- Do not add Javadoc to public methods annotated with `@Override`.
-- Describe the method's purpose and observable behavior.
-- Document every parameter with `@param`, non-void return values with `@return`, and declared exceptions with `@throws`.
-- Update the Javadoc whenever a public method's behavior or signature changes.
+Use `./.agents/skills/baseball-orders-development/scripts/verify.sh` as the canonical verification entrypoint.
+
+## Production Java
+
+- Add Javadoc to every public production method except methods annotated with `@Override`.
+- Document purpose, observable behavior, parameters, non-void returns, and declared exceptions.
+- Update Javadoc when behavior or signatures change.
+
+## Completion report
+
+Summarize changed behavior, tests and checks run, skipped conditional tests, assumptions, dependency changes, and unresolved blockers.
