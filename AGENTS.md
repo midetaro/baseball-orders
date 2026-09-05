@@ -19,8 +19,16 @@ Terraform changes.
 - Do not wait on interactive commands, foreground servers, credentials, or selectors.
 - Keep SQS wire types in `libs/messaging-contract`; do not create application-local copies.
 - Keep domain and application models independent from transport types unless the boundary mapper itself consumes a shared message.
-- Change dependencies or module relationships only when the requested behavior requires it. Keep the change minimal and report it.
-- Do not change dependency versions unless explicitly requested or required by the task.
+
+## Module dependency protection
+
+- Never add, remove, or change Gradle project dependencies between modules.
+- Never modify the module graph in settings.gradle or settings.gradle.kts.
+- Existing module dependencies may be inspected and used as-is.
+- Adding or changing external OSS/library dependencies is allowed when required.
+- If a requested feature cannot be implemented without changing module relationships,
+  stop that part of the implementation and report the architectural conflict.
+- Do not work around this rule by copying production classes between modules.
 
 ## Test-driven changes
 
@@ -71,3 +79,69 @@ At the end of the final response:
 - Do not continue with the next task unless the user explicitly asks.
 Use wording similar to:
 "このタスクは完了しました。コンテキスト肥大化を避けるために`/exit && codex`で新しいCodexセッションへ分割することを推奨します。"
+
+## Verification policy
+
+- If a requirement can be verified deterministically, prefer deterministic verification over heuristic or review-based judgment.
+- Do not rely on visual inspection, assumptions, or prose review when the same property can be checked by:
+  - compilation,
+  - automated tests,
+  - static analysis,
+  - scripts,
+  - grep/diff-based checks,
+  - dependency graph checks,
+  - schema/contract assertions.
+- Human/model review should focus on properties that cannot be fully determined automatically.
+- A review finding must clearly distinguish:
+  - deterministically verified,
+  - test-covered,
+  - manually reviewed,
+  - not verified.
+
+## Integration test documentation
+
+Every integration test must include a Japanese comment or Javadoc that explicitly states:
+
+1. 実物
+  - Components/services used without mocking.
+
+2. モック
+  - Every mocked, stubbed, faked, or replaced dependency.
+  - If nothing is mocked, write `モック: なし`.
+
+3. 担保する疎通
+  - The end-to-end path that this integration test proves.
+  - Write the path in `A -> B -> C` form where practical.
+
+4. 担保しないもの
+  - Important behavior intentionally excluded from this test.
+
+Do not call a test an Integration Test if the intended integration boundary itself is mocked.
+
+## Feature completion
+
+A feature is not complete until all of the following are done:
+
+1. Acceptance criteria are satisfied.
+2. Focused tests pass.
+3. Owning application verification passes.
+4. Run the baseball-orders-review skill against the current feature diff.
+5. Fix all blocking findings.
+6. Re-run affected tests.
+7. Report completion.
+8. Recommend starting a new Codex session before beginning another feature.
+
+## Feature specification status
+
+Feature specification documents have a status field:
+
+- todo
+- in_progress
+- done
+
+When selecting work:
+- Ignore specifications with `status: done`.
+- Prefer only specifications explicitly requested by the user.
+- Do not scan completed specifications unless they are needed to understand an interface or regression.
+- After implementation, deterministic verification, and review skill all pass, change the specification status to `done`.
+- Do not mark a specification `done` if any blocking review finding remains.
