@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
@@ -22,7 +23,7 @@ class LineUpMapperTest {
     void mapsSqsPlayersToLineUpEntity() {
         // given
         AtBatBehavior atBatBehavior = (hitAverage, sluggish) -> BattingResult.HIT_SINGLE;
-        StealStrategy stealStrategy = new FixedStealStrategy();
+        FixedStealStrategy stealStrategy = new FixedStealStrategy();
         LineUpMapper mapper =
                 new LineUpMapper(
                         atBatBehavior,
@@ -33,7 +34,7 @@ class LineUpMapperTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 1.0f, 0.0f, 0.8f))
+                                                "player-" + number, 1.0f, 0.0f, 0.8f, 0.9f))
                         .toList();
 
         // when
@@ -50,23 +51,27 @@ class LineUpMapperTest {
                         assertEquals(
                                 StealResult.NOT_TRY,
                                 result.getBatterEntities().getFirst().stealToDouble()),
+                () -> assertEquals(0.9f, stealStrategy.receivedSuccessRate),
                 () ->
                         assertEquals(
                                 BuntResult.SUCCESS,
                                 result.getBatterEntities()
                                         .getFirst()
-                                        .bunt(0, new SingleBasesState())));
+                                        .bunt(OutCount.NO_OUT, new SingleBasesState())));
     }
 
     private static final class FixedStealStrategy implements StealStrategy {
 
+        private float receivedSuccessRate;
+
         @Override
-        public StealResult runToDouble() {
+        public StealResult runToDouble(float successRate) {
+            receivedSuccessRate = successRate;
             return StealResult.NOT_TRY;
         }
 
         @Override
-        public StealResult runToTriple() {
+        public StealResult runToTriple(float successRate) {
             return StealResult.NOT_TRY;
         }
     }

@@ -1,6 +1,6 @@
 package com.example.baseballorders.backend.simulation.infrastructure.api;
 
-import com.example.baseballorders.backend.simulation.application.SimulationCoordinator;
+import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.simulation.domain.SimulationResult;
 import java.util.List;
 import lombok.NonNull;

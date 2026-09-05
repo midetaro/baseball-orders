@@ -60,7 +60,7 @@ public class SqsSimulationScheduler {
      * Receives pending requests from SQS, sends each simulation response to the configured result
      * queue, and deletes the source message after all results are sent successfully.
      */
-    @Scheduled(fixedDelay = 60_000L)
+    @Scheduled(fixedDelayString = "${simulation.sqs.poll-fixed-delay}")
     public void poll() {
         String requestQueueUrl = queueUrl(requestQueueName);
         String resultQueueUrl = queueUrl(resultQueueName);

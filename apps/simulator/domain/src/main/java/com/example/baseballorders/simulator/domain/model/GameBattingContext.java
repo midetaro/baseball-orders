@@ -2,6 +2,7 @@ package com.example.baseballorders.simulator.domain.model;
 
 import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
@@ -18,7 +19,7 @@ public class GameBattingContext {
 
     private long inning = 1;
     private long totalScore = 0;
-    private long outCounts = 0;
+    private OutCount outCount = OutCount.NO_OUT;
     private BasesState currentBaseState = new NoBasesState();
     @Setter private Optional<BatterEntity> runnerOnFirstBase = Optional.empty();
     @Setter private Optional<BatterEntity> runnerOnSecondBase = Optional.empty();
@@ -38,31 +39,38 @@ public class GameBattingContext {
     }
 
     public void setRunnerTo(Base base, Optional<BatterEntity> batter) {
-        switch (base) {
-            case FIRST -> runnerOnFirstBase = batter;
-            case SECOND -> runnerOnSecondBase = batter;
-            case THIRD -> runnerOnThirdBase = batter;
-        }
+        Runnable setRunner =
+                switch (base) {
+                    case FIRST -> () -> runnerOnFirstBase = batter;
+                    case SECOND -> () -> runnerOnSecondBase = batter;
+                    case THIRD -> () -> runnerOnThirdBase = batter;
+                };
+        setRunner.run();
     }
 
     public void moveRunnerNthBase(Base nthBase) {
-        switch (nthBase) {
-            case FIRST -> {
-                runnerOnThirdBase = runnerOnSecondBase;
-                runnerOnSecondBase = runnerOnFirstBase;
-                runnerOnFirstBase = Optional.empty();
-            }
-            case SECOND -> {
-                runnerOnThirdBase = runnerOnFirstBase;
-                runnerOnSecondBase = Optional.empty();
-                runnerOnFirstBase = Optional.empty();
-            }
-            case THIRD -> {
-                runnerOnThirdBase = Optional.empty();
-                runnerOnFirstBase = Optional.empty();
-                runnerOnSecondBase = Optional.empty();
-            }
-        }
+        Runnable moveRunners =
+                switch (nthBase) {
+                    case FIRST ->
+                            () -> {
+                                runnerOnThirdBase = runnerOnSecondBase;
+                                runnerOnSecondBase = runnerOnFirstBase;
+                                runnerOnFirstBase = Optional.empty();
+                            };
+                    case SECOND ->
+                            () -> {
+                                runnerOnThirdBase = runnerOnFirstBase;
+                                runnerOnSecondBase = Optional.empty();
+                                runnerOnFirstBase = Optional.empty();
+                            };
+                    case THIRD ->
+                            () -> {
+                                runnerOnThirdBase = Optional.empty();
+                                runnerOnFirstBase = Optional.empty();
+                                runnerOnSecondBase = Optional.empty();
+                            };
+                };
+        moveRunners.run();
     }
 
     public void addScore(long runs) {
@@ -71,8 +79,13 @@ public class GameBattingContext {
     }
 
     public void addOutCounts(long diff) {
-        outCounts += diff;
-        if (outCounts >= 3) {
+        outCount = outCount.add(diff);
+        boolean inningOver =
+                switch (outCount) {
+                    case NO_OUT, ONE_OUT, TWO_OUT -> false;
+                    case THREE_OUT -> true;
+                };
+        if (inningOver) {
             this.goToNextInning();
         }
     }
@@ -81,14 +94,14 @@ public class GameBattingContext {
         if (inning == 9) {
             this.cleanAllBases();
             updateBaseStateOf();
-            outCounts = 0;
+            outCount = OutCount.NO_OUT;
             isGameOver = true;
             return;
         }
         inning++;
         this.cleanAllBases();
         updateBaseStateOf();
-        outCounts = 0;
+        outCount = OutCount.NO_OUT;
     }
 
     public void nextAtBat() {
@@ -99,44 +112,52 @@ public class GameBattingContext {
 
         // --- 打撃 ---
         BattingResult battingResult = batter.swing();
-        switch (battingResult) {
-            case OUT -> currentBaseState.out(this);
-            case HIT_SINGLE -> currentBaseState.hitSingle(this, batter);
-            case HIT_DOUBLE -> currentBaseState.hitDouble(this, batter);
-            case HIT_TRIPLE -> currentBaseState.hitTriple(this, batter);
-            case HIT_HOMER -> currentBaseState.hitHomer(this, batter);
-        }
+        Runnable applyBattingResult =
+                switch (battingResult) {
+                    case OUT -> () -> currentBaseState.out(this);
+                    case HIT_SINGLE -> () -> currentBaseState.hitSingle(this, batter);
+                    case HIT_DOUBLE -> () -> currentBaseState.hitDouble(this, batter);
+                    case HIT_TRIPLE -> () -> currentBaseState.hitTriple(this, batter);
+                    case HIT_HOMER -> () -> currentBaseState.hitHomer(this, batter);
+                };
+        applyBattingResult.run();
         this.updateBaseStateOf();
         this.toNextBatter();
     }
 
     private void trySteal() {
         if (currentBaseState instanceof StealableToDoubleBase) {
-            stealTo(Base.SECOND);
+            stealToDouble();
         }
         if (currentBaseState instanceof StealableToTripleBase) {
-            stealTo(Base.THIRD);
+            stealToTriple();
         }
     }
 
-    private void stealTo(Base targetBaseOfSteal) {
-        Base currentBase = targetBaseOfSteal == Base.SECOND ? Base.FIRST : Base.SECOND;
-        StealResult stealResult;
-        if (targetBaseOfSteal == Base.SECOND) {
-            stealResult = getRunnerIndexOf(currentBase).get().stealToDouble();
-        } else {
-            stealResult = getRunnerIndexOf(currentBase).get().stealToTriple();
-        }
-        switch (stealResult) {
-            case FAILURE -> {
-                this.setRunnerTo(currentBase, Optional.empty());
-                this.addOutCounts(1);
-            }
-            case SUCCESS -> {
-                this.setRunnerTo(targetBaseOfSteal, getRunnerIndexOf(currentBase));
-                this.setRunnerTo(currentBase, Optional.empty());
-            }
-        }
+    private void stealToDouble() {
+        applySteal(Base.FIRST, Base.SECOND, getRunnerIndexOf(Base.FIRST).get().stealToDouble());
+    }
+
+    private void stealToTriple() {
+        applySteal(Base.SECOND, Base.THIRD, getRunnerIndexOf(Base.SECOND).get().stealToTriple());
+    }
+
+    private void applySteal(Base currentBase, Base targetBaseOfSteal, StealResult stealResult) {
+        Runnable applyStealResult =
+                switch (stealResult) {
+                    case NOT_TRY -> () -> {};
+                    case FAILURE ->
+                            () -> {
+                                this.setRunnerTo(currentBase, Optional.empty());
+                                this.addOutCounts(1);
+                            };
+                    case SUCCESS ->
+                            () -> {
+                                this.setRunnerTo(targetBaseOfSteal, getRunnerIndexOf(currentBase));
+                                this.setRunnerTo(currentBase, Optional.empty());
+                            };
+                };
+        applyStealResult.run();
     }
 
     private Optional<BatterEntity> getRunnerIndexOf(Base base) {

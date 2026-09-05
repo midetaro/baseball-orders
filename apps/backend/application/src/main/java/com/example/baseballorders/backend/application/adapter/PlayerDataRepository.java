@@ -1,4 +1,4 @@
-package com.example.baseballorders.backend.simulation.application;
+package com.example.baseballorders.backend.application.adapter;
 
 import com.example.baseballorders.backend.simulation.domain.PlayerData;
 import java.util.List;

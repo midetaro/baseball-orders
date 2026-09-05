@@ -45,8 +45,8 @@ import software.amazon.awssdk.services.sqs.model.SqsException;
 class SqsSimulationSchedulerTest {
 
     @Test
-    @DisplayName("ポーリング処理には60秒の固定遅延が設定されている")
-    void pollsEveryMinute() throws NoSuchMethodException {
+    @DisplayName("ポーリング処理の固定遅延は設定プロパティから取得する")
+    void obtainsPollingDelayFromProperty() throws NoSuchMethodException {
         // given
         var pollMethod = SqsSimulationScheduler.class.getMethod("poll");
 
@@ -54,7 +54,10 @@ class SqsSimulationSchedulerTest {
         Scheduled result = pollMethod.getAnnotation(Scheduled.class);
 
         // then
-        assertAll(() -> assertEquals(60_000L, result.fixedDelay()));
+        assertAll(
+                () ->
+                        assertEquals(
+                                "${simulation.sqs.poll-fixed-delay}", result.fixedDelayString()));
     }
 
     @Test
@@ -76,7 +79,7 @@ class SqsSimulationSchedulerTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 0.3f, 0.4f, 0.7f))
+                                                "player-" + number, 0.3f, 0.4f, 0.7f, 0.8f))
                         .toList();
         UUID simulationId = UUID.randomUUID();
         String body =
@@ -262,12 +265,12 @@ class SqsSimulationSchedulerTest {
     private static final class FixedStealStrategy implements StealStrategy {
 
         @Override
-        public StealResult runToDouble() {
+        public StealResult runToDouble(float successRate) {
             return StealResult.NOT_TRY;
         }
 
         @Override
-        public StealResult runToTriple() {
+        public StealResult runToTriple(float successRate) {
             return StealResult.NOT_TRY;
         }
     }

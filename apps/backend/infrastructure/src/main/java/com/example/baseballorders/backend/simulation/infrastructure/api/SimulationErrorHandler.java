@@ -1,7 +1,7 @@
 package com.example.baseballorders.backend.simulation.infrastructure.api;
 
-import com.example.baseballorders.backend.simulation.application.SimulationSendException;
-import com.example.baseballorders.backend.simulation.application.SimulationTimeoutException;
+import com.example.baseballorders.backend.application.exception.SimulationSendException;
+import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

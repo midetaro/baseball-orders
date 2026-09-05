@@ -2,6 +2,7 @@ package com.example.baseballorders.simulator.domain.model.player;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
@@ -27,6 +28,9 @@ public class BatterEntity extends Player {
     /** バント成功率 */
     private final float buntSuccessRate;
 
+    /** 盗塁成功率 */
+    private final float stealSuccessRate;
+
     /** 打撃戦略 */
     private final AtBatBehavior atBatBehavior;
 
@@ -51,7 +55,7 @@ public class BatterEntity extends Player {
      * @return 盗塁結果
      */
     public StealResult stealToDouble() {
-        return stealStrategy.runToDouble();
+        return stealStrategy.runToDouble(stealSuccessRate);
     }
 
     /**
@@ -60,17 +64,17 @@ public class BatterEntity extends Player {
      * @return 盗塁結果
      */
     public StealResult stealToTriple() {
-        return stealStrategy.runToTriple();
+        return stealStrategy.runToTriple(stealSuccessRate);
     }
 
     /**
      * アウト数と塁状態を考慮し、バント戦略に従ってバントする。
      *
-     * @param outCounts アウト数
+     * @param outCount アウトカウント
      * @param basesState 現在の塁状態
      * @return バント結果
      */
-    public BuntResult bunt(long outCounts, BasesState basesState) {
-        return buntStrategy.bunt(buntSuccessRate, outCounts, basesState);
+    public BuntResult bunt(OutCount outCount, BasesState basesState) {
+        return buntStrategy.bunt(buntSuccessRate, outCount, basesState);
     }
 }

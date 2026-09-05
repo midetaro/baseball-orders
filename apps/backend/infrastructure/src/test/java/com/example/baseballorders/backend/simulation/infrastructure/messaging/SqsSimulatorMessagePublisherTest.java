@@ -6,7 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import com.example.baseballorders.backend.simulation.application.SimulationRequest;
+import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.simulation.domain.PlayerData;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
@@ -35,8 +35,8 @@ class SqsSimulatorMessagePublisherTest {
     }
 
     @Test
-    @DisplayName("backendの選手データをバント成功率を含む共有要求へ変換する")
-    void mapsBuntSuccessRateToSharedRequest() {
+    @DisplayName("backendの選手データをバントと盗塁の成功率を含む共有要求へ変換する")
+    void mapsSuccessRatesToSharedRequest() {
         // given
         SqsTemplate sqsTemplate = mock(SqsTemplate.class);
         var publisher = new SqsSimulatorMessagePublisher(sqsTemplate, "test-request-queue");
@@ -44,7 +44,7 @@ class SqsSimulatorMessagePublisherTest {
                 new SimulationRequest(
                         UUID.randomUUID(),
                         "1",
-                        List.of(new PlayerData("選手1", 0.321f, 0.456f, 0.789f)));
+                        List.of(new PlayerData("選手1", 0.321f, 0.456f, 0.789f, 0.678f)));
         var messageCaptor = ArgumentCaptor.forClass(SimulationRequestMessage.class);
 
         // when
@@ -56,6 +56,10 @@ class SqsSimulatorMessagePublisherTest {
                 () ->
                         assertEquals(
                                 0.789f,
-                                messageCaptor.getValue().players().getFirst().buntSuccessRate()));
+                                messageCaptor.getValue().players().getFirst().buntSuccessRate()),
+                () ->
+                        assertEquals(
+                                0.678f,
+                                messageCaptor.getValue().players().getFirst().stealSuccessRate()));
     }
 }

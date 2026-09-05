@@ -18,7 +18,7 @@ class JpaPlayerDataRepositoryTest {
     @DisplayName("Player Entityの各項目をgetterで取得できる")
     void exposesPlayerPropertiesWithGetters() {
         // given
-        var player = new PlayerEntity(1L, "山田", 0.301f, 0.501f, 0.701f);
+        var player = new PlayerEntity(1L, "山田", 0.301f, 0.501f, 0.701f, 0.801f);
 
         // when
         Long playerId = player.getPlayerId();
@@ -26,6 +26,7 @@ class JpaPlayerDataRepositoryTest {
         float hitAverage = player.getHitAverage();
         float sluggish = player.getSluggish();
         float buntSuccessRate = player.getBuntSuccessRate();
+        float stealSuccessRate = player.getStealSuccessRate();
 
         // then
         assertAll(
@@ -33,7 +34,8 @@ class JpaPlayerDataRepositoryTest {
                 () -> assertEquals("山田", name),
                 () -> assertEquals(0.301f, hitAverage),
                 () -> assertEquals(0.501f, sluggish),
-                () -> assertEquals(0.701f, buntSuccessRate));
+                () -> assertEquals(0.701f, buntSuccessRate),
+                () -> assertEquals(0.801f, stealSuccessRate));
     }
 
     @Test
@@ -42,8 +44,8 @@ class JpaPlayerDataRepositoryTest {
         // given
         try (EntityManagerFactory factory = entityManagerFactory();
                 EntityManager entityManager = factory.createEntityManager()) {
-            persist(entityManager, new PlayerEntity(1L, "山田", 0.301f, 0.501f, 0.701f));
-            persist(entityManager, new PlayerEntity(2L, "鈴木", 0.302f, 0.502f, 0.702f));
+            persist(entityManager, new PlayerEntity(1L, "山田", 0.301f, 0.501f, 0.701f, 0.801f));
+            persist(entityManager, new PlayerEntity(2L, "鈴木", 0.302f, 0.502f, 0.702f, 0.802f));
             var repository = new JpaPlayerDataRepository(entityManager);
 
             // when
@@ -57,7 +59,8 @@ class JpaPlayerDataRepositoryTest {
                                     players.stream().map(player -> player.name()).toList()),
                     () -> assertEquals(0.302f, players.getFirst().hitAverage()),
                     () -> assertEquals(0.502f, players.getFirst().sluggish()),
-                    () -> assertEquals(0.702f, players.getFirst().buntSuccessRate()));
+                    () -> assertEquals(0.702f, players.getFirst().buntSuccessRate()),
+                    () -> assertEquals(0.802f, players.getFirst().stealSuccessRate()));
         }
     }
 

@@ -1,6 +1,6 @@
 package com.example.baseballorders.backend.simulation.infrastructure.persistence;
 
-import com.example.baseballorders.backend.simulation.application.PlayerDataRepository;
+import com.example.baseballorders.backend.application.adapter.PlayerDataRepository;
 import com.example.baseballorders.backend.simulation.domain.PlayerData;
 import jakarta.persistence.EntityManager;
 import java.util.List;
@@ -32,6 +32,7 @@ public class JpaPlayerDataRepository implements PlayerDataRepository {
                 player.getName(),
                 player.getHitAverage(),
                 player.getSluggish(),
-                player.getBuntSuccessRate());
+                player.getBuntSuccessRate(),
+                player.getStealSuccessRate());
     }
 }

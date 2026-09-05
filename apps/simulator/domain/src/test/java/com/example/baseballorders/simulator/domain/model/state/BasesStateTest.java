@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
@@ -433,7 +434,7 @@ class BasesStateTest {
         state.out(context);
 
         // then
-        assertAll(() -> assertEquals(1, context.getOutCounts()));
+        assertAll(() -> assertEquals(OutCount.ONE_OUT, context.getOutCount()));
     }
 
     private static GameBattingContext contextWithRunners(
@@ -452,6 +453,7 @@ class BasesStateTest {
     private static BatterEntity batter(String name) {
         return new BatterEntity(
                 name,
+                0.0f,
                 0.0f,
                 0.0f,
                 0.0f,
@@ -494,12 +496,12 @@ class BasesStateTest {
             implements com.example.baseballorders.simulator.domain.model.behavior.StealStrategy {
 
         @Override
-        public StealResult runToDouble() {
+        public StealResult runToDouble(float successRate) {
             return StealResult.NOT_TRY;
         }
 
         @Override
-        public StealResult runToTriple() {
+        public StealResult runToTriple(float successRate) {
             return StealResult.NOT_TRY;
         }
     }

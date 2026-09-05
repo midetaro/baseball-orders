@@ -9,22 +9,14 @@ public class EagerStealBehavior implements StealStrategy {
 
     private final float TO_DOUBLE_TRY_AVERAGE = 0.3f;
     private final float TO_DOUBLE_NOT_TRY = 1 - TO_DOUBLE_TRY_AVERAGE;
-    private final float TO_DOUBLE_SUCCESS_PROBABILITY =
-            TO_DOUBLE_NOT_TRY + 0.9f * TO_DOUBLE_TRY_AVERAGE;
 
     @Override
-    public StealResult runToDouble() {
+    public StealResult runToDouble(float successRate) {
         float random = RandomGenerator.nextFloat();
-        System.out.println(
-                "TO_DOUBLE_NOT_TRY:"
-                        + TO_DOUBLE_NOT_TRY
-                        + " TO_DOUBLE_SUCCESS_PROBABILITY:"
-                        + TO_DOUBLE_SUCCESS_PROBABILITY
-                        + " random:"
-                        + random);
+        float successProbability = TO_DOUBLE_NOT_TRY + successRate * TO_DOUBLE_TRY_AVERAGE;
         if (random < TO_DOUBLE_NOT_TRY) {
             return StealResult.NOT_TRY;
-        } else if (TO_DOUBLE_NOT_TRY < random && random < TO_DOUBLE_SUCCESS_PROBABILITY) {
+        } else if (TO_DOUBLE_NOT_TRY < random && random < successProbability) {
             return StealResult.SUCCESS;
         } else {
             return StealResult.FAILURE;
@@ -33,15 +25,14 @@ public class EagerStealBehavior implements StealStrategy {
 
     private final float TO_TRIPLE_TRY_AVERAGE = 0.15f;
     private final float TO_TRIPLE_NOT_TRY = 1 - TO_TRIPLE_TRY_AVERAGE;
-    private final float TO_TRIPLE_SUCCESS_PROBABILITY =
-            TO_TRIPLE_NOT_TRY + 0.9f * TO_TRIPLE_TRY_AVERAGE;
 
     @Override
-    public StealResult runToTriple() {
+    public StealResult runToTriple(float successRate) {
         float random = RandomGenerator.nextFloat();
+        float successProbability = TO_TRIPLE_NOT_TRY + successRate * TO_TRIPLE_TRY_AVERAGE;
         if (random < TO_TRIPLE_NOT_TRY) {
             return StealResult.NOT_TRY;
-        } else if (TO_TRIPLE_NOT_TRY < random && random < TO_TRIPLE_SUCCESS_PROBABILITY) {
+        } else if (TO_TRIPLE_NOT_TRY < random && random < successProbability) {
             return StealResult.SUCCESS;
         } else {
             return StealResult.FAILURE;

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.example.baseballorders.backend.simulation.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
@@ -56,7 +56,9 @@ class SqsMessagingIntegrationTest {
                 new SimulationRequestMessage(
                         simulationId,
                         "1",
-                        List.of(new SimulationPlayerMessage("選手1", 0.321f, 0.456f, 0.789f)));
+                        List.of(
+                                new SimulationPlayerMessage(
+                                        "選手1", 0.321f, 0.456f, 0.789f, 0.678f)));
 
         // when
         publisher.publish(request);
@@ -79,7 +81,9 @@ class SqsMessagingIntegrationTest {
                 () -> assertTrue(messages.getFirst().body().contains(simulationId.toString())),
                 () -> assertTrue(messages.getFirst().body().contains("選手1")),
                 () -> assertTrue(messages.getFirst().body().contains("buntSuccessRate")),
-                () -> assertTrue(messages.getFirst().body().contains("0.789")));
+                () -> assertTrue(messages.getFirst().body().contains("0.789")),
+                () -> assertTrue(messages.getFirst().body().contains("stealSuccessRate")),
+                () -> assertTrue(messages.getFirst().body().contains("0.678")));
     }
 
     @Test
