@@ -456,6 +456,7 @@ class BasesStateTest {
                 0.0f,
                 0.0f,
                 0.0f,
+                0.0f,
                 (hitAverage, sluggish) -> BattingResult.OUT,
                 new StealStrategyStub(),
                 (successRate, outCounts, basesState) ->
@@ -495,12 +496,12 @@ class BasesStateTest {
             implements com.example.baseballorders.simulator.domain.model.behavior.StealStrategy {
 
         @Override
-        public StealResult runToDouble() {
+        public StealResult runToDouble(float successRate) {
             return StealResult.NOT_TRY;
         }
 
         @Override
-        public StealResult runToTriple() {
+        public StealResult runToTriple(float successRate) {
             return StealResult.NOT_TRY;
         }
     }

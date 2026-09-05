@@ -27,7 +27,7 @@ public class LineUpMapper {
      */
     public LineUpMapper(
             @Qualifier("shortDistanceAtBat") AtBatBehavior atBatBehavior,
-            @Qualifier("nowayStealBehavior") StealStrategy stealStrategy,
+            @Qualifier("eagerStealBehavior") StealStrategy stealStrategy,
             @Qualifier("standardBuntStrategy") BuntStrategy buntStrategy) {
         this.atBatBehavior = atBatBehavior;
         this.stealStrategy = stealStrategy;
@@ -50,6 +50,7 @@ public class LineUpMapper {
                                                 player.hitAverage(),
                                                 player.sluggish(),
                                                 player.buntSuccessRate(),
+                                                player.stealSuccessRate(),
                                                 atBatBehavior,
                                                 stealStrategy,
                                                 buntStrategy))

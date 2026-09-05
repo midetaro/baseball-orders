@@ -4,7 +4,19 @@ import com.example.baseballorders.simulator.domain.code.StealResult;
 
 public interface StealStrategy {
 
-    StealResult runToDouble();
+    /**
+     * Determines an attempted steal from first base to second base.
+     *
+     * @param successRate success probability for the runner
+     * @return whether the steal was attempted and its result
+     */
+    StealResult runToDouble(float successRate);
 
-    StealResult runToTriple();
+    /**
+     * Determines an attempted steal from second base to third base.
+     *
+     * @param successRate success probability for the runner
+     * @return whether the steal was attempted and its result
+     */
+    StealResult runToTriple(float successRate);
 }

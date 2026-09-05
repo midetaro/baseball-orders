@@ -7,12 +7,12 @@ import org.springframework.stereotype.Component;
 public class NowayStealBehavior implements StealStrategy {
 
     @Override
-    public StealResult runToDouble() {
+    public StealResult runToDouble(float successRate) {
         return StealResult.NOT_TRY;
     }
 
     @Override
-    public StealResult runToTriple() {
+    public StealResult runToTriple(float successRate) {
         return StealResult.NOT_TRY;
     }
 }

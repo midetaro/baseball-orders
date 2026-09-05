@@ -23,7 +23,7 @@ class LineUpMapperTest {
     void mapsSqsPlayersToLineUpEntity() {
         // given
         AtBatBehavior atBatBehavior = (hitAverage, sluggish) -> BattingResult.HIT_SINGLE;
-        StealStrategy stealStrategy = new FixedStealStrategy();
+        FixedStealStrategy stealStrategy = new FixedStealStrategy();
         LineUpMapper mapper =
                 new LineUpMapper(
                         atBatBehavior,
@@ -34,7 +34,7 @@ class LineUpMapperTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 1.0f, 0.0f, 0.8f))
+                                                "player-" + number, 1.0f, 0.0f, 0.8f, 0.9f))
                         .toList();
 
         // when
@@ -51,6 +51,7 @@ class LineUpMapperTest {
                         assertEquals(
                                 StealResult.NOT_TRY,
                                 result.getBatterEntities().getFirst().stealToDouble()),
+                () -> assertEquals(0.9f, stealStrategy.receivedSuccessRate),
                 () ->
                         assertEquals(
                                 BuntResult.SUCCESS,
@@ -61,13 +62,16 @@ class LineUpMapperTest {
 
     private static final class FixedStealStrategy implements StealStrategy {
 
+        private float receivedSuccessRate;
+
         @Override
-        public StealResult runToDouble() {
+        public StealResult runToDouble(float successRate) {
+            receivedSuccessRate = successRate;
             return StealResult.NOT_TRY;
         }
 
         @Override
-        public StealResult runToTriple() {
+        public StealResult runToTriple(float successRate) {
             return StealResult.NOT_TRY;
         }
     }

@@ -28,6 +28,9 @@ public class BatterEntity extends Player {
     /** バント成功率 */
     private final float buntSuccessRate;
 
+    /** 盗塁成功率 */
+    private final float stealSuccessRate;
+
     /** 打撃戦略 */
     private final AtBatBehavior atBatBehavior;
 
@@ -52,7 +55,7 @@ public class BatterEntity extends Player {
      * @return 盗塁結果
      */
     public StealResult stealToDouble() {
-        return stealStrategy.runToDouble();
+        return stealStrategy.runToDouble(stealSuccessRate);
     }
 
     /**
@@ -61,7 +64,7 @@ public class BatterEntity extends Player {
      * @return 盗塁結果
      */
     public StealResult stealToTriple() {
-        return stealStrategy.runToTriple();
+        return stealStrategy.runToTriple(stealSuccessRate);
     }
 
     /**

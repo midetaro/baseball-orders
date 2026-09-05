@@ -7,6 +7,11 @@ package com.example.baseballorders.messaging;
  * @param hitAverage 打率
  * @param sluggish 長打率
  * @param buntSuccessRate バント成功率
+ * @param stealSuccessRate 盗塁成功率
  */
 public record SimulationPlayerMessage(
-        String name, float hitAverage, float sluggish, float buntSuccessRate) {}
+        String name,
+        float hitAverage,
+        float sluggish,
+        float buntSuccessRate,
+        float stealSuccessRate) {}

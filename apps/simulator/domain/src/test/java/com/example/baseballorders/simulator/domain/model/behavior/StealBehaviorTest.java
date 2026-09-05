@@ -30,10 +30,30 @@ class StealBehaviorTest {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
 
             // when
-            StealResult result = destination.run(strategy);
+            float successRate = strategy instanceof MiddleStealBehavior ? 0.8f : 0.9f;
+            StealResult result = destination.run(strategy, successRate);
 
             // then
             assertAll(() -> assertEquals(expectedResult, result, description));
+        }
+    }
+
+    @DisplayName("選手の盗塁成功率が高いほど同じ乱数でも盗塁に成功する")
+    @org.junit.jupiter.api.Test
+    void usesPlayerStealSuccessRate() {
+        // given
+        var strategy = new EagerStealBehavior();
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.9f);
+
+            // when
+            StealResult lowRateResult = strategy.runToDouble(0.5f);
+            StealResult highRateResult = strategy.runToDouble(0.8f);
+
+            // then
+            assertAll(
+                    () -> assertEquals(StealResult.FAILURE, lowRateResult),
+                    () -> assertEquals(StealResult.SUCCESS, highRateResult));
         }
     }
 
@@ -146,7 +166,7 @@ class StealBehaviorTest {
         var strategy = new NowayStealBehavior();
 
         // when
-        StealResult result = destination.run(strategy);
+        StealResult result = destination.run(strategy, 0.0f);
 
         // then
         assertAll(() -> assertEquals(expectedResult, result, description));
@@ -161,17 +181,17 @@ class StealBehaviorTest {
     enum Destination {
         SECOND {
             @Override
-            StealResult run(StealStrategy strategy) {
-                return strategy.runToDouble();
+            StealResult run(StealStrategy strategy, float successRate) {
+                return strategy.runToDouble(successRate);
             }
         },
         THIRD {
             @Override
-            StealResult run(StealStrategy strategy) {
-                return strategy.runToTriple();
+            StealResult run(StealStrategy strategy, float successRate) {
+                return strategy.runToTriple(successRate);
             }
         };
 
-        abstract StealResult run(StealStrategy strategy);
+        abstract StealResult run(StealStrategy strategy, float successRate);
     }
 }

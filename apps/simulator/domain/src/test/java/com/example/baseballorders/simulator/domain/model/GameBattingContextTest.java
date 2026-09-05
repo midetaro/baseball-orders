@@ -478,6 +478,7 @@ public class GameBattingContextTest {
                 0.0f,
                 0.0f,
                 0.0f,
+                0.0f,
                 (hitAverage, sluggish) -> battingResult,
                 new FixedStealStrategy(stealResult),
                 (successRate, outCount, basesState) -> BuntResult.NOT_TRY);
@@ -486,12 +487,12 @@ public class GameBattingContextTest {
     private record FixedStealStrategy(StealResult result) implements StealStrategy {
 
         @Override
-        public StealResult runToDouble() {
+        public StealResult runToDouble(float successRate) {
             return result;
         }
 
         @Override
-        public StealResult runToTriple() {
+        public StealResult runToTriple(float successRate) {
             return result;
         }
     }

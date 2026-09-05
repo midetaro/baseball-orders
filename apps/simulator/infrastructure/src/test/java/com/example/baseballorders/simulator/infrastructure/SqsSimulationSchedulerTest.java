@@ -79,7 +79,7 @@ class SqsSimulationSchedulerTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 0.3f, 0.4f, 0.7f))
+                                                "player-" + number, 0.3f, 0.4f, 0.7f, 0.8f))
                         .toList();
         UUID simulationId = UUID.randomUUID();
         String body =
@@ -265,12 +265,12 @@ class SqsSimulationSchedulerTest {
     private static final class FixedStealStrategy implements StealStrategy {
 
         @Override
-        public StealResult runToDouble() {
+        public StealResult runToDouble(float successRate) {
             return StealResult.NOT_TRY;
         }
 
         @Override
-        public StealResult runToTriple() {
+        public StealResult runToTriple(float successRate) {
             return StealResult.NOT_TRY;
         }
     }
