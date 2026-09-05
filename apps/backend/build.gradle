@@ -3,7 +3,7 @@ plugins {
 }
 
 allprojects {
-    group = 'com.example.baseballorders'
+    group = 'com.example.baseballorders.backend'
     version = '0.1.0-SNAPSHOT'
 
     repositories {

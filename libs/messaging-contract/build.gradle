@@ -2,6 +2,9 @@ plugins {
     id 'java-library'
 }
 
+// Both included builds use these sources; keep their task outputs independent.
+layout.buildDirectory = layout.projectDirectory.dir("build/${rootProject.name}")
+
 dependencies {
     api 'com.fasterxml.jackson.core:jackson-annotations:2.20'
 

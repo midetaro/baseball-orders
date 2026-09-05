@@ -41,7 +41,7 @@
     .remove { color:#ff9a87; }
     .actions { padding:18px 24px 24px; border-top:1px solid var(--line); }
     .submit { width:100%; padding:16px; border-radius:10px; background:var(--lime); color:#17200f; letter-spacing:.05em; }
-    .submit:disabled { opacity:.35; cursor:not-allowed; }
+    button:disabled { opacity:.35; cursor:not-allowed; }
     #feedback { min-height:56px; margin-top:12px; padding:13px; border-radius:10px; background:#101817; color:var(--muted); white-space:pre-line; }
     #feedback.success { color:var(--lime); }
     #feedback.error { color:#ff9a87; }
@@ -77,11 +77,12 @@
 </main>
 <script>
   const lineup = [];
+  let inFlight = false;
   const order = document.querySelector('#order');
   const submit = document.querySelector('#submit');
   const feedback = document.querySelector('#feedback');
   document.querySelectorAll('.player').forEach(card => card.querySelector('.add').addEventListener('click', () => {
-    if (lineup.length === 9 || lineup.some(player => player.id === card.dataset.id)) return;
+    if (inFlight || lineup.length === 9 || lineup.some(player => player.id === card.dataset.id)) return;
     lineup.push({ id: card.dataset.id, name: card.dataset.name, hitAverage: card.dataset.hitAverage, sluggish: card.dataset.sluggish, stealSuccessRate: card.dataset.stealSuccessRate }); render();
   }));
   function render() {
@@ -95,17 +96,24 @@
         const stat = document.createElement('span'); stat.className = 'slot-stat'; stat.textContent = player ? player[key] : '—'; row.append(stat);
       });
       const controls = document.createElement('div'); controls.className = 'controls';
-      if (player) [{label:'↑',delta:-1,title:'上へ'},{label:'↓',delta:1,title:'下へ'},{label:'×',delta:0,title:'削除'}].forEach(control => { const button=document.createElement('button'); button.type='button'; button.className=control.delta===0?'remove':'move'; button.textContent=control.label; button.title=control.title; button.addEventListener('click',()=>{ if(control.delta===0) lineup.splice(index,1); else { const next=index+control.delta; if(next>=0&&next<lineup.length) { const current=lineup[index]; lineup[index]=lineup[next]; lineup[next]=current; } } render(); }); controls.append(button); });
+      if (player) [{label:'↑',delta:-1,title:'上へ'},{label:'↓',delta:1,title:'下へ'},{label:'×',delta:0,title:'削除'}].forEach(control => { const button=document.createElement('button'); button.type='button'; button.className=control.delta===0?'remove':'move'; button.textContent=control.label; button.title=control.title; button.addEventListener('click',()=>{ if(inFlight) return; if(control.delta===0) lineup.splice(index,1); else { const next=index+control.delta; if(next>=0&&next<lineup.length) { const current=lineup[index]; lineup[index]=lineup[next]; lineup[next]=current; } } render(); }); controls.append(button); });
       row.append(controls); order.append(row);
     }
-    document.querySelector('#selected-count').textContent = lineup.length; submit.disabled = lineup.length !== 9;
+    document.querySelector('#selected-count').textContent = lineup.length; submit.disabled = inFlight || lineup.length !== 9;
     feedback.className=''; feedback.textContent = lineup.length === 9 ? '準備完了。シミュレーションを実行できます。' : `${9-lineup.length}人を追加してください。`;
   }
+  function setInFlight(value) {
+    inFlight = value;
+    submit.disabled = value || lineup.length !== 9;
+    document.querySelectorAll('.add, .move, .remove').forEach(button => { button.disabled = value; });
+    feedback.setAttribute('aria-busy', String(value));
+  }
   submit.addEventListener('click', async () => {
-    submit.disabled=true; feedback.className=''; feedback.textContent='シミュレーション中…';
-    try { const response=await fetch('/simulations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lineup.map(player=>({player_id:Number(player.id)})))}); const data=await response.json(); if(!response.ok) throw new Error(data.message||'リクエストに失敗しました。'); feedback.className='success'; feedback.textContent=`試合終了\n得点 ${data.score} — 失点 ${data.runs}`; }
+    if (inFlight || lineup.length !== 9) return;
+    setInFlight(true); feedback.className=''; feedback.textContent='シミュレーション中…';
+    try { const response=await fetch('/simulations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lineup.map(player=>({player_id:Number(player.id)})))}); const data=await response.json(); if(!response.ok) throw new Error(data.error||data.message||'リクエストに失敗しました。'); feedback.className='success'; feedback.textContent=`試合終了\n得点 ${data.score} — 失点 ${data.runs}`; }
     catch(error) { feedback.className='error'; feedback.textContent=error.message; }
-    finally { submit.disabled=false; }
+    finally { setInFlight(false); }
   });
   render();
 </script>

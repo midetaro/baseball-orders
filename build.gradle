@@ -1,6 +1,7 @@
 tasks.register('build') {
     group = 'build'
     description = 'Builds both applications in the composite.'
+    dependsOn project(':integration-test').tasks.named('build')
     dependsOn gradle.includedBuild('backend').task(':build')
     dependsOn gradle.includedBuild('simulator').task(':build')
 }
@@ -8,6 +9,7 @@ tasks.register('build') {
 tasks.register('clean') {
     group = 'build'
     description = 'Cleans both applications in the composite.'
+    dependsOn project(':integration-test').tasks.named('clean')
     dependsOn gradle.includedBuild('backend').task(':clean')
     dependsOn gradle.includedBuild('simulator').task(':clean')
 }

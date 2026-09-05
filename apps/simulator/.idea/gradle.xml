@@ -11,6 +11,7 @@
             <option value="$PROJECT_DIR$/application" />
             <option value="$PROJECT_DIR$/domain" />
             <option value="$PROJECT_DIR$/infrastructure" />
+            <option value="$PROJECT_DIR$/../../libs/messaging-contract" />
           </set>
         </option>
       </GradleProjectSettings>
