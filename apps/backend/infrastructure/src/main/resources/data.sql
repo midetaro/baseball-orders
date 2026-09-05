@@ -1,5 +1,5 @@
 INSERT INTO players (player_id, name, hit_average, sluggish, bunt_success_rate, steal_success_rate)
-VALUES (1, '青い地球', 0.380, 0.350, 0.700, 0.850),
+VALUES (1, '青い地球', 0.380, 0.350, 0.800, 0.850),
        (2, '熱い太陽', 0.330, 0.500, 0.650, 0.750),
        (3, '冷たい氷', 0.300, 0.450, 0.750, 0.800),
        (4, '白い雪', 0.300, 0.300, 0.800, 0.700),

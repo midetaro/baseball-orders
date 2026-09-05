@@ -7,10 +7,8 @@ import com.example.baseballorders.simulator.domain.model.state.DoubleBaseState;
 import com.example.baseballorders.simulator.domain.model.state.FirstDoubleBaseState;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
-import org.springframework.stereotype.Component;
 
 /** 標準戦略より広い試合状況でバントを試みる積極的な戦略。 */
-@Component("eagerBuntStrategy")
 public class EagerBuntStrategy implements BuntStrategy {
 
     @Override
