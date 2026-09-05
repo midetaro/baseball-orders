@@ -60,3 +60,14 @@ When changing a repository skill, also run its official-validator wrapper,
 ## Completion report
 
 Summarize changed behavior, tests and checks run, skipped conditional tests, assumptions, dependency changes, and unresolved blockers.
+
+## Session boundary recommendation
+
+When the current logical task is complete, do not automatically continue to unrelated work.
+At the end of the final response:
+- State that the current task is complete.
+- If the next work is a separate logical task, explicitly recommend starting a new Codex session.
+- Briefly summarize the information that should be carried into the next session.
+- Do not continue with the next task unless the user explicitly asks.
+Use wording similar to:
+"このタスクは完了しました。コンテキスト肥大化を避けるために`/exit && codex`で新しいCodexセッションへ分割することを推奨します。"
