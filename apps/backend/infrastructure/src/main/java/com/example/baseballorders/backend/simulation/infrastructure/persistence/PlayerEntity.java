@@ -32,4 +32,7 @@ public class PlayerEntity {
 
     @Column(name = "bunt_success_rate", nullable = false)
     private float buntSuccessRate;
+
+    @Column(name = "steal_success_rate", nullable = false)
+    private float stealSuccessRate;
 }

@@ -32,6 +32,7 @@ public class JpaPlayerDataRepository implements PlayerDataRepository {
                 player.getName(),
                 player.getHitAverage(),
                 player.getSluggish(),
-                player.getBuntSuccessRate());
+                player.getBuntSuccessRate(),
+                player.getStealSuccessRate());
     }
 }

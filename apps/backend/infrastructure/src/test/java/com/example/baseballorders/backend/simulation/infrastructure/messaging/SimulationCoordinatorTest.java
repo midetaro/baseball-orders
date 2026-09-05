@@ -38,7 +38,11 @@ class SimulationCoordinatorTest {
                 new SimulationCoordinator(
                         ids ->
                                 ids.stream()
-                                        .map(id -> new PlayerData("山田", 0.301f, 0.501f, 0.701f))
+                                        .map(
+                                                id ->
+                                                        new PlayerData(
+                                                                "山田", 0.301f, 0.501f, 0.701f,
+                                                                0.801f))
                                         .toList(),
                         publisher,
                         registry,
@@ -54,6 +58,10 @@ class SimulationCoordinatorTest {
                 () -> assertEquals("山田", published.getFirst().players().getFirst().name()),
                 () -> assertEquals(0.301f, published.getFirst().players().getFirst().hitAverage()),
                 () -> assertEquals(0.501f, published.getFirst().players().getFirst().sluggish()),
+                () ->
+                        assertEquals(
+                                0.801f,
+                                published.getFirst().players().getFirst().stealSuccessRate()),
                 () -> assertEquals(5, result.score()),
                 () -> assertEquals(0, registry.pendingCount()));
     }
