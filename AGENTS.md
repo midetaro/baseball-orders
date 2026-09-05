@@ -31,6 +31,8 @@ Terraform changes.
 5. For shared contracts, run verification for both applications.
 
 Use `./.agents/skills/baseball-orders-development/scripts/verify.sh` as the canonical verification entrypoint.
+When changing a repository skill, also run its official-validator wrapper,
+`./.agents/skills/baseball-orders-development/scripts/validate-skill.sh`.
 
 ## Production Java
 
