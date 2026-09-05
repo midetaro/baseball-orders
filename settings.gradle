@@ -1,4 +1,19 @@
 rootProject.name = 'baseball-orders'
 
-includeBuild 'apps/backend'
-includeBuild 'apps/simulator'
+include 'integration-test'
+
+includeBuild('apps/backend') {
+    dependencySubstitution {
+        substitute module('com.example.baseballorders.backend:infrastructure') using project(':infrastructure')
+        substitute module('com.example.baseballorders.backend:application') using project(':application')
+        substitute module('com.example.baseballorders.backend:domain') using project(':domain')
+        substitute module('com.example.baseballorders.backend:messaging-contract') using project(':messaging-contract')
+    }
+}
+includeBuild('apps/simulator') {
+    dependencySubstitution {
+        substitute module('com.example.baseballorders.simulator:infrastructure') using project(':infrastructure')
+        substitute module('com.example.baseballorders.simulator:application') using project(':application')
+        substitute module('com.example.baseballorders.simulator:domain') using project(':domain')
+    }
+}
