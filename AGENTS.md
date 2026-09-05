@@ -52,8 +52,10 @@ When changing a repository skill, also run its official-validator wrapper,
   `if` chain or statement-style `switch` when the branch produces a value.
 - List every enum constant explicitly and omit `default` for closed internal
   enums so adding a constant causes a compile-time failure at every affected
-  branch. Use `default` only when forward-compatible handling is an explicit
-  requirement.
+  branch.
+- Do not use `default` in a `switch` expression unless that branch throws an
+  exception. A `default` branch must never return a fallback value, silently do
+  nothing, or handle ordinary control flow.
 
 ## Completion report
 
