@@ -40,6 +40,21 @@ When changing a repository skill, also run its official-validator wrapper,
 - Document purpose, observable behavior, parameters, non-void returns, and declared exceptions.
 - Update Javadoc when behavior or signatures change.
 
+## Implementation style
+
+- Where Lombok is already available, use focused annotations such as `@Getter`,
+  `@RequiredArgsConstructor`, and `@Slf4j` to remove trivial getters,
+  constructors, and logger declarations.
+- Do not use Lombok to hide validation, state transitions, or other domain
+  behavior, and do not add a Lombok dependency to a module solely to follow this
+  preference.
+- Implement branching on enum values with a `switch` expression rather than an
+  `if` chain or statement-style `switch` when the branch produces a value.
+- List every enum constant explicitly and omit `default` for closed internal
+  enums so adding a constant causes a compile-time failure at every affected
+  branch. Use `default` only when forward-compatible handling is an explicit
+  requirement.
+
 ## Completion report
 
 Summarize changed behavior, tests and checks run, skipped conditional tests, assumptions, dependency changes, and unresolved blockers.
