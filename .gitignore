@@ -8,15 +8,14 @@ build
 .kotlin
 
 /build
-/.idea/
-
-/apps/backend/.ai
-/apps/backend/.idea
-/apps/backend/build
-
-/apps/simulator/.ai
-/apps/simulator/.idea
-/apps/simulator/build
+.idea/
+.ai/
+build/
 
 .env
 .DS_Store
+
+# 一度commitしたファイルをgit管理から外す方法
+# git rm --cached {ファイル名}
+# または
+# git rm -r --cached {フォルダ名}

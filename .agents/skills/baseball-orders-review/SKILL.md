@@ -1,3 +1,8 @@
+---
+name: baseball-orders-review
+description: Use when reviewing a completed baseball-orders feature, checking the diff against the specification, deterministic verification, tests, architecture boundaries, and integration test coverage.
+---
+
 # baseball-orders-review
 
 ## Purpose
