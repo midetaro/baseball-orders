@@ -12,12 +12,14 @@ import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.LineUpMapper;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
+import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.model.statistics.ScoreStatisticsCalculator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
@@ -62,8 +64,10 @@ class SqsSimulationSchedulerIntegrationTest {
                                                 result ->
                                                         new SimulationResultMessage.Result(
                                                                 result.score(), result.runs()))
-                                        .toList()));
-        when(useCase.invoke(any(LineUpEntity.class))).thenReturn(simulationResults);
+                                        .toList(),
+                                new SimulationResultMessage.Statistics(4.5, 4.5, 9)));
+        when(useCase.invoke(any(LineUpEntity.class)))
+                .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =
                 new LineUpMapper(
                         (hitAverage, slugging) -> BattingResult.OUT,
@@ -161,6 +165,13 @@ class SqsSimulationSchedulerIntegrationTest {
 
     private static void deleteQueue(SqsClient client, String queueUrl) {
         client.deleteQueue(DeleteQueueRequest.builder().queueUrl(queueUrl).build());
+    }
+
+    private static SimulationResult simulationResult(List<SimulationResponse> responses) {
+        return new SimulationResult(
+                responses,
+                new ScoreStatisticsCalculator()
+                        .calculate(responses.stream().map(SimulationResponse::score).toList()));
     }
 
     private static final class FixedStealStrategy implements StealStrategy {

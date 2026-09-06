@@ -16,6 +16,7 @@ import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.LineUpMapper;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
+import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
@@ -23,6 +24,7 @@ import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.model.statistics.ScoreStatisticsCalculator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
@@ -90,7 +92,8 @@ class SqsSimulationSchedulerTest {
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
         List<SimulationResponse> simulationResponses =
                 IntStream.range(0, 10).mapToObj(index -> new SimulationResponse(index, 4)).toList();
-        when(useCase.invoke(any(LineUpEntity.class))).thenReturn(simulationResponses);
+        when(useCase.invoke(any(LineUpEntity.class)))
+                .thenReturn(simulationResult(simulationResponses));
         SqsSimulationScheduler scheduler =
                 new SqsSimulationScheduler(
                         sqsClient, objectMapper, useCase, mapper, "request-queue", "result-queue");
@@ -134,7 +137,11 @@ class SqsSimulationSchedulerTest {
                                         .toList(),
                                 sentResponses.getFirst().results()),
                 () -> assertEquals("1", sentResponses.getFirst().version()),
-                () -> assertEquals(simulationId, sentResponses.getFirst().simulationId()));
+                () -> assertEquals(simulationId, sentResponses.getFirst().simulationId()),
+                () ->
+                        assertEquals(
+                                new SimulationResultMessage.Statistics(4.5, 4.5, 9),
+                                sentResponses.getFirst().statistics()));
     }
 
     @Test
@@ -152,7 +159,7 @@ class SqsSimulationSchedulerTest {
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
         when(objectMapper.readValue("request-body", SimulationRequestMessage.class))
                 .thenReturn(request);
-        when(useCase.invoke(any())).thenReturn(responses);
+        when(useCase.invoke(any())).thenReturn(simulationResult(responses));
         when(objectMapper.writeValueAsString(any(SimulationResultMessage.class)))
                 .thenThrow(new JsonProcessingException("serialization failed") {});
         SqsSimulationScheduler scheduler =
@@ -191,7 +198,7 @@ class SqsSimulationSchedulerTest {
                         .build();
         when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
-        when(useCase.invoke(any())).thenReturn(responses);
+        when(useCase.invoke(any())).thenReturn(simulationResult(responses));
         when(sqsClient.sendMessage(any(SendMessageRequest.class)))
                 .thenThrow(SqsException.builder().message("send failed").build());
         SqsSimulationScheduler scheduler =
@@ -241,8 +248,8 @@ class SqsSimulationSchedulerTest {
     }
 
     @Test
-    @DisplayName("結果が空でも空リストを1通送信して要求を削除する")
-    void sendsEmptyResultList() throws Exception {
+    @DisplayName("統計値を計算できない場合は結果を送信せず要求を削除しない")
+    void doesNotSendOrDeleteWhenStatisticsCannotBeCalculated() throws Exception {
         // given
         SqsClient sqsClient = mock(SqsClient.class);
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
@@ -258,27 +265,29 @@ class SqsSimulationSchedulerTest {
                                                 .receiptHandle("receipt-1")
                                                 .build())
                                 .build());
-        when(useCase.invoke(any())).thenReturn(List.of());
+        when(useCase.invoke(any()))
+                .thenThrow(new IllegalArgumentException("scores must not be empty"));
         stubQueueUrls(sqsClient);
         var scheduler =
                 new SqsSimulationScheduler(
                         sqsClient, objectMapper, useCase, mapper, "request-queue", "result-queue");
-        var sent = ArgumentCaptor.forClass(SendMessageRequest.class);
         var ordered = inOrder(sqsClient);
 
         // when
-        scheduler.poll();
+        IllegalArgumentException exception =
+                assertThrows(IllegalArgumentException.class, scheduler::poll);
 
         // then
-        ordered.verify(sqsClient).sendMessage(sent.capture());
-        ordered.verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
-        assertAll(
-                () ->
-                        assertEquals(
-                                new SimulationResultMessage(request.simulationId(), "1", List.of()),
-                                objectMapper.readValue(
-                                        sent.getValue().messageBody(),
-                                        SimulationResultMessage.class)));
+        ordered.verify(sqsClient, never()).sendMessage(any(SendMessageRequest.class));
+        ordered.verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class));
+        assertAll(() -> assertEquals("scores must not be empty", exception.getMessage()));
+    }
+
+    private static SimulationResult simulationResult(List<SimulationResponse> responses) {
+        return new SimulationResult(
+                responses,
+                new ScoreStatisticsCalculator()
+                        .calculate(responses.stream().map(SimulationResponse::score).toList()));
     }
 
     private static void stubQueueUrls(SqsClient sqsClient) {
