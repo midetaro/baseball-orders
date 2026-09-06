@@ -41,6 +41,7 @@ public class SimulateGameUseCase {
         if (lineUpEntity.getBatterEntities().size() != 9) {
             throw new IllegalArgumentException("LineUpEntity size must be 9");
         }
+        IO.println("試合数：" + gameCount);
         return IntStream.range(0, gameCount).mapToObj(ignored -> simulate(lineUpEntity)).toList();
     }
 

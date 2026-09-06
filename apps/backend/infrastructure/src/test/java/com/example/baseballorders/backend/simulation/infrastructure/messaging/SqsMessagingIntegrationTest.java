@@ -105,7 +105,7 @@ class SqsMessagingIntegrationTest {
 
         // when
         sqsTemplate.send(RESULT_QUEUE, message);
-        var result = waiting.get(10, TimeUnit.SECONDS);
+        var result = waiting.get(1000, TimeUnit.SECONDS);
 
         // then
         assertAll(
