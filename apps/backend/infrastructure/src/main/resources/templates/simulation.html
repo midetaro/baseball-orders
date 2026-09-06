@@ -46,6 +46,11 @@
     #feedback.success { color:var(--lime); }
     #feedback.error { color:#ff9a87; }
     #results { margin-top:22px; }
+    .statistics { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--line); }
+    .statistic { padding:18px 24px; border-right:1px solid var(--line); }
+    .statistic:last-child { border-right:0; }
+    .statistic-label { color:var(--muted); font-size:11px; }
+    .statistic-value { margin-top:6px; font:700 26px monospace; color:var(--lime); }
     .results-scroll { overflow-x:auto; }
     .results-table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
     .results-table th,.results-table td { padding:12px 24px; text-align:right; border-bottom:1px solid var(--line); }
@@ -82,6 +87,11 @@
   </div>
   <section id="results" aria-labelledby="results-heading" hidden>
     <div class="section-head"><h2 id="results-heading">試合結果</h2></div>
+    <div class="statistics" aria-label="得点統計">
+      <div class="statistic"><div class="statistic-label">平均得点</div><div class="statistic-value" id="average-score"></div></div>
+      <div class="statistic"><div class="statistic-label">中央値得点</div><div class="statistic-value" id="median-score"></div></div>
+      <div class="statistic"><div class="statistic-label">最大得点</div><div class="statistic-value" id="maximum-score"></div></div>
+    </div>
     <div class="results-scroll" tabindex="0" aria-label="全試合の得点と失点">
       <table class="results-table" aria-labelledby="results-heading">
         <thead><tr><th scope="col">試合</th><th scope="col">得点</th><th scope="col">失点</th></tr></thead>
@@ -98,6 +108,9 @@
   const feedback = document.querySelector('#feedback');
   const results = document.querySelector('#results');
   const resultRows = document.querySelector('#result-rows');
+  const averageScore = document.querySelector('#average-score');
+  const medianScore = document.querySelector('#median-score');
+  const maximumScore = document.querySelector('#maximum-score');
   document.querySelectorAll('.player').forEach(card => card.querySelector('.add').addEventListener('click', () => {
     if (inFlight || lineup.length === 9 || lineup.some(player => player.id === card.dataset.id)) return;
     lineup.push({ id: card.dataset.id, name: card.dataset.name, hitAverage: card.dataset.hitAverage, sluggish: card.dataset.sluggish, stealSuccessRate: card.dataset.stealSuccessRate }); render();
@@ -119,7 +132,10 @@
     document.querySelector('#selected-count').textContent = lineup.length; submit.disabled = inFlight || lineup.length !== 9;
     feedback.className=''; feedback.textContent = lineup.length === 9 ? '準備完了。シミュレーションを実行できます。' : `${9-lineup.length}人を追加してください。`;
   }
-  function renderResults(games) {
+  function renderResults(games, statistics) {
+    averageScore.textContent = String(statistics.averageScore);
+    medianScore.textContent = String(statistics.medianScore);
+    maximumScore.textContent = String(statistics.maximumScore);
     games.forEach((game, index) => {
       const row = document.createElement('tr');
       [index + 1, game.score, game.runs].forEach(value => {
@@ -143,7 +159,7 @@
     if (inFlight || lineup.length !== 9) return;
     resultRows.replaceChildren(); results.hidden = true;
     setInFlight(true); feedback.className=''; feedback.textContent='シミュレーション中…';
-    try { const response=await fetch('/simulations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lineup.map(player=>({player_id:Number(player.id)})))}); const data=await response.json(); if(!response.ok) throw new Error(data.error||data.message||'リクエストに失敗しました。'); renderResults(data.results); }
+    try { const response=await fetch('/simulations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lineup.map(player=>({player_id:Number(player.id)})))}); const data=await response.json(); if(!response.ok) throw new Error(data.error||data.message||'リクエストに失敗しました。'); renderResults(data.results, data.statistics); }
     catch(error) { feedback.className='error'; feedback.textContent=error.message; }
     finally { setInFlight(false); }
   });

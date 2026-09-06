@@ -26,7 +26,8 @@ class SimulatorRequestControllerTest {
                                         request.simulationId(),
                                         new SimulationResult(
                                                 request.simulationId(),
-                                                List.of(new SimulationResult.Result(5, 4)))),
+                                                List.of(new SimulationResult.Result(5, 4)),
+                                                new SimulationResult.Statistics(5, 5, 5))),
                         registry);
         var controller = new SimulatorRequestController(coordinator);
 

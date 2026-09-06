@@ -24,7 +24,11 @@ class WaitingResultRegistryTest {
         UUID secondId = UUID.randomUUID();
         var first = registry.register(firstId);
         var second = registry.register(secondId);
-        var result = new SimulationResult(firstId, List.of(new SimulationResult.Result(5, 4)));
+        var result =
+                new SimulationResult(
+                        firstId,
+                        List.of(new SimulationResult.Result(5, 4)),
+                        new SimulationResult.Statistics(5, 5, 5));
 
         // when
         boolean completed = registry.complete(firstId, result);
@@ -43,7 +47,11 @@ class WaitingResultRegistryTest {
         // given
         var registry = new WaitingResultRegistry();
         UUID simulationId = UUID.randomUUID();
-        var result = new SimulationResult(simulationId, List.of(new SimulationResult.Result(5, 4)));
+        var result =
+                new SimulationResult(
+                        simulationId,
+                        List.of(new SimulationResult.Result(5, 4)),
+                        new SimulationResult.Statistics(5, 5, 5));
         registry.register(simulationId);
         registry.complete(simulationId, result);
 
@@ -62,7 +70,11 @@ class WaitingResultRegistryTest {
         // given
         var registry = new WaitingResultRegistry();
         UUID simulationId = UUID.randomUUID();
-        var result = new SimulationResult(simulationId, List.of(new SimulationResult.Result(5, 4)));
+        var result =
+                new SimulationResult(
+                        simulationId,
+                        List.of(new SimulationResult.Result(5, 4)),
+                        new SimulationResult.Statistics(5, 5, 5));
         registry.register(simulationId).complete(result);
 
         // when
