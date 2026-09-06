@@ -45,6 +45,12 @@
     #feedback { min-height:56px; margin-top:12px; padding:13px; border-radius:10px; background:#101817; color:var(--muted); white-space:pre-line; }
     #feedback.success { color:var(--lime); }
     #feedback.error { color:#ff9a87; }
+    #results { margin-top:22px; }
+    .results-scroll { overflow-x:auto; }
+    .results-table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+    .results-table th,.results-table td { padding:12px 24px; text-align:right; border-bottom:1px solid var(--line); }
+    .results-table th { color:var(--muted); }
+    .results-table th:first-child,.results-table td:first-child { text-align:left; }
     @media (max-width:780px) { header { align-items:start; flex-direction:column; } .layout { grid-template-columns:1fr; } main { padding-top:30px; } }
   </style>
 </head>
@@ -74,6 +80,15 @@
       <div class="actions"><button class="submit" id="submit" type="button" disabled>SIMULATIONを実行</button><div id="feedback" role="status">9人の打者を選択してください。</div></div>
     </section>
   </div>
+  <section id="results" aria-labelledby="results-heading" hidden>
+    <div class="section-head"><h2 id="results-heading">試合結果</h2></div>
+    <div class="results-scroll" tabindex="0" aria-label="全試合の得点と失点">
+      <table class="results-table" aria-labelledby="results-heading">
+        <thead><tr><th scope="col">試合</th><th scope="col">得点</th><th scope="col">失点</th></tr></thead>
+        <tbody id="result-rows"></tbody>
+      </table>
+    </div>
+  </section>
 </main>
 <script>
   const lineup = [];
@@ -81,6 +96,8 @@
   const order = document.querySelector('#order');
   const submit = document.querySelector('#submit');
   const feedback = document.querySelector('#feedback');
+  const results = document.querySelector('#results');
+  const resultRows = document.querySelector('#result-rows');
   document.querySelectorAll('.player').forEach(card => card.querySelector('.add').addEventListener('click', () => {
     if (inFlight || lineup.length === 9 || lineup.some(player => player.id === card.dataset.id)) return;
     lineup.push({ id: card.dataset.id, name: card.dataset.name, hitAverage: card.dataset.hitAverage, sluggish: card.dataset.sluggish, stealSuccessRate: card.dataset.stealSuccessRate }); render();
@@ -102,6 +119,20 @@
     document.querySelector('#selected-count').textContent = lineup.length; submit.disabled = inFlight || lineup.length !== 9;
     feedback.className=''; feedback.textContent = lineup.length === 9 ? '準備完了。シミュレーションを実行できます。' : `${9-lineup.length}人を追加してください。`;
   }
+  function renderResults(games) {
+    games.forEach((game, index) => {
+      const row = document.createElement('tr');
+      [index + 1, game.score, game.runs].forEach(value => {
+        const cell = document.createElement('td');
+        cell.textContent = String(value);
+        row.append(cell);
+      });
+      resultRows.append(row);
+    });
+    results.hidden = games.length === 0;
+    feedback.className = 'success';
+    feedback.textContent = games.length === 0 ? '試合結果はありません。' : `試合終了：${games.length}試合`;
+  }
   function setInFlight(value) {
     inFlight = value;
     submit.disabled = value || lineup.length !== 9;
@@ -110,8 +141,9 @@
   }
   submit.addEventListener('click', async () => {
     if (inFlight || lineup.length !== 9) return;
+    resultRows.replaceChildren(); results.hidden = true;
     setInFlight(true); feedback.className=''; feedback.textContent='シミュレーション中…';
-    try { const response=await fetch('/simulations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lineup.map(player=>({player_id:Number(player.id)})))}); const data=await response.json(); if(!response.ok) throw new Error(data.error||data.message||'リクエストに失敗しました。'); feedback.className='success'; feedback.textContent=`試合終了\n得点 ${data.score} — 失点 ${data.runs}`; }
+    try { const response=await fetch('/simulations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lineup.map(player=>({player_id:Number(player.id)})))}); const data=await response.json(); if(!response.ok) throw new Error(data.error||data.message||'リクエストに失敗しました。'); renderResults(data.results); }
     catch(error) { feedback.className='error'; feedback.textContent=error.message; }
     finally { setInFlight(false); }
   });

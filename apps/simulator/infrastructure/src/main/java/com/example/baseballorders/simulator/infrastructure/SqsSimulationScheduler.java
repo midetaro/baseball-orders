@@ -57,13 +57,14 @@ public class SqsSimulationScheduler {
     }
 
     /**
-     * Receives pending requests from SQS, sends each simulation response to the configured result
-     * queue, and deletes the source message after all results are sent successfully.
+     * Receives pending requests from SQS, sends all simulation results in one message to the
+     * configured result queue, and deletes the source message only after that send succeeds.
      */
     @Scheduled(fixedDelayString = "${simulation.sqs.poll-fixed-delay}")
     public void poll() {
         String requestQueueUrl = queueUrl(requestQueueName);
         String resultQueueUrl = queueUrl(resultQueueName);
+        // 受信
         var response =
                 sqsClient.receiveMessage(
                         ReceiveMessageRequest.builder()
@@ -71,28 +72,30 @@ public class SqsSimulationScheduler {
                                 .waitTimeSeconds(LONG_POLL_SECONDS)
                                 .maxNumberOfMessages(MAX_MESSAGES_PER_POLL)
                                 .build());
-
         response.messages()
                 .forEach(
                         message -> {
+                            // 送信
                             SimulationRequestMessage request = deserialize(message.body());
                             List<SimulationResponse> results =
                                     simulateGameUseCase.invoke(lineUpMapper.map(request.players()));
-                            results.forEach(
-                                    result ->
-                                            sqsClient.sendMessage(
-                                                    SendMessageRequest.builder()
-                                                            .queueUrl(resultQueueUrl)
-                                                            .messageBody(
-                                                                    serialize(
-                                                                            new SimulationResultMessage(
-                                                                                    request
-                                                                                            .simulationId(),
-                                                                                    request
-                                                                                            .version(),
-                                                                                    result.score(),
-                                                                                    result.runs())))
-                                                            .build()));
+                            var resultMessage =
+                                    new SimulationResultMessage(
+                                            request.simulationId(),
+                                            request.version(),
+                                            results.stream()
+                                                    .map(
+                                                            result ->
+                                                                    new SimulationResultMessage
+                                                                            .Result(
+                                                                            result.score(),
+                                                                            result.runs()))
+                                                    .toList());
+                            sqsClient.sendMessage(
+                                    SendMessageRequest.builder()
+                                            .queueUrl(resultQueueUrl)
+                                            .messageBody(serialize(resultMessage))
+                                            .build());
                             sqsClient.deleteMessage(
                                     DeleteMessageRequest.builder()
                                             .queueUrl(requestQueueUrl)

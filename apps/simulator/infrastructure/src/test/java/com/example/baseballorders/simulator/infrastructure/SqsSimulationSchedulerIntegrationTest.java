@@ -38,6 +38,11 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 class SqsSimulationSchedulerIntegrationTest {
 
+    /**
+     * 実物: ElasticMQ SQS、Scheduler、ObjectMapper、LineUpMapper。 モック:
+     * SimulateGameUseCase、固定の打撃・盗塁・バント戦略。 担保する疎通: request SQS -> Scheduler -> result SQS ->
+     * 共有結果メッセージ、および要求削除。 担保しないもの: 試合計算の正当性、backendのHTTP応答、AWS実環境。
+     */
     @Test
     @EnabledIfEnvironmentVariable(named = "ELASTICMQ_ENDPOINT_URL", matches = ".+")
     @DisplayName("ElasticMQで受信した試合を実行すると結果を送信して要求を削除する")
@@ -48,16 +53,16 @@ class SqsSimulationSchedulerIntegrationTest {
         List<SimulationResponse> simulationResults =
                 IntStream.range(0, 10).mapToObj(index -> new SimulationResponse(index, 4)).toList();
         List<SimulationResultMessage> expectedResponses =
-                IntStream.range(0, 10)
-                        .mapToObj(
-                                index ->
-                                        new SimulationResultMessage(
-                                                UUID.fromString(
-                                                        "00000000-0000-0000-0000-000000000001"),
-                                                "1",
-                                                index,
-                                                4))
-                        .toList();
+                List.of(
+                        new SimulationResultMessage(
+                                UUID.fromString("00000000-0000-0000-0000-000000000001"),
+                                "1",
+                                simulationResults.stream()
+                                        .map(
+                                                result ->
+                                                        new SimulationResultMessage.Result(
+                                                                result.score(), result.runs()))
+                                        .toList()));
         when(useCase.invoke(any(LineUpEntity.class))).thenReturn(simulationResults);
         LineUpMapper mapper =
                 new LineUpMapper(
@@ -103,7 +108,7 @@ class SqsSimulationSchedulerIntegrationTest {
                 List<Message> resultMessages = receive(sqsClient, resultQueueUrl);
                 List<Message> requestMessages = receive(sqsClient, requestQueueUrl);
                 assertAll(
-                        () -> assertEquals(10, resultMessages.size()),
+                        () -> assertEquals(1, resultMessages.size()),
                         () ->
                                 assertEquals(
                                         expectedResponses,

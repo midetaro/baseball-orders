@@ -3,9 +3,10 @@ package com.example.baseballorders.backend.application;
 import com.example.baseballorders.backend.application.adapter.PlayerDataRepository;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
+import com.example.baseballorders.backend.application.exception.SimulationAcceptException;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
-import com.example.baseballorders.backend.simulation.domain.SimulationResult;
+import com.example.baseballorders.backend.domain.SimulationResult;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -71,11 +72,23 @@ public final class SimulationCoordinator {
         }
         var players = playerDataRepository.findAllByIds(playerIds);
         UUID simulationId = UUID.randomUUID();
+
+        // 送信
+        // simulation-idの登録
         var waiting = registry.register(simulationId);
         try {
+            // SQSの送信
             publisher.publish(new SimulationRequest(simulationId, MESSAGE_VERSION, players));
-            SimulationResult result = waiting.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-            return result;
+        } catch (RuntimeException exception) {
+            registry.remove(simulationId);
+            throw new SimulationSendException(simulationId, exception);
+        }
+
+        // 受信
+        SimulationResult result;
+        try {
+            // simulation-idの取得
+            result = waiting.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException exception) {
             throw new SimulationTimeoutException(simulationId);
         } catch (InterruptedException exception) {
@@ -85,9 +98,11 @@ public final class SimulationCoordinator {
         } catch (ExecutionException exception) {
             throw new IllegalStateException("simulation result failed: " + simulationId, exception);
         } catch (RuntimeException exception) {
-            throw new SimulationSendException(simulationId, exception);
+            throw new SimulationAcceptException(simulationId, exception);
         } finally {
             registry.remove(simulationId);
         }
+
+        return result;
     }
 }

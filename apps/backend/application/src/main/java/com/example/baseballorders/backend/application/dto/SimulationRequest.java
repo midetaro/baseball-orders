@@ -1,6 +1,6 @@
 package com.example.baseballorders.backend.application.dto;
 
-import com.example.baseballorders.backend.simulation.domain.PlayerData;
+import com.example.baseballorders.backend.domain.PlayerData;
 import java.util.List;
 import java.util.UUID;
 

@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    default: local
   application:
     name: baseball-orders-backend
   datasource:

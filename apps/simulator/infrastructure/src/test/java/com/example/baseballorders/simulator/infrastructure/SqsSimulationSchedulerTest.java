@@ -104,7 +104,7 @@ class SqsSimulationSchedulerTest {
 
         // then
         ordered.verify(useCase).invoke(lineUpCaptor.capture());
-        ordered.verify(sqsClient, org.mockito.Mockito.times(10))
+        ordered.verify(sqsClient, org.mockito.Mockito.times(1))
                 .sendMessage(sendMessageCaptor.capture());
         ordered.verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
         List<SimulationResultMessage> sentResponses =
@@ -123,29 +123,18 @@ class SqsSimulationSchedulerTest {
         assertAll(
                 () -> assertEquals(9, lineUpCaptor.getValue().getBatterEntities().size()),
                 () -> assertEquals("result-url", sendMessageCaptor.getValue().queueUrl()),
-                () -> assertEquals(10, sentResponses.size()),
+                () -> assertEquals(1, sentResponses.size()),
                 () ->
                         assertEquals(
-                                List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
-                                sentResponses.stream()
-                                        .map(SimulationResultMessage::score)
-                                        .toList()),
-                () ->
-                        assertEquals(
-                                List.of(
-                                        simulationId,
-                                        simulationId,
-                                        simulationId,
-                                        simulationId,
-                                        simulationId,
-                                        simulationId,
-                                        simulationId,
-                                        simulationId,
-                                        simulationId,
-                                        simulationId),
-                                sentResponses.stream()
-                                        .map(SimulationResultMessage::simulationId)
-                                        .toList()));
+                                simulationResponses.stream()
+                                        .map(
+                                                result ->
+                                                        new SimulationResultMessage.Result(
+                                                                result.score(), result.runs()))
+                                        .toList(),
+                                sentResponses.getFirst().results()),
+                () -> assertEquals("1", sentResponses.getFirst().version()),
+                () -> assertEquals(simulationId, sentResponses.getFirst().simulationId()));
     }
 
     @Test
@@ -249,6 +238,47 @@ class SqsSimulationSchedulerTest {
                 () -> verifyNoInteractions(useCase),
                 () -> verify(sqsClient, never()).sendMessage(any(SendMessageRequest.class)),
                 () -> verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class)));
+    }
+
+    @Test
+    @DisplayName("結果が空でも空リストを1通送信して要求を削除する")
+    void sendsEmptyResultList() throws Exception {
+        // given
+        SqsClient sqsClient = mock(SqsClient.class);
+        SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
+        LineUpMapper mapper = mock(LineUpMapper.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        var request = new SimulationRequestMessage(UUID.randomUUID(), "1", List.of());
+        when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
+                .thenReturn(
+                        ReceiveMessageResponse.builder()
+                                .messages(
+                                        Message.builder()
+                                                .body(objectMapper.writeValueAsString(request))
+                                                .receiptHandle("receipt-1")
+                                                .build())
+                                .build());
+        when(useCase.invoke(any())).thenReturn(List.of());
+        stubQueueUrls(sqsClient);
+        var scheduler =
+                new SqsSimulationScheduler(
+                        sqsClient, objectMapper, useCase, mapper, "request-queue", "result-queue");
+        var sent = ArgumentCaptor.forClass(SendMessageRequest.class);
+        var ordered = inOrder(sqsClient);
+
+        // when
+        scheduler.poll();
+
+        // then
+        ordered.verify(sqsClient).sendMessage(sent.capture());
+        ordered.verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
+        assertAll(
+                () ->
+                        assertEquals(
+                                new SimulationResultMessage(request.simulationId(), "1", List.of()),
+                                objectMapper.readValue(
+                                        sent.getValue().messageBody(),
+                                        SimulationResultMessage.class)));
     }
 
     private static void stubQueueUrls(SqsClient sqsClient) {

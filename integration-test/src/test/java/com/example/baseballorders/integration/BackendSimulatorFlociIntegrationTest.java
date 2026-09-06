@@ -15,6 +15,7 @@ import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.infrastructure.SqsSimulationScheduler;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.floci.testcontainers.FlociContainer;
 import java.net.URI;
@@ -63,6 +64,7 @@ class BackendSimulatorFlociIntegrationTest {
                 var requestUrl = sqs.createQueue(r -> r.queueName(requestQueue)).queueUrl();
                 sqs.createQueue(r -> r.queueName(resultQueue));
                 try (var backend = new SpringApplicationBuilder(BackendApplication.class).run(
+                                "--spring.profiles.active=integration",
                                 "--server.port=0",
                                 "--spring.cloud.aws.region.static=" + floci.getRegion(),
                                 "--spring.cloud.aws.credentials.access-key=" + floci.getAccessKey(),
@@ -104,7 +106,7 @@ class BackendSimulatorFlociIntegrationTest {
                             .receiptHandle(message.receiptHandle()).visibilityTimeout(0));
                     simulator.poll();
                     var response = responseFuture.get(10, TimeUnit.SECONDS);
-                    var body = mapper.readTree(response.body());
+                    JsonNode body = mapper.readTree(response.body());
 
                     // then
                     assertAll(
@@ -112,8 +114,8 @@ class BackendSimulatorFlociIntegrationTest {
                             () -> assertNotNull(wireRequest.simulationId()),
                             () -> assertEquals(wireRequest.simulationId().toString(), body.path("simulationId").asText()),
                             () -> assertEquals(9, wireRequest.players().size()),
-                            () -> assertEquals(0, body.path("score").asInt(-1)),
-                            () -> assertEquals(4, body.path("runs").asInt(-1)),
+                            () -> assertEquals(0, body.path("results").path(0).path("score").asInt(-1)),
+                            () -> assertEquals(4, body.path("results").path(0).path("runs").asInt(-1)),
                             () -> assertEquals(0, registry.pendingCount()));
                 }
             }
