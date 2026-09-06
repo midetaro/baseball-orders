@@ -1,6 +1,6 @@
 package com.example.baseballorders.backend.application;
 
-import com.example.baseballorders.backend.simulation.domain.SimulationResult;
+import com.example.baseballorders.backend.domain.SimulationResult;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;

@@ -6,7 +6,7 @@ import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.application.exception.SimulationAcceptException;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
-import com.example.baseballorders.backend.simulation.domain.SimulationResult;
+import com.example.baseballorders.backend.domain.SimulationResult;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
