@@ -1,4 +1,9 @@
-# Infrastructure integration test
+# Simulator のローカル起動
+
+Backend・Simulator・FlociをまとめてDockerで動かす場合は、
+[ローカルDocker環境](../../../infra/docker/README.md)を参照してください。
+
+## Infrastructure integration test
 
 The integration test exercises `SqsSimulationScheduler` against ElasticMQ running in Docker.
 
