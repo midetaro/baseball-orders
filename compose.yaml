@@ -42,7 +42,6 @@ services:
     environment:
       <<: *aws-environment
       SIMULATION_SQS_POLL_FIXED_DELAY: 1s
-      SIMULATION_GAME_COUNT: "1"
     depends_on:
       queues:
         condition: service_completed_successfully

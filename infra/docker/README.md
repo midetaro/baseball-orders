@@ -22,8 +22,12 @@ http://127.0.0.1:18080/ を開いてください。
 Backend -> 要求SQS (Floci) -> Simulator -> 結果SQS (Floci) -> Backend
 
 Dockerでは明示的に`docker`プロファイルを指定し、Backendの`local`プロファイルによる
-リスナー停止を回避します。Simulatorは1要求につき1試合を計算し、ポーリング間隔は1秒です。
-`SIMULATION_GAME_COUNT`と`SIMULATION_SQS_POLL_FIXED_DELAY`はCompose内で変更できます。
+リスナー停止を回避します。Simulatorの試合数は
+`apps/simulator/infrastructure/src/main/resources/application.yml`の
+`simulation.game-count`（現在10）に従います。変更後はSimulatorを再ビルド・再作成してください。
+ポーリング間隔は1秒で、`SIMULATION_SQS_POLL_FIXED_DELAY`をCompose内で変更できます。
+
+Composeが試合数を上書きしないことは、`python3 infra/docker/test-compose-config.py`で検証できます。
 
 実AWSの認証情報は不要です。コンテナにはローカル専用の`test`認証情報を渡します。
 FlociはDocker内部の`http://floci:4566`に配置し、ホストにはBackendのみを公開します。

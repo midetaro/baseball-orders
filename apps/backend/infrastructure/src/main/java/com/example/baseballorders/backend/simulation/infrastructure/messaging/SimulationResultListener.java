@@ -26,6 +26,7 @@ public final class SimulationResultListener {
     @SqsListener("${simulation.sqs.result-queue-name}")
     public void receive(SimulationResultMessage message) {
         LOGGER.info("simulation result received simulationId={}", message.simulationId());
+        LOGGER.info("試合数={}", message.results().size());
         boolean completed =
                 registry.complete(
                         message.simulationId(),
