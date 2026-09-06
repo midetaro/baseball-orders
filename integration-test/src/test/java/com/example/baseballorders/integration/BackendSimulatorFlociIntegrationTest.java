@@ -63,6 +63,7 @@ class BackendSimulatorFlociIntegrationTest {
                 var requestUrl = sqs.createQueue(r -> r.queueName(requestQueue)).queueUrl();
                 sqs.createQueue(r -> r.queueName(resultQueue));
                 try (var backend = new SpringApplicationBuilder(BackendApplication.class).run(
+                                "--spring.profiles.active=integration",
                                 "--server.port=0",
                                 "--spring.cloud.aws.region.static=" + floci.getRegion(),
                                 "--spring.cloud.aws.credentials.access-key=" + floci.getAccessKey(),
