@@ -14,3 +14,8 @@ build/
 
 .env
 .DS_Store
+
+# 一度commitしたファイルをgit管理から外す方法
+# git rm --cached {ファイル名}
+# または
+# git rm -r --cached {フォルダ名}
