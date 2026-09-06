@@ -111,7 +111,7 @@
   submit.addEventListener('click', async () => {
     if (inFlight || lineup.length !== 9) return;
     setInFlight(true); feedback.className=''; feedback.textContent='シミュレーション中…';
-    try { const response=await fetch('/simulations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lineup.map(player=>({player_id:Number(player.id)})))}); const data=await response.json(); if(!response.ok) throw new Error(data.error||data.message||'リクエストに失敗しました。'); feedback.className='success'; feedback.textContent=`試合終了\n得点 ${data.score} — 失点 ${data.runs}`; }
+    try { const response=await fetch('/simulations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lineup.map(player=>({player_id:Number(player.id)})))}); const data=await response.json(); if(!response.ok) throw new Error(data.error||data.message||'リクエストに失敗しました。'); feedback.className='success'; feedback.textContent=`試合終了\n${data.results.map((result, index) => `${index + 1}試合目: 得点 ${result.score} — 失点 ${result.runs}`).join('\n')}`; }
     catch(error) { feedback.className='error'; feedback.textContent=error.message; }
     finally { setInFlight(false); }
   });

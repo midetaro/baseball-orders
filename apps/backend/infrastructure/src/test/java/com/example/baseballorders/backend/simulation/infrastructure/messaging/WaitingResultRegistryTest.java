@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.simulation.domain.SimulationResult;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ class WaitingResultRegistryTest {
         UUID secondId = UUID.randomUUID();
         var first = registry.register(firstId);
         var second = registry.register(secondId);
-        var result = new SimulationResult(firstId, 5, 4);
+        var result = new SimulationResult(firstId, List.of(new SimulationResult.Result(5, 4)));
 
         // when
         boolean completed = registry.complete(firstId, result);
@@ -42,7 +43,7 @@ class WaitingResultRegistryTest {
         // given
         var registry = new WaitingResultRegistry();
         UUID simulationId = UUID.randomUUID();
-        var result = new SimulationResult(simulationId, 5, 4);
+        var result = new SimulationResult(simulationId, List.of(new SimulationResult.Result(5, 4)));
         registry.register(simulationId);
         registry.complete(simulationId, result);
 
@@ -61,7 +62,7 @@ class WaitingResultRegistryTest {
         // given
         var registry = new WaitingResultRegistry();
         UUID simulationId = UUID.randomUUID();
-        var result = new SimulationResult(simulationId, 5, 4);
+        var result = new SimulationResult(simulationId, List.of(new SimulationResult.Result(5, 4)));
         registry.register(simulationId).complete(result);
 
         // when

@@ -24,13 +24,15 @@ class SimulationResultListenerTest {
         var listener = new SimulationResultListener(registry);
 
         // when
-        listener.receive(new SimulationResultMessage(simulationId, "1", 5, 4));
+        listener.receive(
+                new SimulationResultMessage(
+                        simulationId, "1", List.of(new SimulationResultMessage.Result(5, 4))));
 
         // then
         assertAll(
                 () -> assertEquals(simulationId, waiting.join().simulationId()),
-                () -> assertEquals(5, waiting.join().score()),
-                () -> assertEquals(4, waiting.join().runs()));
+                () -> assertEquals(5, waiting.join().results().getFirst().score()),
+                () -> assertEquals(4, waiting.join().results().getFirst().runs()));
     }
 
     @Test
@@ -59,7 +61,9 @@ class SimulationResultListenerTest {
         var listener = new SimulationResultListener(registry);
 
         // when
-        listener.receive(new SimulationResultMessage(UUID.randomUUID(), "1", 5, 4));
+        listener.receive(
+                new SimulationResultMessage(
+                        UUID.randomUUID(), "1", List.of(new SimulationResultMessage.Result(5, 4))));
 
         // then
         assertAll(() -> assertFalse(registry.pendingCount() > 0));

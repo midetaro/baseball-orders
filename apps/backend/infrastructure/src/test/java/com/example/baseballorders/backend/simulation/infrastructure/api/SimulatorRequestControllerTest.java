@@ -24,7 +24,9 @@ class SimulatorRequestControllerTest {
                         request ->
                                 registry.complete(
                                         request.simulationId(),
-                                        new SimulationResult(request.simulationId(), 5, 4)),
+                                        new SimulationResult(
+                                                request.simulationId(),
+                                                List.of(new SimulationResult.Result(5, 4)))),
                         registry);
         var controller = new SimulatorRequestController(coordinator);
 
@@ -36,7 +38,9 @@ class SimulatorRequestControllerTest {
                                 .toList());
 
         // then
-        assertAll(() -> assertEquals(5, result.score()), () -> assertEquals(4, result.runs()));
+        assertAll(
+                () -> assertEquals(5, result.results().getFirst().score()),
+                () -> assertEquals(4, result.results().getFirst().runs()));
     }
 
     @Test

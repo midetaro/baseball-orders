@@ -32,7 +32,9 @@ class SimulationCoordinatorTest {
                     published.add(request);
                     registry.complete(
                             request.simulationId(),
-                            new SimulationResult(request.simulationId(), 5, 4));
+                            new SimulationResult(
+                                    request.simulationId(),
+                                    List.of(new SimulationResult.Result(5, 4))));
                 };
         var coordinator =
                 new SimulationCoordinator(
@@ -62,7 +64,7 @@ class SimulationCoordinatorTest {
                         assertEquals(
                                 0.801f,
                                 published.getFirst().players().getFirst().stealSuccessRate()),
-                () -> assertEquals(5, result.score()),
+                () -> assertEquals(5, result.results().getFirst().score()),
                 () -> assertEquals(0, registry.pendingCount()));
     }
 

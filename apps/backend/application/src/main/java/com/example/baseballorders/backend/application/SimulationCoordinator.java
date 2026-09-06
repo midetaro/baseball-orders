@@ -74,16 +74,20 @@ public final class SimulationCoordinator {
         UUID simulationId = UUID.randomUUID();
 
         // 送信
+        // simulation-idの登録
         var waiting = registry.register(simulationId);
         try {
+            // SQSの送信
             publisher.publish(new SimulationRequest(simulationId, MESSAGE_VERSION, players));
         } catch (RuntimeException exception) {
+            registry.remove(simulationId);
             throw new SimulationSendException(simulationId, exception);
         }
 
         // 受信
         SimulationResult result;
         try {
+            // simulation-idの取得
             result = waiting.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException exception) {
             throw new SimulationTimeoutException(simulationId);

@@ -30,7 +30,13 @@ public final class SimulationResultListener {
                 registry.complete(
                         message.simulationId(),
                         new SimulationResult(
-                                message.simulationId(), message.score(), message.runs()));
+                                message.simulationId(),
+                                message.results().stream()
+                                        .map(
+                                                result ->
+                                                        new SimulationResult.Result(
+                                                                result.score(), result.runs()))
+                                        .toList()));
         if (!completed) {
             LOGGER.warn("simulation result ignored simulationId={}", message.simulationId());
         }

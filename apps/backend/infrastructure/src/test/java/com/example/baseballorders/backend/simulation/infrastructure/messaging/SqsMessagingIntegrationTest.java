@@ -27,12 +27,17 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 
+/**
+ * 実物: ElasticMQ SQS、Publisher、SQS Listener、WaitingResultRegistry、メッセージ変換。 モック: なし。 担保する疎通:
+ * Publisher -> request SQS、および result SQS -> Listener -> WaitingResultRegistry。 担保しないもの:
+ * simulatorの計算、HTTP要求からの全経路、AWS実環境。
+ */
 @EnabledIfEnvironmentVariable(named = "SQS_ENDPOINT", matches = ".+")
 @SpringBootTest
 class SqsMessagingIntegrationTest {
 
-    private static final String REQUEST_QUEUE = "simulation-request";
-    private static final String RESULT_QUEUE = "simulation-result";
+    private static final String REQUEST_QUEUE = "simulation-request-" + UUID.randomUUID();
+    private static final String RESULT_QUEUE = "simulation-result-" + UUID.randomUUID();
 
     @Autowired private SqsSimulatorMessagePublisher publisher;
     @Autowired private WaitingResultRegistry registry;
@@ -41,6 +46,8 @@ class SqsMessagingIntegrationTest {
     @DynamicPropertySource
     static void configureSqs(DynamicPropertyRegistry registry) {
         createQueues();
+        registry.add("simulation.sqs.request-queue-name", () -> REQUEST_QUEUE);
+        registry.add("simulation.sqs.result-queue-name", () -> RESULT_QUEUE);
         registry.add("spring.cloud.aws.sqs.endpoint", () -> endpoint().toString());
         registry.add("spring.cloud.aws.credentials.access-key", () -> "test");
         registry.add("spring.cloud.aws.credentials.secret-key", () -> "test");
@@ -92,7 +99,9 @@ class SqsMessagingIntegrationTest {
         // given
         UUID simulationId = UUID.randomUUID();
         var waiting = registry.register(simulationId);
-        var message = new SimulationResultMessage(simulationId, "1", 5, 4);
+        var message =
+                new SimulationResultMessage(
+                        simulationId, "1", List.of(new SimulationResultMessage.Result(5, 4)));
 
         // when
         sqsTemplate.send(RESULT_QUEUE, message);
@@ -101,8 +110,8 @@ class SqsMessagingIntegrationTest {
         // then
         assertAll(
                 () -> assertEquals(simulationId, result.simulationId()),
-                () -> assertEquals(5, result.score()),
-                () -> assertEquals(4, result.runs()),
+                () -> assertEquals(5, result.results().getFirst().score()),
+                () -> assertEquals(4, result.results().getFirst().runs()),
                 () -> assertFalse(waiting.isCompletedExceptionally()));
     }
 

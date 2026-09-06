@@ -17,6 +17,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -81,13 +82,31 @@ class SimulationResultHttpIntegrationTest {
             var second = client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
             var secondSent = sent.poll(10, TimeUnit.SECONDS);
             assertAll(() -> assertNotNull(secondSent));
-            listener.receive(new SimulationResultMessage(UUID.randomUUID(), "1", 99, 99));
+            listener.receive(
+                    new SimulationResultMessage(
+                            UUID.randomUUID(),
+                            "1",
+                            List.of(new SimulationResultMessage.Result(99, 99))));
             assertAll(() -> assertFalse(first.isDone()), () -> assertFalse(second.isDone()));
-            listener.receive(new SimulationResultMessage(secondSent.simulationId(), "1", 0, 7));
+            listener.receive(
+                    new SimulationResultMessage(
+                            secondSent.simulationId(),
+                            "1",
+                            List.of(new SimulationResultMessage.Result(0, 7))));
             var secondResponse = second.get(10, TimeUnit.SECONDS);
             assertAll(() -> assertFalse(first.isDone()));
-            listener.receive(new SimulationResultMessage(secondSent.simulationId(), "1", 99, 99));
-            listener.receive(new SimulationResultMessage(firstSent.simulationId(), "1", 5, 4));
+            listener.receive(
+                    new SimulationResultMessage(
+                            secondSent.simulationId(),
+                            "1",
+                            List.of(new SimulationResultMessage.Result(99, 99))));
+            listener.receive(
+                    new SimulationResultMessage(
+                            firstSent.simulationId(),
+                            "1",
+                            List.of(
+                                    new SimulationResultMessage.Result(5, 4),
+                                    new SimulationResultMessage.Result(8, 2))));
             var firstResponse = first.get(10, TimeUnit.SECONDS);
             var firstBody = objectMapper.readTree(firstResponse.body());
             var secondBody = objectMapper.readTree(secondResponse.body());
@@ -104,10 +123,13 @@ class SimulationResultHttpIntegrationTest {
                             assertEquals(
                                     secondSent.simulationId().toString(),
                                     secondBody.get("simulationId").asString()),
-                    () -> assertEquals(5, firstBody.get("score").asInt()),
-                    () -> assertEquals(4, firstBody.get("runs").asInt()),
-                    () -> assertEquals(0, secondBody.get("score").asInt()),
-                    () -> assertEquals(7, secondBody.get("runs").asInt()),
+                    () -> assertEquals(2, firstBody.get("results").size()),
+                    () -> assertEquals(8, firstBody.get("results").get(1).get("score").asInt()),
+                    () -> assertEquals(2, firstBody.get("results").get(1).get("runs").asInt()),
+                    () -> assertEquals(5, firstBody.get("results").get(0).get("score").asInt()),
+                    () -> assertEquals(4, firstBody.get("results").get(0).get("runs").asInt()),
+                    () -> assertEquals(0, secondBody.get("results").get(0).get("score").asInt()),
+                    () -> assertEquals(7, secondBody.get("results").get(0).get("runs").asInt()),
                     () -> assertEquals(0, registry.pendingCount()));
         }
     }
