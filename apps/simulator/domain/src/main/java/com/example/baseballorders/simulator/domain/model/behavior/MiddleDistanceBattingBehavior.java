@@ -19,8 +19,7 @@ public class MiddleDistanceBattingBehavior implements AtBatBehavior {
         float tripleProbability = extraBaseProbability / 6;
         float homeRunProbability = extraBaseProbability / 6;
 
-        float singleProbability =
-                hitAverage - extraBaseProbability / 2;
+        float singleProbability = hitAverage - extraBaseProbability / 2;
 
         float cumulative = singleProbability;
 
