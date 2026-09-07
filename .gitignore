@@ -11,6 +11,7 @@ build
 .idea/
 .ai/
 build/
+.gradle-user-home/
 
 .env
 .DS_Store
