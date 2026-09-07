@@ -17,7 +17,7 @@ function setup() {
   const nodes = Object.fromEntries(['order', 'submit', 'feedback', 'selected-count', 'results', 'result-rows', 'average-score', 'median-score', 'maximum-score'].map(id => [`#${id}`, element()]));
   const cards = Array.from({ length: 9 }, (_, i) => {
     const add = element();
-    return { dataset: { id: String(i + 1), name: `選手${i + 1}` }, querySelector: () => add };
+    return { dataset: { id: String(i + 1), name: `選手${i + 1}`, hitAverage: '0.300', sluggish: '0.450', stealSuccessRate: '80%' }, querySelector: () => add };
   });
   let resolve;
   const requests = [];
@@ -29,12 +29,15 @@ function setup() {
   runInNewContext(script, { document, fetch: (...args) => {
     requests.push(args); return new Promise(done => { resolve = done; });
   } });
-  cards.forEach(card => card.querySelector().handlers.click());
   return { nodes, cards, requests, respond: value => resolve(value) };
 }
 
 export async function verifySimulationPage() {
   const page = setup();
+  assert.equal(page.nodes['#selected-count'].textContent, 9, '初期表示で先頭9人を打順へ設定する');
+  assert.equal(page.nodes['#submit'].disabled, false, '初期表示からシミュレーションを実行できる');
+  assert.equal(page.nodes['#order'].children[0].children[1].textContent, '選手1');
+  assert.equal(page.nodes['#order'].children[8].children[1].textContent, '選手9');
   const pending = page.nodes['#submit'].handlers.click();
   assert.equal(page.nodes['#submit'].disabled, true);
   assert.equal(page.cards[0].querySelector().disabled, true, '待機中は打順操作を無効にする');

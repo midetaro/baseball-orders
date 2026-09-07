@@ -63,7 +63,7 @@
 <main>
   <header>
     <div><div class="eyebrow">Baseball Orders / Simulator</div><h1>LINEUP<br>BUILDER</h1></div>
-    <div class="status">9人を選び、勝負の打順を組み立てる。</div>
+    <div class="status">打順を組み立てる。 <a href="/simulation-guide">シミュレーションの仕組み</a></div>
   </header>
   <div class="layout">
     <section aria-labelledby="players-heading">
@@ -101,7 +101,13 @@
   </section>
 </main>
 <script>
-  const lineup = [];
+  const lineup = Array.from(document.querySelectorAll('.player')).slice(0, 9).map(card => ({
+    id: card.dataset.id,
+    name: card.dataset.name,
+    hitAverage: card.dataset.hitAverage,
+    sluggish: card.dataset.sluggish,
+    stealSuccessRate: card.dataset.stealSuccessRate
+  }));
   let inFlight = false;
   const order = document.querySelector('#order');
   const submit = document.querySelector('#submit');
