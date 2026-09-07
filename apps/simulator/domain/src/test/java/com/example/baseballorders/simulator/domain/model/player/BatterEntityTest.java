@@ -25,6 +25,7 @@ class BatterEntityTest {
                         0.3f,
                         0.4f,
                         0.75f,
+                        false,
                         0.85f,
                         (hitAverage, slugging) -> BattingResult.OUT,
                         new NeverStealStrategy(),
@@ -35,6 +36,7 @@ class BatterEntityTest {
         float hitAverage = batter.getHitAverage();
         float sluggish = batter.getSluggish();
         float buntSuccessRate = batter.getBuntSuccessRate();
+        boolean buntEnabled = batter.isBuntEnabled();
         float stealSuccessRate = batter.getStealSuccessRate();
 
         // then
@@ -43,6 +45,7 @@ class BatterEntityTest {
                 () -> assertEquals(0.3f, hitAverage),
                 () -> assertEquals(0.4f, sluggish),
                 () -> assertEquals(0.75f, buntSuccessRate),
+                () -> assertEquals(false, buntEnabled),
                 () -> assertEquals(0.85f, stealSuccessRate));
     }
 
@@ -57,6 +60,7 @@ class BatterEntityTest {
                         0.3f,
                         0.4f,
                         0.75f,
+                        true,
                         0.85f,
                         (hitAverage, slugging) -> BattingResult.OUT,
                         new NeverStealStrategy(),
@@ -98,6 +102,7 @@ class BatterEntityTest {
                         0.3f,
                         0.4f,
                         0.75f,
+                        true,
                         0.85f,
                         (hitAverage, slugging) -> BattingResult.OUT,
                         strategy,
@@ -110,6 +115,29 @@ class BatterEntityTest {
         assertAll(
                 () -> assertEquals(StealResult.SUCCESS, result),
                 () -> assertEquals(0.85f, receivedRate.get()));
+    }
+
+    @Test
+    @DisplayName("バント無効の打者は戦略の判定をせずバントしない")
+    void doesNotBuntWhenBuntIsDisabled() {
+        // given
+        var batter =
+                new BatterEntity(
+                        "batter",
+                        0.3f,
+                        0.4f,
+                        0.75f,
+                        false,
+                        0.85f,
+                        (hitAverage, slugging) -> BattingResult.OUT,
+                        new NeverStealStrategy(),
+                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
+
+        // when
+        BuntResult result = batter.bunt(OutCount.NO_OUT, new SingleBasesState());
+
+        // then
+        assertAll(() -> assertEquals(BuntResult.NOT_TRY, result));
     }
 
     private static final class NeverStealStrategy implements StealStrategy {

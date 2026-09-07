@@ -78,7 +78,7 @@ class SqsSimulationSchedulerIntegrationTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 0.3f, 0.4f, 0.7f, 0.8f))
+                                                "player-" + number, 0.3f, 0.4f, 0.7f, true, 0.8f))
                         .toList();
 
         try (SqsClient sqsClient = createClient()) {

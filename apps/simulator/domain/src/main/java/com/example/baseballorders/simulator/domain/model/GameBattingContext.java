@@ -2,6 +2,7 @@ package com.example.baseballorders.simulator.domain.model;
 
 import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
@@ -141,6 +142,13 @@ public class GameBattingContext {
         this.trySteal();
         this.updateBaseStateOf();
 
+        // --- バント ---
+        if (applyBuntResult(batter.bunt(outCount, currentBaseState))) {
+            this.updateBaseStateOf();
+            this.toNextBatter();
+            return;
+        }
+
         // --- 打撃 ---
         BattingResult battingResult = batter.swing();
         Runnable applyBattingResult =
@@ -154,6 +162,21 @@ public class GameBattingContext {
         applyBattingResult.run();
         this.updateBaseStateOf();
         this.toNextBatter();
+    }
+
+    private boolean applyBuntResult(BuntResult buntResult) {
+        return switch (buntResult) {
+            case NOT_TRY -> false;
+            case FAILURE -> {
+                this.addOutCounts(1);
+                yield true;
+            }
+            case SUCCESS -> {
+                this.moveRunnerNthBase(Base.FIRST);
+                this.addOutCounts(1);
+                yield true;
+            }
+        };
     }
 
     private void trySteal() {

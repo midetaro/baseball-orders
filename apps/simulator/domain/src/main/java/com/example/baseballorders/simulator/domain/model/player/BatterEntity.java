@@ -28,6 +28,9 @@ public class BatterEntity extends Player {
     /** バント成功率 */
     private final float buntSuccessRate;
 
+    /** バントを試みるかどうか */
+    private final boolean buntEnabled;
+
     /** 盗塁成功率 */
     private final float stealSuccessRate;
 
@@ -75,6 +78,9 @@ public class BatterEntity extends Player {
      * @return バント結果
      */
     public BuntResult bunt(OutCount outCount, BasesState basesState) {
+        if (!buntEnabled) {
+            return BuntResult.NOT_TRY;
+        }
         return buntStrategy.bunt(buntSuccessRate, outCount, basesState);
     }
 }

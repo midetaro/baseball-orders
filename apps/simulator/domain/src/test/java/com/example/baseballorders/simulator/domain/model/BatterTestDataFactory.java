@@ -39,6 +39,7 @@ public final class BatterTestDataFactory {
                 hitAverage,
                 slugging,
                 0.7f,
+                true,
                 0.8f,
                 shortDistanceAtBatBehavior,
                 stealStrategy,

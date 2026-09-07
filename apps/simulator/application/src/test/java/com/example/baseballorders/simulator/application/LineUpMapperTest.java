@@ -34,7 +34,7 @@ class LineUpMapperTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 1.0f, 0.0f, 0.8f, 0.9f))
+                                                "player-" + number, 1.0f, 0.0f, 0.8f, false, 0.9f))
                         .toList();
 
         // when
@@ -54,7 +54,7 @@ class LineUpMapperTest {
                 () -> assertEquals(0.9f, stealStrategy.receivedSuccessRate),
                 () ->
                         assertEquals(
-                                BuntResult.SUCCESS,
+                                BuntResult.NOT_TRY,
                                 result.getBatterEntities()
                                         .getFirst()
                                         .bunt(OutCount.NO_OUT, new SingleBasesState())));

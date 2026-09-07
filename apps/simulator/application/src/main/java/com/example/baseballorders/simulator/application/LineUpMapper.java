@@ -50,6 +50,7 @@ public class LineUpMapper {
                                                 player.hitAverage(),
                                                 player.sluggish(),
                                                 player.buntSuccessRate(),
+                                                player.buntEnabled(),
                                                 player.stealSuccessRate(),
                                                 atBatBehavior,
                                                 stealStrategy,
