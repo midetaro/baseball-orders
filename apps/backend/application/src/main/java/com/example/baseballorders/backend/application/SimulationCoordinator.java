@@ -2,10 +2,12 @@ package com.example.baseballorders.backend.application;
 
 import com.example.baseballorders.backend.application.adapter.PlayerDataRepository;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
+import com.example.baseballorders.backend.application.dto.SimulationPlayerSelection;
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.application.exception.SimulationAcceptException;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
+import com.example.baseballorders.backend.domain.PlayerData;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.time.Duration;
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.IntStream;
 
 /** シミュレーションユースケースのデータ取得、要求送信、結果待機を調整する。 */
 public final class SimulationCoordinator {
@@ -62,15 +65,31 @@ public final class SimulationCoordinator {
     /**
      * 選手データを読み込んでSQSへ要求し、相関する結果をtimeoutまで待機する。
      *
-     * @param playerIds 打順どおりの9人のplayer ID
+     * @param selections 打順どおりの9人のplayer IDとバント選択
      * @return simulatorから受信した結果
      * @throws SimulationTimeoutException timeout内に結果を受信できなかった場合
      */
-    public SimulationResult simulate(List<Long> playerIds) {
-        if (playerIds.size() != LINEUP_SIZE) {
+    public SimulationResult simulate(List<SimulationPlayerSelection> selections) {
+        if (selections.size() != LINEUP_SIZE) {
             throw new IllegalArgumentException("playerIds must contain exactly 9 entries");
         }
-        var players = playerDataRepository.findAllByIds(playerIds);
+        var playerData =
+                playerDataRepository.findAllByIds(
+                        selections.stream().map(SimulationPlayerSelection::playerId).toList());
+        var players =
+                IntStream.range(0, playerData.size())
+                        .mapToObj(
+                                index -> {
+                                    var player = playerData.get(index);
+                                    return new PlayerData(
+                                            player.name(),
+                                            player.hitAverage(),
+                                            player.sluggish(),
+                                            player.buntSuccessRate(),
+                                            selections.get(index).buntEnabled(),
+                                            player.stealSuccessRate());
+                                })
+                        .toList();
         UUID simulationId = UUID.randomUUID();
 
         // 送信

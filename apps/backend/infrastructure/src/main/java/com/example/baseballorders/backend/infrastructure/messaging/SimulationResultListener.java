@@ -4,6 +4,7 @@ import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import io.awspring.cloud.sqs.annotation.SqsListener;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,9 @@ public final class SimulationResultListener {
     @SqsListener("${simulation.sqs.result-queue-name}")
     public void receive(SimulationResultMessage message) {
         LOGGER.info("simulation result received simulationId={}", message.simulationId());
+        var statistics =
+                Objects.requireNonNull(
+                        message.statistics(), "simulation result statistics must not be null");
         LOGGER.info("試合数={}", message.results().size());
         boolean completed =
                 registry.complete(
@@ -37,7 +41,11 @@ public final class SimulationResultListener {
                                                 result ->
                                                         new SimulationResult.Result(
                                                                 result.score(), result.runs()))
-                                        .toList()));
+                                        .toList(),
+                                new SimulationResult.Statistics(
+                                        statistics.averageScore(),
+                                        statistics.medianScore(),
+                                        statistics.maximumScore())));
         if (!completed) {
             LOGGER.warn("simulation result ignored simulationId={}", message.simulationId());
         }

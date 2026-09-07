@@ -472,16 +472,68 @@ public class GameBattingContextTest {
                 () -> assertEquals(Optional.of(hitter), context.getRunnerOnFirstBase()));
     }
 
+    @org.junit.jupiter.api.Test
+    @DisplayName("バント成功時は打撃せず走者を進めて打者をアウトにする")
+    void appliesSuccessfulBuntInsteadOfBatting() {
+        // given
+        BatterEntity runner = batter(BattingResult.OUT, StealResult.NOT_TRY);
+        BatterEntity bunter =
+                batter(BattingResult.HIT_HOMER, StealResult.NOT_TRY, BuntResult.SUCCESS);
+        GameBattingContext context =
+                new GameBattingContext(new LineUpEntity(Collections.nCopies(9, bunter)));
+        context.setRunnerOnFirstBase(Optional.of(runner));
+        context.updateBaseStateOf();
+
+        // when
+        context.nextAtBat();
+
+        // then
+        assertAll(
+                () -> assertEquals(OutCount.ONE_OUT, context.getOutCount()),
+                () -> assertEquals(Optional.empty(), context.getRunnerOnFirstBase()),
+                () -> assertEquals(Optional.of(runner), context.getRunnerOnSecondBase()),
+                () -> assertEquals(0, context.getTotalScore()));
+    }
+
+    @org.junit.jupiter.api.Test
+    @DisplayName("バント失敗時は打撃せず走者を残して打者をアウトにする")
+    void appliesFailedBuntInsteadOfBatting() {
+        // given
+        BatterEntity runner = batter(BattingResult.OUT, StealResult.NOT_TRY);
+        BatterEntity bunter =
+                batter(BattingResult.HIT_HOMER, StealResult.NOT_TRY, BuntResult.FAILURE);
+        GameBattingContext context =
+                new GameBattingContext(new LineUpEntity(Collections.nCopies(9, bunter)));
+        context.setRunnerOnFirstBase(Optional.of(runner));
+        context.updateBaseStateOf();
+
+        // when
+        context.nextAtBat();
+
+        // then
+        assertAll(
+                () -> assertEquals(OutCount.ONE_OUT, context.getOutCount()),
+                () -> assertEquals(Optional.of(runner), context.getRunnerOnFirstBase()),
+                () -> assertEquals(Optional.empty(), context.getRunnerOnSecondBase()),
+                () -> assertEquals(0, context.getTotalScore()));
+    }
+
     private static BatterEntity batter(BattingResult battingResult, StealResult stealResult) {
+        return batter(battingResult, stealResult, BuntResult.NOT_TRY);
+    }
+
+    private static BatterEntity batter(
+            BattingResult battingResult, StealResult stealResult, BuntResult buntResult) {
         return new BatterEntity(
                 "batter",
                 0.0f,
                 0.0f,
                 0.0f,
+                true,
                 0.0f,
                 (hitAverage, sluggish) -> battingResult,
                 new FixedStealStrategy(stealResult),
-                (successRate, outCount, basesState) -> BuntResult.NOT_TRY);
+                (successRate, outCount, basesState) -> buntResult);
     }
 
     private record FixedStealStrategy(StealResult result) implements StealStrategy {

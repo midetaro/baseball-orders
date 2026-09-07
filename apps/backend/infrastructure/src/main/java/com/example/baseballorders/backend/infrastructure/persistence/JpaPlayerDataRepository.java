@@ -33,6 +33,7 @@ public class JpaPlayerDataRepository implements PlayerDataRepository {
                 player.getHitAverage(),
                 player.getSluggish(),
                 player.getBuntSuccessRate(),
+                false,
                 player.getStealSuccessRate());
     }
 }

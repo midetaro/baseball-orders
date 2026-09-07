@@ -3,6 +3,7 @@ package com.example.baseballorders.backend.infrastructure.messaging;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.messaging.SimulationResultMessage;
@@ -26,13 +27,19 @@ class SimulationResultListenerTest {
         // when
         listener.receive(
                 new SimulationResultMessage(
-                        simulationId, "1", List.of(new SimulationResultMessage.Result(5, 4))));
+                        simulationId,
+                        "1",
+                        List.of(new SimulationResultMessage.Result(5, 4)),
+                        new SimulationResultMessage.Statistics(5, 5, 5)));
 
         // then
         assertAll(
                 () -> assertEquals(simulationId, waiting.join().simulationId()),
                 () -> assertEquals(5, waiting.join().results().getFirst().score()),
-                () -> assertEquals(4, waiting.join().results().getFirst().runs()));
+                () -> assertEquals(4, waiting.join().results().getFirst().runs()),
+                () -> assertEquals(5, waiting.join().statistics().averageScore()),
+                () -> assertEquals(5, waiting.join().statistics().medianScore()),
+                () -> assertEquals(5, waiting.join().statistics().maximumScore()));
     }
 
     @Test
@@ -63,9 +70,43 @@ class SimulationResultListenerTest {
         // when
         listener.receive(
                 new SimulationResultMessage(
-                        UUID.randomUUID(), "1", List.of(new SimulationResultMessage.Result(5, 4))));
+                        UUID.randomUUID(),
+                        "1",
+                        List.of(new SimulationResultMessage.Result(5, 4)),
+                        new SimulationResultMessage.Statistics(5, 5, 5)));
 
         // then
         assertAll(() -> assertFalse(registry.pendingCount() > 0));
+    }
+
+    @Test
+    @DisplayName("統計情報がないsimulation-resultは待機結果として受理しない")
+    void rejectsResultWithoutStatistics() {
+        // given
+        var registry = new WaitingResultRegistry();
+        UUID simulationId = UUID.randomUUID();
+        var waiting = registry.register(simulationId);
+        var listener = new SimulationResultListener(registry);
+
+        // when
+        var exception =
+                assertThrows(
+                        NullPointerException.class,
+                        () ->
+                                listener.receive(
+                                        new SimulationResultMessage(
+                                                simulationId,
+                                                "1",
+                                                List.of(
+                                                        new SimulationResultMessage.Result(
+                                                                5, 4)))));
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                "simulation result statistics must not be null",
+                                exception.getMessage()),
+                () -> assertFalse(waiting.isDone()));
     }
 }

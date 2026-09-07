@@ -3,6 +3,7 @@ package com.example.baseballorders.simulator.application;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
+import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
@@ -35,6 +36,7 @@ class SimulateGameUseCaseTest {
                                                 0.4f,
                                                 0.4f,
                                                 0.7f,
+                                                true,
                                                 0.8f,
                                                 shortDistanceAtBatBehavior,
                                                 new NowayStealBehavior(),
@@ -43,18 +45,27 @@ class SimulateGameUseCaseTest {
                                                                 .code.BuntResult.SUCCESS))
                         .toList();
         // when
-        List<SimulationResponse> results =
-                simulateGameUseCase.invoke(new LineUpEntity(batterEntities));
+        SimulationResult result = simulateGameUseCase.invoke(new LineUpEntity(batterEntities));
         // then
         assertAll(
-                () -> assertEquals(3, results.size(), "設定された3試合分の結果であること"),
+                () -> assertEquals(3, result.results().size(), "設定された3試合分の結果であること"),
                 () ->
                         assertTrue(
-                                results.stream().allMatch(result -> result.score() >= 0),
+                                result.results().stream()
+                                        .allMatch(response -> response.score() >= 0),
                                 "すべての得点が0以上であること"),
                 () ->
                         assertTrue(
-                                results.stream().allMatch(result -> result.runs() == 4),
-                                "すべての失点が設定されていること"));
+                                result.results().stream()
+                                        .allMatch(response -> response.runs() == 4),
+                                "すべての失点が設定されていること"),
+                () ->
+                        assertEquals(
+                                result.results().stream()
+                                        .mapToInt(SimulationResponse::score)
+                                        .max()
+                                        .orElseThrow(),
+                                result.statistics().maximumScore(),
+                                "最大得点が全試合の結果から計算されること"));
     }
 }

@@ -15,8 +15,24 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 class LineUpMapperTest {
+
+    @Test
+    @DisplayName("既定の打撃戦略には中距離バッターを指定する")
+    void usesMiddleDistanceAtBatAsDefault() {
+        // given
+        var constructor = LineUpMapper.class.getConstructors()[0];
+
+        // when
+        Qualifier qualifier = constructor.getParameters()[0].getAnnotation(Qualifier.class);
+
+        // then
+        assertAll(
+                () -> assertEquals("middleDistanceAtBat", qualifier.value()),
+                () -> assertEquals(AtBatBehavior.class, constructor.getParameters()[0].getType()));
+    }
 
     @Test
     @DisplayName("SQSの選手情報を打順へ変換すると全選手の能力と振る舞いが保持される")
@@ -34,7 +50,7 @@ class LineUpMapperTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 1.0f, 0.0f, 0.8f, 0.9f))
+                                                "player-" + number, 1.0f, 0.0f, 0.8f, false, 0.9f))
                         .toList();
 
         // when
@@ -54,7 +70,7 @@ class LineUpMapperTest {
                 () -> assertEquals(0.9f, stealStrategy.receivedSuccessRate),
                 () ->
                         assertEquals(
-                                BuntResult.SUCCESS,
+                                BuntResult.NOT_TRY,
                                 result.getBatterEntities()
                                         .getFirst()
                                         .bunt(OutCount.NO_OUT, new SingleBasesState())));

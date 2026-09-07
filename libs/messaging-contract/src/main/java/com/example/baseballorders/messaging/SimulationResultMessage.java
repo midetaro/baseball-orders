@@ -10,9 +10,33 @@ import java.util.UUID;
  * @param simulationId 要求と同じ相関ID
  * @param version メッセージスキーマのバージョン
  * @param results 実行順の得点・失点の組
+ * @param statistics 全試合の得点統計
  */
 public record SimulationResultMessage(
-        @JsonProperty("simulation_id") UUID simulationId, String version, List<Result> results) {
+        @JsonProperty("simulation_id") UUID simulationId,
+        String version,
+        List<Result> results,
+        Statistics statistics) {
+
+    /**
+     * 全試合の得点統計。
+     *
+     * @param averageScore 平均得点
+     * @param medianScore 中央値得点
+     * @param maximumScore 最大得点
+     */
+    public record Statistics(double averageScore, double medianScore, int maximumScore) {}
+
+    /**
+     * Backwards-compatible constructor for callers that do not yet supply statistics.
+     *
+     * @param simulationId 要求と同じ相関ID
+     * @param version メッセージスキーマのバージョン
+     * @param results 実行順の得点・失点の組
+     */
+    public SimulationResultMessage(UUID simulationId, String version, List<Result> results) {
+        this(simulationId, version, results, null);
+    }
 
     /**
      * 1試合の結果。

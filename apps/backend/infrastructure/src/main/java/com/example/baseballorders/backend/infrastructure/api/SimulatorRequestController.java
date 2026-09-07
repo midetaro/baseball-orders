@@ -1,6 +1,7 @@
 package com.example.baseballorders.backend.infrastructure.api;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
+import com.example.baseballorders.backend.application.dto.SimulationPlayerSelection;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.util.List;
 import lombok.NonNull;
@@ -21,11 +22,17 @@ public final class SimulatorRequestController {
     /**
      * player IDを受け取り、SQS結果を受信するまでHTTP要求を待機して結果を返す。
      *
-     * @param players 打順どおりに並んだ9人のplayer ID
+     * @param players 打順どおりに並んだ9人のplayer IDとバント選択
      * @return simulatorから返されたシミュレーション結果
      */
     @PostMapping
     public SimulationResult send(@RequestBody List<PlayerIdRequest> players) {
-        return coordinator.simulate(players.stream().map(PlayerIdRequest::playerId).toList());
+        return coordinator.simulate(
+                players.stream()
+                        .map(
+                                player ->
+                                        new SimulationPlayerSelection(
+                                                player.playerId(), player.buntEnabled()))
+                        .toList());
     }
 }

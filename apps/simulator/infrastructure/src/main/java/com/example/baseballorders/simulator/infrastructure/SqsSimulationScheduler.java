@@ -3,11 +3,10 @@ package com.example.baseballorders.simulator.infrastructure;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.LineUpMapper;
-import com.example.baseballorders.simulator.application.contract.SimulationResponse;
+import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -77,20 +76,24 @@ public class SqsSimulationScheduler {
                         message -> {
                             // 送信
                             SimulationRequestMessage request = deserialize(message.body());
-                            List<SimulationResponse> results =
+                            SimulationResult simulationResult =
                                     simulateGameUseCase.invoke(lineUpMapper.map(request.players()));
                             var resultMessage =
                                     new SimulationResultMessage(
                                             request.simulationId(),
                                             request.version(),
-                                            results.stream()
+                                            simulationResult.results().stream()
                                                     .map(
                                                             result ->
                                                                     new SimulationResultMessage
                                                                             .Result(
                                                                             result.score(),
                                                                             result.runs()))
-                                                    .toList());
+                                                    .toList(),
+                                            new SimulationResultMessage.Statistics(
+                                                    simulationResult.statistics().averageScore(),
+                                                    simulationResult.statistics().medianScore(),
+                                                    simulationResult.statistics().maximumScore()));
                             sqsClient.sendMessage(
                                     SendMessageRequest.builder()
                                             .queueUrl(resultQueueUrl)

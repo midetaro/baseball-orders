@@ -6,4 +6,5 @@ public record PlayerData(
         float hitAverage,
         float sluggish,
         float buntSuccessRate,
+        boolean buntEnabled,
         float stealSuccessRate) {}
