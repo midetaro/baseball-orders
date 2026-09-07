@@ -21,12 +21,12 @@ public class LineUpMapper {
     /**
      * Creates a mapper using the default batting and stealing strategies.
      *
-     * @param atBatBehavior behavior assigned to each batter
+     * @param atBatBehavior middle-distance batting behavior assigned to each batter
      * @param stealStrategy stealing strategy assigned to each batter
      * @param buntStrategy bunt strategy assigned to each batter
      */
     public LineUpMapper(
-            @Qualifier("shortDistanceAtBat") AtBatBehavior atBatBehavior,
+            @Qualifier("middleDistanceAtBat") AtBatBehavior atBatBehavior,
             @Qualifier("eagerStealBehavior") StealStrategy stealStrategy,
             @Qualifier("standardBuntStrategy") BuntStrategy buntStrategy) {
         this.atBatBehavior = atBatBehavior;

@@ -1,5 +1,5 @@
 simulation:
-  game-count: 10
+  game-count: 1000
   sqs:
     poll-fixed-delay: ${SIMULATION_SQS_POLL_FIXED_DELAY:60s}
     request-queue-name: ${SIMULATION_REQUEST_QUEUE_NAME:simulation-request}
