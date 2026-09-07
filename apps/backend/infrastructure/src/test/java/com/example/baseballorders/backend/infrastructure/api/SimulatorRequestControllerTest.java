@@ -35,7 +35,7 @@ class SimulatorRequestControllerTest {
         SimulationResult result =
                 controller.send(
                         java.util.stream.IntStream.rangeClosed(1, 9)
-                                .mapToObj(number -> new PlayerIdRequest((long) number))
+                                .mapToObj(number -> new PlayerIdRequest((long) number, true))
                                 .toList());
 
         // then

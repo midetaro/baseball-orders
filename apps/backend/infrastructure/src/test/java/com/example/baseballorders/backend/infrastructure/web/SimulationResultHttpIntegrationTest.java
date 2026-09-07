@@ -68,9 +68,9 @@ class SimulationResultHttpIntegrationTest {
                         .POST(
                                 HttpRequest.BodyPublishers.ofString(
                                         """
-                        [{"player_id":1},{"player_id":2},{"player_id":3},
-                         {"player_id":4},{"player_id":5},{"player_id":6},
-                         {"player_id":7},{"player_id":8},{"player_id":9}]
+                        [{"player_id":1,"bunt_enabled":false},{"player_id":2,"bunt_enabled":false},{"player_id":3,"bunt_enabled":false},
+                         {"player_id":4,"bunt_enabled":false},{"player_id":5,"bunt_enabled":false},{"player_id":6,"bunt_enabled":false},
+                         {"player_id":7,"bunt_enabled":false},{"player_id":8,"bunt_enabled":false},{"player_id":9,"bunt_enabled":false}]
                         """))
                         .build();
 

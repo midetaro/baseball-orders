@@ -60,6 +60,7 @@ class JpaPlayerDataRepositoryTest {
                     () -> assertEquals(0.302f, players.getFirst().hitAverage()),
                     () -> assertEquals(0.502f, players.getFirst().sluggish()),
                     () -> assertEquals(0.702f, players.getFirst().buntSuccessRate()),
+                    () -> assertEquals(false, players.getFirst().buntEnabled()),
                     () -> assertEquals(0.802f, players.getFirst().stealSuccessRate()));
         }
     }

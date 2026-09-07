@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
+import com.example.baseballorders.backend.application.dto.SimulationPlayerSelection;
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
@@ -44,7 +45,7 @@ class SimulationCoordinatorTest {
                                         .map(
                                                 id ->
                                                         new PlayerData(
-                                                                "山田", 0.301f, 0.501f, 0.701f,
+                                                                "山田", 0.301f, 0.501f, 0.701f, false,
                                                                 0.801f))
                                         .toList(),
                         publisher,
@@ -61,6 +62,7 @@ class SimulationCoordinatorTest {
                 () -> assertEquals("山田", published.getFirst().players().getFirst().name()),
                 () -> assertEquals(0.301f, published.getFirst().players().getFirst().hitAverage()),
                 () -> assertEquals(0.501f, published.getFirst().players().getFirst().sluggish()),
+                () -> assertEquals(true, published.getFirst().players().getFirst().buntEnabled()),
                 () ->
                         assertEquals(
                                 0.801f,
@@ -204,9 +206,9 @@ class SimulationCoordinatorTest {
                                 exception.getMessage()));
     }
 
-    private static List<Long> playerIds(int size) {
+    private static List<SimulationPlayerSelection> playerIds(int size) {
         return java.util.stream.IntStream.rangeClosed(1, size)
-                .mapToObj(number -> (long) number)
+                .mapToObj(number -> new SimulationPlayerSelection((long) number, true))
                 .toList();
     }
 }

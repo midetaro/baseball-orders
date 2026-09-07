@@ -44,7 +44,7 @@ class SqsSimulatorMessagePublisherTest {
                 new SimulationRequest(
                         UUID.randomUUID(),
                         "1",
-                        List.of(new PlayerData("選手1", 0.321f, 0.456f, 0.789f, 0.678f)));
+                        List.of(new PlayerData("選手1", 0.321f, 0.456f, 0.789f, true, 0.678f)));
         var messageCaptor = ArgumentCaptor.forClass(SimulationRequestMessage.class);
 
         // when
@@ -57,6 +57,9 @@ class SqsSimulatorMessagePublisherTest {
                         assertEquals(
                                 0.789f,
                                 messageCaptor.getValue().players().getFirst().buntSuccessRate()),
+                () ->
+                        assertEquals(
+                                true, messageCaptor.getValue().players().getFirst().buntEnabled()),
                 () ->
                         assertEquals(
                                 0.678f,

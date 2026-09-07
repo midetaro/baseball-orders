@@ -47,6 +47,7 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
                                                         player.hitAverage(),
                                                         player.sluggish(),
                                                         player.buntSuccessRate(),
+                                                        player.buntEnabled(),
                                                         player.stealSuccessRate()))
                                 .toList());
         sqsTemplate.send(requestQueueName, message);

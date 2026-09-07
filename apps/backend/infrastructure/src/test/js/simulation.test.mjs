@@ -38,6 +38,9 @@ export async function verifySimulationPage() {
   assert.equal(page.nodes['#submit'].disabled, false, '初期表示からシミュレーションを実行できる');
   assert.equal(page.nodes['#order'].children[0].children[1].textContent, '選手1');
   assert.equal(page.nodes['#order'].children[8].children[1].textContent, '選手9');
+  const buntButton = page.nodes['#order'].children[0].children[5];
+  buntButton.handlers.click();
+  assert.equal(buntButton['aria-pressed'], 'true', '打順ごとにバント実行を選択できる');
   const pending = page.nodes['#submit'].handlers.click();
   assert.equal(page.nodes['#submit'].disabled, true);
   assert.equal(page.cards[0].querySelector().disabled, true, '待機中は打順操作を無効にする');
@@ -49,7 +52,7 @@ export async function verifySimulationPage() {
   // disabled属性だけでなく、イベントが重複しても二重要求を送らない。
   await page.nodes['#submit'].handlers.click();
   assert.equal(page.requests.length, 1);
-  assert.deepEqual(JSON.parse(page.requests[0][1].body), Array.from({ length: 9 }, (_, i) => ({ player_id: i + 1 })));
+  assert.deepEqual(JSON.parse(page.requests[0][1].body), Array.from({ length: 9 }, (_, i) => ({ player_id: i + 1, bunt_enabled: i === 0 })));
   page.respond({ ok: true, json: async () => ({ simulationId: 'request-id', results: [{ score: 5, runs: 4 }, { score: 0, runs: 2 }, { score: 3, runs: 3 }], statistics: { averageScore: 2.67, medianScore: 3, maximumScore: 5 } }) });
   await pending;
   assert.equal(page.nodes['#feedback'].textContent, '試合終了：3試合');
