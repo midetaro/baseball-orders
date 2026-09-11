@@ -1,0 +1,61 @@
+package com.example.baseballorders.backend.infrastructure.api;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import com.example.baseballorders.backend.application.SimulationCoordinator;
+import com.example.baseballorders.backend.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.domain.SimulationResult;
+import java.util.List;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.web.bind.annotation.PostMapping;
+
+class SimulatorRequestControllerTest {
+
+    @Test
+    @DisplayName("player_idを受け取るとSQS結果を待機して同期的に返す")
+    void returnsSynchronousSimulationResult() {
+        // given
+        var registry = new WaitingResultRegistry();
+        var coordinator =
+                new SimulationCoordinator(
+                        ids -> List.of(),
+                        request ->
+                                registry.complete(
+                                        request.simulationId(),
+                                        new SimulationResult(
+                                                request.simulationId(),
+                                                List.of(new SimulationResult.Result(5, 4)),
+                                                new SimulationResult.Statistics(5, 5, 5))),
+                        registry);
+        var controller = new SimulatorRequestController(coordinator);
+
+        // when
+        SimulationResult result =
+                controller.send(
+                        java.util.stream.IntStream.rangeClosed(1, 9)
+                                .mapToObj(number -> new PlayerIdRequest((long) number, true))
+                                .toList());
+
+        // then
+        assertAll(
+                () -> assertEquals(5, result.results().getFirst().score()),
+                () -> assertEquals(4, result.results().getFirst().runs()));
+    }
+
+    @Test
+    @DisplayName("POST APIは202ではなく結果を返す通常の同期エンドポイントである")
+    void exposesSynchronousPostEndpoint() throws NoSuchMethodException {
+        // given
+        var method = SimulatorRequestController.class.getMethod("send", List.class);
+
+        // when
+        var postMapping = method.getAnnotation(PostMapping.class);
+
+        // then
+        assertAll(
+                () -> assertEquals(PostMapping.class, postMapping.annotationType()),
+                () -> assertEquals(SimulationResult.class, method.getReturnType()));
+    }
+}

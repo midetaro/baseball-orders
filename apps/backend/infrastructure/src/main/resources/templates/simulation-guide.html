@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>シミュレーションの仕組み | Batting Order Lab</title>
+  <style>
+    :root { color-scheme:dark; --ink:#f7f3e8; --muted:#a8b0ad; --panel:#17201f; --line:#31423e; --lime:#d8ff62; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; color:var(--ink); background:#0c1212; font-family:Inter,"Noto Sans JP",sans-serif; }
+    main { width:min(780px,calc(100% - 32px)); margin:auto; padding:48px 0 64px; }
+    .eyebrow { color:var(--lime); font:700 12px/1 monospace; letter-spacing:.18em; text-transform:uppercase; }
+    h1 { margin:10px 0 28px; font-size:clamp(36px,7vw,64px); letter-spacing:-.05em; line-height:1; }
+    section { margin-top:16px; padding:24px; background:var(--panel); border:1px solid var(--line); border-radius:16px; }
+    h2 { margin:0 0 12px; font-size:20px; }
+    p,li { color:var(--muted); line-height:1.8; }
+    strong { color:var(--ink); }
+    a { color:var(--lime); }
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Baseball Orders / Simulator</div>
+  <h1>シミュレーションの仕組み</h1>
+  <section>
+    <h2>1. 打順を入力する</h2>
+    <p>打者一覧の先頭9人が初期打順として入っています。打順は上下ボタンで並べ替え、別の選手を追加・削除できます。実行時には、表示順の9人の選手IDをシミュレータへ送ります。</p>
+  </section>
+  <section>
+    <h2>2. 9回の試合を進める</h2>
+    <p>各試合は<strong>9回</strong>まで進み、3アウトで次の回へ移ります。打者は入力した打順を繰り返し、打率・長打率、バント成功率、盗塁成功率を使った確率的なプレーで走者と得点が変化します。</p>
+  </section>
+  <section>
+    <h2>3. 複数試合を集計する</h2>
+    <p>同じ打順で複数試合をシミュレーションし、各試合の得点と失点を表示します。<strong>平均得点</strong>、中央値得点、最大得点は、その試合群の得点から算出します。乱数を使うため、同じ打順でも実行ごとに結果は変わります。</p>
+  </section>
+  <p><a href="/">打順を組み立てる</a></p>
+</main>
+</body>
+</html>

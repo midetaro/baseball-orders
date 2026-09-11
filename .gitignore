@@ -1,0 +1,25 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+# Ignore Kotlin plugin data
+.kotlin
+
+/build
+.idea/
+.ai/
+build/
+.gradle-user-home/
+
+.env
+.DS_Store
+
+# Developer-specific AWS IAM profile used by Terraform.
+infra/aws-terraform/terraform.tfvars
+
+# 一度commitしたファイルをgit管理から外す方法
+# git rm --cached {ファイル名}
+# または
+# git rm -r --cached {フォルダ名}

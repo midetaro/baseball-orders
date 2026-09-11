@@ -1,0 +1,86 @@
+package com.example.baseballorders.simulator.domain.model.player;
+
+import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
+import com.example.baseballorders.simulator.domain.code.StealResult;
+import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
+import com.example.baseballorders.simulator.domain.model.state.BasesState;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+/** 打者 */
+@Getter
+@AllArgsConstructor
+public class BatterEntity extends Player {
+
+    /** 選手名 */
+    private final String name;
+
+    /** 打率 */
+    private final float hitAverage;
+
+    /** 長打率 */
+    private final float sluggish;
+
+    /** バント成功率 */
+    private final float buntSuccessRate;
+
+    /** バントを試みるかどうか */
+    private final boolean buntEnabled;
+
+    /** 盗塁成功率 */
+    private final float stealSuccessRate;
+
+    /** 打撃戦略 */
+    private final AtBatBehavior atBatBehavior;
+
+    /** 走塁戦略 */
+    private final StealStrategy stealStrategy;
+
+    /** バント戦略 */
+    private final BuntStrategy buntStrategy;
+
+    /**
+     * 打撃戦略に従って打撃する。
+     *
+     * @return 打席結果
+     */
+    public BattingResult swing() {
+        return atBatBehavior.batting(this.hitAverage, this.sluggish);
+    }
+
+    /**
+     * 二塁への盗塁を試みる。
+     *
+     * @return 盗塁結果
+     */
+    public StealResult stealToDouble() {
+        return stealStrategy.runToDouble(stealSuccessRate);
+    }
+
+    /**
+     * 三塁への盗塁を試みる。
+     *
+     * @return 盗塁結果
+     */
+    public StealResult stealToTriple() {
+        return stealStrategy.runToTriple(stealSuccessRate);
+    }
+
+    /**
+     * アウト数と塁状態を考慮し、バント戦略に従ってバントする。
+     *
+     * @param outCount アウトカウント
+     * @param basesState 現在の塁状態
+     * @return バント結果
+     */
+    public BuntResult bunt(OutCount outCount, BasesState basesState) {
+        if (!buntEnabled) {
+            return BuntResult.NOT_TRY;
+        }
+        return buntStrategy.bunt(buntSuccessRate, outCount, basesState);
+    }
+}

@@ -1,0 +1,9 @@
+.git
+.idea
+.agents
+**/.gradle
+**/build
+**/.idea
+**/.ai
+**/.DS_Store
+**/.env

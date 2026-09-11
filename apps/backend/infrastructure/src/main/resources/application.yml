@@ -1,0 +1,36 @@
+spring:
+  profiles:
+    default: local
+  application:
+    name: baseball-orders-backend
+  datasource:
+    url: jdbc:h2:mem:appdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  sql:
+    init:
+      mode: always
+
+spring.cloud.aws:
+  region:
+    static: ap-northeast-1
+
+simulation:
+  sqs:
+    request-queue-name: ${SIMULATION_REQUEST_QUEUE_NAME:simulation-request}
+    result-queue-name: ${SIMULATION_RESULT_QUEUE_NAME:simulation-result}
+
+logging:
+  level:
+    com.example.baseballorders.backend: INFO
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: strict
