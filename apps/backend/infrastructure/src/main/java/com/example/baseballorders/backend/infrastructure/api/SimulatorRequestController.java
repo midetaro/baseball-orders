@@ -6,6 +6,7 @@ import com.example.baseballorders.backend.domain.SimulationResult;
 import java.util.List;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,12 +28,18 @@ public final class SimulatorRequestController {
      */
     @PostMapping
     public SimulationResult send(@RequestBody List<PlayerIdRequest> players) {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long userId =
+                authentication != null && authentication.getPrincipal() instanceof Long id
+                        ? id
+                        : null;
         return coordinator.simulate(
                 players.stream()
                         .map(
                                 player ->
                                         new SimulationPlayerSelection(
                                                 player.playerId(), player.buntEnabled()))
-                        .toList());
+                        .toList(),
+                userId);
     }
 }

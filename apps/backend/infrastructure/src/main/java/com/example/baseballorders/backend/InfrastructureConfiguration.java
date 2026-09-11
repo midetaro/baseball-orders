@@ -2,11 +2,15 @@ package com.example.baseballorders.backend;
 
 import com.example.baseballorders.backend.application.PasswordHasher;
 import com.example.baseballorders.backend.application.SimulationCoordinator;
+import com.example.baseballorders.backend.application.SimulationRepository;
+import com.example.baseballorders.backend.application.SimulationResultService;
+import com.example.baseballorders.backend.application.SimulationStatisticsRepository;
 import com.example.baseballorders.backend.application.UserAccountRepository;
 import com.example.baseballorders.backend.application.UserAccountService;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.application.adapter.PlayerDataRepository;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
+import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -71,7 +75,23 @@ public class InfrastructureConfiguration {
     public SimulationCoordinator simulationCoordinator(
             PlayerDataRepository repository,
             SimulatorMessagePublisher publisher,
-            WaitingResultRegistry registry) {
-        return new SimulationCoordinator(repository, publisher, registry);
+            WaitingResultRegistry registry,
+            SimulationRepository simulationRepository) {
+        return new SimulationCoordinator(repository, publisher, registry, simulationRepository);
+    }
+
+    /**
+     * SQS結果を永続化するユースケースを生成する。
+     *
+     * @param simulationRepository シミュレーション状態の永続化ポート
+     * @param statisticsRepository 統計情報の永続化ポート
+     * @return 構成済み結果保存ユースケース
+     */
+    @Bean
+    public SimulationResultService simulationResultService(
+            SimulationRepository simulationRepository,
+            SimulationStatisticsRepository statisticsRepository) {
+        return new SimulationResultService(
+                simulationRepository, statisticsRepository, Clock.systemUTC());
     }
 }
