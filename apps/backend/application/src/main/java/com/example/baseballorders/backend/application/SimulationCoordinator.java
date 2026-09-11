@@ -8,7 +8,10 @@ import com.example.baseballorders.backend.application.exception.SimulationAccept
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
 import com.example.baseballorders.backend.domain.PlayerData;
+import com.example.baseballorders.backend.domain.Simulation;
 import com.example.baseballorders.backend.domain.SimulationResult;
+import com.example.baseballorders.backend.domain.SimulationStatus;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +30,7 @@ public final class SimulationCoordinator {
     private final PlayerDataRepository playerDataRepository;
     private final SimulatorMessagePublisher publisher;
     private final WaitingResultRegistry registry;
+    private final SimulationRepository simulationRepository;
     private final Duration timeout;
 
     /**
@@ -40,7 +44,7 @@ public final class SimulationCoordinator {
             PlayerDataRepository playerDataRepository,
             SimulatorMessagePublisher publisher,
             WaitingResultRegistry registry) {
-        this(playerDataRepository, publisher, registry, DEFAULT_TIMEOUT);
+        this(playerDataRepository, publisher, registry, null, DEFAULT_TIMEOUT);
     }
 
     /**
@@ -56,9 +60,35 @@ public final class SimulationCoordinator {
             SimulatorMessagePublisher publisher,
             WaitingResultRegistry registry,
             Duration timeout) {
+        this(playerDataRepository, publisher, registry, null, timeout);
+    }
+
+    /**
+     * 永続化を伴うCoordinatorを作成する。
+     *
+     * @param playerDataRepository player IDから選手データを取得するRepository
+     * @param publisher シミュレーション要求の送信ポート
+     * @param registry HTTPと結果を相関するレジストリ
+     * @param simulationRepository シミュレーション状態の永続化ポート
+     */
+    public SimulationCoordinator(
+            PlayerDataRepository playerDataRepository,
+            SimulatorMessagePublisher publisher,
+            WaitingResultRegistry registry,
+            SimulationRepository simulationRepository) {
+        this(playerDataRepository, publisher, registry, simulationRepository, DEFAULT_TIMEOUT);
+    }
+
+    private SimulationCoordinator(
+            PlayerDataRepository playerDataRepository,
+            SimulatorMessagePublisher publisher,
+            WaitingResultRegistry registry,
+            SimulationRepository simulationRepository,
+            Duration timeout) {
         this.playerDataRepository = playerDataRepository;
         this.publisher = publisher;
         this.registry = registry;
+        this.simulationRepository = simulationRepository;
         this.timeout = timeout;
     }
 
@@ -70,6 +100,18 @@ public final class SimulationCoordinator {
      * @throws SimulationTimeoutException timeout内に結果を受信できなかった場合
      */
     public SimulationResult simulate(List<SimulationPlayerSelection> selections) {
+        return simulate(selections, null);
+    }
+
+    /**
+     * 選手データを読み込んで所有者付き要求をSQSへ送信し、相関する結果を待機する。
+     *
+     * @param selections 打順どおりの9人のplayer IDとバント選択
+     * @param userId ログイン済みユーザーID。未認証時はnull
+     * @return simulatorから受信した結果
+     * @throws SimulationTimeoutException timeout内に結果を受信できなかった場合
+     */
+    public SimulationResult simulate(List<SimulationPlayerSelection> selections, Long userId) {
         if (selections.size() != LINEUP_SIZE) {
             throw new IllegalArgumentException("playerIds must contain exactly 9 entries");
         }
@@ -91,6 +133,15 @@ public final class SimulationCoordinator {
                                 })
                         .toList();
         UUID simulationId = UUID.randomUUID();
+        if (simulationRepository != null) {
+            simulationRepository.save(
+                    new Simulation(
+                            simulationId,
+                            userId,
+                            SimulationStatus.PENDING,
+                            Clock.systemUTC().instant(),
+                            null));
+        }
 
         // 送信
         // simulation-idの登録
