@@ -1,6 +1,9 @@
 terraform {
   required_version = ">= 1.8.0"
 
+  # GitHub Actions supplies the S3 backend values at terraform init time.
+  backend "s3" {}
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -13,6 +16,13 @@ variable "aws_region" {
   description = "AWS region in which resources are created."
   type        = string
   default     = "ap-northeast-1"
+}
+
+variable "aws_profile" {
+  description = "Optional local AWS shared-config profile name. Leave null for the default credential chain, including GitHub Actions OIDC credentials."
+  type        = string
+  default     = null
+  nullable    = true
 }
 
 variable "project_name" {
@@ -61,7 +71,8 @@ variable "message_retention_seconds" {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = var.aws_profile
 
   default_tags {
     tags = {
