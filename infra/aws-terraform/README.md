@@ -31,6 +31,33 @@ these environment variables are absent.
 - Terraform 1.8 or newer
 - AWS credentials available through the standard AWS credential chain
 
+For local use, copy `terraform.tfvars.example` to `terraform.tfvars` and set
+`aws_profile` to the name of an AWS CLI shared-config profile with permission to
+manage the S3 state and AWS resources. The local file is intentionally ignored
+by Git. When `aws_profile` is not set, Terraform uses the default AWS credential
+chain, which is how GitHub Actions receives OIDC credentials.
+
+## GitHub Actions deployment
+
+`.github/workflows/apply-terraform.yml` plans and applies infrastructure after a
+Terraform change is pushed to `develop`; it can also be run manually. It assumes
+that the AWS IAM OIDC provider for GitHub Actions and the assumable role have
+already been configured.
+
+Set these GitHub Actions variables before enabling deployments:
+
+- `AWS_TERRAFORM_ROLE_ARN`: IAM role ARN GitHub Actions assumes through OIDC.
+- `TF_STATE_BUCKET`: existing S3 bucket used for Terraform state.
+- `AWS_REGION` (optional): AWS and state-bucket region; defaults to
+  `ap-northeast-1`.
+- `TF_STATE_KEY` (optional): state object key; defaults to
+  `baseball-orders/develop/terraform.tfstate`.
+
+The assumed role needs access to the managed SQS and IAM-policy resources, and
+read/write access to the configured state object and its `.tflock` lock object.
+The workflow uses the protected `aws-development` GitHub Environment, so create
+that environment and add any required reviewers before the first deployment.
+
 ## Usage
 
 ```sh
