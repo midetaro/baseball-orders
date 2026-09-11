@@ -65,7 +65,7 @@
 <main>
   <header>
     <div><div class="eyebrow">Baseball Orders / Simulator</div><h1>LINEUP<br>BUILDER</h1></div>
-    <div class="status">打順を組み立てる。 <a href="/simulation-guide">シミュレーションの仕組み</a></div>
+    <div class="status"><span th:text="${loggedIn} ? 'ログイン済み' : '未ログイン'">未ログイン</span>。打順を組み立てる。 <a href="/simulation-guide">シミュレーションの仕組み</a></div>
   </header>
   <div class="layout">
     <section aria-labelledby="players-heading">

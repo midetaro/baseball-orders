@@ -48,6 +48,7 @@ class SimulationPageIntegrationTest {
         // then
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
+                () -> assertTrue(response.body().contains("未ログイン")),
                 () -> assertTrue(response.body().contains("打者一覧")),
                 () -> assertTrue(response.body().contains("ルンバ")),
                 () -> assertTrue(response.body().contains("打率")),

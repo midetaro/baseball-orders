@@ -25,8 +25,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * 実物: HTTPサーバー、Spring Security、Thymeleaf、Flyway、H2、JPA、BCrypt。 モック: SQSを使わないためのSqsTemplate。 担保する疎通:
- * HTTPフォーム -> CSRF -> UserAccountController -> UserAccountService -> JPA -> H2。 担保しないもの:
- * ユーザー固有データの取得、パスワード再設定、外部SQS通信。
+ * HTTPフォーム -> CSRF -> UserAccountController -> UserAccountService -> JPA -> H2、および HTTP GET ->
+ * SessionAuthenticationFilter -> SimulationPageController -> Thymeleaf。 担保しないもの: ユーザー固有データの取得、
+ * パスワード再設定、外部SQS通信。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -67,6 +68,7 @@ class UserAccountIntegrationTest {
                         csrfToken(loginPage.body()),
                         "baseball_user",
                         "password-123");
+        var simulationPage = get(client, "/");
 
         // then
         assertAll(
@@ -81,6 +83,8 @@ class UserAccountIntegrationTest {
                 () -> assertTrue(account.passwordHash().startsWith("$2")),
                 () -> assertFalse(account.passwordHash().contains("password-123")),
                 () -> assertEquals(302, loggedIn.statusCode()),
+                () -> assertEquals(200, simulationPage.statusCode()),
+                () -> assertTrue(simulationPage.body().contains("ログイン済み")),
                 () ->
                         assertTrue(
                                 loggedIn.headers()
