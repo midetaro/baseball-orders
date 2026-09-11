@@ -1,6 +1,9 @@
 terraform {
   required_version = ">= 1.8.0"
 
+  # GitHub Actions supplies the S3 backend values at terraform init time.
+  backend "s3" {}
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -13,6 +16,13 @@ variable "aws_region" {
   description = "AWS region in which resources are created."
   type        = string
   default     = "ap-northeast-1"
+}
+
+variable "aws_profile" {
+  description = "Optional local AWS shared-config profile name. Leave null for the default credential chain, including GitHub Actions OIDC credentials."
+  type        = string
+  default     = null
+  nullable    = true
 }
 
 variable "project_name" {
@@ -61,7 +71,8 @@ variable "message_retention_seconds" {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = var.aws_profile
 
   default_tags {
     tags = {
@@ -74,62 +85,6 @@ provider "aws" {
 
 locals {
   name_prefix = "${var.project_name}-${var.environment}"
-}
-
-resource "aws_sqs_queue" "simulation_request_dlq" {
-  name                       = "${var.request_queue_name}-dlq"
-  message_retention_seconds  = 1209600
-  sqs_managed_sse_enabled    = true
-}
-
-resource "aws_sqs_queue" "simulation_result_dlq" {
-  name                       = "${var.result_queue_name}-dlq"
-  message_retention_seconds  = 1209600
-  sqs_managed_sse_enabled    = true
-}
-
-resource "aws_sqs_queue" "simulation_request" {
-  name                       = var.request_queue_name
-  message_retention_seconds  = var.message_retention_seconds
-  receive_wait_time_seconds  = 20
-  visibility_timeout_seconds = 60
-  sqs_managed_sse_enabled    = true
-
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.simulation_request_dlq.arn
-    maxReceiveCount     = 5
-  })
-}
-
-resource "aws_sqs_queue" "simulation_result" {
-  name                       = var.result_queue_name
-  message_retention_seconds  = var.message_retention_seconds
-  receive_wait_time_seconds  = 20
-  visibility_timeout_seconds = 60
-  sqs_managed_sse_enabled    = true
-
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.simulation_result_dlq.arn
-    maxReceiveCount     = 5
-  })
-}
-
-resource "aws_sqs_queue_redrive_allow_policy" "simulation_request" {
-  queue_url = aws_sqs_queue.simulation_request_dlq.id
-
-  redrive_allow_policy = jsonencode({
-    redrivePermission = "byQueue"
-    sourceQueueArns   = [aws_sqs_queue.simulation_request.arn]
-  })
-}
-
-resource "aws_sqs_queue_redrive_allow_policy" "simulation_result" {
-  queue_url = aws_sqs_queue.simulation_result_dlq.id
-
-  redrive_allow_policy = jsonencode({
-    redrivePermission = "byQueue"
-    sourceQueueArns   = [aws_sqs_queue.simulation_result.arn]
-  })
 }
 
 data "aws_iam_policy_document" "backend_sqs" {
@@ -170,23 +125,6 @@ resource "aws_iam_policy" "simulator_sqs" {
   name        = "${local.name_prefix}-simulator-sqs"
   description = "Least-privilege SQS access for the baseball-orders simulator."
   policy      = data.aws_iam_policy_document.simulator_sqs.json
-}
-
-output "simulation_request_queue_url" {
-  description = "URL of the simulation request queue."
-  value       = aws_sqs_queue.simulation_request.url
-}
-
-output "simulation_request_queue_arn" {
-  value = aws_sqs_queue.simulation_request.arn
-}
-
-output "simulation_result_queue_url" {
-  value = aws_sqs_queue.simulation_result.url
-}
-
-output "simulation_result_queue_arn" {
-  value = aws_sqs_queue.simulation_result.arn
 }
 
 output "backend_sqs_policy_arn" {

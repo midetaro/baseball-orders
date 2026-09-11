@@ -10,6 +10,21 @@ permissions:
   contents: read
 
 jobs:
+  terraform:
+    name: Test Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.5"
+
+      - name: Run Terraform checks
+        run: ./.agents/skills/baseball-orders-development/scripts/verify.sh terraform
+
   test:
     name: Test ${{ matrix.application }}
     runs-on: ubuntu-latest

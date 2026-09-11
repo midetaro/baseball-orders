@@ -1,7 +1,21 @@
 mock_provider "aws" {}
 
 run "sqs_configuration" {
-  command = plan
+  command = apply
+
+  override_data {
+    target = data.aws_iam_policy_document.backend_sqs
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.simulator_sqs
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
 
   assert {
     condition     = aws_sqs_queue.simulation_request.name == "simulation-request"
@@ -34,6 +48,20 @@ run "sqs_configuration" {
 
 run "iam_configuration" {
   command = plan
+
+  override_data {
+    target = data.aws_iam_policy_document.backend_sqs
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.simulator_sqs
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
 
   assert {
     condition     = aws_iam_policy.backend_sqs.name == "baseball-orders-dev-backend-sqs"
