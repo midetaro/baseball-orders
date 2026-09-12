@@ -16,8 +16,9 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
- * 実物: HTTPサーバー、Controller、Thymeleaf、H2の選手データ。 モック: SqsTemplate。 担保する疎通: HTTP GET ->
- * SimulationPageController -> Thymeleaf HTML応答。 担保しないもの: SQSへのシミュレーション要求送信と結果受信。
+ * 実物: HTTPサーバー、Controller、PlayerListQuery、JPA Repository、Thymeleaf、H2の選手データ。 モック: SqsTemplate。
+ * 担保する疎通: HTTP GET -> SimulationPageController -> PlayerListQuery -> JpaPlayerDataRepository -> H2
+ * -> Thymeleaf HTML応答。 担保しないもの: SQSへのシミュレーション要求送信と結果受信。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,

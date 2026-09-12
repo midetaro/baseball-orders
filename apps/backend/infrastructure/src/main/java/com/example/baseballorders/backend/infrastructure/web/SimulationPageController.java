@@ -1,7 +1,6 @@
 package com.example.baseballorders.backend.infrastructure.web;
 
-import com.example.baseballorders.backend.infrastructure.persistence.PlayerEntity;
-import jakarta.persistence.EntityManager;
+import com.example.baseballorders.backend.application.adapter.PlayerListQuery;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -13,21 +12,16 @@ import org.springframework.web.servlet.ModelAndView;
 @RequiredArgsConstructor
 public final class SimulationPageController {
 
-    @NonNull private final EntityManager entityManager;
+    @NonNull private final PlayerListQuery playerListQuery;
 
     /**
-     * player ID順の打者一覧を含むシミュレーション画面を表示する。
+     * 打者一覧を含むシミュレーション画面を表示する。
      *
      * @return 打者一覧を保持するシミュレーション画面
      */
     @GetMapping("/")
     public ModelAndView index() {
-        var players =
-                entityManager
-                        .createQuery(
-                                "SELECT p FROM PlayerEntity p ORDER BY p.playerId",
-                                PlayerEntity.class)
-                        .getResultList();
+        var players = playerListQuery.findAll();
         return new ModelAndView("simulation", "players", players);
     }
 }
