@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import com.example.baseballorders.backend.application.adapter.PlayerListQuery;
 import com.example.baseballorders.backend.application.dto.PlayerListItem;
-import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
