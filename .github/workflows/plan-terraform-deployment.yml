@@ -34,6 +34,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      # デバック用のecho
       - name: Check GitHub context
         run: |
           echo "repository=${{ github.repository }}"
