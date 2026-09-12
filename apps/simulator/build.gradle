@@ -30,7 +30,6 @@ subprojects {
 
         tasks.withType(Test).configureEach {
             useJUnitPlatform()
-            dependsOn tasks.named('spotlessCheck')
         }
     }
 }
