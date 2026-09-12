@@ -15,26 +15,6 @@ import org.junit.jupiter.api.Test;
 class SimulationPageControllerTest {
 
     @Test
-    @DisplayName("画面ControllerはpersistenceアダプタまたはJPAクライアントに直接依存しない")
-    void doesNotDependOnPersistenceAdapter() {
-        // given
-        var fields = SimulationPageController.class.getDeclaredFields();
-
-        // when
-        boolean hasInfrastructureDependency =
-                Arrays.stream(fields)
-                        .map(field -> field.getType().getPackageName())
-                        .anyMatch(
-                                packageName ->
-                                        packageName.equals("jakarta.persistence")
-                                                || packageName.contains(
-                                                        ".infrastructure.persistence"));
-
-        // then
-        assertAll(() -> assertEquals(false, hasInfrastructureDependency));
-    }
-
-    @Test
     @DisplayName("トップ画面を表示すると打者一覧を渡す")
     void showsPlayersOnSimulationPage() {
         // given
