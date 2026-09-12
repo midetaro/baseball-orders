@@ -39,10 +39,13 @@ chain, which is how GitHub Actions receives OIDC credentials.
 
 ## GitHub Actions deployment
 
-`.github/workflows/apply-terraform.yml` plans and applies infrastructure after a
-Terraform change is pushed to `develop`; it can also be run manually. It assumes
-that the AWS IAM OIDC provider for GitHub Actions and the assumable role have
-already been configured.
+`.github/workflows/plan-terraform-deployment.yml` creates a production Terraform
+plan for pull requests targeting `develop`; it can also be run manually. It is a
+pre-merge check for `.github/workflows/deploy.yml` and never runs `terraform
+apply`. `.github/workflows/deploy.yml` applies the production plan after a
+Terraform change is pushed to `main`. Both workflows assume that the AWS IAM
+OIDC provider for GitHub Actions and the assumable role have already been
+configured.
 
 Set these GitHub Actions variables before enabling deployments:
 
@@ -51,11 +54,11 @@ Set these GitHub Actions variables before enabling deployments:
 - `AWS_REGION` (optional): AWS and state-bucket region; defaults to
   `ap-northeast-1`.
 - `TF_STATE_KEY` (optional): state object key; defaults to
-  `baseball-orders/develop/terraform.tfstate`.
+  `baseball-orders/production/terraform.tfstate`.
 
 The assumed role needs access to the managed SQS and IAM-policy resources, and
 read/write access to the configured state object and its `.tflock` lock object.
-The workflow uses the protected `aws-development` GitHub Environment, so create
+The workflows use the protected `aws-production` GitHub Environment, so create
 that environment and add any required reviewers before the first deployment.
 
 ## Usage
