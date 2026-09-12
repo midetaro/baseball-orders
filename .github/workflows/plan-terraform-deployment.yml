@@ -1,0 +1,64 @@
+name: Test AWS Terraform Deployment
+
+# main へ反映される deploy.yml と同じ production 設定で、変更を適用せずに検証する。
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - "infra/aws-terraform/**"
+      - ".github/workflows/plan-terraform-deployment.yml"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+# リポジトリの取得と、production state を読むための OIDC 認証だけを許可する。
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  # 同じ PR の古い plan は不要なため、新しい実行開始時に取り消す。
+  group: terraform-aws-production-plan-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: Validate and plan production infrastructure
+    runs-on: ubuntu-latest
+    # deploy.yml と同じ Environment の変数・OIDC ロールを使い、反映前に本番との差分を確認する。
+    environment: aws-production
+    defaults:
+      run:
+        working-directory: infra/aws-terraform
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials through GitHub OIDC
+        # 長期アクセスキーを置かず、GitHub Actions 用ロールを一時的に引き受ける。
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'ap-northeast-1' }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.8.5"
+
+      - name: Initialize remote state
+        # deploy.yml と同じ production state を初期化し、plan の差分計算に利用する。
+        run: >-
+          terraform init -input=false
+          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="key=${{ vars.TF_STATE_KEY || 'baseball-orders/production/terraform.tfstate' }}"
+          -backend-config="region=${{ vars.AWS_REGION || 'ap-northeast-1' }}"
+          -backend-config="use_lockfile=true"
+
+      - name: Validate Terraform
+        # 構文と設定の整合性を、AWS リソースを変更せずに確認する。
+        run: terraform validate
+
+      - name: Create execution plan
+        # production 向けの変更予定を確認するだけで、terraform apply は実行しない。
+        run: terraform plan -input=false -var="environment=production"
