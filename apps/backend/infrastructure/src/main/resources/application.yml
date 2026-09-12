@@ -4,13 +4,13 @@ spring:
   application:
     name: baseball-orders-backend
   datasource:
-    url: jdbc:h2:mem:baseballorders
+    url: jdbc:h2:mem:appdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password: ""
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
   sql:
     init:
       mode: always
@@ -27,3 +27,10 @@ simulation:
 logging:
   level:
     com.example.baseballorders.backend: INFO
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: strict
