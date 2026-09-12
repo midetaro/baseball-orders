@@ -1,6 +1,8 @@
 package com.example.baseballorders.backend.infrastructure.persistence;
 
 import com.example.baseballorders.backend.application.adapter.PlayerDataRepository;
+import com.example.baseballorders.backend.application.adapter.PlayerListQuery;
+import com.example.baseballorders.backend.application.dto.PlayerListItem;
 import com.example.baseballorders.backend.domain.PlayerData;
 import jakarta.persistence.EntityManager;
 import java.util.List;
@@ -12,7 +14,7 @@ import org.springframework.stereotype.Repository;
 /** JPAを使用してplayersテーブルから選手の打撃データを取得するRepository。 */
 @Repository
 @RequiredArgsConstructor
-public class JpaPlayerDataRepository implements PlayerDataRepository {
+public class JpaPlayerDataRepository implements PlayerDataRepository, PlayerListQuery {
 
     @NonNull private final EntityManager entityManager;
 
@@ -21,6 +23,25 @@ public class JpaPlayerDataRepository implements PlayerDataRepository {
     public List<PlayerData> findAllByIds(List<Long> playerIds) {
         Objects.requireNonNull(playerIds, "playerIds must not be null");
         return playerIds.stream().map(this::findById).toList();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public List<PlayerListItem> findAll() {
+        return entityManager
+                .createQuery("SELECT p FROM PlayerEntity p", PlayerEntity.class)
+                .getResultList()
+                .stream()
+                .map(
+                        player ->
+                                new PlayerListItem(
+                                        player.getPlayerId(),
+                                        player.getName(),
+                                        player.getHitAverage(),
+                                        player.getSluggish(),
+                                        player.getBuntSuccessRate(),
+                                        player.getStealSuccessRate()))
+                .toList();
     }
 
     private PlayerData findById(Long playerId) {

@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.example.baseballorders.backend.infrastructure.persistence.PlayerEntity;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
+import com.example.baseballorders.backend.application.adapter.PlayerListQuery;
+import com.example.baseballorders.backend.application.dto.PlayerListItem;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,20 +15,35 @@ import org.junit.jupiter.api.Test;
 class SimulationPageControllerTest {
 
     @Test
-    @DisplayName("トップ画面を表示すると打者一覧をplayer ID順で渡す")
+    @DisplayName("画面ControllerはpersistenceアダプタまたはJPAクライアントに直接依存しない")
+    void doesNotDependOnPersistenceAdapter() {
+        // given
+        var fields = SimulationPageController.class.getDeclaredFields();
+
+        // when
+        boolean hasInfrastructureDependency =
+                Arrays.stream(fields)
+                        .map(field -> field.getType().getPackageName())
+                        .anyMatch(
+                                packageName ->
+                                        packageName.equals("jakarta.persistence")
+                                                || packageName.contains(
+                                                        ".infrastructure.persistence"));
+
+        // then
+        assertAll(() -> assertEquals(false, hasInfrastructureDependency));
+    }
+
+    @Test
+    @DisplayName("トップ画面を表示すると打者一覧を渡す")
     void showsPlayersOnSimulationPage() {
         // given
-        // EntityManagerとJPA queryをモックする
-        EntityManager entityManager = mock(EntityManager.class);
-        @SuppressWarnings("unchecked")
-        TypedQuery<PlayerEntity> query = mock(TypedQuery.class);
-        PlayerEntity first = mock(PlayerEntity.class);
-        PlayerEntity second = mock(PlayerEntity.class);
-        when(entityManager.createQuery(
-                        "SELECT p FROM PlayerEntity p ORDER BY p.playerId", PlayerEntity.class))
-                .thenReturn(query);
-        when(query.getResultList()).thenReturn(List.of(first, second));
-        var controller = new SimulationPageController(entityManager);
+        // 画面表示用の選手一覧を返すapplicationポートをモックする
+        PlayerListQuery playerListQuery = mock(PlayerListQuery.class);
+        var first = new PlayerListItem(1L, "山田", 0.301f, 0.501f, 0.701f, 0.801f);
+        var second = new PlayerListItem(2L, "鈴木", 0.302f, 0.502f, 0.702f, 0.802f);
+        when(playerListQuery.findAll()).thenReturn(List.of(first, second));
+        var controller = new SimulationPageController(playerListQuery);
 
         // when
         var page = controller.index();
