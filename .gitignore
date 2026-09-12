@@ -12,9 +12,11 @@ build
 .ai/
 build/
 .gradle-user-home/
+.terraform/
 
 .env
 .DS_Store
+.txt
 
 # Developer-specific AWS IAM profile used by Terraform.
 infra/aws-terraform/terraform.tfvars
