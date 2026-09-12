@@ -51,7 +51,7 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.8.5"
+          terraform_version: "1.14.5"
 
       - name: Initialize remote state
         # deploy.yml と同じ production state を初期化し、plan の差分計算に利用する。
