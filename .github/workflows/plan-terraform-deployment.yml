@@ -2,14 +2,13 @@ name: Test AWS Terraform Deployment
 
 # main へ反映される deploy.yml と同じ production 設定で、変更を適用せずに検証する。
 on:
-  pull_request:
+  push:
     branches:
       - develop
     paths:
       - "infra/aws-terraform/**"
       - ".github/workflows/plan-terraform-deployment.yml"
       - ".github/workflows/deploy.yml"
-  workflow_dispatch:
 
 # リポジトリの取得と、production state を読むための OIDC 認証だけを許可する。
 permissions:
@@ -17,8 +16,8 @@ permissions:
   id-token: write
 
 concurrency:
-  # 同じ PR の古い plan は不要なため、新しい実行開始時に取り消す。
-  group: terraform-aws-production-plan-${{ github.event.pull_request.number || github.run_id }}
+  # 同じブランチの古い plan は不要なため、新しい実行開始時に取り消す。
+  group: terraform-aws-production-plan-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
