@@ -181,7 +181,8 @@ class SimulationCoordinatorTest {
 
     private static List<PlayerData> players(int size) {
         return java.util.stream.IntStream.rangeClosed(1, size)
-                .mapToObj(number -> new PlayerData("山田", 0.301f, 0.501f, 0.701f, true, 0.801f))
+                .mapToObj(
+                        number -> new PlayerData("山田", 0.301f, 0.501f, 0.701f, true, 0.801f, true))
                 .toList();
     }
 }

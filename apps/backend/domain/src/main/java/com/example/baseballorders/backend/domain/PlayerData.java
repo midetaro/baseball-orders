@@ -12,7 +12,8 @@ public record PlayerData(
         float sluggish,
         float buntSuccessRate,
         boolean buntEnabled,
-        float stealSuccessRate) {
+        float stealSuccessRate,
+        boolean stealEnabled) {
 
     private static final float MIN_HIT_AVERAGE = 0.005f;
     private static final float MAX_HIT_AVERAGE = 0.400f;

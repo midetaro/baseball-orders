@@ -22,7 +22,7 @@ public final class SimulatorRequestController {
     /**
      * 画面で入力された打順データを受け取り、SQS結果を受信するまでHTTP要求を待機して結果を返す。
      *
-     * @param players 打順どおりに並んだ9人の打撃データとバント選択
+     * @param players 打順どおりに並んだ9人の打撃データとバント・盗塁選択
      * @return simulatorから返されたシミュレーション結果
      */
     @PostMapping
@@ -38,7 +38,8 @@ public final class SimulatorRequestController {
                                             player.sluggish(),
                                             player.buntSuccessRate(),
                                             player.buntEnabled(),
-                                            player.stealSuccessRate());
+                                            player.stealSuccessRate(),
+                                            player.stealEnabled());
                                 })
                         .toList());
     }
