@@ -16,16 +16,12 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
- * 実物: HTTPサーバー、Controller、PlayerListQuery、JPA Repository、Thymeleaf、H2の選手データ。 モック: SqsTemplate。
- * 担保する疎通: HTTP GET -> SimulationPageController -> PlayerListQuery -> JpaPlayerDataRepository -> H2
- * -> Thymeleaf HTML応答。 担保しないもの: SQSへのシミュレーション要求送信と結果受信。
+ * 実物: HTTPサーバー、Controller、Thymeleaf。 モック: SqsTemplate。 担保する疎通: HTTP GET -> SimulationPageController
+ * -> Thymeleaf HTML応答。 担保しないもの: SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {
-            "spring.cloud.aws.sqs.enabled=false",
-            "spring.datasource.url=jdbc:h2:mem:simulation-page"
-        })
+        properties = "spring.cloud.aws.sqs.enabled=false")
 class SimulationPageIntegrationTest {
 
     // GUI表示では使用しないSqsTemplateをモックする
@@ -49,11 +45,24 @@ class SimulationPageIntegrationTest {
         // then
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
-                () -> assertTrue(response.body().contains("打者一覧")),
-                () -> assertTrue(response.body().contains("ルンバ")),
+                () -> assertTrue(response.body().contains("打順入力")),
+                () -> assertTrue(response.body().contains("一番〜九番として送信します。")),
                 () -> assertTrue(response.body().contains("打率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () -> assertTrue(response.body().contains("盗塁成功率")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("key:'hitAverage',label:'打率',min:0.005,max:0.4")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("key:'sluggish',label:'長打率',min:0.1,max:0.6")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "key:'stealSuccessRate',label:'盗塁成功率',min:0.1,max:0.9")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
                 () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
                 () -> assertTrue(response.body().contains("fetch('/simulations'")),
@@ -64,8 +73,8 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("満塁")),
                 () -> assertTrue(response.body().contains("バント")),
                 () -> assertTrue(response.body().contains("盗塁")),
-                () -> assertTrue(response.body().contains("statistics.homeRunCount")),
-                () -> assertTrue(response.body().contains("statistics.stealCount")));
+                () -> assertTrue(response.body().contains("'homeRunCount'")),
+                () -> assertTrue(response.body().contains("'stealCount'")));
     }
 
     @Test

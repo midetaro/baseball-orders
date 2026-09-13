@@ -30,17 +30,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * 実物: HTTPサーバー、Controller、Coordinator、H2 Repository、WaitingResultRegistry、結果Listener、JSON変換。 モック:
- * 要求送信ポートSimulatorMessagePublisher、SQS無効化時に未使用のSqsTemplate。 担保する疎通: 結果Listener ->
- * WaitingResultRegistry -> Coordinator -> Controller -> HTTP JSON応答。 担保しないもの:
- * SQS通信・メッセージ変換・削除、simulatorの計算、ブラウザ描画。
+ * 実物: HTTPサーバー、Controller、Coordinator、WaitingResultRegistry、結果Listener、JSON変換。 モック:
+ * 要求送信ポートSimulatorMessagePublisher、SQS無効化時に未使用のSqsTemplate。 担保する疎通: HTTP JSON要求 -> Controller ->
+ * Coordinator -> 結果Listener -> WaitingResultRegistry -> Coordinator -> Controller -> HTTP JSON応答。
+ * 担保しないもの: SQS通信・メッセージ変換・削除、simulatorの計算、ブラウザ描画。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {
-            "spring.cloud.aws.sqs.enabled=false",
-            "spring.datasource.url=jdbc:h2:mem:result-http"
-        })
+        properties = "spring.cloud.aws.sqs.enabled=false")
 class SimulationResultHttpIntegrationTest {
 
     @MockitoBean private SimulatorMessagePublisher publisher;
@@ -68,9 +65,15 @@ class SimulationResultHttpIntegrationTest {
                         .POST(
                                 HttpRequest.BodyPublishers.ofString(
                                         """
-                        [{"player_id":1,"bunt_enabled":false},{"player_id":2,"bunt_enabled":false},{"player_id":3,"bunt_enabled":false},
-                         {"player_id":4,"bunt_enabled":false},{"player_id":5,"bunt_enabled":false},{"player_id":6,"bunt_enabled":false},
-                         {"player_id":7,"bunt_enabled":false},{"player_id":8,"bunt_enabled":false},{"player_id":9,"bunt_enabled":false}]
+                        [{"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false}]
                         """))
                         .build();
 

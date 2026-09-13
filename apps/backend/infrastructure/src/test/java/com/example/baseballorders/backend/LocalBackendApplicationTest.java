@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(properties = "spring.datasource.url=jdbc:h2:mem:local-backend-startup")
+@SpringBootTest
 @ActiveProfiles("local")
 class LocalBackendApplicationTest {
 

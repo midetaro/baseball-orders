@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
-import com.example.baseballorders.backend.application.dto.SimulationPlayerSelection;
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
@@ -23,7 +22,7 @@ import org.junit.jupiter.api.Test;
 class SimulationCoordinatorTest {
 
     @Test
-    @DisplayName("DBの選手を共有contractへ変換して送信し同じsimulation IDの結果を返す")
+    @DisplayName("画面入力の選手を共有contractへ変換して送信し同じsimulation IDの結果を返す")
     void sendsContractAndReturnsCorrelatedResult() {
         // given
         var registry = new WaitingResultRegistry();
@@ -38,22 +37,10 @@ class SimulationCoordinatorTest {
                                     List.of(new SimulationResult.Result(5, 4)),
                                     new SimulationResult.Statistics(5, 5, 5)));
                 };
-        var coordinator =
-                new SimulationCoordinator(
-                        ids ->
-                                ids.stream()
-                                        .map(
-                                                id ->
-                                                        new PlayerData(
-                                                                "山田", 0.301f, 0.501f, 0.701f, false,
-                                                                0.801f))
-                                        .toList(),
-                        publisher,
-                        registry,
-                        Duration.ofSeconds(1));
+        var coordinator = new SimulationCoordinator(publisher, registry, Duration.ofSeconds(1));
 
         // when
-        SimulationResult result = coordinator.simulate(playerIds(9));
+        SimulationResult result = coordinator.simulate(players(9));
 
         // then
         assertAll(
@@ -76,14 +63,12 @@ class SimulationCoordinatorTest {
     void removesWaitAfterTimeout() {
         // given
         var registry = new WaitingResultRegistry();
-        var coordinator =
-                new SimulationCoordinator(
-                        ids -> List.of(), request -> {}, registry, Duration.ofMillis(1));
+        var coordinator = new SimulationCoordinator(request -> {}, registry, Duration.ofMillis(1));
 
         // when
         var exception =
                 assertThrows(
-                        SimulationTimeoutException.class, () -> coordinator.simulate(playerIds(9)));
+                        SimulationTimeoutException.class, () -> coordinator.simulate(players(9)));
 
         // then
         assertAll(
@@ -105,7 +90,6 @@ class SimulationCoordinatorTest {
         var failure = new IllegalStateException("send failed");
         var coordinator =
                 new SimulationCoordinator(
-                        ids -> List.of(),
                         request -> {
                             throw failure;
                         },
@@ -114,8 +98,7 @@ class SimulationCoordinatorTest {
 
         // when
         var exception =
-                assertThrows(
-                        SimulationSendException.class, () -> coordinator.simulate(playerIds(9)));
+                assertThrows(SimulationSendException.class, () -> coordinator.simulate(players(9)));
 
         // then
         assertAll(
@@ -129,15 +112,13 @@ class SimulationCoordinatorTest {
         // given
         var registry = new WaitingResultRegistry();
         var failure = new AtomicReference<Throwable>();
-        var coordinator =
-                new SimulationCoordinator(
-                        ids -> List.of(), request -> {}, registry, Duration.ofSeconds(5));
+        var coordinator = new SimulationCoordinator(request -> {}, registry, Duration.ofSeconds(5));
         Thread thread =
                 Thread.ofPlatform()
                         .unstarted(
                                 () -> {
                                     try {
-                                        coordinator.simulate(playerIds(9));
+                                        coordinator.simulate(players(9));
                                     } catch (Throwable exception) {
                                         failure.set(exception);
                                     }
@@ -159,56 +140,48 @@ class SimulationCoordinatorTest {
     }
 
     @Test
-    @DisplayName("player IDが8件の場合はDB取得やSQS送信をせず拒否する")
-    void rejectsEightPlayerIds() {
+    @DisplayName("入力選手が8件の場合はSQS送信をせず拒否する")
+    void rejectsEightPlayers() {
         // given
         var coordinator =
                 new SimulationCoordinator(
-                        ids -> List.of(),
-                        request -> {},
-                        new WaitingResultRegistry(),
-                        Duration.ofSeconds(1));
+                        request -> {}, new WaitingResultRegistry(), Duration.ofSeconds(1));
 
         // when
         var exception =
                 assertThrows(
-                        IllegalArgumentException.class, () -> coordinator.simulate(playerIds(8)));
+                        IllegalArgumentException.class, () -> coordinator.simulate(players(8)));
 
         // then
         assertAll(
                 () ->
                         assertEquals(
-                                "playerIds must contain exactly 9 entries",
-                                exception.getMessage()));
+                                "players must contain exactly 9 entries", exception.getMessage()));
     }
 
     @Test
-    @DisplayName("player IDが10件の場合はDB取得やSQS送信をせず拒否する")
-    void rejectsTenPlayerIds() {
+    @DisplayName("入力選手が10件の場合はSQS送信をせず拒否する")
+    void rejectsTenPlayers() {
         // given
         var coordinator =
                 new SimulationCoordinator(
-                        ids -> List.of(),
-                        request -> {},
-                        new WaitingResultRegistry(),
-                        Duration.ofSeconds(1));
+                        request -> {}, new WaitingResultRegistry(), Duration.ofSeconds(1));
 
         // when
         var exception =
                 assertThrows(
-                        IllegalArgumentException.class, () -> coordinator.simulate(playerIds(10)));
+                        IllegalArgumentException.class, () -> coordinator.simulate(players(10)));
 
         // then
         assertAll(
                 () ->
                         assertEquals(
-                                "playerIds must contain exactly 9 entries",
-                                exception.getMessage()));
+                                "players must contain exactly 9 entries", exception.getMessage()));
     }
 
-    private static List<SimulationPlayerSelection> playerIds(int size) {
+    private static List<PlayerData> players(int size) {
         return java.util.stream.IntStream.rangeClosed(1, size)
-                .mapToObj(number -> new SimulationPlayerSelection((long) number, true))
+                .mapToObj(number -> new PlayerData("山田", 0.301f, 0.501f, 0.701f, true, 0.801f))
                 .toList();
     }
 }
