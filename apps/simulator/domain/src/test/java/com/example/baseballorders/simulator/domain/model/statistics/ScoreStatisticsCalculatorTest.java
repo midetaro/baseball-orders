@@ -11,6 +11,29 @@ import org.junit.jupiter.api.Test;
 class ScoreStatisticsCalculatorTest {
 
     @Test
+    @DisplayName("段階的ビルダーで得点統計を生成できる")
+    void buildsScoreStatisticsWithStagedBuilder() {
+        // given
+        var builder =
+                ScoreStatisticsBuilder.scoreStatistics()
+                        .averageScore(3.5)
+                        .medianScore(3.0)
+                        .maximumScore(9)
+                        .homeRunCount(4)
+                        .soloHomeRunCount(1)
+                        .twoRunHomeRunCount(1)
+                        .threeRunHomeRunCount(1)
+                        .grandSlamCount(1)
+                        .buntCount(2);
+
+        // when
+        var statistics = builder.stealCount(3).build();
+
+        // then
+        assertAll(() -> assertEquals(3, statistics.stealCount()));
+    }
+
+    @Test
     @DisplayName("順不同の奇数件の得点から平均・中央値・最大得点を計算する")
     void calculatesStatisticsForOddNumberOfScores() {
         // given

@@ -518,6 +518,69 @@ public class GameBattingContextTest {
                 () -> assertEquals(0, context.getTotalScore()));
     }
 
+    @org.junit.jupiter.api.Test
+    @DisplayName("試合統計として本塁打の種類・成功バント・成功盗塁を記録する")
+    void recordsGameStatistics() {
+        // given
+        BatterEntity hitter = batter(BattingResult.HIT_HOMER, StealResult.NOT_TRY);
+        BatterEntity runner = batter(BattingResult.OUT, StealResult.NOT_TRY);
+        GameBattingContext soloHomeRunContext = homeRunContext(hitter, runner, false, false, false);
+        GameBattingContext twoRunHomeRunContext =
+                homeRunContext(hitter, runner, true, false, false);
+        GameBattingContext threeRunHomeRunContext =
+                homeRunContext(hitter, runner, true, true, false);
+        GameBattingContext grandSlamContext = homeRunContext(hitter, runner, true, true, true);
+        BatterEntity bunter = batter(BattingResult.OUT, StealResult.NOT_TRY, BuntResult.SUCCESS);
+        GameBattingContext buntContext =
+                new GameBattingContext(new LineUpEntity(Collections.nCopies(9, bunter)));
+        buntContext.setRunnerOnFirstBase(Optional.of(runner));
+        buntContext.updateBaseStateOf();
+        BatterEntity stealingRunner = batter(BattingResult.OUT, StealResult.SUCCESS);
+        BatterEntity battingOut = batter(BattingResult.OUT, StealResult.NOT_TRY);
+        GameBattingContext stealContext =
+                new GameBattingContext(new LineUpEntity(Collections.nCopies(9, battingOut)));
+        stealContext.setRunnerOnFirstBase(Optional.of(stealingRunner));
+        stealContext.updateBaseStateOf();
+
+        // when
+        soloHomeRunContext.nextAtBat();
+        twoRunHomeRunContext.nextAtBat();
+        threeRunHomeRunContext.nextAtBat();
+        grandSlamContext.nextAtBat();
+        buntContext.nextAtBat();
+        stealContext.nextAtBat();
+
+        // then
+        assertAll(
+                () -> assertEquals(1, soloHomeRunContext.getGameStatistics().homeRunCount()),
+                () -> assertEquals(1, soloHomeRunContext.getGameStatistics().soloHomeRunCount()),
+                () ->
+                        assertEquals(
+                                1, twoRunHomeRunContext.getGameStatistics().twoRunHomeRunCount()),
+                () ->
+                        assertEquals(
+                                1,
+                                threeRunHomeRunContext.getGameStatistics().threeRunHomeRunCount()),
+                () -> assertEquals(1, grandSlamContext.getGameStatistics().grandSlamCount()),
+                () -> assertEquals(1, buntContext.getGameStatistics().buntCount()),
+                () -> assertEquals(1, stealContext.getGameStatistics().stealCount()));
+    }
+
+    private static GameBattingContext homeRunContext(
+            BatterEntity hitter,
+            BatterEntity runner,
+            boolean hasRunnerOnFirst,
+            boolean hasRunnerOnSecond,
+            boolean hasRunnerOnThird) {
+        GameBattingContext context =
+                new GameBattingContext(new LineUpEntity(Collections.nCopies(9, hitter)));
+        context.setRunnerOnFirstBase(hasRunnerOnFirst ? Optional.of(runner) : Optional.empty());
+        context.setRunnerOnSecondBase(hasRunnerOnSecond ? Optional.of(runner) : Optional.empty());
+        context.setRunnerOnThirdBase(hasRunnerOnThird ? Optional.of(runner) : Optional.empty());
+        context.updateBaseStateOf();
+        return context;
+    }
+
     private static BatterEntity batter(BattingResult battingResult, StealResult stealResult) {
         return batter(battingResult, stealResult, BuntResult.NOT_TRY);
     }

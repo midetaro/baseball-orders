@@ -52,8 +52,10 @@ public class SimulateGameUseCase {
                 IntStream.range(0, gameCount).mapToObj(ignored -> simulate(lineUpEntity)).toList();
         return new SimulationResult(
                 results,
-                scoreStatisticsCalculator.calculate(
-                        results.stream().map(SimulationResponse::score).toList()));
+                scoreStatisticsCalculator
+                        .calculate(results.stream().map(SimulationResponse::score).toList())
+                        .withGameStatistics(
+                                results.stream().map(SimulationResponse::gameStatistics).toList()));
     }
 
     private SimulationResponse simulate(LineUpEntity lineUpEntity) {
@@ -64,6 +66,7 @@ public class SimulateGameUseCase {
             ctx.nextAtBat();
         }
 
-        return new SimulationResponse(Math.toIntExact(ctx.getTotalScore()), 4);
+        return new SimulationResponse(
+                Math.toIntExact(ctx.getTotalScore()), 4, ctx.getGameStatistics());
     }
 }
