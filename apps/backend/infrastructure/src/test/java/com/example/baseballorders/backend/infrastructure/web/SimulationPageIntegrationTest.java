@@ -56,7 +56,16 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("盗塁成功率")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
                 () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
-                () -> assertTrue(response.body().contains("fetch('/simulations'")));
+                () -> assertTrue(response.body().contains("fetch('/simulations'")),
+                () -> assertTrue(response.body().contains("本塁打")),
+                () -> assertTrue(response.body().contains("ソロ")),
+                () -> assertTrue(response.body().contains("ツーラン")),
+                () -> assertTrue(response.body().contains("スリーラン")),
+                () -> assertTrue(response.body().contains("満塁")),
+                () -> assertTrue(response.body().contains("バント")),
+                () -> assertTrue(response.body().contains("盗塁")),
+                () -> assertTrue(response.body().contains("statistics.homeRunCount")),
+                () -> assertTrue(response.body().contains("statistics.stealCount")));
     }
 
     @Test
