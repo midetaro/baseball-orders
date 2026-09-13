@@ -1,5 +1,6 @@
 package com.example.baseballorders.simulator.domain.model.statistics;
 
+import java.util.Map;
 import org.jilt.Builder;
 import org.jilt.BuilderStyle;
 
@@ -9,6 +10,8 @@ public record ScoreStatistics(
         double averageScore,
         double medianScore,
         int maximumScore,
+        int gameCount,
+        Map<Integer, Integer> scoreDistribution,
         int homeRunCount,
         int soloHomeRunCount,
         int twoRunHomeRunCount,
@@ -25,7 +28,7 @@ public record ScoreStatistics(
      * @param maximumScore maximum score
      */
     public ScoreStatistics(double averageScore, double medianScore, int maximumScore) {
-        this(averageScore, medianScore, maximumScore, 0, 0, 0, 0, 0, 0, 0);
+        this(averageScore, medianScore, maximumScore, 0, Map.of(), 0, 0, 0, 0, 0, 0, 0);
     }
 
     /**
@@ -35,16 +38,35 @@ public record ScoreStatistics(
      * @return score statistics including the aggregated batting events
      */
     public ScoreStatistics withGameStatistics(java.util.List<GameStatistics> gameStatistics) {
+        GameStatistics battingEventCounts =
+                gameStatistics.stream()
+                        .reduce(
+                                new GameStatistics(0, 0, 0, 0, 0, 0, 0),
+                                (total, statistics) ->
+                                        new GameStatistics(
+                                                total.homeRunCount() + statistics.homeRunCount(),
+                                                total.soloHomeRunCount()
+                                                        + statistics.soloHomeRunCount(),
+                                                total.twoRunHomeRunCount()
+                                                        + statistics.twoRunHomeRunCount(),
+                                                total.threeRunHomeRunCount()
+                                                        + statistics.threeRunHomeRunCount(),
+                                                total.grandSlamCount()
+                                                        + statistics.grandSlamCount(),
+                                                total.buntCount() + statistics.buntCount(),
+                                                total.stealCount() + statistics.stealCount()));
         return new ScoreStatistics(
                 averageScore,
                 medianScore,
                 maximumScore,
-                gameStatistics.stream().mapToInt(GameStatistics::homeRunCount).sum(),
-                gameStatistics.stream().mapToInt(GameStatistics::soloHomeRunCount).sum(),
-                gameStatistics.stream().mapToInt(GameStatistics::twoRunHomeRunCount).sum(),
-                gameStatistics.stream().mapToInt(GameStatistics::threeRunHomeRunCount).sum(),
-                gameStatistics.stream().mapToInt(GameStatistics::grandSlamCount).sum(),
-                gameStatistics.stream().mapToInt(GameStatistics::buntCount).sum(),
-                gameStatistics.stream().mapToInt(GameStatistics::stealCount).sum());
+                gameCount,
+                scoreDistribution,
+                battingEventCounts.homeRunCount(),
+                battingEventCounts.soloHomeRunCount(),
+                battingEventCounts.twoRunHomeRunCount(),
+                battingEventCounts.threeRunHomeRunCount(),
+                battingEventCounts.grandSlamCount(),
+                battingEventCounts.buntCount(),
+                battingEventCounts.stealCount());
     }
 }

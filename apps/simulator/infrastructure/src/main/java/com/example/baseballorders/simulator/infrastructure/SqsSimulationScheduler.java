@@ -87,18 +87,14 @@ public class SqsSimulationScheduler {
                                     new SimulationResultMessage(
                                             request.simulationId(),
                                             request.version(),
-                                            simulationResult.results().stream()
-                                                    .map(
-                                                            result ->
-                                                                    new SimulationResultMessage
-                                                                            .Result(
-                                                                            result.score(),
-                                                                            result.runs()))
-                                                    .toList(),
                                             new SimulationResultMessage.Statistics(
                                                     simulationResult.statistics().averageScore(),
                                                     simulationResult.statistics().medianScore(),
                                                     simulationResult.statistics().maximumScore(),
+                                                    simulationResult.statistics().gameCount(),
+                                                    simulationResult
+                                                            .statistics()
+                                                            .scoreDistribution(),
                                                     simulationResult.statistics().homeRunCount(),
                                                     simulationResult
                                                             .statistics()

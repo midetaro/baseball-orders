@@ -54,7 +54,7 @@ class SimulationCoordinatorTest {
                         assertEquals(
                                 0.801f,
                                 published.getFirst().players().getFirst().stealSuccessRate()),
-                () -> assertEquals(5, result.results().getFirst().score()),
+                () -> assertEquals(5, result.statistics().maximumScore()),
                 () -> assertEquals(0, registry.pendingCount()));
     }
 

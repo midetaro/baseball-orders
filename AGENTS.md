@@ -67,6 +67,65 @@ When changing a repository skill, also run its official-validator wrapper,
   exception. A `default` branch must never return a fallback value, silently do
   nothing, or handle ordinary control flow.
 
+## コレクション集計におけるStream利用方針
+
+### 目的
+- 同一コレクションを複数回走査する集計処理を避け、不要なCPU消費とコードの重複を抑える。
+### 禁止事項
+- 同一のコレクションに対して、集計項目ごとに終端操作付きのStreamを繰り返し実行してはならない。
+```
+gameStatistics.stream().mapToInt(GameStatistics::homeRunCount).sum();
+gameStatistics.stream().mapToInt(GameStatistics::buntCount).sum();
+gameStatistics.stream().mapToInt(GameStatistics::stealCount).sum();
+```
+特に、同じメソッド内で次のようなコードを複数記述してはならない。
+```
+collection.stream().mapToInt(...).sum();
+collection.stream().filter(...).count();
+collection.stream().mapToLong(...).sum();
+```
+Streamは終端操作ごとにコレクションを走査するため、集計項目が増えるほど同じ要素を繰り返し処理することになる。
+
+### 推奨実装
+
+複数の値を同時に集計する場合は、原則として1回のループで集計する。
+```
+int homeRunCount = 0;
+int buntCount = 0;
+int stealCount = 0;
+
+for (GameStatistics statistics : gameStatistics) {
+homeRunCount += statistics.homeRunCount();
+buntCount += statistics.buntCount();
+stealCount += statistics.stealCount();
+}
+```
+
+集計項目が多い場合、または集計処理を再利用する場合は、可変な集計用クラスを作成して処理を分離する。
+
+```
+ScoreAccumulator accumulator = new ScoreAccumulator();
+for (GameStatistics statistics : gameStatistics) {
+accumulator.add(statistics);
+}
+
+return accumulator.toScoreStatistics(
+averageScore,
+medianScore,
+maximumScore,
+gameCount,
+scoreDistribution
+);
+```
+
+### 許容されるStream利用
+- 次の場合はStreamの利用を許容する。
+  - コレクションを1回だけ走査する単純な変換・抽出
+  - 同じコレクションを複数回走査しても、各処理が独立しており、データ量が十分に小さいことが明確な場合
+  - 1回のStream処理に集計ロジックを集約したカスタムCollectorを使用する場合
+  - 可読性上の理由から複数回走査が適切であり、性能上の影響を計測・確認済みの場合
+- ただし、許容事項に該当する場合でも、複数回走査の理由をコメントまたは設計書に残す。
+
 ## Completion report
 
 Summarize changed behavior, tests and checks run, skipped conditional tests, assumptions, dependency changes, and unresolved blockers.

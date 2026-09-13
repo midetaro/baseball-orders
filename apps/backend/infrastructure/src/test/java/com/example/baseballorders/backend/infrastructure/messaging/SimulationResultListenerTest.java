@@ -9,6 +9,7 @@ import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,13 +31,14 @@ class SimulationResultListenerTest {
                         simulationId,
                         "1",
                         List.of(new SimulationResultMessage.Result(5, 4)),
-                        new SimulationResultMessage.Statistics(5, 5, 5, 4, 1, 1, 1, 1, 2, 3)));
+                        new SimulationResultMessage.Statistics(
+                                5, 5, 5, 10, Map.of(5, 10), 4, 1, 1, 1, 1, 2, 3)));
 
         // then
         assertAll(
                 () -> assertEquals(simulationId, waiting.join().simulationId()),
-                () -> assertEquals(5, waiting.join().results().getFirst().score()),
-                () -> assertEquals(4, waiting.join().results().getFirst().runs()),
+                () -> assertEquals(10, waiting.join().statistics().gameCount()),
+                () -> assertEquals(Map.of(5, 10), waiting.join().statistics().scoreDistribution()),
                 () -> assertEquals(5, waiting.join().statistics().averageScore()),
                 () -> assertEquals(5, waiting.join().statistics().medianScore()),
                 () -> assertEquals(5, waiting.join().statistics().maximumScore()),

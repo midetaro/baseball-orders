@@ -18,8 +18,13 @@ assert.ok(html.includes('戦術の成功数'), '戦術統計を構造化して�
 assert.ok(html.includes('id="share-results"'), '結果をSNS共有できる操作を表示する');
 assert.ok(html.includes('navigator.share'), '対応ブラウザではネイティブ共有を使う');
 assert.ok(html.includes('clipboard.writeText'), 'ネイティブ共有非対応時は共有文をコピーする');
-assert.ok(html.includes('.order { min-width:640px;'), '入力欄を横に長すぎないコンパクトな幅にする');
-assert.ok(html.includes('grid-template-columns:38px repeat(4,minmax(72px,1fr)) 78px 78px'), '入力列と戦術列をコンパクトにする');
+assert.ok(html.includes('.order { width:max-content; min-width:570px;'), '入力欄を親幅いっぱいに広げずコンパクトにする');
+assert.ok(html.includes('grid-template-columns:38px repeat(4,76px) 78px 78px'), '入力列を読みやすい固定幅にする');
+assert.ok(html.includes('class="lineup-workspace"'), '打順入力とシミュレーション操作を横並びに配置する');
+assert.ok(html.includes('.lineup-workspace { display:flex;'), 'シミュレーション操作を打順の右側へ配置する');
+assert.ok(html.includes('.actions { width:220px;'), 'シミュレーション操作の横幅を固定する');
+assert.ok(!html.includes("const labelElement=document.createElement('label');"), '各入力セルに列名を重複表示しない');
+assert.ok(html.includes("input.setAttribute('aria-label',field.label);"), '列見出しを視覚的に重複させず入力の名称を提供する');
 for (const [field, minimum, maximum] of [
   ["key:'hitAverage'", 'min:0.005', 'max:0.4'],
   ["key:'sluggish'", 'min:0.1', 'max:0.6'],
@@ -31,6 +36,9 @@ assert.ok(html.includes("bunt_enabled:player.buntEnabled"), 'バント可否をA
 assert.ok(html.includes("steal_enabled:player.stealEnabled"), '盗塁可否をAPIへ送る');
 assert.ok(html.includes("bunt_success_rate:Number(player.buntSuccessRate)"), 'バント成功率をAPIへ送る');
 assert.ok(html.includes("steal_success_rate:Number(player.stealSuccessRate)"), '盗塁成功率をAPIへ送る');
+assert.ok(html.includes("enabledKey:'buntEnabled'"), 'バント成功率はバント選択に連動させる');
+assert.ok(html.includes("enabledKey:'stealEnabled'"), '盗塁成功率は盗塁選択に連動させる');
+assert.ok(html.includes("input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]);"), 'バント・盗塁をしない場合は対応する成功率を入力不可にする');
 assert.ok(html.includes("fetch('/simulations'"), '直接入力をシミュレーションAPIへ送る');
 assert.ok(!html.includes('name:'), '固定表示の打者名をAPIへ送らない');
 

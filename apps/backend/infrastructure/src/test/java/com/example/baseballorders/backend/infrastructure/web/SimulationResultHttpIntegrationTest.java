@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
@@ -17,7 +18,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -89,31 +90,29 @@ class SimulationResultHttpIntegrationTest {
                     new SimulationResultMessage(
                             UUID.randomUUID(),
                             "1",
-                            List.of(new SimulationResultMessage.Result(99, 99)),
-                            new SimulationResultMessage.Statistics(99, 99, 99)));
+                            new SimulationResultMessage.Statistics(
+                                    99, 99, 99, 1, Map.of(99, 1), 0, 0, 0, 0, 0, 0, 0)));
             assertAll(() -> assertFalse(first.isDone()), () -> assertFalse(second.isDone()));
             listener.receive(
                     new SimulationResultMessage(
                             secondSent.simulationId(),
                             "1",
-                            List.of(new SimulationResultMessage.Result(0, 7)),
-                            new SimulationResultMessage.Statistics(0, 0, 0)));
+                            new SimulationResultMessage.Statistics(
+                                    0, 0, 0, 1, Map.of(0, 1), 0, 0, 0, 0, 0, 0, 0)));
             var secondResponse = second.get(10, TimeUnit.SECONDS);
             assertAll(() -> assertFalse(first.isDone()));
             listener.receive(
                     new SimulationResultMessage(
                             secondSent.simulationId(),
                             "1",
-                            List.of(new SimulationResultMessage.Result(99, 99)),
-                            new SimulationResultMessage.Statistics(99, 99, 99)));
+                            new SimulationResultMessage.Statistics(
+                                    99, 99, 99, 1, Map.of(99, 1), 0, 0, 0, 0, 0, 0, 0)));
             listener.receive(
                     new SimulationResultMessage(
                             firstSent.simulationId(),
                             "1",
-                            List.of(
-                                    new SimulationResultMessage.Result(5, 4),
-                                    new SimulationResultMessage.Result(8, 2)),
-                            new SimulationResultMessage.Statistics(6.5, 6.5, 8)));
+                            new SimulationResultMessage.Statistics(
+                                    6.5, 6.5, 8, 2, Map.of(5, 1, 8, 1), 0, 0, 0, 0, 0, 0, 0)));
             var firstResponse = first.get(10, TimeUnit.SECONDS);
             var firstBody = objectMapper.readTree(firstResponse.body());
             var secondBody = objectMapper.readTree(secondResponse.body());
@@ -132,11 +131,7 @@ class SimulationResultHttpIntegrationTest {
                             assertEquals(
                                     secondSent.simulationId().toString(),
                                     secondBody.get("simulationId").asString()),
-                    () -> assertEquals(2, firstBody.get("results").size()),
-                    () -> assertEquals(8, firstBody.get("results").get(1).get("score").asInt()),
-                    () -> assertEquals(2, firstBody.get("results").get(1).get("runs").asInt()),
-                    () -> assertEquals(5, firstBody.get("results").get(0).get("score").asInt()),
-                    () -> assertEquals(4, firstBody.get("results").get(0).get("runs").asInt()),
+                    () -> assertTrue(firstBody.path("results").isMissingNode()),
                     () ->
                             assertEquals(
                                     6.5,
@@ -145,8 +140,16 @@ class SimulationResultHttpIntegrationTest {
                             assertEquals(
                                     6.5, firstBody.get("statistics").get("medianScore").asDouble()),
                     () -> assertEquals(8, firstBody.get("statistics").get("maximumScore").asInt()),
-                    () -> assertEquals(0, secondBody.get("results").get(0).get("score").asInt()),
-                    () -> assertEquals(7, secondBody.get("results").get(0).get("runs").asInt()),
+                    () -> assertEquals(2, firstBody.get("statistics").get("gameCount").asInt()),
+                    () ->
+                            assertEquals(
+                                    1,
+                                    firstBody
+                                            .get("statistics")
+                                            .get("scoreDistribution")
+                                            .get("5")
+                                            .asInt()),
+                    () -> assertEquals(1, secondBody.get("statistics").get("gameCount").asInt()),
                     () -> assertEquals(0, registry.pendingCount()));
         }
     }
