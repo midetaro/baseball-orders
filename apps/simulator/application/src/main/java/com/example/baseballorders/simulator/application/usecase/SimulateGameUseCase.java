@@ -9,6 +9,8 @@ import com.example.baseballorders.simulator.domain.model.statistics.ScoreStatist
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SimulateGameUseCase {
 
+    @Getter
     private final Map<String, AtBatBehavior> behaviors;
     private final int gameCount;
     private final ScoreStatisticsCalculator scoreStatisticsCalculator;
