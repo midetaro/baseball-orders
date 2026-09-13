@@ -50,6 +50,12 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("打率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () -> assertTrue(response.body().contains("盗塁成功率")),
+                () -> assertTrue(response.body().contains("position.textContent=`${index+1}番`")),
+                () -> assertTrue(!response.body().contains("番打者")),
+                () -> assertTrue(!response.body().contains("name:")),
+                () -> assertTrue(response.body().contains("hitAverage:'.270',sluggish:'.350'")),
+                () -> assertTrue(response.body().contains("hitAverage:'.320',sluggish:'.500'")),
+                () -> assertTrue(response.body().contains("hitAverage:'.230',sluggish:'.400'")),
                 () ->
                         assertTrue(
                                 response.body()
@@ -73,6 +79,13 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("満塁")),
                 () -> assertTrue(response.body().contains("バント")),
                 () -> assertTrue(response.body().contains("盗塁")),
+                () -> assertTrue(response.body().contains("得点サマリー")),
+                () -> assertTrue(response.body().contains("本塁打の内訳")),
+                () -> assertTrue(response.body().contains("戦術の成功数")),
+                () -> assertTrue(response.body().contains("id=\"share-results\"")),
+                () -> assertTrue(response.body().contains("navigator.share")),
+                () -> assertTrue(response.body().contains("clipboard.writeText")),
+                () -> assertTrue(response.body().contains(".order { min-width:640px;")),
                 () -> assertTrue(response.body().contains("'homeRunCount'")),
                 () -> assertTrue(response.body().contains("'stealCount'")));
     }
