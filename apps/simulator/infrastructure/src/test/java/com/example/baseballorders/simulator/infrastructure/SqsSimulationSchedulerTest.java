@@ -47,6 +47,89 @@ import software.amazon.awssdk.services.sqs.model.SqsException;
 
 class SqsSimulationSchedulerTest {
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.MethodSource("missingRequestValues")
+    @DisplayName("SQSの必須値がnullまたは欠落なら計算も結果送信も要求削除もしない")
+    void rejectsMissingRequestValues(String body) {
+        // given
+        var sqsClient = mock(SqsClient.class);
+        var useCase = mock(SimulateGameUseCase.class);
+        var mapper = mock(LineUpMapper.class);
+        stubQueueUrls(sqsClient);
+        when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
+                .thenReturn(
+                        ReceiveMessageResponse.builder()
+                                .messages(
+                                        Message.builder()
+                                                .body(body)
+                                                .receiptHandle("receipt")
+                                                .build())
+                                .build());
+        var scheduler =
+                new SqsSimulationScheduler(
+                        sqsClient,
+                        new ObjectMapper(),
+                        useCase,
+                        mapper,
+                        "request-queue",
+                        "result-queue");
+
+        // when
+        var exception = assertThrows(IllegalArgumentException.class, scheduler::poll);
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                "Failed to deserialize an SQS simulation request",
+                                exception.getMessage()),
+                () -> verifyNoInteractions(useCase, mapper),
+                () -> verify(sqsClient, never()).sendMessage(any(SendMessageRequest.class)),
+                () -> verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class)));
+    }
+
+    private static java.util.stream.Stream<String> missingRequestValues() throws Exception {
+        var objectMapper = new ObjectMapper();
+        var valid =
+                objectMapper.readTree(
+                        """
+                {"simulation_id":"00000000-0000-0000-0000-000000000001","version":"1",
+                 "players":[{"name":"1番","hitAverage":0.3,"sluggish":0.4,"buntSuccessRate":0.7,
+                 "buntEnabled":false,"stealSuccessRate":0.8,"stealEnabled":false}]}
+                """);
+        var bodies = new java.util.ArrayList<String>();
+        for (String field :
+                List.of(
+                        "simulation_id",
+                        "version",
+                        "players",
+                        "name",
+                        "hitAverage",
+                        "sluggish",
+                        "buntSuccessRate",
+                        "buntEnabled",
+                        "stealSuccessRate",
+                        "stealEnabled")) {
+            for (boolean omit : List.of(true, false)) {
+                com.fasterxml.jackson.databind.node.ObjectNode copy = valid.deepCopy();
+                var target =
+                        List.of("simulation_id", "version", "players").contains(field)
+                                ? copy
+                                : (com.fasterxml.jackson.databind.node.ObjectNode)
+                                        copy.path("players").get(0);
+                if (omit) target.remove(field);
+                else target.putNull(field);
+                bodies.add(copy.toString());
+            }
+        }
+        bodies.add("null");
+        var nullPlayer = valid.deepCopy();
+        ((com.fasterxml.jackson.databind.node.ArrayNode) nullPlayer.path("players"))
+                .set(0, objectMapper.nullNode());
+        bodies.add(nullPlayer.toString());
+        return bodies.stream();
+    }
+
     @Test
     @DisplayName("ポーリング処理の固定遅延は設定プロパティから取得する")
     void obtainsPollingDelayFromProperty() throws NoSuchMethodException {
@@ -82,7 +165,13 @@ class SqsSimulationSchedulerTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 0.3f, 0.4f, 0.7f, true, 0.8f))
+                                                "player-" + number,
+                                                0.3f,
+                                                0.4f,
+                                                0.7f,
+                                                true,
+                                                0.8f,
+                                                true))
                         .toList();
         UUID simulationId = UUID.randomUUID();
         String body =
