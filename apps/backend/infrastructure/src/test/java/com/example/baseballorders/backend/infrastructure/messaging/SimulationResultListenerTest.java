@@ -30,7 +30,7 @@ class SimulationResultListenerTest {
                         simulationId,
                         "1",
                         List.of(new SimulationResultMessage.Result(5, 4)),
-                        new SimulationResultMessage.Statistics(5, 5, 5)));
+                        new SimulationResultMessage.Statistics(5, 5, 5, 4, 1, 1, 1, 1, 2, 3)));
 
         // then
         assertAll(
@@ -39,7 +39,14 @@ class SimulationResultListenerTest {
                 () -> assertEquals(4, waiting.join().results().getFirst().runs()),
                 () -> assertEquals(5, waiting.join().statistics().averageScore()),
                 () -> assertEquals(5, waiting.join().statistics().medianScore()),
-                () -> assertEquals(5, waiting.join().statistics().maximumScore()));
+                () -> assertEquals(5, waiting.join().statistics().maximumScore()),
+                () -> assertEquals(4, waiting.join().statistics().homeRunCount()),
+                () -> assertEquals(1, waiting.join().statistics().soloHomeRunCount()),
+                () -> assertEquals(1, waiting.join().statistics().twoRunHomeRunCount()),
+                () -> assertEquals(1, waiting.join().statistics().threeRunHomeRunCount()),
+                () -> assertEquals(1, waiting.join().statistics().grandSlamCount()),
+                () -> assertEquals(2, waiting.join().statistics().buntCount()),
+                () -> assertEquals(3, waiting.join().statistics().stealCount()));
     }
 
     @Test

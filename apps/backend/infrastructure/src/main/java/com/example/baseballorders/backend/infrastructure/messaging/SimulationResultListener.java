@@ -45,7 +45,14 @@ public final class SimulationResultListener {
                                 new SimulationResult.Statistics(
                                         statistics.averageScore(),
                                         statistics.medianScore(),
-                                        statistics.maximumScore())));
+                                        statistics.maximumScore(),
+                                        statistics.homeRunCount(),
+                                        statistics.soloHomeRunCount(),
+                                        statistics.twoRunHomeRunCount(),
+                                        statistics.threeRunHomeRunCount(),
+                                        statistics.grandSlamCount(),
+                                        statistics.buntCount(),
+                                        statistics.stealCount())));
         if (!completed) {
             LOGGER.warn("simulation result ignored simulationId={}", message.simulationId());
         }
