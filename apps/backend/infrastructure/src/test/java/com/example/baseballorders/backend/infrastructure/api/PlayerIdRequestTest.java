@@ -37,4 +37,19 @@ class PlayerIdRequestTest {
         // then
         assertAll(() -> assertEquals("bunt_enabled must not be null", exception.getMessage()));
     }
+
+    @Test
+    @DisplayName("段階的ビルダーで選手識別子を生成できる")
+    void buildsPlayerIdRequestWithStagedBuilder() {
+        // given
+        var builder = PlayerIdRequestBuilder.playerIdRequest().playerId(1L);
+
+        // when
+        var request = builder.buntEnabled(true).build();
+
+        // then
+        assertAll(
+                () -> assertEquals(1L, request.playerId()),
+                () -> assertEquals(true, request.buntEnabled()));
+    }
 }

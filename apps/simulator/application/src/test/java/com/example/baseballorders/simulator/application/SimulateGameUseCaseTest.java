@@ -66,6 +66,35 @@ class SimulateGameUseCaseTest {
                                         .max()
                                         .orElseThrow(),
                                 result.statistics().maximumScore(),
-                                "最大得点が全試合の結果から計算されること"));
+                                "最大得点が全試合の結果から計算されること"),
+                () ->
+                        assertEquals(
+                                result.results().stream()
+                                        .map(SimulationResponse::gameStatistics)
+                                        .mapToInt(
+                                                statistics ->
+                                                        statistics.soloHomeRunCount()
+                                                                + statistics.twoRunHomeRunCount()
+                                                                + statistics.threeRunHomeRunCount()
+                                                                + statistics.grandSlamCount())
+                                        .sum(),
+                                result.statistics().homeRunCount(),
+                                "本塁打数は全試合の内訳の合計であること"),
+                () ->
+                        assertEquals(
+                                result.results().stream()
+                                        .map(SimulationResponse::gameStatistics)
+                                        .mapToInt(statistics -> statistics.buntCount())
+                                        .sum(),
+                                result.statistics().buntCount(),
+                                "成功バント数は全試合分を合算すること"),
+                () ->
+                        assertEquals(
+                                result.results().stream()
+                                        .map(SimulationResponse::gameStatistics)
+                                        .mapToInt(statistics -> statistics.stealCount())
+                                        .sum(),
+                                result.statistics().stealCount(),
+                                "成功盗塁数は全試合分を合算すること"));
     }
 }

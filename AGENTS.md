@@ -53,6 +53,8 @@ When changing a repository skill, also run its official-validator wrapper,
 - Where Lombok is already available, use focused annotations such as `@Getter`,
   `@RequiredArgsConstructor`, and `@Slf4j` to remove trivial getters,
   constructors, and logger declarations.
+- Generate Value Objects with Jilt's STAGED Builder using
+  `@Builder(style = BuilderStyle.STAGED)`; do not hand-write builder classes.
 - Do not use Lombok to hide validation, state transitions, or other domain
   behavior, and do not add a Lombok dependency to a module solely to follow this
   preference.

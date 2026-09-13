@@ -8,6 +8,7 @@ import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.state.*;
+import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
 import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
@@ -29,6 +30,13 @@ public class GameBattingContext {
     private final List<BatterEntity> batterEntityOrders;
     private int numberOfNextBatter;
     private boolean isGameOver = false;
+    private int homeRunCount;
+    private int soloHomeRunCount;
+    private int twoRunHomeRunCount;
+    private int threeRunHomeRunCount;
+    private int grandSlamCount;
+    private int buntCount;
+    private int stealCount;
 
     /**
      * 指定された打順で、初回・無死・走者なし・無得点の試合状態を作成する。
@@ -151,6 +159,9 @@ public class GameBattingContext {
 
         // --- 打撃 ---
         BattingResult battingResult = batter.swing();
+        if (battingResult == BattingResult.HIT_HOMER) {
+            recordHomeRun();
+        }
         Runnable applyBattingResult =
                 switch (battingResult) {
                     case OUT -> () -> currentBaseState.out(this);
@@ -172,6 +183,7 @@ public class GameBattingContext {
                 yield true;
             }
             case SUCCESS -> {
+                buntCount++;
                 this.moveRunnerNthBase(Base.FIRST);
                 this.addOutCounts(1);
                 yield true;
@@ -207,11 +219,43 @@ public class GameBattingContext {
                             };
                     case SUCCESS ->
                             () -> {
+                                stealCount++;
                                 this.setRunnerTo(targetBaseOfSteal, getRunnerIndexOf(currentBase));
                                 this.setRunnerTo(currentBase, Optional.empty());
                             };
                 };
         applyStealResult.run();
+    }
+
+    /**
+     * Returns the batting statistics accumulated in this game.
+     *
+     * @return completed-game statistics at the time of this call
+     */
+    public GameStatistics getGameStatistics() {
+        return new GameStatistics(
+                homeRunCount,
+                soloHomeRunCount,
+                twoRunHomeRunCount,
+                threeRunHomeRunCount,
+                grandSlamCount,
+                buntCount,
+                stealCount);
+    }
+
+    private void recordHomeRun() {
+        homeRunCount++;
+        int runnerCount =
+                (runnerOnFirstBase.isPresent() ? 1 : 0)
+                        + (runnerOnSecondBase.isPresent() ? 1 : 0)
+                        + (runnerOnThirdBase.isPresent() ? 1 : 0);
+        switch (runnerCount) {
+            case 0 -> soloHomeRunCount++;
+            case 1 -> twoRunHomeRunCount++;
+            case 2 -> threeRunHomeRunCount++;
+            case 3 -> grandSlamCount++;
+            default -> throw new IllegalStateException("runner count must be between 0 and 3");
+        }
     }
 
     private Optional<BatterEntity> getRunnerIndexOf(Base base) {

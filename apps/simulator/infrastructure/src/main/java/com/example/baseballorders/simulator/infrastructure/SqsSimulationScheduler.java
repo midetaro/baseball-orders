@@ -93,7 +93,20 @@ public class SqsSimulationScheduler {
                                             new SimulationResultMessage.Statistics(
                                                     simulationResult.statistics().averageScore(),
                                                     simulationResult.statistics().medianScore(),
-                                                    simulationResult.statistics().maximumScore()));
+                                                    simulationResult.statistics().maximumScore(),
+                                                    simulationResult.statistics().homeRunCount(),
+                                                    simulationResult
+                                                            .statistics()
+                                                            .soloHomeRunCount(),
+                                                    simulationResult
+                                                            .statistics()
+                                                            .twoRunHomeRunCount(),
+                                                    simulationResult
+                                                            .statistics()
+                                                            .threeRunHomeRunCount(),
+                                                    simulationResult.statistics().grandSlamCount(),
+                                                    simulationResult.statistics().buntCount(),
+                                                    simulationResult.statistics().stealCount()));
                             sqsClient.sendMessage(
                                     SendMessageRequest.builder()
                                             .queueUrl(resultQueueUrl)

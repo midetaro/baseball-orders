@@ -24,6 +24,7 @@ import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
 import com.example.baseballorders.simulator.domain.model.statistics.ScoreStatisticsCalculator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -91,7 +92,12 @@ class SqsSimulationSchedulerTest {
         when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
         List<SimulationResponse> simulationResponses =
-                IntStream.range(0, 10).mapToObj(index -> new SimulationResponse(index, 4)).toList();
+                IntStream.range(0, 10)
+                        .mapToObj(
+                                index ->
+                                        new SimulationResponse(
+                                                index, 4, new GameStatistics(1, 1, 0, 0, 0, 2, 3)))
+                        .toList();
         when(useCase.invoke(any(LineUpEntity.class)))
                 .thenReturn(simulationResult(simulationResponses));
         SqsSimulationScheduler scheduler =
@@ -140,7 +146,8 @@ class SqsSimulationSchedulerTest {
                 () -> assertEquals(simulationId, sentResponses.getFirst().simulationId()),
                 () ->
                         assertEquals(
-                                new SimulationResultMessage.Statistics(4.5, 4.5, 9),
+                                new SimulationResultMessage.Statistics(
+                                        4.5, 4.5, 9, 10, 10, 0, 0, 0, 20, 30),
                                 sentResponses.getFirst().statistics()));
     }
 
@@ -287,7 +294,11 @@ class SqsSimulationSchedulerTest {
         return new SimulationResult(
                 responses,
                 new ScoreStatisticsCalculator()
-                        .calculate(responses.stream().map(SimulationResponse::score).toList()));
+                        .calculate(responses.stream().map(SimulationResponse::score).toList())
+                        .withGameStatistics(
+                                responses.stream()
+                                        .map(SimulationResponse::gameStatistics)
+                                        .toList()));
     }
 
     private static void stubQueueUrls(SqsClient sqsClient) {

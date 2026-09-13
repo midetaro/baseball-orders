@@ -9,7 +9,6 @@ import com.example.baseballorders.simulator.domain.model.statistics.ScoreStatist
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
-
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,8 +17,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SimulateGameUseCase {
 
-    @Getter
-    private final Map<String, AtBatBehavior> behaviors;
+    @Getter private final Map<String, AtBatBehavior> behaviors;
     private final int gameCount;
     private final ScoreStatisticsCalculator scoreStatisticsCalculator;
 
@@ -54,8 +52,10 @@ public class SimulateGameUseCase {
                 IntStream.range(0, gameCount).mapToObj(ignored -> simulate(lineUpEntity)).toList();
         return new SimulationResult(
                 results,
-                scoreStatisticsCalculator.calculate(
-                        results.stream().map(SimulationResponse::score).toList()));
+                scoreStatisticsCalculator
+                        .calculate(results.stream().map(SimulationResponse::score).toList())
+                        .withGameStatistics(
+                                results.stream().map(SimulationResponse::gameStatistics).toList()));
     }
 
     private SimulationResponse simulate(LineUpEntity lineUpEntity) {
@@ -66,6 +66,7 @@ public class SimulateGameUseCase {
             ctx.nextAtBat();
         }
 
-        return new SimulationResponse(Math.toIntExact(ctx.getTotalScore()), 4);
+        return new SimulationResponse(
+                Math.toIntExact(ctx.getTotalScore()), 4, ctx.getGameStatistics());
     }
 }

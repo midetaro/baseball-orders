@@ -3,6 +3,8 @@ package com.example.baseballorders.backend.domain;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.jilt.Builder;
+import org.jilt.BuilderStyle;
 
 /**
  * backendがHTTP要求へ返すシミュレーション結果。
@@ -11,6 +13,7 @@ import java.util.UUID;
  * @param results 実行順の得点・失点の組
  * @param statistics 全試合の得点統計
  */
+@Builder(style = BuilderStyle.STAGED)
 public record SimulationResult(UUID simulationId, List<Result> results, Statistics statistics) {
     /** 統計情報を必須にしてシミュレーション結果を作成する。 */
     public SimulationResult {
@@ -33,6 +36,7 @@ public record SimulationResult(UUID simulationId, List<Result> results, Statisti
      * @param buntCount 成功バント数
      * @param stealCount 成功盗塁数
      */
+    @Builder(style = BuilderStyle.STAGED)
     public record Statistics(
             double averageScore,
             double medianScore,
@@ -63,5 +67,6 @@ public record SimulationResult(UUID simulationId, List<Result> results, Statisti
      * @param score 得点
      * @param runs 失点
      */
+    @Builder(style = BuilderStyle.STAGED)
     public record Result(int score, int runs) {}
 }
