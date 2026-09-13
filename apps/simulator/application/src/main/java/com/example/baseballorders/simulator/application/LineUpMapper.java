@@ -3,6 +3,8 @@ package com.example.baseballorders.simulator.application;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.NowayBuntStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
@@ -17,6 +19,8 @@ public class LineUpMapper {
     private final AtBatBehavior atBatBehavior;
     private final StealStrategy stealStrategy;
     private final BuntStrategy buntStrategy;
+    private final StealStrategy noStealStrategy = new NowayStealBehavior();
+    private final BuntStrategy noBuntStrategy = new NowayBuntStrategy();
 
     /**
      * Creates a mapper using the default batting and stealing strategies.
@@ -35,7 +39,8 @@ public class LineUpMapper {
     }
 
     /**
-     * Converts SQS player data to a domain lineup.
+     * Converts SQS player data to a domain lineup, disabling steals and bunts according to each
+     * player's selection.
      *
      * @param players players contained in a simulation request
      * @return lineup containing mapped batter entities in request order
@@ -50,11 +55,14 @@ public class LineUpMapper {
                                                 player.hitAverage(),
                                                 player.sluggish(),
                                                 player.buntSuccessRate(),
-                                                player.buntEnabled(),
                                                 player.stealSuccessRate(),
                                                 atBatBehavior,
-                                                stealStrategy,
-                                                buntStrategy))
+                                                player.stealEnabled()
+                                                        ? stealStrategy
+                                                        : noStealStrategy,
+                                                player.buntEnabled()
+                                                        ? buntStrategy
+                                                        : noBuntStrategy))
                         .toList();
         return new LineUpEntity(batters);
     }

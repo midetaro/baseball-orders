@@ -456,7 +456,6 @@ class BasesStateTest {
                 0.0f,
                 0.0f,
                 0.0f,
-                true,
                 0.0f,
                 (hitAverage, sluggish) -> BattingResult.OUT,
                 new StealStrategyStub(),

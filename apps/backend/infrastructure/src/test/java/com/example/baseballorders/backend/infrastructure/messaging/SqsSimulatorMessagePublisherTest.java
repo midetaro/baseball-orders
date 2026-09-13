@@ -44,7 +44,7 @@ class SqsSimulatorMessagePublisherTest {
                 new SimulationRequest(
                         UUID.randomUUID(),
                         "1",
-                        List.of(new PlayerData("選手1", 0.321f, 0.456f, 0.789f, true, 0.678f)));
+                        List.of(new PlayerData("選手1", 0.321f, 0.456f, 0.789f, true, 0.678f, true)));
         var messageCaptor = ArgumentCaptor.forClass(SimulationRequestMessage.class);
 
         // when

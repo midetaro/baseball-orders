@@ -120,6 +120,8 @@ class SimulationResultHttpIntegrationTest {
 
             // then
             assertAll(
+                    () -> assertFalse(firstSent.players().getFirst().stealEnabled()),
+                    () -> assertFalse(firstSent.players().getFirst().buntEnabled()),
                     () -> assertEquals(200, firstResponse.statusCode()),
                     () -> assertEquals(200, secondResponse.statusCode()),
                     () ->

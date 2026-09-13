@@ -14,6 +14,60 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 class SimulatorRequestControllerTest {
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+        "true,true",
+        "true,false",
+        "false,true",
+        "false,false"
+    })
+    @DisplayName("画面の盗塁とバント選択を共有メッセージまで保持する")
+    void propagatesStrategyOptions(boolean stealEnabled, boolean buntEnabled) {
+        // given
+        var template = org.mockito.Mockito.mock(io.awspring.cloud.sqs.operations.SqsTemplate.class);
+        var publisher =
+                new com.example.baseballorders.backend.infrastructure.messaging
+                        .SqsSimulatorMessagePublisher(template, "request");
+        var registry = new WaitingResultRegistry();
+        var controller =
+                new SimulatorRequestController(
+                        new SimulationCoordinator(
+                                request -> {
+                                    publisher.publish(request);
+                                    registry.complete(
+                                            request.simulationId(),
+                                            new SimulationResult(
+                                                    request.simulationId(),
+                                                    List.of(new SimulationResult.Result(0, 0)),
+                                                    new SimulationResult.Statistics(0, 0, 0)));
+                                },
+                                registry));
+        var captor =
+                org.mockito.ArgumentCaptor.forClass(
+                        com.example.baseballorders.messaging.SimulationRequestMessage.class);
+
+        // when
+        controller.send(
+                playersWith(
+                        new PlayerInputRequest(0.3f, 0.4f, 0.7f, 0.8f, buntEnabled, stealEnabled)));
+
+        // then
+        org.mockito.Mockito.verify(template)
+                .send(org.mockito.ArgumentMatchers.eq("request"), captor.capture());
+        var json = new tools.jackson.databind.ObjectMapper().valueToTree(captor.getValue());
+        assertAll(
+                () ->
+                        assertEquals(
+                                stealEnabled,
+                                json.path("players").get(0).required("stealEnabled").asBoolean()),
+                () ->
+                        assertEquals(
+                                buntEnabled,
+                                json.path("players").get(0).required("buntEnabled").asBoolean()),
+                () -> assertEquals("1番", captor.getValue().players().getFirst().name()),
+                () -> assertEquals(9, captor.getValue().players().size()));
+    }
+
     @Test
     @DisplayName("画面入力した打順データをSQS結果を待機して同期的に返す")
     void returnsSynchronousSimulationResult() {

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
@@ -16,9 +17,12 @@ import com.example.baseballorders.simulator.application.contract.SimulationResul
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
+import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.ScoreStatisticsCalculator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -41,9 +45,10 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 class SqsSimulationSchedulerIntegrationTest {
 
     /**
-     * 実物: ElasticMQ SQS、Scheduler、ObjectMapper、LineUpMapper。 モック:
+     * 実物: SQS互換サービス（ElasticMQ/Floci）、Scheduler、ObjectMapper、LineUpMapper。 モック:
      * SimulateGameUseCase、固定の打撃・盗塁・バント戦略。 担保する疎通: request SQS -> Scheduler -> result SQS ->
-     * 共有結果メッセージ、および要求削除。 担保しないもの: 試合計算の正当性、backendのHTTP応答、AWS実環境。
+     * 共有結果メッセージ、および要求削除。request SQS -> Scheduler -> LineUpMapper -> 打者の盗塁・バント選択。 担保しないもの:
+     * 試合計算の正当性、backendのHTTP応答、AWS実環境。
      */
     @Test
     @EnabledIfEnvironmentVariable(named = "ELASTICMQ_ENDPOINT_URL", matches = ".+")
@@ -78,7 +83,13 @@ class SqsSimulationSchedulerIntegrationTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 0.3f, 0.4f, 0.7f, true, 0.8f))
+                                                "player-" + number,
+                                                0.3f,
+                                                0.4f,
+                                                0.7f,
+                                                number % 2 == 0,
+                                                0.8f,
+                                                number % 3 == 0))
                         .toList();
 
         try (SqsClient sqsClient = createClient()) {
@@ -109,9 +120,24 @@ class SqsSimulationSchedulerIntegrationTest {
                 scheduler.poll();
 
                 // then
+                var captor = org.mockito.ArgumentCaptor.forClass(LineUpEntity.class);
+                verify(useCase).invoke(captor.capture());
+                var batters = captor.getValue().getBatterEntities();
                 List<Message> resultMessages = receive(sqsClient, resultQueueUrl);
                 List<Message> requestMessages = receive(sqsClient, requestQueueUrl);
                 assertAll(
+                        () ->
+                                assertAll(
+                                        IntStream.range(0, 9)
+                                                .mapToObj(
+                                                        index ->
+                                                                () ->
+                                                                        assertOptions(
+                                                                                batters.get(index),
+                                                                                (index + 1) % 3
+                                                                                        == 0,
+                                                                                (index + 1) % 2
+                                                                                        == 0))),
                         () -> assertEquals(1, resultMessages.size()),
                         () ->
                                 assertEquals(
@@ -136,6 +162,19 @@ class SqsSimulationSchedulerIntegrationTest {
                 deleteQueue(sqsClient, resultQueueUrl);
             }
         }
+    }
+
+    private static void assertOptions(
+            BatterEntity batter, boolean stealEnabled, boolean buntEnabled) {
+        var expectedSteal = stealEnabled ? StealResult.SUCCESS : StealResult.NOT_TRY;
+        var expectedBunt = buntEnabled ? BuntResult.SUCCESS : BuntResult.NOT_TRY;
+        assertAll(
+                () -> assertEquals(expectedSteal, batter.stealToDouble()),
+                () -> assertEquals(expectedSteal, batter.stealToTriple()),
+                () ->
+                        assertEquals(
+                                expectedBunt,
+                                batter.bunt(OutCount.NO_OUT, new SingleBasesState())));
     }
 
     private static SqsClient createClient() {
@@ -178,12 +217,12 @@ class SqsSimulationSchedulerIntegrationTest {
 
         @Override
         public StealResult runToDouble(float successRate) {
-            return StealResult.NOT_TRY;
+            return StealResult.SUCCESS;
         }
 
         @Override
         public StealResult runToTriple(float successRate) {
-            return StealResult.NOT_TRY;
+            return StealResult.SUCCESS;
         }
     }
 }

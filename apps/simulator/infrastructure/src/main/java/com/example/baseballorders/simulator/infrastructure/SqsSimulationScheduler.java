@@ -7,6 +7,7 @@ import com.example.baseballorders.simulator.application.contract.SimulationResul
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -58,6 +59,10 @@ public class SqsSimulationScheduler {
     /**
      * Receives pending requests from SQS, sends all simulation results in one message to the
      * configured result queue, and deletes the source message only after that send succeeds.
+     * Rejects missing request fields before mapping or simulation, leaving invalid messages on SQS.
+     *
+     * @throws IllegalArgumentException when the request is invalid or the result cannot be
+     *     serialized
      */
     @Scheduled(fixedDelayString = "${simulation.sqs.poll-fixed-delay}")
     public void poll() {
@@ -122,8 +127,10 @@ public class SqsSimulationScheduler {
 
     private SimulationRequestMessage deserialize(String body) {
         try {
-            return objectMapper.readValue(body, SimulationRequestMessage.class);
-        } catch (JsonProcessingException exception) {
+            return Objects.requireNonNull(
+                    objectMapper.readValue(body, SimulationRequestMessage.class),
+                    "request must not be null");
+        } catch (JsonProcessingException | NullPointerException exception) {
             throw new IllegalArgumentException(
                     "Failed to deserialize an SQS simulation request", exception);
         }
