@@ -2,7 +2,6 @@ package com.example.baseballorders.backend;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
-import com.example.baseballorders.backend.application.adapter.PlayerDataRepository;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,16 +23,13 @@ public class InfrastructureConfiguration {
     /**
      * シミュレーションCoordinatorを生成する。
      *
-     * @param repository 選手データ取得ポート
      * @param publisher シミュレーション要求送信ポート
      * @param registry 結果相関レジストリ
      * @return 構成済みCoordinator
      */
     @Bean
     public SimulationCoordinator simulationCoordinator(
-            PlayerDataRepository repository,
-            SimulatorMessagePublisher publisher,
-            WaitingResultRegistry registry) {
-        return new SimulationCoordinator(repository, publisher, registry);
+            SimulatorMessagePublisher publisher, WaitingResultRegistry registry) {
+        return new SimulationCoordinator(publisher, registry);
     }
 }

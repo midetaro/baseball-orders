@@ -1,7 +1,7 @@
 package com.example.baseballorders.backend.infrastructure.api;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
-import com.example.baseballorders.backend.application.dto.SimulationPlayerSelection;
+import com.example.baseballorders.backend.domain.PlayerData;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.util.List;
 import lombok.NonNull;
@@ -20,19 +20,26 @@ public final class SimulatorRequestController {
     @NonNull private final SimulationCoordinator coordinator;
 
     /**
-     * player IDを受け取り、SQS結果を受信するまでHTTP要求を待機して結果を返す。
+     * 画面で入力された打順データを受け取り、SQS結果を受信するまでHTTP要求を待機して結果を返す。
      *
-     * @param players 打順どおりに並んだ9人のplayer IDとバント選択
+     * @param players 打順どおりに並んだ9人の打撃データとバント選択
      * @return simulatorから返されたシミュレーション結果
      */
     @PostMapping
-    public SimulationResult send(@RequestBody List<PlayerIdRequest> players) {
+    public SimulationResult send(@RequestBody List<PlayerInputRequest> players) {
         return coordinator.simulate(
-                players.stream()
-                        .map(
-                                player ->
-                                        new SimulationPlayerSelection(
-                                                player.playerId(), player.buntEnabled()))
+                java.util.stream.IntStream.range(0, players.size())
+                        .mapToObj(
+                                index -> {
+                                    var player = players.get(index);
+                                    return new PlayerData(
+                                            (index + 1) + "番",
+                                            player.hitAverage(),
+                                            player.sluggish(),
+                                            player.buntSuccessRate(),
+                                            player.buntEnabled(),
+                                            player.stealSuccessRate());
+                                })
                         .toList());
     }
 }

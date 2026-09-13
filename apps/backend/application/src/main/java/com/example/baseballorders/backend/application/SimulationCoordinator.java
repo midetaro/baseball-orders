@@ -1,8 +1,6 @@
 package com.example.baseballorders.backend.application;
 
-import com.example.baseballorders.backend.application.adapter.PlayerDataRepository;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
-import com.example.baseballorders.backend.application.dto.SimulationPlayerSelection;
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.application.exception.SimulationAcceptException;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
@@ -15,7 +13,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.IntStream;
 
 /** シミュレーションユースケースのデータ取得、要求送信、結果待機を調整する。 */
 public final class SimulationCoordinator {
@@ -24,7 +21,6 @@ public final class SimulationCoordinator {
     private static final String MESSAGE_VERSION = "1";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
 
-    private final PlayerDataRepository playerDataRepository;
     private final SimulatorMessagePublisher publisher;
     private final WaitingResultRegistry registry;
     private final Duration timeout;
@@ -32,64 +28,39 @@ public final class SimulationCoordinator {
     /**
      * 仕様既定の30秒timeoutでCoordinatorを作成する。
      *
-     * @param playerDataRepository player IDから選手データを取得するRepository
      * @param publisher SQS要求Publisher
      * @param registry HTTPとSQS結果の待機レジストリ
      */
     public SimulationCoordinator(
-            PlayerDataRepository playerDataRepository,
-            SimulatorMessagePublisher publisher,
-            WaitingResultRegistry registry) {
-        this(playerDataRepository, publisher, registry, DEFAULT_TIMEOUT);
+            SimulatorMessagePublisher publisher, WaitingResultRegistry registry) {
+        this(publisher, registry, DEFAULT_TIMEOUT);
     }
 
     /**
      * 指定したtimeoutでCoordinatorを作成する。
      *
-     * @param playerDataRepository player IDから選手データを取得するRepository
      * @param publisher シミュレーション要求の送信ポート
      * @param registry HTTPと結果を相関するレジストリ
      * @param timeout 結果を待機する時間
      */
     public SimulationCoordinator(
-            PlayerDataRepository playerDataRepository,
-            SimulatorMessagePublisher publisher,
-            WaitingResultRegistry registry,
-            Duration timeout) {
-        this.playerDataRepository = playerDataRepository;
+            SimulatorMessagePublisher publisher, WaitingResultRegistry registry, Duration timeout) {
         this.publisher = publisher;
         this.registry = registry;
         this.timeout = timeout;
     }
 
     /**
-     * 選手データを読み込んでSQSへ要求し、相関する結果をtimeoutまで待機する。
+     * 画面入力された選手データをSQSへ要求し、相関する結果をtimeoutまで待機する。
      *
-     * @param selections 打順どおりの9人のplayer IDとバント選択
+     * @param players 打順どおりの9人の入力済み選手データ
      * @return simulatorから受信した結果
      * @throws SimulationTimeoutException timeout内に結果を受信できなかった場合
      */
-    public SimulationResult simulate(List<SimulationPlayerSelection> selections) {
-        if (selections.size() != LINEUP_SIZE) {
-            throw new IllegalArgumentException("playerIds must contain exactly 9 entries");
+    public SimulationResult simulate(List<PlayerData> players) {
+        if (players.size() != LINEUP_SIZE) {
+            throw new IllegalArgumentException("players must contain exactly 9 entries");
         }
-        var playerData =
-                playerDataRepository.findAllByIds(
-                        selections.stream().map(SimulationPlayerSelection::playerId).toList());
-        var players =
-                IntStream.range(0, playerData.size())
-                        .mapToObj(
-                                index -> {
-                                    var player = playerData.get(index);
-                                    return new PlayerData(
-                                            player.name(),
-                                            player.hitAverage(),
-                                            player.sluggish(),
-                                            player.buntSuccessRate(),
-                                            selections.get(index).buntEnabled(),
-                                            player.stealSuccessRate());
-                                })
-                        .toList();
         UUID simulationId = UUID.randomUUID();
 
         // 送信

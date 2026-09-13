@@ -2,6 +2,7 @@ package com.example.baseballorders.backend.infrastructure.api;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
@@ -14,13 +15,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 class SimulatorRequestControllerTest {
 
     @Test
-    @DisplayName("player_idを受け取るとSQS結果を待機して同期的に返す")
+    @DisplayName("画面入力した打順データをSQS結果を待機して同期的に返す")
     void returnsSynchronousSimulationResult() {
         // given
         var registry = new WaitingResultRegistry();
         var coordinator =
                 new SimulationCoordinator(
-                        ids -> List.of(),
                         request ->
                                 registry.complete(
                                         request.simulationId(),
@@ -35,13 +35,56 @@ class SimulatorRequestControllerTest {
         SimulationResult result =
                 controller.send(
                         java.util.stream.IntStream.rangeClosed(1, 9)
-                                .mapToObj(number -> new PlayerIdRequest((long) number, true))
+                                .mapToObj(
+                                        number ->
+                                                new PlayerInputRequest(
+                                                        0.300f, 0.450f, 0.700f, 0.800f, true, true))
                                 .toList());
 
         // then
         assertAll(
                 () -> assertEquals(5, result.results().getFirst().score()),
                 () -> assertEquals(4, result.results().getFirst().runs()));
+    }
+
+    @Test
+    @DisplayName("範囲外または未入力の打撃データを拒否する")
+    void rejectsInvalidPlayerInput() {
+        // given
+        var registry = new WaitingResultRegistry();
+        var controller =
+                new SimulatorRequestController(new SimulationCoordinator(request -> {}, registry));
+
+        // when
+        var hitAverageException =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () ->
+                                controller.send(
+                                        playersWith(
+                                                new PlayerInputRequest(
+                                                        0.004f, 0.450f, 0.700f, 0.800f, false,
+                                                        false))));
+        var missingValueException =
+                assertThrows(
+                        NullPointerException.class,
+                        () ->
+                                controller.send(
+                                        playersWith(
+                                                new PlayerInputRequest(
+                                                        0.300f, 0.450f, null, 0.800f, false,
+                                                        false))));
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                "hitAverage must be between 0.005 and 0.4",
+                                hitAverageException.getMessage()),
+                () ->
+                        assertEquals(
+                                "bunt_success_rate must not be null",
+                                missingValueException.getMessage()));
     }
 
     @Test
@@ -57,5 +100,9 @@ class SimulatorRequestControllerTest {
         assertAll(
                 () -> assertEquals(PostMapping.class, postMapping.annotationType()),
                 () -> assertEquals(SimulationResult.class, method.getReturnType()));
+    }
+
+    private List<PlayerInputRequest> playersWith(PlayerInputRequest player) {
+        return java.util.stream.IntStream.range(0, 9).mapToObj(ignored -> player).toList();
     }
 }
