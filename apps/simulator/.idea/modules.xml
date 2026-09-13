@@ -4,8 +4,6 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/application/simulator.application.main.iml" filepath="$PROJECT_DIR$/.idea/modules/application/simulator.application.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/domain/simulator.domain.main.iml" filepath="$PROJECT_DIR$/.idea/modules/domain/simulator.domain.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/domain/simulator.domain.test.iml" filepath="$PROJECT_DIR$/.idea/modules/domain/simulator.domain.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/infrastructure/simulator.infrastructure.main.iml" filepath="$PROJECT_DIR$/.idea/modules/infrastructure/simulator.infrastructure.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/-1569451193/simulator.messaging-contract.main.iml" filepath="$PROJECT_DIR$/.idea/modules/-1569451193/simulator.messaging-contract.main.iml" />
     </modules>
   </component>
