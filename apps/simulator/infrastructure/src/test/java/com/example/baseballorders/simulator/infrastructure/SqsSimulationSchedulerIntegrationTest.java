@@ -64,13 +64,25 @@ class SqsSimulationSchedulerIntegrationTest {
                         new SimulationResultMessage(
                                 UUID.fromString("00000000-0000-0000-0000-000000000001"),
                                 "1",
-                                simulationResults.stream()
-                                        .map(
-                                                result ->
-                                                        new SimulationResultMessage.Result(
-                                                                result.score(), result.runs()))
-                                        .toList(),
-                                new SimulationResultMessage.Statistics(4.5, 4.5, 9)));
+                                new SimulationResultMessage.Statistics(
+                                        4.5,
+                                        4.5,
+                                        9,
+                                        10,
+                                        java.util.stream.IntStream.range(0, 10)
+                                                .boxed()
+                                                .collect(
+                                                        java.util.stream.Collectors.toMap(
+                                                                java.util.function.Function
+                                                                        .identity(),
+                                                                ignored -> 1)),
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0)));
         when(useCase.invoke(any(LineUpEntity.class)))
                 .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =
@@ -208,7 +220,6 @@ class SqsSimulationSchedulerIntegrationTest {
 
     private static SimulationResult simulationResult(List<SimulationResponse> responses) {
         return new SimulationResult(
-                responses,
                 new ScoreStatisticsCalculator()
                         .calculate(responses.stream().map(SimulationResponse::score).toList()));
     }

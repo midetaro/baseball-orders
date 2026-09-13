@@ -51,7 +51,6 @@ public class SimulateGameUseCase {
         List<SimulationResponse> results =
                 IntStream.range(0, gameCount).mapToObj(ignored -> simulate(lineUpEntity)).toList();
         return new SimulationResult(
-                results,
                 scoreStatisticsCalculator
                         .calculate(results.stream().map(SimulationResponse::score).toList())
                         .withGameStatistics(

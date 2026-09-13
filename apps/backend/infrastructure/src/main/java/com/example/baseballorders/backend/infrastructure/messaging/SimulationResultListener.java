@@ -30,22 +30,18 @@ public final class SimulationResultListener {
         var statistics =
                 Objects.requireNonNull(
                         message.statistics(), "simulation result statistics must not be null");
-        LOGGER.info("試合数={}", message.results().size());
+        LOGGER.info("試合数={}", statistics.gameCount());
         boolean completed =
                 registry.complete(
                         message.simulationId(),
                         new SimulationResult(
                                 message.simulationId(),
-                                message.results().stream()
-                                        .map(
-                                                result ->
-                                                        new SimulationResult.Result(
-                                                                result.score(), result.runs()))
-                                        .toList(),
                                 new SimulationResult.Statistics(
                                         statistics.averageScore(),
                                         statistics.medianScore(),
                                         statistics.maximumScore(),
+                                        statistics.gameCount(),
+                                        statistics.scoreDistribution(),
                                         statistics.homeRunCount(),
                                         statistics.soloHomeRunCount(),
                                         statistics.twoRunHomeRunCount(),

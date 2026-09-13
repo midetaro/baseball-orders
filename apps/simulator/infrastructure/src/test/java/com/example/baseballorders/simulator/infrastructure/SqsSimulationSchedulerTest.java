@@ -222,22 +222,23 @@ class SqsSimulationSchedulerTest {
                 () -> assertEquals(9, lineUpCaptor.getValue().getBatterEntities().size()),
                 () -> assertEquals("result-url", sendMessageCaptor.getValue().queueUrl()),
                 () -> assertEquals(1, sentResponses.size()),
-                () ->
-                        assertEquals(
-                                simulationResponses.stream()
-                                        .map(
-                                                result ->
-                                                        new SimulationResultMessage.Result(
-                                                                result.score(), result.runs()))
-                                        .toList(),
-                                sentResponses.getFirst().results()),
                 () -> assertEquals("1", sentResponses.getFirst().version()),
                 () -> assertEquals(simulationId, sentResponses.getFirst().simulationId()),
+                () -> assertEquals(10, sentResponses.getFirst().statistics().gameCount()),
                 () ->
                         assertEquals(
-                                new SimulationResultMessage.Statistics(
-                                        4.5, 4.5, 9, 10, 10, 0, 0, 0, 20, 30),
-                                sentResponses.getFirst().statistics()));
+                                10,
+                                sentResponses
+                                        .getFirst()
+                                        .statistics()
+                                        .scoreDistribution()
+                                        .values()
+                                        .stream()
+                                        .mapToInt(Integer::intValue)
+                                        .sum()),
+                () -> assertEquals(10, sentResponses.getFirst().statistics().homeRunCount()),
+                () -> assertEquals(20, sentResponses.getFirst().statistics().buntCount()),
+                () -> assertEquals(30, sentResponses.getFirst().statistics().stealCount()));
     }
 
     @Test
@@ -381,7 +382,6 @@ class SqsSimulationSchedulerTest {
 
     private static SimulationResult simulationResult(List<SimulationResponse> responses) {
         return new SimulationResult(
-                responses,
                 new ScoreStatisticsCalculator()
                         .calculate(responses.stream().map(SimulationResponse::score).toList())
                         .withGameStatistics(

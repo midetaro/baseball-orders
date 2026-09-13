@@ -97,8 +97,8 @@ class SimulatorRequestControllerTest {
 
         // then
         assertAll(
-                () -> assertEquals(5, result.results().getFirst().score()),
-                () -> assertEquals(4, result.results().getFirst().runs()));
+                () -> assertEquals(5, result.statistics().averageScore()),
+                () -> assertEquals(5, result.statistics().maximumScore()));
     }
 
     @Test

@@ -85,9 +85,34 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("id=\"share-results\"")),
                 () -> assertTrue(response.body().contains("navigator.share")),
                 () -> assertTrue(response.body().contains("clipboard.writeText")),
-                () -> assertTrue(response.body().contains(".order { min-width:640px;")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(".order { width:max-content; min-width:570px;")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "grid-template-columns:38px repeat(4,76px) 78px 78px")),
+                () -> assertTrue(response.body().contains("enabledKey:'buntEnabled'")),
+                () -> assertTrue(response.body().contains("enabledKey:'stealEnabled'")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]);")),
                 () -> assertTrue(response.body().contains("'homeRunCount'")),
-                () -> assertTrue(response.body().contains("'stealCount'")));
+                () -> assertTrue(response.body().contains("scoreDistribution")),
+                () -> assertTrue(response.body().contains("score-histogram")),
+                () -> assertTrue(response.body().contains("score-distribution-axis")),
+                () -> assertTrue(response.body().contains("全試合に対する割合")),
+                () -> assertTrue(response.body().contains("Math.ceil(maximumRate / 25) * 25")),
+                () -> assertTrue(response.body().contains("rate / histogramMaximum * 100")),
+                () -> assertTrue(response.body().contains("histogramMaximum - index * 25")),
+                () -> assertTrue(response.body().contains("home-run-breakdown")),
+                () -> assertTrue(response.body().contains("home-run-legend")),
+                () -> assertTrue(response.body().contains("本塁打なし")),
+                () -> assertTrue(response.body().contains("tactics-comparison")));
     }
 
     @Test
