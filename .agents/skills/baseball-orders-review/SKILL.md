@@ -100,7 +100,7 @@ Out of Scopeの機能が追加されている場合は指摘する。
 または対象moduleのfocused test。
 
 実行可能なtestを「コードを見る限り通りそう」という理由でPASSにしてはならない。
-src/main配下で使用箇所のないpublicメソッドを削除する
+src/main配下で使用箇所のないpublicメソッドを削除する。クラスは削除しない。
 
 ---
 

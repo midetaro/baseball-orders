@@ -4,30 +4,30 @@ import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 
-public class SingleBasesState implements BasesState, StealableToDoubleBase {
+public final class SingleBasesState extends BasesState implements StealableToDoubleBase {
+    public SingleBasesState() { this(null); }
+    public SingleBasesState(BatterEntity firstRunner) { super(firstRunner, null, null); }
+    @Override public BatterEntity runnerOnFirst() { return runnerAt(Base.FIRST); }
 
     @Override
-    public void hitSingle(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.FIRST);
-        context.getRunners().setFirst(batterEntity);
+    public BasesState hitSingle(GameBattingContext context, BatterEntity batterEntity) {
+        return advance(Base.FIRST).withRunnerAt(Base.FIRST, batterEntity);
     }
 
     @Override
-    public void hitDouble(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.SECOND);
-        context.getRunners().setSecond(batterEntity);
+    public BasesState hitDouble(GameBattingContext context, BatterEntity batterEntity) {
+        return advance(Base.SECOND).withRunnerAt(Base.SECOND, batterEntity);
     }
 
     @Override
-    public void hitTriple(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.THIRD);
+    public BasesState hitTriple(GameBattingContext context, BatterEntity batterEntity) {
         context.addScore(1);
-        context.getRunners().setThird(batterEntity);
+        return advance(Base.THIRD).withRunnerAt(Base.THIRD, batterEntity);
     }
 
     @Override
-    public void hitHomer(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.THIRD);
+    public BasesState hitHomer(GameBattingContext context, BatterEntity batterEntity) {
         context.addScore(2);
+        return empty();
     }
 }

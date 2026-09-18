@@ -5,6 +5,7 @@ import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.model.state.BasesState;
 import com.example.baseballorders.simulator.domain.model.state.StealableToDoubleBase;
 import com.example.baseballorders.simulator.domain.model.state.StealableToTripleBase;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
@@ -17,33 +18,33 @@ final class AtBatProcessor {
             BatterEntity batter,
             GameStatisticsRecorder statisticsRecorder) {
         trySteal(context, statisticsRecorder);
-        context.updateBaseStateOf();
 
         if (applyBuntResult(
                 context,
                 batter.bunt(context.getOutCount(), context.getCurrentBaseState()),
                 statisticsRecorder)) {
-            context.updateBaseStateOf();
             return;
         }
 
         BattingResult battingResult = batter.swing();
         if (battingResult == BattingResult.HIT_HOMER) {
-            statisticsRecorder.recordHomeRun(context.getRunners().count());
+            statisticsRecorder.recordHomeRun(context.getCurrentBaseState().runnerCount());
         }
-        Runnable applyBattingResult =
+        BasesState nextBaseState =
                 switch (battingResult) {
-                    case OUT -> () -> context.getCurrentBaseState().out(context);
+                    case OUT -> {
+                        context.getCurrentBaseState().out(context);
+                        yield context.getCurrentBaseState();
+                    }
                     case HIT_SINGLE ->
-                            () -> context.getCurrentBaseState().hitSingle(context, batter);
+                            context.getCurrentBaseState().hitSingle(context, batter);
                     case HIT_DOUBLE ->
-                            () -> context.getCurrentBaseState().hitDouble(context, batter);
+                            context.getCurrentBaseState().hitDouble(context, batter);
                     case HIT_TRIPLE ->
-                            () -> context.getCurrentBaseState().hitTriple(context, batter);
-                    case HIT_HOMER -> () -> context.getCurrentBaseState().hitHomer(context, batter);
+                            context.getCurrentBaseState().hitTriple(context, batter);
+                    case HIT_HOMER -> context.getCurrentBaseState().hitHomer(context, batter);
                 };
-        applyBattingResult.run();
-        context.updateBaseStateOf();
+        context.replaceBaseState(nextBaseState);
     }
 
     private boolean applyBuntResult(
@@ -58,7 +59,7 @@ final class AtBatProcessor {
             }
             case SUCCESS -> {
                 statisticsRecorder.recordBunt();
-                context.moveRunnerNthBase(Base.FIRST);
+                context.replaceBaseState(context.getCurrentBaseState().advance(Base.FIRST));
                 context.addOutCounts(1);
                 yield true;
             }
@@ -66,20 +67,20 @@ final class AtBatProcessor {
     }
 
     private void trySteal(GameBattingContext context, GameStatisticsRecorder statisticsRecorder) {
-        if (context.getCurrentBaseState() instanceof StealableToDoubleBase) {
+        if (context.getCurrentBaseState() instanceof StealableToDoubleBase stealable) {
             applySteal(
                     context,
                     Base.FIRST,
                     Base.SECOND,
-                    context.getRunners().runnerAt(Base.FIRST).stealToDouble(),
+                    stealable.runnerOnFirst().stealToDouble(),
                     statisticsRecorder);
         }
-        if (context.getCurrentBaseState() instanceof StealableToTripleBase) {
+        if (context.getCurrentBaseState() instanceof StealableToTripleBase stealable) {
             applySteal(
                     context,
                     Base.SECOND,
                     Base.THIRD,
-                    context.getRunners().runnerAt(Base.SECOND).stealToTriple(),
+                    stealable.runnerOnSecond().stealToTriple(),
                     statisticsRecorder);
         }
     }
@@ -90,23 +91,29 @@ final class AtBatProcessor {
             Base targetBaseOfSteal,
             StealResult stealResult,
             GameStatisticsRecorder statisticsRecorder) {
-        Runnable applyStealResult =
+        BasesState nextBaseState =
                 switch (stealResult) {
-                    case NOT_TRY -> () -> {};
+                    case NOT_TRY -> context.getCurrentBaseState();
                     case FAILURE ->
-                            () -> {
-                                context.setRunnerTo(currentBase, null);
-                                context.addOutCounts(1);
-                            };
+                            failSteal(context, currentBase);
                     case SUCCESS ->
-                            () -> {
-                                statisticsRecorder.recordSteal();
-                                context.setRunnerTo(
-                                        targetBaseOfSteal,
-                                        context.getRunners().runnerAt(currentBase));
-                                context.setRunnerTo(currentBase, null);
-                            };
+                            succeedSteal(context, currentBase, targetBaseOfSteal, statisticsRecorder);
                 };
-        applyStealResult.run();
+        context.replaceBaseState(nextBaseState);
+    }
+
+    private BasesState failSteal(GameBattingContext context, Base currentBase) {
+        context.addOutCounts(1);
+        return context.getCurrentBaseState().withRunnerAt(currentBase, null);
+    }
+
+    private BasesState succeedSteal(
+            GameBattingContext context,
+            Base currentBase,
+            Base targetBase,
+            GameStatisticsRecorder statisticsRecorder) {
+        statisticsRecorder.recordSteal();
+        BatterEntity runner = context.getCurrentBaseState().runnerAt(currentBase);
+        return context.getCurrentBaseState().withRunnerAt(targetBase, runner).withRunnerAt(currentBase, null);
     }
 }

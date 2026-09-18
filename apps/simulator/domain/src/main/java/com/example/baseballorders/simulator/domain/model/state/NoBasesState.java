@@ -4,28 +4,27 @@ import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 
-public class NoBasesState implements BasesState {
+public final class NoBasesState extends BasesState {
+    public NoBasesState() { super(null, null, null); }
 
     @Override
-    public void hitSingle(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.FIRST);
-        context.getRunners().setFirst(batterEntity);
+    public BasesState hitSingle(GameBattingContext context, BatterEntity batterEntity) {
+        return withRunnerAt(Base.FIRST, batterEntity);
     }
 
     @Override
-    public void hitDouble(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.SECOND);
-        context.getRunners().setSecond(batterEntity);
+    public BasesState hitDouble(GameBattingContext context, BatterEntity batterEntity) {
+        return withRunnerAt(Base.SECOND, batterEntity);
     }
 
     @Override
-    public void hitTriple(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.THIRD);
-        context.getRunners().setThird(batterEntity);
+    public BasesState hitTriple(GameBattingContext context, BatterEntity batterEntity) {
+        return withRunnerAt(Base.THIRD, batterEntity);
     }
 
     @Override
-    public void hitHomer(GameBattingContext context, BatterEntity batterEntity) {
+    public BasesState hitHomer(GameBattingContext context, BatterEntity batterEntity) {
         context.addScore(1);
+        return empty();
     }
 }

@@ -1,3 +1,3 @@
 package com.example.baseballorders.simulator.domain.model.state;
-
-public interface StealableToDoubleBase {}
+import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
+public interface StealableToDoubleBase { BatterEntity runnerOnFirst(); }
