@@ -1,38 +1,30 @@
 package com.example.baseballorders.simulator.domain.model;
 
 import com.example.baseballorders.simulator.domain.code.Base;
-import com.example.baseballorders.simulator.domain.code.BattingResult;
-import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
-import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.model.state.*;
+import com.example.baseballorders.simulator.domain.model.state.BasesState;
+import com.example.baseballorders.simulator.domain.model.state.NoBasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
+import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import java.util.List;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
-@Getter
 public class GameBattingContext {
 
     private long inning = 1;
-    private long totalScore = 0;
-    private OutCount outCount = OutCount.NO_OUT;
-    private BasesState currentBaseState = new NoBasesState();
-    private BaseRunners runners = BaseRunners.empty();
+    @Getter private long totalScore = 0;
+    @Getter private OutCount outCount = OutCount.NO_OUT;
+    @Getter private BasesState currentBaseState = new NoBasesState();
+    @Getter private BaseRunners runners = BaseRunners.empty();
 
     private final List<BatterEntity> batterEntityOrders;
+    private final AtBatProcessor atBatProcessor = new AtBatProcessor();
+    private final GameStatisticsRecorder statisticsRecorder = new GameStatisticsRecorder();
+
     private int numberOfNextBatter;
-    private boolean isGameOver = false;
-    private int homeRunCount;
-    private int soloHomeRunCount;
-    private int twoRunHomeRunCount;
-    private int threeRunHomeRunCount;
-    private int grandSlamCount;
-    private int buntCount;
-    private int stealCount;
+    @Getter private boolean isGameOver = false;
 
     /**
      * 指定された打順で、初回・無死・走者なし・無得点の試合状態を作成する。
@@ -42,15 +34,6 @@ public class GameBattingContext {
     public GameBattingContext(LineUpEntity batterEntityOrders) {
         this.batterEntityOrders = batterEntityOrders.getBatterEntities();
         this.numberOfNextBatter = 0;
-    }
-
-    /**
-     * 打撃結果の適用に使用する塁状態を設定する。各塁の走者は変更しない。
-     *
-     * @param state 設定する塁状態
-     */
-    public void updateBaseState(BasesState state) {
-        currentBaseState = state;
     }
 
     /**
@@ -115,85 +98,8 @@ public class GameBattingContext {
     /** 盗塁を試みた後に現在の打者の打撃結果を適用し、塁状態と次の打者の位置を更新する。 */
     public void nextAtBat() {
         var batter = batterEntityOrders.get(numberOfNextBatter);
-        // --- Steal ---
-        this.trySteal();
-        this.updateBaseStateOf();
-
-        // --- バント ---
-        if (applyBuntResult(batter.bunt(outCount, currentBaseState))) {
-            this.updateBaseStateOf();
-            this.toNextBatter();
-            return;
-        }
-
-        // --- 打撃 ---
-        BattingResult battingResult = batter.swing();
-        if (battingResult == BattingResult.HIT_HOMER) {
-            recordHomeRun();
-        }
-        Runnable applyBattingResult =
-                switch (battingResult) {
-                    case OUT -> () -> currentBaseState.out(this);
-                    case HIT_SINGLE -> () -> currentBaseState.hitSingle(this, batter);
-                    case HIT_DOUBLE -> () -> currentBaseState.hitDouble(this, batter);
-                    case HIT_TRIPLE -> () -> currentBaseState.hitTriple(this, batter);
-                    case HIT_HOMER -> () -> currentBaseState.hitHomer(this, batter);
-                };
-        applyBattingResult.run();
-        this.updateBaseStateOf();
+        atBatProcessor.process(this, batter, statisticsRecorder);
         this.toNextBatter();
-    }
-
-    private boolean applyBuntResult(BuntResult buntResult) {
-        return switch (buntResult) {
-            case NOT_TRY -> false;
-            case FAILURE -> {
-                this.addOutCounts(1);
-                yield true;
-            }
-            case SUCCESS -> {
-                buntCount++;
-                this.moveRunnerNthBase(Base.FIRST);
-                this.addOutCounts(1);
-                yield true;
-            }
-        };
-    }
-
-    private void trySteal() {
-        if (currentBaseState instanceof StealableToDoubleBase) {
-            stealToDouble();
-        }
-        if (currentBaseState instanceof StealableToTripleBase) {
-            stealToTriple();
-        }
-    }
-
-    private void stealToDouble() {
-        applySteal(Base.FIRST, Base.SECOND, getRunnerIndexOf(Base.FIRST).stealToDouble());
-    }
-
-    private void stealToTriple() {
-        applySteal(Base.SECOND, Base.THIRD, getRunnerIndexOf(Base.SECOND).stealToTriple());
-    }
-
-    private void applySteal(Base currentBase, Base targetBaseOfSteal, StealResult stealResult) {
-        Runnable applyStealResult =
-                switch (stealResult) {
-                    case NOT_TRY -> () -> {};
-                    case FAILURE ->
-                            () -> {
-                                this.setRunnerTo(currentBase, null);
-                                this.addOutCounts(1);
-                            };
-                    case SUCCESS ->
-                            () -> {
-                                stealCount++;
-                                this.setRunnerTo(targetBaseOfSteal, getRunnerIndexOf(currentBase));
-                                this.setRunnerTo(currentBase, null);
-                            };
-                };
-        applyStealResult.run();
     }
 
     /**
@@ -202,30 +108,7 @@ public class GameBattingContext {
      * @return completed-game statistics at the time of this call
      */
     public GameStatistics getGameStatistics() {
-        return new GameStatistics(
-                homeRunCount,
-                soloHomeRunCount,
-                twoRunHomeRunCount,
-                threeRunHomeRunCount,
-                grandSlamCount,
-                buntCount,
-                stealCount);
-    }
-
-    private void recordHomeRun() {
-        homeRunCount++;
-        int runnerCount = runners.count();
-        switch (runnerCount) {
-            case 0 -> soloHomeRunCount++;
-            case 1 -> twoRunHomeRunCount++;
-            case 2 -> threeRunHomeRunCount++;
-            case 3 -> grandSlamCount++;
-            default -> throw new IllegalStateException("runner count must be between 0 and 3");
-        }
-    }
-
-    private BatterEntity getRunnerIndexOf(Base base) {
-        return runners.runnerAt(base);
+        return statisticsRecorder.snapshot();
     }
 
     private void toNextBatter() {
@@ -237,26 +120,7 @@ public class GameBattingContext {
 
     /** 各塁の走者の有無から、打撃結果の適用に使用する塁状態を再判定する。 */
     public void updateBaseStateOf() {
-
-        if (runners.getFirst() != null
-                && runners.getSecond() != null
-                && runners.getThird() != null) {
-            this.currentBaseState = new FullBasesState();
-        } else if (runners.getFirst() != null && runners.getSecond() != null) {
-            this.currentBaseState = new FirstDoubleBaseState();
-        } else if (runners.getFirst() != null && runners.getThird() != null) {
-            this.currentBaseState = new FirstThirdBaseState();
-        } else if (runners.getFirst() != null) {
-            this.currentBaseState = new SingleBasesState();
-        } else if (runners.getSecond() != null && runners.getThird() != null) {
-            this.currentBaseState = new DoubleThirdBaseState();
-        } else if (runners.getSecond() != null) {
-            this.currentBaseState = new DoubleBaseState();
-        } else if (runners.getThird() != null) {
-            this.currentBaseState = new ThirdBaseState();
-        } else {
-            this.currentBaseState = new NoBasesState();
-        }
+        this.currentBaseState = BasesStateResolver.resolve(runners);
     }
 
     /** 全ての塁から走者を取り除く。得点加算と塁状態の再判定は行わない。 */

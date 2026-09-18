@@ -30,8 +30,7 @@ class StealBehaviorTest {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
 
             // when
-            float successRate = strategy instanceof MiddleStealBehavior ? 0.8f : 0.9f;
-            StealResult result = destination.run(strategy, successRate);
+            StealResult result = destination.run(strategy, 0.9f);
 
             // then
             assertAll(() -> assertEquals(expectedResult, result, description));
@@ -106,54 +105,6 @@ class StealBehaviorTest {
                         new EagerStealBehavior(),
                         Destination.THIRD,
                         0.985f,
-                        StealResult.FAILURE),
-                arguments(
-                        "標準戦略で二塁への試行確率未満なら試行しない",
-                        new MiddleStealBehavior(),
-                        Destination.SECOND,
-                        0.79f,
-                        StealResult.NOT_TRY),
-                arguments(
-                        "標準戦略で二塁への試行境界と等しければ失敗する",
-                        new MiddleStealBehavior(),
-                        Destination.SECOND,
-                        0.8f,
-                        StealResult.FAILURE),
-                arguments(
-                        "標準戦略で二塁への成功範囲内なら成功する",
-                        new MiddleStealBehavior(),
-                        Destination.SECOND,
-                        0.9f,
-                        StealResult.SUCCESS),
-                arguments(
-                        "標準戦略で二塁への成功上限と等しければ失敗する",
-                        new MiddleStealBehavior(),
-                        Destination.SECOND,
-                        0.8f + 0.8f * 0.2f,
-                        StealResult.FAILURE),
-                arguments(
-                        "標準戦略で三塁への試行確率未満なら試行しない",
-                        new MiddleStealBehavior(),
-                        Destination.THIRD,
-                        0.94f,
-                        StealResult.NOT_TRY),
-                arguments(
-                        "標準戦略で三塁への試行境界と等しければ失敗する",
-                        new MiddleStealBehavior(),
-                        Destination.THIRD,
-                        0.95f,
-                        StealResult.FAILURE),
-                arguments(
-                        "標準戦略で三塁への成功範囲内なら成功する",
-                        new MiddleStealBehavior(),
-                        Destination.THIRD,
-                        0.97f,
-                        StealResult.SUCCESS),
-                arguments(
-                        "標準戦略で三塁への成功上限と等しければ失敗する",
-                        new MiddleStealBehavior(),
-                        Destination.THIRD,
-                        0.995f,
                         StealResult.FAILURE));
     }
 

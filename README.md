@@ -58,3 +58,131 @@ BACKEND_PORT=18080 python3 infra/docker/smoke-test.py
 
 構成、キュー名の変更、トラブルシューティングなどは
 [ローカル Docker 環境の詳細](infra/docker/README.md)を参照してください。
+
+## Simulator のドメイン設計
+
+`apps/simulator/domain` の主要なドメインクラスと関係を次に示します。図を読みやすくするため、
+`BattingResult`、`BuntResult`、`StealResult`、`OutCount`、`Base` などの enum への参照線は省略しています。
+
+```mermaid
+classDiagram
+    direction LR
+
+    class GameBattingContext {
+        +nextAtBat()
+        +addOutCounts(diff)
+        +addScore(runs)
+        +updateBaseStateOf()
+        +getGameStatistics()
+    }
+    class AtBatProcessor {
+        ~process(context, batter)
+    }
+    class BasesStateResolver {
+        ~resolve(runners) BasesState
+    }
+    class BaseRunners
+    class LineUpEntity
+    class Player
+    class BatterEntity {
+        +swing() BattingResult
+        +bunt(outCount, basesState) BuntResult
+        +stealToDouble() StealResult
+        +stealToTriple() StealResult
+    }
+
+    GameBattingContext *-- AtBatProcessor
+    GameBattingContext *-- BaseRunners
+    GameBattingContext ..> LineUpEntity
+    GameBattingContext o-- "*" BatterEntity
+    GameBattingContext --> BasesState
+    GameBattingContext ..> BasesStateResolver
+    AtBatProcessor --> BatterEntity
+    GameBattingContext *-- GameStatisticsRecorder
+    AtBatProcessor --> GameStatisticsRecorder
+    LineUpEntity o-- "*" BatterEntity
+    BatterEntity --|> Player
+
+    class AtBatBehavior
+    class MiddleDistanceBattingBehavior
+    class BuntStrategy
+    class NowayBuntStrategy
+    class StandardBuntStrategy
+    class StealStrategy
+    class NowayStealBehavior
+    class EagerStealBehavior
+
+    BatterEntity --> AtBatBehavior
+    BatterEntity --> BuntStrategy
+    BatterEntity --> StealStrategy
+    MiddleDistanceBattingBehavior ..|> AtBatBehavior
+    NowayBuntStrategy ..|> BuntStrategy
+    StandardBuntStrategy ..|> BuntStrategy
+    NowayStealBehavior ..|> StealStrategy
+    EagerStealBehavior ..|> StealStrategy
+
+    class BasesState
+    class NoBasesState
+    class SingleBasesState
+    class DoubleBaseState
+    class ThirdBaseState
+    class FirstDoubleBaseState
+    class FirstThirdBaseState
+    class DoubleThirdBaseState
+    class FullBasesState
+    class StealableToDoubleBase
+    class StealableToTripleBase
+
+    NoBasesState ..|> BasesState
+    SingleBasesState ..|> BasesState
+    DoubleBaseState ..|> BasesState
+    ThirdBaseState ..|> BasesState
+    FirstDoubleBaseState ..|> BasesState
+    FirstThirdBaseState ..|> BasesState
+    DoubleThirdBaseState ..|> BasesState
+    FullBasesState ..|> BasesState
+    SingleBasesState ..|> StealableToDoubleBase
+    FirstThirdBaseState ..|> StealableToDoubleBase
+    DoubleBaseState ..|> StealableToTripleBase
+    FirstDoubleBaseState ..|> StealableToTripleBase
+    BasesStateResolver ..> BasesState
+
+    class GameStatisticsRecorder {
+        +recordHomeRun(runnerCount)
+        +recordBunt()
+        +recordSteal()
+        +snapshot() GameStatistics
+    }
+    class GameStatistics
+    class ScoreStatisticsCalculator
+    class ScoreAccumulator
+    class ScoreStatistics
+
+    GameStatisticsRecorder ..> GameStatistics
+    ScoreStatisticsCalculator ..> ScoreAccumulator
+    ScoreStatisticsCalculator ..> ScoreStatistics
+    ScoreAccumulator ..> GameStatistics
+    ScoreAccumulator ..> ScoreStatistics
+```
+
+`GameBattingContext` は DDD の **集約ルート（Aggregate Root）** であり、試合のイニング、得点、
+アウト、走者、打順を一貫した単位として保持します。同時に、利用側へ `nextAtBat()` などの少数の操作を
+提供し、内部の協調処理を隠す **Facade** として働きます。
+
+一打席の「盗塁 → バント → 打撃」というユースケースは `AtBatProcessor` へ分離しています。
+これはエンティティ単体に属さないルールを表す **Domain Service** です。成功したプレーの計数は
+`GameStatisticsRecorder` が **Accumulator** として引き受け、`snapshot()` で不変の
+`GameStatistics` を返します。
+
+塁状況ごとの進塁ルールは `BasesState` を中心とした **State パターン** です。
+`GameBattingContext` は現在の State へ打撃結果の適用を委譲し、走者配置が変わると
+`BasesStateResolver` が対応する State を選びます。この Resolver は生成判断を一か所へ集約する
+**Simple Factory** です。
+
+打者の打撃、バント、盗塁の判断は、それぞれ `AtBatBehavior`、`BuntStrategy`、`StealStrategy` を
+差し替えられる **Strategy パターン** です。`BatterEntity` は能力値を保持しながら判断アルゴリズムを
+Strategy へ委譲するため、選手モデルを変えずに戦術を追加できます。
+
+集計側では `ScoreStatisticsCalculator` が計算手順を担い、`ScoreAccumulator` が複数試合を一度の走査で
+集約します。公開結果の `GameStatistics` と `ScoreStatistics` は不変の **Value Object** として、
+シミュレーション中の可変状態を外部へ漏らしません。

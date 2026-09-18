@@ -4,23 +4,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
+import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class SimulateGameUseCaseTest {
 
-    ShortDistanceAtBatBehavior shortDistanceAtBatBehavior = new ShortDistanceAtBatBehavior();
-    Map<String, AtBatBehavior> map = Map.of("shortDistanceAtBat", shortDistanceAtBatBehavior);
+    AtBatBehavior atBatBehavior = (onBasePercentage, sluggish) -> BattingResult.OUT;
 
-    SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(map, 3);
+    SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(3);
 
     @DisplayName("9人の打順でシミュレーションを実行すると表示用の集計統計を返す")
     @Test
@@ -36,7 +34,7 @@ class SimulateGameUseCaseTest {
                                                 0.4f,
                                                 0.7f,
                                                 0.8f,
-                                                shortDistanceAtBatBehavior,
+                                                atBatBehavior,
                                                 new NowayStealBehavior(),
                                                 (successRate, outCounts, basesState) ->
                                                         com.example.baseballorders.simulator.domain

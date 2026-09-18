@@ -9,10 +9,8 @@ import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 /** 打者 */
-@Getter
 @AllArgsConstructor
 public class BatterEntity extends Player {
 

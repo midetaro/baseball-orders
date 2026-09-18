@@ -15,11 +15,15 @@ import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.state.NoBasesState;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -36,7 +40,6 @@ public class GameBattingContextTest {
             int initialInning,
             int addOutCount,
             OutCount expectedOutCount,
-            int expectedInning,
             boolean expectedGameOver) {
         // given
         GameBattingContext gameBattingContext =
@@ -54,7 +57,6 @@ public class GameBattingContextTest {
         // then
         assertAll(
                 () -> assertEquals(expectedOutCount, gameBattingContext.getOutCount(), description),
-                () -> assertEquals(expectedInning, gameBattingContext.getInning(), description),
                 () -> assertEquals(expectedGameOver, gameBattingContext.isGameOver(), description));
     }
 
@@ -66,14 +68,12 @@ public class GameBattingContextTest {
                         1,
                         1,
                         OutCount.ONE_OUT,
-                        1,
                         false),
                 arguments(
                         "[分岐1-2] addOutCounts(2) → outCounts=2（goToNextInning スキップ）",
                         1,
                         2,
                         OutCount.TWO_OUT,
-                        1,
                         false),
                 // 分岐2a: outCounts >= 3 かつ inning != 9（イニング進行）
                 arguments(
@@ -81,14 +81,12 @@ public class GameBattingContextTest {
                         1,
                         3,
                         OutCount.NO_OUT,
-                        2,
                         false),
                 arguments(
                         "[分岐2a] addOutCounts(3)、inning=2 → inning=3, outCounts=0（リセット）",
                         2,
                         3,
                         OutCount.NO_OUT,
-                        3,
                         false),
                 // 分岐2b: outCounts >= 3 かつ inning == 9（ゲーム終了）
                 arguments(
@@ -96,7 +94,6 @@ public class GameBattingContextTest {
                         9,
                         3,
                         OutCount.NO_OUT,
-                        9,
                         true));
     }
 
@@ -128,32 +125,6 @@ public class GameBattingContextTest {
                 arguments("[基本] addScore(1) → totalScore=1", 0, 1, 1),
                 arguments("[基本] addScore(3) → totalScore=3", 0, 3, 3),
                 arguments("[累積] initialScore=5 + addScore(2) → totalScore=7", 5, 2, 7));
-    }
-
-    @DisplayName("updateBaseState() - 分岐網羅テスト")
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("updateBaseStateTestCases")
-    public void updateBaseStateTest(
-            String description,
-            com.example.baseballorders.simulator.domain.model.state.BasesState newState) {
-        // given
-        GameBattingContext gameBattingContext =
-                new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
-
-        // when
-        gameBattingContext.updateBaseState(newState);
-
-        // then
-        assertAll(
-                () ->
-                        assertEquals(
-                                newState, gameBattingContext.getCurrentBaseState(), description));
-    }
-
-    static Stream<Arguments> updateBaseStateTestCases() {
-        return Stream.of(
-                arguments("[初期状態→NoBasesState] 塁が空になる", new NoBasesState()),
-                arguments("[初期状態→SingleBasesState] 1塁に走者がいる状態", new SingleBasesState()));
     }
 
     @DisplayName("setRunnerTo() - 分岐網羅テスト")
@@ -347,44 +318,24 @@ public class GameBattingContextTest {
                 arguments("[分岐8] 塁なし → NoBasesState", false, false, false, NoBasesState.class));
     }
 
-    @DisplayName("nextAtBat() - 打者交代テスト")
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("nextAtBatTestCases")
-    public void nextAtBatTest(
-            String description, int numberOfNextBatterBefore, int expectedNumberOfNextBatterAfter) {
+    @Test
+    @DisplayName("打席ごとに次の打者を選び九番打者の後は二番打者へ進む")
+    void advancesBattingOrder() {
         // given
-        GameBattingContext gameBattingContext =
-                new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
-        // numberOfNextBatter を設定するためにループで実行
-        for (int i = 0; i < numberOfNextBatterBefore; i++) {
-            gameBattingContext.nextAtBat();
-        }
+        List<Integer> actualOrder = new ArrayList<>();
+        List<BatterEntity> battingOrder =
+                IntStream.range(0, 9)
+                        .mapToObj(index -> battingOrderBatter(index, actualOrder))
+                        .toList();
+        GameBattingContext context = new GameBattingContext(new LineUpEntity(battingOrder));
 
         // when
-        gameBattingContext.nextAtBat();
+        for (int plateAppearance = 0; plateAppearance < 10; plateAppearance++) {
+            context.nextAtBat();
+        }
 
         // then
-        assertAll(
-                () ->
-                        assertEquals(
-                                expectedNumberOfNextBatterAfter,
-                                gameBattingContext.getNumberOfNextBatter(),
-                                description));
-    }
-
-    static Stream<Arguments> nextAtBatTestCases() {
-        return Stream.of(
-                // 通常の打者交代（0～7番目）
-                arguments("[打者交代] 0番目 → 1番目", 0, 1),
-                arguments("[打者交代] 1番目 → 2番目", 1, 2),
-                arguments("[打者交代] 2番目 → 3番目", 2, 3),
-                arguments("[打者交代] 3番目 → 4番目", 3, 4),
-                arguments("[打者交代] 4番目 → 5番目", 4, 5),
-                arguments("[打者交代] 5番目 → 6番目", 5, 6),
-                arguments("[打者交代] 6番目 → 7番目", 6, 7),
-                arguments("[打者交代] 7番目 → 8番目", 7, 8),
-                // 順番が一周して最初に戻る（8番目 → 0 → 1）
-                arguments("[打者交代・周回] 8番目 → 1番目", 8, 1));
+        assertAll(() -> assertEquals(List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 1), actualOrder));
     }
 
     @DisplayName("打席結果に応じた進塁処理を実行する")
@@ -581,6 +532,21 @@ public class GameBattingContextTest {
 
     private static BatterEntity batter(BattingResult battingResult, StealResult stealResult) {
         return batter(battingResult, stealResult, BuntResult.NOT_TRY);
+    }
+
+    private static BatterEntity battingOrderBatter(int index, List<Integer> actualOrder) {
+        return new BatterEntity(
+                "batter" + index,
+                0.0f,
+                0.0f,
+                0.0f,
+                0.0f,
+                (hitAverage, sluggish) -> {
+                    actualOrder.add(index);
+                    return BattingResult.OUT;
+                },
+                new FixedStealStrategy(StealResult.NOT_TRY),
+                (successRate, outCount, basesState) -> BuntResult.NOT_TRY);
     }
 
     private static BatterEntity batter(

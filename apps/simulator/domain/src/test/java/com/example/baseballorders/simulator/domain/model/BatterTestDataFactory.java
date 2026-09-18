@@ -1,9 +1,9 @@
 package com.example.baseballorders.simulator.domain.model;
 
+import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.MiddleStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StandardBuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
@@ -13,9 +13,8 @@ public final class BatterTestDataFactory {
 
     private BatterTestDataFactory() {}
 
-    static ShortDistanceAtBatBehavior shortDistanceAtBatBehavior = new ShortDistanceAtBatBehavior();
+    static AtBatBehavior atBatBehavior = (onBasePercentage, slugging) -> BattingResult.OUT;
     static EagerStealBehavior eagerStealBehavior = new EagerStealBehavior();
-    static MiddleStealBehavior middleStealBehavior = new MiddleStealBehavior();
     static NowayStealBehavior nowayStealBehavior = new NowayStealBehavior();
     static StandardBuntStrategy standardBuntStrategy = new StandardBuntStrategy();
 
@@ -23,13 +22,13 @@ public final class BatterTestDataFactory {
         return List.of(
                 batter("batter1", 0.4f, 0.4f, eagerStealBehavior),
                 batter("batter2", 0.4f, 0.2f, eagerStealBehavior),
-                batter("batter3", 0.25f, 0.5f, middleStealBehavior),
+                batter("batter3", 0.25f, 0.5f, eagerStealBehavior),
                 batter("batter1", 0.2f, 0.7f, nowayStealBehavior),
-                batter("batter2", 0.4f, 0.5f, middleStealBehavior),
-                batter("batter3", 0.3f, 0.3f, middleStealBehavior),
-                batter("batter1", 0.3f, 0.6f, middleStealBehavior),
-                batter("batter2", 0.3f, 0.4f, middleStealBehavior),
-                batter("batter3", 0.3f, 0.5f, middleStealBehavior));
+                batter("batter2", 0.4f, 0.5f, eagerStealBehavior),
+                batter("batter3", 0.3f, 0.3f, eagerStealBehavior),
+                batter("batter1", 0.3f, 0.6f, eagerStealBehavior),
+                batter("batter2", 0.3f, 0.4f, eagerStealBehavior),
+                batter("batter3", 0.3f, 0.5f, eagerStealBehavior));
     }
 
     private static BatterEntity batter(
@@ -40,7 +39,7 @@ public final class BatterTestDataFactory {
                 slugging,
                 0.7f,
                 0.8f,
-                shortDistanceAtBatBehavior,
+                atBatBehavior,
                 stealStrategy,
                 standardBuntStrategy);
     }
