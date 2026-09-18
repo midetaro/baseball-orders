@@ -9,11 +9,11 @@ import org.springframework.stereotype.Component;
 public class ShortDistanceAtBatBehavior implements AtBatBehavior {
 
     @Override
-    public BattingResult batting(float hitAverage, float sluggish) {
+    public BattingResult batting(float onBasePercentage, float sluggish) {
 
         float random = RandomGenerator.nextFloat();
-        float singleProbability = hitAverage * (1 - sluggish);
-        float doubleProbability = hitAverage * sluggish;
+        float singleProbability = onBasePercentage * (1 - sluggish);
+        float doubleProbability = onBasePercentage * sluggish;
 
         if (random < singleProbability) {
             return BattingResult.HIT_SINGLE;

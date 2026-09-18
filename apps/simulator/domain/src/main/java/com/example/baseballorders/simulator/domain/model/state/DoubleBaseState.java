@@ -3,33 +3,41 @@ package com.example.baseballorders.simulator.domain.model.state;
 import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-import java.util.Optional;
 
-public class DoubleBaseState implements BasesState, StealableToTripleBase {
+public final class DoubleBaseState extends BasesState implements StealableToTripleBase {
+    public DoubleBaseState() {
+        this(null);
+    }
 
-    @Override
-    public void hitSingle(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.FIRST);
-        context.setRunnerOnFirstBase(Optional.of(batterEntity));
+    public DoubleBaseState(BatterEntity secondRunner) {
+        super(null, secondRunner, null);
     }
 
     @Override
-    public void hitDouble(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.SECOND);
-        context.setRunnerOnSecondBase(Optional.of(batterEntity));
+    public BatterEntity runnerOnSecond() {
+        return runnerAt(Base.SECOND);
+    }
+
+    @Override
+    public BasesState hitSingle(GameBattingContext context, BatterEntity batterEntity) {
+        return advance(Base.FIRST).withRunnerAt(Base.FIRST, batterEntity);
+    }
+
+    @Override
+    public BasesState hitDouble(GameBattingContext context, BatterEntity batterEntity) {
         context.addScore(1);
+        return advance(Base.SECOND).withRunnerAt(Base.SECOND, batterEntity);
     }
 
     @Override
-    public void hitTriple(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.THIRD);
-        context.setRunnerOnThirdBase(Optional.of(batterEntity));
+    public BasesState hitTriple(GameBattingContext context, BatterEntity batterEntity) {
         context.addScore(1);
+        return advance(Base.THIRD).withRunnerAt(Base.THIRD, batterEntity);
     }
 
     @Override
-    public void hitHomer(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.THIRD);
+    public BasesState hitHomer(GameBattingContext context, BatterEntity batterEntity) {
         context.addScore(2);
+        return empty();
     }
 }

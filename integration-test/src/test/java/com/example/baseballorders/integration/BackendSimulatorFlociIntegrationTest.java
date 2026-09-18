@@ -87,17 +87,25 @@ class BackendSimulatorFlociIntegrationTest {
                             .timeout(Duration.ofSeconds(30))
                             .header("Content-Type", "application/json")
                             .POST(HttpRequest.BodyPublishers.ofString("""
-                                    [{"player_id":1,"bunt_enabled":false},{"player_id":2,"bunt_enabled":false},{"player_id":3,"bunt_enabled":false},
-                                     {"player_id":4,"bunt_enabled":false},{"player_id":5,"bunt_enabled":false},{"player_id":6,"bunt_enabled":false},
-                                     {"player_id":7,"bunt_enabled":false},{"player_id":8,"bunt_enabled":false},{"player_id":9,"bunt_enabled":false}]
+                                    [{"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false}]
                                     """))
                             .build();
 
                     // when
                     var responseFuture = http.sendAsync(request, HttpResponse.BodyHandlers.ofString());
                     // 要求を観測して相関IDを保存し、可視性を戻して本番simulatorに処理させる。
-                    var messages = sqs.receiveMessage(r -> r.queueUrl(requestUrl)
+                    var messages = sqs
+                            .receiveMessage(r -> r.queueUrl(requestUrl)
                             .waitTimeSeconds(10).maxNumberOfMessages(1)).messages();
+
                     assertAll(() -> assertEquals(1, messages.size(), "backendが要求SQSへ送信する"));
                     var message = messages.getFirst();
                     var wireRequest = mapper.readValue(message.body(), SimulationRequestMessage.class);
@@ -114,9 +122,10 @@ class BackendSimulatorFlociIntegrationTest {
                             () -> assertNotNull(wireRequest.simulationId()),
                             () -> assertEquals(wireRequest.simulationId().toString(), body.path("simulationId").asText()),
                             () -> assertEquals(9, wireRequest.players().size()),
-                            () -> assertEquals(0, body.path("results").path(0).path("score").asInt(-1)),
-                            () -> assertEquals(4, body.path("results").path(0).path("runs").asInt(-1)),
-                            () -> assertEquals(0, registry.pendingCount()));
+                            () -> assertEquals(0, body.path("statistics").path("averageScore").asInt(-1)),
+                            () -> assertEquals(1, body.path("statistics").path("gameCount").asInt(-1)),
+                            () -> assertEquals(0, registry.pendingCount())
+                    );
                 }
             }
         }

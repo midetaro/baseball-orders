@@ -47,19 +47,19 @@ class SimulationPageIntegrationTest {
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("打順入力")),
                 () -> assertTrue(response.body().contains("一番〜九番として送信します。")),
-                () -> assertTrue(response.body().contains("打率")),
+                () -> assertTrue(response.body().contains("出塁率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () -> assertTrue(response.body().contains("盗塁成功率")),
                 () -> assertTrue(response.body().contains("position.textContent=`${index+1}番`")),
                 () -> assertTrue(!response.body().contains("番打者")),
                 () -> assertTrue(!response.body().contains("name:")),
-                () -> assertTrue(response.body().contains("hitAverage:'.270',sluggish:'.350'")),
-                () -> assertTrue(response.body().contains("hitAverage:'.320',sluggish:'.500'")),
-                () -> assertTrue(response.body().contains("hitAverage:'.230',sluggish:'.400'")),
+                () -> assertTrue(response.body().contains("hitAverage:'.32',sluggish:'.35'")),
+                () -> assertTrue(response.body().contains("hitAverage:'.37',sluggish:'.50'")),
+                () -> assertTrue(response.body().contains("hitAverage:'.28',sluggish:'.40'")),
                 () ->
                         assertTrue(
                                 response.body()
-                                        .contains("key:'hitAverage',label:'打率',min:0.005,max:0.4")),
+                                        .contains("key:'hitAverage',label:'出塁率',min:0.01,max:0.4")),
                 () ->
                         assertTrue(
                                 response.body()
@@ -101,6 +101,13 @@ class SimulationPageIntegrationTest {
                                 response.body()
                                         .contains(
                                                 "input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]);")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("buntSuccessRate:'.80',stealSuccessRate:'.80'")),
+                () -> assertTrue(response.body().contains("input.step='0.01'")),
+                () -> assertTrue(response.body().contains("hasAtMostTwoDecimalPlaces")),
+                () -> assertTrue(response.body().contains("class=\"simulation-workspace\"")),
                 () -> assertTrue(response.body().contains("'homeRunCount'")),
                 () -> assertTrue(response.body().contains("scoreDistribution")),
                 () -> assertTrue(response.body().contains("score-histogram")),

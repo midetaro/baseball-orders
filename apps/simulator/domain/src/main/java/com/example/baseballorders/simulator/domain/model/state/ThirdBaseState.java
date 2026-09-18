@@ -3,9 +3,15 @@ package com.example.baseballorders.simulator.domain.model.state;
 import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-import java.util.Optional;
 
-public class ThirdBaseState implements BasesState {
+public final class ThirdBaseState extends BasesState {
+    public ThirdBaseState() {
+        this(null);
+    }
+
+    public ThirdBaseState(BatterEntity thirdRunner) {
+        super(null, null, thirdRunner);
+    }
 
     /**
      * Scores the runner on third and places the batter on first.
@@ -14,29 +20,26 @@ public class ThirdBaseState implements BasesState {
      * @param batterEntity batter who hit the single
      */
     @Override
-    public void hitSingle(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.FIRST);
+    public BasesState hitSingle(GameBattingContext context, BatterEntity batterEntity) {
         context.addScore(1);
-        context.setRunnerOnFirstBase(Optional.of(batterEntity));
+        return advance(Base.FIRST).withRunnerAt(Base.FIRST, batterEntity);
     }
 
     @Override
-    public void hitDouble(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.SECOND);
+    public BasesState hitDouble(GameBattingContext context, BatterEntity batterEntity) {
         context.addScore(1);
-        context.setRunnerOnSecondBase(Optional.of(batterEntity));
+        return advance(Base.SECOND).withRunnerAt(Base.SECOND, batterEntity);
     }
 
     @Override
-    public void hitTriple(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.THIRD);
+    public BasesState hitTriple(GameBattingContext context, BatterEntity batterEntity) {
         context.addScore(1);
-        context.setRunnerOnThirdBase(Optional.of(batterEntity));
+        return advance(Base.THIRD).withRunnerAt(Base.THIRD, batterEntity);
     }
 
     @Override
-    public void hitHomer(GameBattingContext context, BatterEntity batterEntity) {
-        context.moveRunnerNthBase(Base.THIRD);
+    public BasesState hitHomer(GameBattingContext context, BatterEntity batterEntity) {
         context.addScore(2);
+        return empty();
     }
 }

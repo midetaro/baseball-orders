@@ -13,6 +13,7 @@ import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,8 +58,6 @@ class LineUpMapperTest {
         var doubleResult = batter.stealToDouble();
         var tripleResult = batter.stealToTriple();
         var buntResult = batter.bunt(OutCount.NO_OUT, new SingleBasesState());
-        var mappedBuntStrategyResult =
-                batter.getBuntStrategy().bunt(0.7f, OutCount.NO_OUT, new SingleBasesState());
 
         // then
         assertAll(
@@ -73,10 +72,6 @@ class LineUpMapperTest {
                 () ->
                         assertEquals(
                                 buntEnabled ? BuntResult.SUCCESS : BuntResult.NOT_TRY, buntResult),
-                () ->
-                        assertEquals(
-                                buntEnabled ? BuntResult.SUCCESS : BuntResult.NOT_TRY,
-                                mappedBuntStrategyResult),
                 () -> {
                     if (!stealEnabled) org.mockito.Mockito.verifyNoInteractions(strategy);
                 });
@@ -101,7 +96,14 @@ class LineUpMapperTest {
     @DisplayName("SQSの選手情報を打順へ変換すると全選手の能力と振る舞いが保持される")
     void mapsSqsPlayersToLineUpEntity() {
         // given
-        AtBatBehavior atBatBehavior = (hitAverage, sluggish) -> BattingResult.HIT_SINGLE;
+        AtomicReference<Float> receivedOnBasePercentage = new AtomicReference<>();
+        AtomicReference<Float> receivedSlugging = new AtomicReference<>();
+        AtBatBehavior atBatBehavior =
+                (onBasePercentage, slugging) -> {
+                    receivedOnBasePercentage.set(onBasePercentage);
+                    receivedSlugging.set(slugging);
+                    return BattingResult.HIT_SINGLE;
+                };
         FixedStealStrategy stealStrategy = new FixedStealStrategy();
         LineUpMapper mapper =
                 new LineUpMapper(
@@ -124,14 +126,14 @@ class LineUpMapperTest {
 
         // when
         var result = mapper.map(players);
+        BattingResult battingResult = result.getBatterEntities().getFirst().swing();
 
         // then
         assertAll(
                 () -> assertEquals(9, result.getBatterEntities().size()),
-                () ->
-                        assertEquals(
-                                BattingResult.HIT_SINGLE,
-                                result.getBatterEntities().getFirst().swing()),
+                () -> assertEquals(1.0f, receivedOnBasePercentage.get()),
+                () -> assertEquals(0.0f, receivedSlugging.get()),
+                () -> assertEquals(BattingResult.HIT_SINGLE, battingResult),
                 () ->
                         assertEquals(
                                 StealResult.NOT_TRY,

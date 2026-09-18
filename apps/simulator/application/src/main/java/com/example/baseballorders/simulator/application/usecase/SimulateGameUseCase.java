@@ -3,34 +3,26 @@ package com.example.baseballorders.simulator.application.usecase;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
-import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.statistics.ScoreStatisticsCalculator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.IntStream;
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-/** Simulates a baseball game using the configured batting behaviors. */
+/** Simulates baseball games for a supplied lineup. */
 @Service
 public class SimulateGameUseCase {
 
-    @Getter private final Map<String, AtBatBehavior> behaviors;
     private final int gameCount;
     private final ScoreStatisticsCalculator scoreStatisticsCalculator;
 
     /**
      * Creates a game simulation use case.
      *
-     * @param behaviors batting behaviors available to the simulation
      * @param gameCount number of games to simulate for each request
      */
-    public SimulateGameUseCase(
-            Map<String, AtBatBehavior> behaviors,
-            @Value("${simulation.game-count}") int gameCount) {
-        this.behaviors = behaviors;
+    public SimulateGameUseCase(@Value("${simulation.game-count}") int gameCount) {
         this.gameCount = gameCount;
         this.scoreStatisticsCalculator = new ScoreStatisticsCalculator();
     }

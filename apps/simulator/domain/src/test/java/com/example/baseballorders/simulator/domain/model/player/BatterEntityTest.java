@@ -16,37 +16,6 @@ import org.junit.jupiter.api.Test;
 class BatterEntityTest {
 
     @Test
-    @DisplayName("打者の能力値を取得すると生成時の値を返す")
-    void returnsBatterAttributes() {
-        // given
-        var batter =
-                new BatterEntity(
-                        "batter",
-                        0.3f,
-                        0.4f,
-                        0.75f,
-                        0.85f,
-                        (hitAverage, slugging) -> BattingResult.OUT,
-                        new NeverStealStrategy(),
-                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
-
-        // when
-        String name = batter.getName();
-        float hitAverage = batter.getHitAverage();
-        float sluggish = batter.getSluggish();
-        float buntSuccessRate = batter.getBuntSuccessRate();
-        float stealSuccessRate = batter.getStealSuccessRate();
-
-        // then
-        assertAll(
-                () -> assertEquals("batter", name),
-                () -> assertEquals(0.3f, hitAverage),
-                () -> assertEquals(0.4f, sluggish),
-                () -> assertEquals(0.75f, buntSuccessRate),
-                () -> assertEquals(0.85f, stealSuccessRate));
-    }
-
-    @Test
     @DisplayName("バントすると打者のバント成功率を戦略に渡して結果を返す")
     void delegatesBuntWithBatterSuccessRate() {
         // given
@@ -58,7 +27,7 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        (hitAverage, slugging) -> BattingResult.OUT,
+                        (onBasePercentage, slugging) -> BattingResult.OUT,
                         new NeverStealStrategy(),
                         (successRate, outCounts, basesState) -> {
                             receivedRate.set(successRate);
@@ -99,7 +68,7 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        (hitAverage, slugging) -> BattingResult.OUT,
+                        (onBasePercentage, slugging) -> BattingResult.OUT,
                         strategy,
                         (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
 

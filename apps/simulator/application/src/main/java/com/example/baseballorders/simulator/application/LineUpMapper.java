@@ -40,7 +40,8 @@ public class LineUpMapper {
 
     /**
      * Converts SQS player data to a domain lineup, disabling steals and bunts according to each
-     * player's selection.
+     * player's selection. The legacy {@code hitAverage} wire field is interpreted as the domain
+     * on-base percentage to retain the existing message contract.
      *
      * @param players players contained in a simulation request
      * @return lineup containing mapped batter entities in request order
