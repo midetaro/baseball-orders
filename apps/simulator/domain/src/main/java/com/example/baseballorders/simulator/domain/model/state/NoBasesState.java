@@ -5,7 +5,9 @@ import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 
 public final class NoBasesState extends BasesState {
-    public NoBasesState() { super(null, null, null); }
+    public NoBasesState() {
+        super(null, null, null);
+    }
 
     @Override
     public BasesState hitSingle(GameBattingContext context, BatterEntity batterEntity) {

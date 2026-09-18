@@ -5,9 +5,18 @@ import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 
 public final class SingleBasesState extends BasesState implements StealableToDoubleBase {
-    public SingleBasesState() { this(null); }
-    public SingleBasesState(BatterEntity firstRunner) { super(firstRunner, null, null); }
-    @Override public BatterEntity runnerOnFirst() { return runnerAt(Base.FIRST); }
+    public SingleBasesState() {
+        this(null);
+    }
+
+    public SingleBasesState(BatterEntity firstRunner) {
+        super(firstRunner, null, null);
+    }
+
+    @Override
+    public BatterEntity runnerOnFirst() {
+        return runnerAt(Base.FIRST);
+    }
 
     @Override
     public BasesState hitSingle(GameBattingContext context, BatterEntity batterEntity) {

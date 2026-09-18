@@ -5,8 +5,13 @@ import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 
 public final class DoubleThirdBaseState extends BasesState {
-    public DoubleThirdBaseState() { this(null, null); }
-    public DoubleThirdBaseState(BatterEntity secondRunner, BatterEntity thirdRunner) { super(null, secondRunner, thirdRunner); }
+    public DoubleThirdBaseState() {
+        this(null, null);
+    }
+
+    public DoubleThirdBaseState(BatterEntity secondRunner, BatterEntity thirdRunner) {
+        super(null, secondRunner, thirdRunner);
+    }
 
     @Override
     public BasesState hitSingle(GameBattingContext context, BatterEntity batterEntity) {

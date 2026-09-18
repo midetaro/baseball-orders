@@ -36,12 +36,9 @@ final class AtBatProcessor {
                         context.getCurrentBaseState().out(context);
                         yield context.getCurrentBaseState();
                     }
-                    case HIT_SINGLE ->
-                            context.getCurrentBaseState().hitSingle(context, batter);
-                    case HIT_DOUBLE ->
-                            context.getCurrentBaseState().hitDouble(context, batter);
-                    case HIT_TRIPLE ->
-                            context.getCurrentBaseState().hitTriple(context, batter);
+                    case HIT_SINGLE -> context.getCurrentBaseState().hitSingle(context, batter);
+                    case HIT_DOUBLE -> context.getCurrentBaseState().hitDouble(context, batter);
+                    case HIT_TRIPLE -> context.getCurrentBaseState().hitTriple(context, batter);
                     case HIT_HOMER -> context.getCurrentBaseState().hitHomer(context, batter);
                 };
         context.replaceBaseState(nextBaseState);
@@ -94,10 +91,10 @@ final class AtBatProcessor {
         BasesState nextBaseState =
                 switch (stealResult) {
                     case NOT_TRY -> context.getCurrentBaseState();
-                    case FAILURE ->
-                            failSteal(context, currentBase);
+                    case FAILURE -> failSteal(context, currentBase);
                     case SUCCESS ->
-                            succeedSteal(context, currentBase, targetBaseOfSteal, statisticsRecorder);
+                            succeedSteal(
+                                    context, currentBase, targetBaseOfSteal, statisticsRecorder);
                 };
         context.replaceBaseState(nextBaseState);
     }
@@ -114,6 +111,8 @@ final class AtBatProcessor {
             GameStatisticsRecorder statisticsRecorder) {
         statisticsRecorder.recordSteal();
         BatterEntity runner = context.getCurrentBaseState().runnerAt(currentBase);
-        return context.getCurrentBaseState().withRunnerAt(targetBase, runner).withRunnerAt(currentBase, null);
+        return context.getCurrentBaseState()
+                .withRunnerAt(targetBase, runner)
+                .withRunnerAt(currentBase, null);
     }
 }

@@ -94,7 +94,11 @@ public class GameBattingContext {
         this.numberOfNextBatter++;
     }
 
-    void replaceBaseState(BasesState baseState) { this.currentBaseState = baseState; }
+    void replaceBaseState(BasesState baseState) {
+        this.currentBaseState = baseState;
+    }
 
-    private void cleanAllBases() { this.currentBaseState = BasesState.empty(); }
+    private void cleanAllBases() {
+        this.currentBaseState = BasesState.empty();
+    }
 }
