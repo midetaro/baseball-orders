@@ -8,18 +8,18 @@ import org.springframework.stereotype.Component;
 @Component("middleDistanceAtBat")
 public class MiddleDistanceBattingBehavior implements AtBatBehavior {
 
-    public BattingResult batting(float hitAverage, float slugging) {
+    public BattingResult batting(float onBasePercentage, float slugging) {
         float random = RandomGenerator.nextFloat();
 
         // 長打によって増えた塁数
-        float extraBaseProbability = slugging - hitAverage;
+        float extraBaseProbability = slugging - onBasePercentage;
 
         // 二塁打・三塁打・本塁打を同じ確率と仮定
         float doubleProbability = extraBaseProbability / 6;
         float tripleProbability = extraBaseProbability / 6;
         float homeRunProbability = extraBaseProbability / 6;
 
-        float singleProbability = hitAverage - extraBaseProbability / 2;
+        float singleProbability = onBasePercentage - extraBaseProbability / 2;
 
         float cumulative = singleProbability;
 

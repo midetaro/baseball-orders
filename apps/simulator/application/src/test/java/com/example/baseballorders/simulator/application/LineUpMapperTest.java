@@ -101,7 +101,7 @@ class LineUpMapperTest {
     @DisplayName("SQSの選手情報を打順へ変換すると全選手の能力と振る舞いが保持される")
     void mapsSqsPlayersToLineUpEntity() {
         // given
-        AtBatBehavior atBatBehavior = (hitAverage, sluggish) -> BattingResult.HIT_SINGLE;
+        AtBatBehavior atBatBehavior = (onBasePercentage, sluggish) -> BattingResult.HIT_SINGLE;
         FixedStealStrategy stealStrategy = new FixedStealStrategy();
         LineUpMapper mapper =
                 new LineUpMapper(
@@ -128,6 +128,9 @@ class LineUpMapperTest {
         // then
         assertAll(
                 () -> assertEquals(9, result.getBatterEntities().size()),
+                () ->
+                        assertEquals(
+                                1.0f, result.getBatterEntities().getFirst().getOnBasePercentage()),
                 () ->
                         assertEquals(
                                 BattingResult.HIT_SINGLE,

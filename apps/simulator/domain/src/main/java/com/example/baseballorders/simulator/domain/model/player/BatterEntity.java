@@ -19,8 +19,8 @@ public class BatterEntity extends Player {
     /** 選手名 */
     private final String name;
 
-    /** 打率 */
-    private final float hitAverage;
+    /** 出塁率 */
+    private final float onBasePercentage;
 
     /** 長打率 */
     private final float sluggish;
@@ -46,7 +46,7 @@ public class BatterEntity extends Player {
      * @return 打席結果
      */
     public BattingResult swing() {
-        return atBatBehavior.batting(this.hitAverage, this.sluggish);
+        return atBatBehavior.batting(this.onBasePercentage, this.sluggish);
     }
 
     /**

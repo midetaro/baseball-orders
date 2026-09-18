@@ -3,14 +3,13 @@ package com.example.baseballorders.simulator.domain.model.state;
 import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-import java.util.Optional;
 
 public class FullBasesState implements BasesState {
 
     @Override
     public void hitSingle(GameBattingContext context, BatterEntity batterEntity) {
         context.moveRunnerNthBase(Base.FIRST);
-        context.setRunnerOnFirstBase(Optional.of(batterEntity));
+        context.getRunners().setFirst(batterEntity);
         context.addScore(1);
     }
 
@@ -18,14 +17,14 @@ public class FullBasesState implements BasesState {
     public void hitDouble(GameBattingContext context, BatterEntity batterEntity) {
         context.moveRunnerNthBase(Base.SECOND);
         context.addScore(2);
-        context.setRunnerOnSecondBase(Optional.of(batterEntity));
+        context.getRunners().setSecond(batterEntity);
     }
 
     @Override
     public void hitTriple(GameBattingContext context, BatterEntity batterEntity) {
         context.moveRunnerNthBase(Base.THIRD);
         context.addScore(3);
-        context.setRunnerOnThirdBase(Optional.of(batterEntity));
+        context.getRunners().setThird(batterEntity);
     }
 
     @Override

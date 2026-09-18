@@ -26,13 +26,13 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        (hitAverage, slugging) -> BattingResult.OUT,
+                        (onBasePercentage, slugging) -> BattingResult.OUT,
                         new NeverStealStrategy(),
                         (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
 
         // when
         String name = batter.getName();
-        float hitAverage = batter.getHitAverage();
+        float onBasePercentage = batter.getOnBasePercentage();
         float sluggish = batter.getSluggish();
         float buntSuccessRate = batter.getBuntSuccessRate();
         float stealSuccessRate = batter.getStealSuccessRate();
@@ -40,7 +40,7 @@ class BatterEntityTest {
         // then
         assertAll(
                 () -> assertEquals("batter", name),
-                () -> assertEquals(0.3f, hitAverage),
+                () -> assertEquals(0.3f, onBasePercentage),
                 () -> assertEquals(0.4f, sluggish),
                 () -> assertEquals(0.75f, buntSuccessRate),
                 () -> assertEquals(0.85f, stealSuccessRate));
@@ -58,7 +58,7 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        (hitAverage, slugging) -> BattingResult.OUT,
+                        (onBasePercentage, slugging) -> BattingResult.OUT,
                         new NeverStealStrategy(),
                         (successRate, outCounts, basesState) -> {
                             receivedRate.set(successRate);
@@ -99,7 +99,7 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        (hitAverage, slugging) -> BattingResult.OUT,
+                        (onBasePercentage, slugging) -> BattingResult.OUT,
                         strategy,
                         (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
 

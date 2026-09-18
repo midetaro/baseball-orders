@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class LongDistanceBattingBehavior implements AtBatBehavior {
 
     @Override
-    public BattingResult batting(float hitAverage, float sluggish) {
+    public BattingResult batting(float onBasePercentage, float sluggish) {
         return BattingResult.HIT_HOMER;
     }
 }

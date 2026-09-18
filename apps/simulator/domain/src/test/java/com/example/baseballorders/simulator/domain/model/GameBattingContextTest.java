@@ -16,7 +16,6 @@ import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.state.NoBasesState;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -165,20 +164,19 @@ public class GameBattingContextTest {
         // given
         GameBattingContext gameBattingContext =
                 new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
-        Optional<BatterEntity> batter =
-                hasBatter ? Optional.of(BatterTestDataFactory.mock().get(0)) : Optional.empty();
+        BatterEntity batter = hasBatter ? BatterTestDataFactory.mock().get(0) : null;
 
         // when
         gameBattingContext.setRunnerTo(base, batter);
 
         // then
-        Optional<BatterEntity> runner =
+        BatterEntity runner =
                 switch (base) {
-                    case FIRST -> gameBattingContext.getRunnerOnFirstBase();
-                    case SECOND -> gameBattingContext.getRunnerOnSecondBase();
-                    case THIRD -> gameBattingContext.getRunnerOnThirdBase();
+                    case FIRST -> gameBattingContext.getRunners().getFirst();
+                    case SECOND -> gameBattingContext.getRunners().getSecond();
+                    case THIRD -> gameBattingContext.getRunners().getThird();
                 };
-        assertAll(() -> assertEquals(hasBatter, runner.isPresent(), description));
+        assertAll(() -> assertEquals(hasBatter, runner != null, description));
     }
 
     static Stream<Arguments> setRunnerToTestCases() {
@@ -204,9 +202,9 @@ public class GameBattingContextTest {
         GameBattingContext gameBattingContext =
                 new GameBattingContext(new LineUpEntity(BatterTestDataFactory.mock()));
         var batter = BatterTestDataFactory.mock().get(0);
-        gameBattingContext.setRunnerTo(Base.FIRST, Optional.of(batter));
-        gameBattingContext.setRunnerTo(Base.SECOND, Optional.of(batter));
-        gameBattingContext.setRunnerTo(Base.THIRD, Optional.of(batter));
+        gameBattingContext.setRunnerTo(Base.FIRST, batter);
+        gameBattingContext.setRunnerTo(Base.SECOND, batter);
+        gameBattingContext.setRunnerTo(Base.THIRD, batter);
 
         // when
         gameBattingContext.moveRunnerNthBase(targetBase);
@@ -216,17 +214,17 @@ public class GameBattingContextTest {
                 () ->
                         assertEquals(
                                 expectedFirstEmpty,
-                                gameBattingContext.getRunnerOnFirstBase().isEmpty(),
+                                gameBattingContext.getRunners().getFirst() == null,
                                 description),
                 () ->
                         assertEquals(
                                 expectedSecondEmpty,
-                                gameBattingContext.getRunnerOnSecondBase().isEmpty(),
+                                gameBattingContext.getRunners().getSecond() == null,
                                 description),
                 () ->
                         assertEquals(
                                 expectedThirdEmpty,
-                                gameBattingContext.getRunnerOnThirdBase().isEmpty(),
+                                gameBattingContext.getRunners().getThird() == null,
                                 description));
     }
 
@@ -280,9 +278,9 @@ public class GameBattingContextTest {
         var batter = BatterTestDataFactory.mock().get(0);
 
         // 各塁に走者を設定
-        if (hasFirst) gameBattingContext.setRunnerTo(Base.FIRST, Optional.of(batter));
-        if (hasSecond) gameBattingContext.setRunnerTo(Base.SECOND, Optional.of(batter));
-        if (hasThird) gameBattingContext.setRunnerTo(Base.THIRD, Optional.of(batter));
+        if (hasFirst) gameBattingContext.setRunnerTo(Base.FIRST, batter);
+        if (hasSecond) gameBattingContext.setRunnerTo(Base.SECOND, batter);
+        if (hasThird) gameBattingContext.setRunnerTo(Base.THIRD, batter);
 
         // when
         gameBattingContext.updateBaseStateOf();
@@ -460,7 +458,7 @@ public class GameBattingContextTest {
         BatterEntity hitter = batter(BattingResult.HIT_SINGLE, StealResult.NOT_TRY);
         GameBattingContext context =
                 new GameBattingContext(new LineUpEntity(Collections.nCopies(9, hitter)));
-        context.setRunnerOnFirstBase(Optional.of(runner));
+        context.getRunners().setFirst(runner);
         context.updateBaseStateOf();
 
         // when
@@ -469,7 +467,7 @@ public class GameBattingContextTest {
         // then
         assertAll(
                 () -> assertEquals(OutCount.ONE_OUT, context.getOutCount()),
-                () -> assertEquals(Optional.of(hitter), context.getRunnerOnFirstBase()));
+                () -> assertEquals(hitter, context.getRunners().getFirst()));
     }
 
     @org.junit.jupiter.api.Test
@@ -481,7 +479,7 @@ public class GameBattingContextTest {
                 batter(BattingResult.HIT_HOMER, StealResult.NOT_TRY, BuntResult.SUCCESS);
         GameBattingContext context =
                 new GameBattingContext(new LineUpEntity(Collections.nCopies(9, bunter)));
-        context.setRunnerOnFirstBase(Optional.of(runner));
+        context.getRunners().setFirst(runner);
         context.updateBaseStateOf();
 
         // when
@@ -490,8 +488,8 @@ public class GameBattingContextTest {
         // then
         assertAll(
                 () -> assertEquals(OutCount.ONE_OUT, context.getOutCount()),
-                () -> assertEquals(Optional.empty(), context.getRunnerOnFirstBase()),
-                () -> assertEquals(Optional.of(runner), context.getRunnerOnSecondBase()),
+                () -> assertEquals(null, context.getRunners().getFirst()),
+                () -> assertEquals(runner, context.getRunners().getSecond()),
                 () -> assertEquals(0, context.getTotalScore()));
     }
 
@@ -504,7 +502,7 @@ public class GameBattingContextTest {
                 batter(BattingResult.HIT_HOMER, StealResult.NOT_TRY, BuntResult.FAILURE);
         GameBattingContext context =
                 new GameBattingContext(new LineUpEntity(Collections.nCopies(9, bunter)));
-        context.setRunnerOnFirstBase(Optional.of(runner));
+        context.getRunners().setFirst(runner);
         context.updateBaseStateOf();
 
         // when
@@ -513,8 +511,8 @@ public class GameBattingContextTest {
         // then
         assertAll(
                 () -> assertEquals(OutCount.ONE_OUT, context.getOutCount()),
-                () -> assertEquals(Optional.of(runner), context.getRunnerOnFirstBase()),
-                () -> assertEquals(Optional.empty(), context.getRunnerOnSecondBase()),
+                () -> assertEquals(runner, context.getRunners().getFirst()),
+                () -> assertEquals(null, context.getRunners().getSecond()),
                 () -> assertEquals(0, context.getTotalScore()));
     }
 
@@ -533,13 +531,13 @@ public class GameBattingContextTest {
         BatterEntity bunter = batter(BattingResult.OUT, StealResult.NOT_TRY, BuntResult.SUCCESS);
         GameBattingContext buntContext =
                 new GameBattingContext(new LineUpEntity(Collections.nCopies(9, bunter)));
-        buntContext.setRunnerOnFirstBase(Optional.of(runner));
+        buntContext.getRunners().setFirst(runner);
         buntContext.updateBaseStateOf();
         BatterEntity stealingRunner = batter(BattingResult.OUT, StealResult.SUCCESS);
         BatterEntity battingOut = batter(BattingResult.OUT, StealResult.NOT_TRY);
         GameBattingContext stealContext =
                 new GameBattingContext(new LineUpEntity(Collections.nCopies(9, battingOut)));
-        stealContext.setRunnerOnFirstBase(Optional.of(stealingRunner));
+        stealContext.getRunners().setFirst(stealingRunner);
         stealContext.updateBaseStateOf();
 
         // when
@@ -574,9 +572,9 @@ public class GameBattingContextTest {
             boolean hasRunnerOnThird) {
         GameBattingContext context =
                 new GameBattingContext(new LineUpEntity(Collections.nCopies(9, hitter)));
-        context.setRunnerOnFirstBase(hasRunnerOnFirst ? Optional.of(runner) : Optional.empty());
-        context.setRunnerOnSecondBase(hasRunnerOnSecond ? Optional.of(runner) : Optional.empty());
-        context.setRunnerOnThirdBase(hasRunnerOnThird ? Optional.of(runner) : Optional.empty());
+        context.getRunners().setFirst(hasRunnerOnFirst ? runner : null);
+        context.getRunners().setSecond(hasRunnerOnSecond ? runner : null);
+        context.getRunners().setThird(hasRunnerOnThird ? runner : null);
         context.updateBaseStateOf();
         return context;
     }

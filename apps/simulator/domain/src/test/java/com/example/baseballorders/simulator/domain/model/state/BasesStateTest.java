@@ -12,7 +12,6 @@ import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,21 +49,9 @@ class BasesStateTest {
         // then
         assertAll(
                 () -> assertEquals(expectedScore, context.getTotalScore(), description),
-                () ->
-                        assertSame(
-                                expectedFirst,
-                                context.getRunnerOnFirstBase().orElse(null),
-                                description),
-                () ->
-                        assertSame(
-                                expectedSecond,
-                                context.getRunnerOnSecondBase().orElse(null),
-                                description),
-                () ->
-                        assertSame(
-                                expectedThird,
-                                context.getRunnerOnThirdBase().orElse(null),
-                                description));
+                () -> assertSame(expectedFirst, context.getRunners().getFirst(), description),
+                () -> assertSame(expectedSecond, context.getRunners().getSecond(), description),
+                () -> assertSame(expectedThird, context.getRunners().getThird(), description));
     }
 
     static Stream<Arguments> hitTestCases() {
@@ -440,14 +427,10 @@ class BasesStateTest {
     private static GameBattingContext contextWithRunners(
             boolean hasFirst, boolean hasSecond, boolean hasThird) {
         GameBattingContext context = new GameBattingContext(new LineUpEntity(List.of(BATTER)));
-        context.setRunnerOnFirstBase(optionalRunner(hasFirst, FIRST_RUNNER));
-        context.setRunnerOnSecondBase(optionalRunner(hasSecond, SECOND_RUNNER));
-        context.setRunnerOnThirdBase(optionalRunner(hasThird, THIRD_RUNNER));
+        context.getRunners().setFirst(hasFirst ? FIRST_RUNNER : null);
+        context.getRunners().setSecond(hasSecond ? SECOND_RUNNER : null);
+        context.getRunners().setThird(hasThird ? THIRD_RUNNER : null);
         return context;
-    }
-
-    private static Optional<BatterEntity> optionalRunner(boolean isPresent, BatterEntity runner) {
-        return isPresent ? Optional.of(runner) : Optional.empty();
     }
 
     private static BatterEntity batter(String name) {
