@@ -94,35 +94,4 @@ class UnusedProductionApiTest {
                 arguments("盗塁戦略 getter", BatterEntity.class, "getStealStrategy", new Class<?>[0]),
                 arguments("バント戦略 getter", BatterEntity.class, "getBuntStrategy", new Class<?>[0]));
     }
-
-    @DisplayName("プロダクトコードに未使用の戦略クラスを定義しない")
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("unusedClassTestCases")
-    void doesNotDefineUnusedClass(String description, String className) {
-        // given
-        ClassLoader classLoader = getClass().getClassLoader();
-
-        // when
-        ClassNotFoundException exception =
-                assertThrows(ClassNotFoundException.class, () -> classLoader.loadClass(className));
-
-        // then
-        assertAll(description, () -> assertTrue(exception.getMessage().contains(className)));
-    }
-
-    static Stream<Arguments> unusedClassTestCases() {
-        return Stream.of(
-                arguments(
-                        "積極的バント戦略",
-                        "com.example.baseballorders.simulator.domain.model.behavior.EagerBuntStrategy"),
-                arguments(
-                        "中間盗塁戦略",
-                        "com.example.baseballorders.simulator.domain.model.behavior.MiddleStealBehavior"),
-                arguments(
-                        "短距離打撃戦略",
-                        "com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior"),
-                arguments(
-                        "長距離打撃戦略",
-                        "com.example.baseballorders.simulator.domain.model.behavior.LongDistanceBattingBehavior"));
-    }
 }

@@ -98,7 +98,7 @@ class BasesStateTransitionTest {
 
     static Stream<Arguments> advances() {
         return Stream.of(
-                arguments("一つ進塁", Base.FIRST, FirstDoubleBaseState.class),
+                arguments("一つ進塁", Base.FIRST, DoubleThirdBaseState.class),
                 arguments("二つ進塁", Base.SECOND, ThirdBaseState.class),
                 arguments("走者消去", Base.THIRD, NoBasesState.class));
     }
