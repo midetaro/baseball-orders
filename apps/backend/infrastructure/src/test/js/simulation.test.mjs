@@ -22,6 +22,10 @@ assert.ok(!html.includes("buntSuccessRate:'.700'"), 'バント成功率の初期
 assert.ok(!html.includes("stealSuccessRate:'.500'"), '盗塁成功率の初期値を役割ごとに変えない');
 assert.ok(html.includes("buntSuccessRate:'0.80',stealSuccessRate:'0.80'"), 'バントと盗塁の成功率の初期値を8割にする');
 assert.ok(html.includes("input.step='0.01'"), '数値入力は小数第2位刻みにする');
+assert.ok(html.includes("key:'hitAverage',label:'出塁率',min:0.01,max:0.6"), '出塁率の上限を60%にする');
+assert.ok(html.includes('function formatPercentage(value)'), '入力値を小数第2位に整形する');
+assert.ok(html.includes('Number(value).toFixed(2)'), '小数第2位のゼロを常に表示する');
+assert.ok(html.includes("input.addEventListener('change'"), '入力の確定時に小数第2位へ整形する');
 assert.ok(!html.includes("hitAverage:'.32'"), '小数点前のゼロを省略しない');
 assert.ok(html.includes("input.value.startsWith('.') ? `0${input.value}` : input.value"), '入力時も小数点前のゼロを表示する');
 assert.ok(html.includes('hasAtMostTwoDecimalPlaces'), '小数第3位以降の入力では実行できないようにする');
@@ -40,13 +44,17 @@ assert.ok(html.includes('id="toggle-all-steal"'), '全員盗塁を切り替え�
 assert.ok(html.includes('lineup.every(player=>player.buntEnabled)'), '全員バントが有効なら次の操作で全員無効にする');
 assert.ok(html.includes('lineup.every(player=>player.stealEnabled)'), '全員盗塁が有効なら次の操作で全員無効にする');
 assert.ok(html.includes('class="simulation-workspace"'), '打順入力と結果を同一のワークスペースに配置する');
+assert.ok(html.includes('<title>打順監督</title>'), 'ブラウザのタブにサービス名を表示する');
+assert.ok(html.includes('<h1>打順監督</h1>'), '画面左上にサービス名を表示する');
+assert.ok(!html.includes('Baseball Orders / Simulator'), '旧サービス名を画面から除去する');
+assert.ok(!html.includes('LINEUP<br>BUILDER'), '旧見出しを画面から除去する');
 assert.ok(!html.includes('id="results" aria-labelledby="results-heading" hidden'), '初期表示から結果の表示ラベルを隠さない');
 assert.ok(!html.includes('id="home-run-empty-state" hidden'), '初期表示から本塁打なしの表示ラベルを隠さない');
 assert.ok(html.includes('.simulation-workspace { display:grid;'), '広い画面では打順入力と結果を横並びにする');
 assert.ok(!html.includes("const labelElement=document.createElement('label');"), '各入力セルに列名を重複表示しない');
 assert.ok(html.includes("input.setAttribute('aria-label',field.label);"), '列見出しを視覚的に重複させず入力の名称を提供する');
 for (const [field, minimum, maximum] of [
-  ["key:'hitAverage'", 'min:0.01', 'max:0.4'],
+  ["key:'hitAverage'", 'min:0.01', 'max:0.6'],
   ["key:'sluggish'", 'min:0.1', 'max:0.6'],
   ["key:'stealSuccessRate'", 'min:0.1', 'max:0.9']
 ]) {

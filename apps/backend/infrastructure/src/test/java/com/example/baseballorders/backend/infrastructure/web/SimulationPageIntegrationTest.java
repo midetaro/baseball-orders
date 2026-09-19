@@ -46,6 +46,10 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("打順入力")),
+                () -> assertTrue(response.body().contains("<title>打順監督</title>")),
+                () -> assertTrue(response.body().contains("<h1>打順監督</h1>")),
+                () -> assertTrue(!response.body().contains("Baseball Orders / Simulator")),
+                () -> assertTrue(!response.body().contains("LINEUP<br>BUILDER")),
                 () -> assertTrue(response.body().contains("出塁率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () -> assertTrue(response.body().contains("盗塁成功率")),
@@ -57,7 +61,7 @@ class SimulationPageIntegrationTest {
                 () ->
                         assertTrue(
                                 response.body()
-                                        .contains("key:'hitAverage',label:'出塁率',min:0.01,max:0.4")),
+                                        .contains("key:'hitAverage',label:'出塁率',min:0.01,max:0.6")),
                 () ->
                         assertTrue(
                                 response.body()
