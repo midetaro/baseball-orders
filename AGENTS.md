@@ -63,6 +63,7 @@ When changing a repository skill, also run its official-validator wrapper,
 - List every enum constant explicitly and omit `default` for closed internal
   enums so adding a constant causes a compile-time failure at every affected
   branch.
+- Use sealed interface or sealed class when it can be.
 - Do not use `default` in a `switch` expression unless that branch throws an
   exception. A `default` branch must never return a fallback value, silently do
   nothing, or handle ordinary control flow.
