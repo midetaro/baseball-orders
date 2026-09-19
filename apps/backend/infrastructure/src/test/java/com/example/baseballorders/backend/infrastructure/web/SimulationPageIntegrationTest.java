@@ -16,8 +16,9 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
- * 実物: HTTPサーバー、Controller、Thymeleaf。 モック: SqsTemplate。 担保する疎通: HTTP GET -> SimulationPageController
- * -> Thymeleaf HTML応答。 担保しないもの: SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
+ * 実物: HTTPサーバー、SimulationPageController、SimulationGuidePageController、Thymeleaf。 モック: SqsTemplate。
+ * 担保する疎通: HTTP GET -> 各PageController -> Thymeleaf HTML応答。 担保しないもの: SQSへのシミュレーション要求送信と結果受信、
+ * 入力値のブラウザ操作。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -174,6 +175,8 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("シミュレーションの仕組み")),
                 () -> assertTrue(response.body().contains("9回")),
                 () -> assertTrue(response.body().contains("平均得点")),
+                () -> assertTrue(response.body().contains("盗塁死となり、アウトが一つ増えます")),
+                () -> assertTrue(response.body().contains("三塁走者がいない一・二塁の状況で、無死の場合だけ")),
                 () -> assertTrue(response.body().contains("打順を組み立てる")));
     }
 }
