@@ -46,16 +46,14 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("打順入力")),
-                () -> assertTrue(response.body().contains("一番〜九番として送信します。")),
                 () -> assertTrue(response.body().contains("出塁率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () -> assertTrue(response.body().contains("盗塁成功率")),
                 () -> assertTrue(response.body().contains("position.textContent=`${index+1}番`")),
-                () -> assertTrue(!response.body().contains("番打者")),
                 () -> assertTrue(!response.body().contains("name:")),
-                () -> assertTrue(response.body().contains("hitAverage:'.32',sluggish:'.35'")),
-                () -> assertTrue(response.body().contains("hitAverage:'.37',sluggish:'.50'")),
-                () -> assertTrue(response.body().contains("hitAverage:'.28',sluggish:'.40'")),
+                () -> assertTrue(response.body().contains("hitAverage:'0.32',sluggish:'0.35'")),
+                () -> assertTrue(response.body().contains("hitAverage:'0.37',sluggish:'0.50'")),
+                () -> assertTrue(response.body().contains("hitAverage:'0.28',sluggish:'0.40'")),
                 () ->
                         assertTrue(
                                 response.body()
@@ -70,6 +68,21 @@ class SimulationPageIntegrationTest {
                                         .contains(
                                                 "key:'stealSuccessRate',label:'盗塁成功率',min:0.1,max:0.9")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<h2 id=\"order-heading\">打順入力</h2><button class=\"submit\"")),
+                () -> assertTrue(response.body().contains("id=\"toggle-all-bunt\"")),
+                () -> assertTrue(response.body().contains("id=\"toggle-all-steal\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("lineup.every(player=>player.buntEnabled)")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("lineup.every(player=>player.stealEnabled)")),
                 () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
                 () -> assertTrue(response.body().contains("fetch('/simulations'")),
                 () -> assertTrue(response.body().contains("本塁打")),
@@ -104,10 +117,24 @@ class SimulationPageIntegrationTest {
                 () ->
                         assertTrue(
                                 response.body()
-                                        .contains("buntSuccessRate:'.80',stealSuccessRate:'.80'")),
+                                        .contains(
+                                                "buntSuccessRate:'0.80',stealSuccessRate:'0.80'")),
                 () -> assertTrue(response.body().contains("input.step='0.01'")),
+                () -> assertTrue(!response.body().contains("hitAverage:'.32'")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "input.value.startsWith('.') ? `0${input.value}` : input.value")),
+                () -> assertTrue(response.body().contains(".section-head { display:flex;")),
                 () -> assertTrue(response.body().contains("hasAtMostTwoDecimalPlaces")),
                 () -> assertTrue(response.body().contains("class=\"simulation-workspace\"")),
+                () ->
+                        assertTrue(
+                                !response.body()
+                                        .contains(
+                                                "id=\"results\" aria-labelledby=\"results-heading\" hidden")),
+                () -> assertTrue(!response.body().contains("id=\"home-run-empty-state\" hidden")),
                 () -> assertTrue(response.body().contains("'homeRunCount'")),
                 () -> assertTrue(response.body().contains("scoreDistribution")),
                 () -> assertTrue(response.body().contains("score-histogram")),
