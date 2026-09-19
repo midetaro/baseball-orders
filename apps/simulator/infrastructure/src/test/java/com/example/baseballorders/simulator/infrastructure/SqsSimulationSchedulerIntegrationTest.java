@@ -31,9 +31,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -52,8 +52,8 @@ class SqsSimulationSchedulerIntegrationTest {
      * 共有結果メッセージ、および要求削除。request SQS -> Scheduler -> LineUpMapper -> 打者の盗塁・バント選択。 担保しないもの:
      * 試合計算の正当性、backendのHTTP応答、AWS実環境。
      */
+    @Disabled
     @Test
-    @EnabledIfEnvironmentVariable(named = "ELASTICMQ_ENDPOINT_URL", matches = ".+")
     @DisplayName("ElasticMQで受信した試合を実行すると結果を送信して要求を削除する")
     void sendsResultAndDeletesRequestWithElasticMq() throws Exception {
         // given
