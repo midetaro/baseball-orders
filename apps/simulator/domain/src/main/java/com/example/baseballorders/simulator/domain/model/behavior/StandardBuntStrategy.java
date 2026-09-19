@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 /** 選手のバント成功率に基づく標準的なバント戦略。 */
 @Component("standardBuntStrategy")
-public class StandardBuntStrategy implements BuntStrategy {
+public final class StandardBuntStrategy implements BuntStrategy {
 
     @Override
     public BuntResult bunt(float successRate, OutCount outCount, BasesState basesState) {

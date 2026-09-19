@@ -2,7 +2,10 @@ package com.example.baseballorders.simulator.domain.model.behavior;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 
-public interface AtBatBehavior {
+public sealed interface AtBatBehavior
+        permits LongDistanceBattingBehavior,
+                MiddleDistanceBattingBehavior,
+                ShortDistanceAtBatBehavior {
 
     /**
      * 打者の打撃成績と戦略に基づいて、一打席の打撃結果を決定する。

@@ -15,11 +15,9 @@ import com.example.baseballorders.simulator.application.LineUpMapper;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
-import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
-import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
@@ -88,9 +86,12 @@ class SqsSimulationSchedulerIntegrationTest {
                 .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =
                 new LineUpMapper(
-                        (hitAverage, slugging) -> BattingResult.OUT,
-                        new FixedStealStrategy(),
-                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
+                        new com.example.baseballorders.simulator.domain.model.behavior
+                                .MiddleDistanceBattingBehavior(),
+                        new com.example.baseballorders.simulator.domain.model.behavior
+                                .EagerStealBehavior(),
+                        new com.example.baseballorders.simulator.domain.model.behavior
+                                .StandardBuntStrategy());
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
                         .mapToObj(
@@ -232,18 +233,5 @@ class SqsSimulationSchedulerIntegrationTest {
                 response ->
                         accumulator.onGameCompleted(response.score(), response.gameStatistics()));
         return new SimulationResult(accumulator.toScoreStatistics());
-    }
-
-    private static final class FixedStealStrategy implements StealStrategy {
-
-        @Override
-        public StealResult runToDouble(float successRate) {
-            return StealResult.SUCCESS;
-        }
-
-        @Override
-        public StealResult runToTriple(float successRate) {
-            return StealResult.SUCCESS;
-        }
     }
 }

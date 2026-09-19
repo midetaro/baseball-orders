@@ -2,19 +2,23 @@ package com.example.baseballorders.simulator.domain.model;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mockStatic;
 
-import com.example.baseballorders.simulator.domain.code.BattingResult;
-import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.model.behavior.LongDistanceBattingBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.MiddleDistanceBattingBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.NowayBuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
+import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 class GameBattingContextTest {
 
@@ -60,13 +64,16 @@ class GameBattingContextTest {
                         0.4f,
                         0.7f,
                         0.8f,
-                        (onBasePercentage, sluggish) -> BattingResult.HIT_HOMER,
+                        new LongDistanceBattingBehavior(),
                         new NowayStealBehavior(),
-                        (successRate, outCount, basesState) -> BuntResult.NOT_TRY);
+                        new NowayBuntStrategy());
         var context = new GameBattingContext(new LineUpEntity(Collections.nCopies(9, batter)));
 
         // when
-        context.nextAtBat();
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.23f);
+            context.nextAtBat();
+        }
 
         // then
         assertAll(
@@ -80,8 +87,8 @@ class GameBattingContextTest {
                 0.4f,
                 0.7f,
                 0.8f,
-                (onBasePercentage, sluggish) -> BattingResult.OUT,
+                new MiddleDistanceBattingBehavior(),
                 new NowayStealBehavior(),
-                (successRate, outCount, basesState) -> BuntResult.NOT_TRY);
+                new NowayBuntStrategy());
     }
 }

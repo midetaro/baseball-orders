@@ -6,7 +6,7 @@ import com.example.baseballorders.simulator.domain.model.state.BasesState;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 
 /** 標準戦略より広い試合状況でバントを試みる積極的な戦略。 */
-public class EagerBuntStrategy implements BuntStrategy {
+public final class EagerBuntStrategy implements BuntStrategy {
 
     @Override
     public BuntResult bunt(float successRate, OutCount outCount, BasesState basesState) {

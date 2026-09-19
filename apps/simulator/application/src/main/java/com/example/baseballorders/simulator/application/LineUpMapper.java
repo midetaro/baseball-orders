@@ -1,8 +1,11 @@
 package com.example.baseballorders.simulator.application;
 
+import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.EagerBuntStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.LongDistanceBattingBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayBuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
@@ -17,7 +20,7 @@ import org.springframework.stereotype.Component;
 public class LineUpMapper {
 
     private final AtBatBehavior atBatBehavior;
-    private final StealStrategy stealStrategy;
+    private final StealStrategy eagerStealStrategy;
     private final BuntStrategy buntStrategy;
     private final StealStrategy noStealStrategy = new NowayStealBehavior();
     private final BuntStrategy noBuntStrategy = new NowayBuntStrategy();
@@ -34,7 +37,7 @@ public class LineUpMapper {
             @Qualifier("eagerStealBehavior") StealStrategy stealStrategy,
             @Qualifier("standardBuntStrategy") BuntStrategy buntStrategy) {
         this.atBatBehavior = atBatBehavior;
-        this.stealStrategy = stealStrategy;
+        this.eagerStealStrategy = stealStrategy;
         this.buntStrategy = buntStrategy;
     }
 
@@ -56,14 +59,34 @@ public class LineUpMapper {
                                                 player.sluggish(),
                                                 player.buntSuccessRate(),
                                                 player.stealSuccessRate(),
-                                                atBatBehavior,
+                                                atBatBehaviorFor(player.personality()),
                                                 player.stealEnabled()
-                                                        ? stealStrategy
+                                                        ? stealStrategyFor(player.personality())
                                                         : noStealStrategy,
                                                 player.buntEnabled()
-                                                        ? buntStrategy
+                                                        ? buntStrategyFor(player.personality())
                                                         : noBuntStrategy))
                         .toList();
         return new LineUpEntity(batters);
+    }
+
+    private AtBatBehavior atBatBehaviorFor(PlayerPersonality personality) {
+        return switch (personality) {
+            case DEFAULT, EAGER_STEAL, EAGER_BUNT -> atBatBehavior;
+            case EAGER_SLUGGISH -> new LongDistanceBattingBehavior();
+        };
+    }
+
+    private StealStrategy stealStrategyFor(PlayerPersonality personality) {
+        return switch (personality) {
+            case DEFAULT, EAGER_SLUGGISH, EAGER_STEAL, EAGER_BUNT -> eagerStealStrategy;
+        };
+    }
+
+    private BuntStrategy buntStrategyFor(PlayerPersonality personality) {
+        return switch (personality) {
+            case DEFAULT, EAGER_SLUGGISH, EAGER_STEAL -> buntStrategy;
+            case EAGER_BUNT -> new EagerBuntStrategy();
+        };
     }
 }

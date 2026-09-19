@@ -5,7 +5,8 @@ import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
 
 /** バント戦略。 */
-public interface BuntStrategy {
+public sealed interface BuntStrategy
+        permits EagerBuntStrategy, NowayBuntStrategy, StandardBuntStrategy {
 
     /**
      * 試合状況に応じて、指定された成功率でバントを試みる。
