@@ -242,6 +242,27 @@ class BasesStateTransitionTest {
         assertAll(() -> assertTrue(sealed));
     }
 
+    @DisplayName("バント能力はスクイズと進塁バントの実装インターフェースを許可する")
+    @org.junit.jupiter.api.Test
+    void buntablePermitsSqueezeAndAdvancingBuntInterfaces() {
+        // given
+
+        // when
+        var permittedSubclasses = Buntable.class.getPermittedSubclasses();
+
+        // then
+        assertAll(
+                () -> assertEquals(2, permittedSubclasses.length),
+                () ->
+                        assertTrue(
+                                java.util.Arrays.asList(permittedSubclasses)
+                                        .contains(SqueezeBuntable.class)),
+                () ->
+                        assertTrue(
+                                java.util.Arrays.asList(permittedSubclasses)
+                                        .contains(AdvancingBuntable.class)));
+    }
+
     @DisplayName("バント候補はバント可能インタフェースを実装した塁状態だけが返す")
     @ParameterizedTest(name = "{0}")
     @MethodSource("buntOpportunities")

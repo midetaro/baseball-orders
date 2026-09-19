@@ -2,7 +2,8 @@ package com.example.baseballorders.simulator.domain.model.state;
 
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 
-public final class SingleBasesState extends BasesState implements StealableToDoubleBase, Buntable {
+public final class SingleBasesState extends BasesState
+        implements StealableToDoubleBase, AdvancingBuntable {
 
     public SingleBasesState(BatterEntity firstRunner) {
         super(firstRunner, null, null);
