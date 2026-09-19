@@ -1,7 +1,7 @@
 package com.example.baseballorders.simulator.domain.model;
 
 import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
@@ -11,7 +11,7 @@ public final class BatterTestDataFactory {
 
     private BatterTestDataFactory() {}
 
-    static AtBatBehavior atBatBehavior = BehaviorStrategies.middleDistanceAtBat();
+    static HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceAtBat();
     static StealStrategy eagerStealBehavior = BehaviorStrategies.eagerSteal();
     static StealStrategy nowayStealBehavior = BehaviorStrategies.noSteal();
     static BuntStrategy standardBuntStrategy = BehaviorStrategies.standardBunt();
@@ -36,7 +36,7 @@ public final class BatterTestDataFactory {
                 slugging,
                 0.7f,
                 0.8f,
-                atBatBehavior,
+                hittingStrategy,
                 stealStrategy,
                 standardBuntStrategy);
     }

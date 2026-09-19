@@ -11,7 +11,7 @@ import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
@@ -150,17 +150,19 @@ class LineUpMapperTest {
         // then
         assertAll(
                 () -> assertEquals("middleDistanceAtBat", qualifier.value()),
-                () -> assertEquals(AtBatBehavior.class, constructor.getParameters()[0].getType()));
+                () ->
+                        assertEquals(
+                                HittingStrategy.class, constructor.getParameters()[0].getType()));
     }
 
     @Test
     @DisplayName("SQSの選手情報を打順へ変換すると全選手の能力と振る舞いが保持される")
     void mapsSqsPlayersToLineUpEntity() {
         // given
-        AtBatBehavior atBatBehavior = BehaviorStrategies.middleDistanceAtBat();
+        HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceAtBat();
         LineUpMapper mapper =
                 new LineUpMapper(
-                        atBatBehavior,
+                        hittingStrategy,
                         BehaviorStrategies.eagerSteal(),
                         BehaviorStrategies.standardBunt());
         List<SimulationPlayerMessage> players =

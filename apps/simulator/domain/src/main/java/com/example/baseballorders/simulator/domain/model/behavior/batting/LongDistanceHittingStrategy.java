@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 /** 長距離バッター */
 @Component("longDistanceAtBat")
-public final class LongDistanceBattingBehavior implements AtBatBehavior {
+public final class LongDistanceHittingStrategy implements HittingStrategy {
 
     @Override
     public BattingResult batting(float onBasePercentage, float slugging) {

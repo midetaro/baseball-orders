@@ -6,8 +6,8 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.code.StealResult;
-import com.example.baseballorders.simulator.domain.model.behavior.steal.EagerStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.steal.NowayStealBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.steal.EagerStealStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.steal.NowayStealStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.stream.Stream;
@@ -44,7 +44,7 @@ class StealBehaviorTest {
     @org.junit.jupiter.api.Test
     void usesPlayerStealSuccessRate() {
         // given
-        var strategy = new EagerStealBehavior();
+        var strategy = new EagerStealStrategy();
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.9f);
 
@@ -63,49 +63,49 @@ class StealBehaviorTest {
         return Stream.of(
                 arguments(
                         "積極的戦略で二塁への試行確率未満なら試行しない",
-                        new EagerStealBehavior(),
+                        new EagerStealStrategy(),
                         Destination.SECOND,
                         0.69f,
                         StealResult.NOT_TRY),
                 arguments(
                         "積極的戦略で二塁への試行境界と等しければ失敗する",
-                        new EagerStealBehavior(),
+                        new EagerStealStrategy(),
                         Destination.SECOND,
                         0.7f,
                         StealResult.FAILURE),
                 arguments(
                         "積極的戦略で二塁への成功範囲内なら成功する",
-                        new EagerStealBehavior(),
+                        new EagerStealStrategy(),
                         Destination.SECOND,
                         0.8f,
                         StealResult.SUCCESS),
                 arguments(
                         "積極的戦略で二塁への成功上限と等しければ失敗する",
-                        new EagerStealBehavior(),
+                        new EagerStealStrategy(),
                         Destination.SECOND,
                         0.97f,
                         StealResult.FAILURE),
                 arguments(
                         "積極的戦略で三塁への試行確率未満なら試行しない",
-                        new EagerStealBehavior(),
+                        new EagerStealStrategy(),
                         Destination.THIRD,
                         0.84f,
                         StealResult.NOT_TRY),
                 arguments(
                         "積極的戦略で三塁への試行境界と等しければ失敗する",
-                        new EagerStealBehavior(),
+                        new EagerStealStrategy(),
                         Destination.THIRD,
                         0.85f,
                         StealResult.FAILURE),
                 arguments(
                         "積極的戦略で三塁への成功範囲内なら成功する",
-                        new EagerStealBehavior(),
+                        new EagerStealStrategy(),
                         Destination.THIRD,
                         0.9f,
                         StealResult.SUCCESS),
                 arguments(
                         "積極的戦略で三塁への成功上限と等しければ失敗する",
-                        new EagerStealBehavior(),
+                        new EagerStealStrategy(),
                         Destination.THIRD,
                         0.985f,
                         StealResult.FAILURE));
@@ -117,7 +117,7 @@ class StealBehaviorTest {
     void neverAttemptsSteal(
             String description, Destination destination, StealResult expectedResult) {
         // given
-        var strategy = new NowayStealBehavior();
+        var strategy = new NowayStealStrategy();
 
         // when
         StealResult result = destination.run(strategy, 0.0f);

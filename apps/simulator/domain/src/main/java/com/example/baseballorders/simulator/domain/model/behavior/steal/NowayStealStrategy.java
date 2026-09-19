@@ -2,7 +2,7 @@ package com.example.baseballorders.simulator.domain.model.behavior.steal;
 
 import com.example.baseballorders.simulator.domain.code.StealResult;
 
-public final class NowayStealBehavior implements StealStrategy {
+public final class NowayStealStrategy implements StealStrategy {
 
     @Override
     public StealResult runToDouble(float successRate) {

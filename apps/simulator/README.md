@@ -26,7 +26,7 @@ SQS request
 | Adapter | `SqsSimulationScheduler` | AWS SQS の受信・送信を、アプリケーションの呼び出しに変換する。 |
 | Application Service | `SimulateGameUseCase` | ユースケースの流れ（指定回数の試合実行と集計）を調整し、個別の野球ルールは保持しない。 |
 | Mapper | `LineUpMapper` | shared contract の `SimulationPlayerMessage` をドメインの `BatterEntity`/`LineUpEntity` に変換する。プレイヤー転送データの事情をドメインから隔離する。 |
-| Strategy | `AtBatBehavior`、`StealStrategy`、`BuntStrategy` と各実装 | 打撃・盗塁・バントの判定アルゴリズムを交換可能にする。`BatterEntity` はインターフェースへ依存する。 |
+| Strategy | `HittingStrategy`、`StealStrategy`、`BuntStrategy` と各実装 | 打撃・盗塁・バントの判定アルゴリズムを交換可能にする。`BatterEntity` はインターフェースへ依存する。 |
 | State | `BasesState` と各塁配置クラス | 塁上の走者配置をオブジェクトで表し、打撃・盗塁・犠打後の次状態を返す。状態遷移を明示的な値として扱う。 |
 | Context | `GameBattingContext` | イニング、アウト、得点、現在の `BasesState`、打順を保持し、一打席ずつ試合を進める。State パターンの文脈では Context に当たる。 |
 | Value Object | `BaseTransition`、`GameStatistics`、`ScoreStatistics` | プレー結果や統計値を値として受け渡す。不変な結果を返し、状態更新と得点加算を明示する。 |
@@ -43,7 +43,7 @@ BatterEntity
   └─ BuntStrategy    -> Standard/Eager/NowayBuntStrategy
 ```
 
-たとえば「盗塁をしない」選手は `NowayStealBehavior` を持ちます。呼び出し側で `stealEnabled` の分岐を繰り返す代わりに、戦略オブジェクトへ判断を委譲できます。新しい行動を追加するときは、既存の条件分岐を増やすより、対応する Strategy インターフェースの実装を追加し、`LineUpMapper` または設定から選択するのが基本です。
+たとえば「盗塁をしない」選手は `NowayStealStrategy` を持ちます。呼び出し側で `stealEnabled` の分岐を繰り返す代わりに、戦略オブジェクトへ判断を委譲できます。新しい行動を追加するときは、既存の条件分岐を増やすより、対応する Strategy インターフェースの実装を追加し、`LineUpMapper` または設定から選択するのが基本です。
 
 ## State: 塁配置と遷移を表す
 

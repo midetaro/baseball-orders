@@ -6,7 +6,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.LongDistanceBattingBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.LongDistanceHittingStrategy;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -15,14 +15,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 
-class LongDistanceBattingBehaviorTest {
+class LongDistanceHittingStrategyTest {
 
     @DisplayName("乱数と打撃成績に応じて長距離バッターの打席結果を決定する")
     @ParameterizedTest(name = "{0}")
     @MethodSource("battingTestCases")
     void determinesBattingResult(String description, float random, BattingResult expectedResult) {
         // given
-        var behavior = new LongDistanceBattingBehavior();
+        var behavior = new LongDistanceHittingStrategy();
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
 

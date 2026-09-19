@@ -3,7 +3,7 @@ package com.example.baseballorders.simulator.application;
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class LineUpMapper {
 
-    private final AtBatBehavior atBatBehavior;
+    private final HittingStrategy hittingStrategy;
     private final StealStrategy eagerStealStrategy;
     private final BuntStrategy buntStrategy;
     private final StealStrategy noStealStrategy = BehaviorStrategies.noSteal();
@@ -25,15 +25,15 @@ public class LineUpMapper {
     /**
      * Creates a mapper using the default batting and stealing strategies.
      *
-     * @param atBatBehavior middle-distance batting behavior assigned to each batter
+     * @param hittingStrategy middle-distance batting behavior assigned to each batter
      * @param stealStrategy stealing strategy assigned to each batter
      * @param buntStrategy bunt strategy assigned to each batter
      */
     public LineUpMapper(
-            @Qualifier("middleDistanceAtBat") AtBatBehavior atBatBehavior,
+            @Qualifier("middleDistanceAtBat") HittingStrategy hittingStrategy,
             @Qualifier("eagerStealBehavior") StealStrategy stealStrategy,
             @Qualifier("standardBuntStrategy") BuntStrategy buntStrategy) {
-        this.atBatBehavior = atBatBehavior;
+        this.hittingStrategy = hittingStrategy;
         this.eagerStealStrategy = stealStrategy;
         this.buntStrategy = buntStrategy;
     }
@@ -67,9 +67,9 @@ public class LineUpMapper {
         return new LineUpEntity(batters);
     }
 
-    private AtBatBehavior atBatBehaviorFor(PlayerPersonality personality) {
+    private HittingStrategy atBatBehaviorFor(PlayerPersonality personality) {
         return switch (personality) {
-            case DEFAULT, EAGER_STEAL, EAGER_BUNT -> atBatBehavior;
+            case DEFAULT, EAGER_STEAL, EAGER_BUNT -> hittingStrategy;
             case EAGER_SLUGGISH -> BehaviorStrategies.longDistanceAtBat();
         };
     }
