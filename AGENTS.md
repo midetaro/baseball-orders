@@ -67,6 +67,7 @@ When changing a repository skill, also run its official-validator wrapper,
 - Do not use `default` in a `switch` expression unless that branch throws an
   exception. A `default` branch must never return a fallback value, silently do
   nothing, or handle ordinary control flow.
+- use `_` instead of `ignored` as a local variable name. 
 
 ## コレクション集計におけるStream利用方針
 
