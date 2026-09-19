@@ -12,6 +12,7 @@ import java.util.Objects;
  * @param buntEnabled バントを試みるかどうか
  * @param stealSuccessRate 盗塁成功率
  * @param stealEnabled 盗塁を試みるかどうか
+ * @param personality 選手の行動傾向
  */
 public record SimulationPlayerMessage(
         String name,
@@ -20,7 +21,38 @@ public record SimulationPlayerMessage(
         Float buntSuccessRate,
         Boolean buntEnabled,
         Float stealSuccessRate,
-        Boolean stealEnabled) {
+        Boolean stealEnabled,
+        PlayerPersonality personality) {
+
+    /**
+     * Creates a player with the default personality for compatibility with existing callers.
+     *
+     * @param name 選手名
+     * @param hitAverage 打率
+     * @param sluggish 長打率
+     * @param buntSuccessRate バント成功率
+     * @param buntEnabled バントを試みるかどうか
+     * @param stealSuccessRate 盗塁成功率
+     * @param stealEnabled 盗塁を試みるかどうか
+     */
+    public SimulationPlayerMessage(
+            String name,
+            Float hitAverage,
+            Float sluggish,
+            Float buntSuccessRate,
+            Boolean buntEnabled,
+            Float stealSuccessRate,
+            Boolean stealEnabled) {
+        this(
+                name,
+                hitAverage,
+                sluggish,
+                buntSuccessRate,
+                buntEnabled,
+                stealSuccessRate,
+                stealEnabled,
+                PlayerPersonality.DEFAULT);
+    }
 
     /**
      * Rejects missing player data, including rates when a strategy is disabled.
@@ -35,5 +67,6 @@ public record SimulationPlayerMessage(
         Objects.requireNonNull(buntEnabled, "buntEnabled must not be null");
         Objects.requireNonNull(stealSuccessRate, "stealSuccessRate must not be null");
         Objects.requireNonNull(stealEnabled, "stealEnabled must not be null");
+        personality = personality == null ? PlayerPersonality.DEFAULT : personality;
     }
 }
