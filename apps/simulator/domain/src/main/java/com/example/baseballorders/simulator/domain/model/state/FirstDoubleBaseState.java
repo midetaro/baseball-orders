@@ -1,13 +1,9 @@
 package com.example.baseballorders.simulator.domain.model.state;
 
-import com.example.baseballorders.simulator.domain.code.Base;
-import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 
-public final class FirstDoubleBaseState extends BasesState implements StealableToTripleBase {
-    public FirstDoubleBaseState() {
-        this(null, null);
-    }
+public final class FirstDoubleBaseState extends BasesState
+        implements StealableToTripleBase, Buntable {
 
     public FirstDoubleBaseState(BatterEntity firstRunner, BatterEntity secondRunner) {
         super(firstRunner, secondRunner, null);
@@ -15,29 +11,6 @@ public final class FirstDoubleBaseState extends BasesState implements StealableT
 
     @Override
     public BatterEntity runnerOnSecond() {
-        return runnerAt(Base.SECOND);
-    }
-
-    @Override
-    public BasesState hitSingle(GameBattingContext context, BatterEntity batterEntity) {
-        return advance(Base.FIRST).withRunnerAt(Base.FIRST, batterEntity);
-    }
-
-    @Override
-    public BasesState hitDouble(GameBattingContext context, BatterEntity batterEntity) {
-        context.addScore(1);
-        return advance(Base.SECOND).withRunnerAt(Base.SECOND, batterEntity);
-    }
-
-    @Override
-    public BasesState hitTriple(GameBattingContext context, BatterEntity batterEntity) {
-        context.addScore(2);
-        return advance(Base.THIRD).withRunnerAt(Base.THIRD, batterEntity);
-    }
-
-    @Override
-    public BasesState hitHomer(GameBattingContext context, BatterEntity batterEntity) {
-        context.addScore(3);
-        return empty();
+        return runnerAt(com.example.baseballorders.simulator.domain.code.Base.SECOND);
     }
 }

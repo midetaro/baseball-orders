@@ -1,13 +1,12 @@
 package com.example.baseballorders.simulator.domain.model;
 
-import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.model.state.BaseTransition;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
-import com.example.baseballorders.simulator.domain.model.state.StealableToDoubleBase;
-import com.example.baseballorders.simulator.domain.model.state.StealableToTripleBase;
+import com.example.baseballorders.simulator.domain.model.state.Stealable;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 
 /** 盗塁、バント、打撃の順で一打席を進行するドメインサービス。 */
@@ -17,31 +16,77 @@ final class AtBatProcessor {
             GameBattingContext context,
             BatterEntity batter,
             GameStatisticsRecorder statisticsRecorder) {
+
+        // 盗塁
         trySteal(context, statisticsRecorder);
 
+        // バント
         if (applyBuntResult(
                 context,
                 batter.bunt(context.getOutCount(), context.getCurrentBaseState()),
                 statisticsRecorder)) {
-            return;
+            return; // バントした場合は終了
         }
 
+        // ヒッティング
         BattingResult battingResult = batter.swing();
         if (battingResult == BattingResult.HIT_HOMER) {
             statisticsRecorder.recordHomeRun(context.getCurrentBaseState().runnerCount());
         }
+
         BasesState nextBaseState =
                 switch (battingResult) {
                     case OUT -> {
-                        context.getCurrentBaseState().out(context);
+                        context.addOutCounts(1);
                         yield context.getCurrentBaseState();
                     }
-                    case HIT_SINGLE -> context.getCurrentBaseState().hitSingle(context, batter);
-                    case HIT_DOUBLE -> context.getCurrentBaseState().hitDouble(context, batter);
-                    case HIT_TRIPLE -> context.getCurrentBaseState().hitTriple(context, batter);
-                    case HIT_HOMER -> context.getCurrentBaseState().hitHomer(context, batter);
+                    case HIT_SINGLE ->
+                            applyTransition(
+                                    context, context.getCurrentBaseState().hitSingle(batter));
+                    case HIT_DOUBLE ->
+                            applyTransition(
+                                    context, context.getCurrentBaseState().hitDouble(batter));
+                    case HIT_TRIPLE ->
+                            applyTransition(
+                                    context, context.getCurrentBaseState().hitTriple(batter));
+                    case HIT_HOMER ->
+                            applyTransition(context, context.getCurrentBaseState().hitHomer());
                 };
         context.replaceBaseState(nextBaseState);
+    }
+
+    private void trySteal(GameBattingContext context, GameStatisticsRecorder statisticsRecorder) {
+
+        context.getCurrentBaseState()
+                .stealOpportunity()
+                .ifPresent(
+                        opportunity -> {
+                            switch (stealResult(opportunity)) {
+                                case NOT_TRY -> {}
+                                case FAILURE -> {
+                                    context.addOutCounts(1);
+                                    applyTransition(
+                                            context,
+                                            context.getCurrentBaseState()
+                                                    .caughtStealing(opportunity));
+                                }
+                                case SUCCESS -> {
+                                    statisticsRecorder.recordSteal();
+                                    applyTransition(
+                                            context,
+                                            context.getCurrentBaseState()
+                                                    .succeedSteal(opportunity));
+                                }
+                            }
+                        });
+    }
+
+    private StealResult stealResult(Stealable stealable) {
+        return switch (stealable.targetBase()) {
+            case FIRST -> throw new IllegalArgumentException("盗塁先は二塁または三塁である必要があります");
+            case SECOND -> stealable.runner().stealToDouble();
+            case THIRD -> stealable.runner().stealToTriple();
+        };
     }
 
     private boolean applyBuntResult(
@@ -56,63 +101,15 @@ final class AtBatProcessor {
             }
             case SUCCESS -> {
                 statisticsRecorder.recordBunt();
-                context.replaceBaseState(context.getCurrentBaseState().advance(Base.FIRST));
+                applyTransition(context, context.getCurrentBaseState().sacrificeBunt());
                 context.addOutCounts(1);
                 yield true;
             }
         };
     }
 
-    private void trySteal(GameBattingContext context, GameStatisticsRecorder statisticsRecorder) {
-        if (context.getCurrentBaseState() instanceof StealableToDoubleBase stealable) {
-            applySteal(
-                    context,
-                    Base.FIRST,
-                    Base.SECOND,
-                    stealable.runnerOnFirst().stealToDouble(),
-                    statisticsRecorder);
-        }
-        if (context.getCurrentBaseState() instanceof StealableToTripleBase stealable) {
-            applySteal(
-                    context,
-                    Base.SECOND,
-                    Base.THIRD,
-                    stealable.runnerOnSecond().stealToTriple(),
-                    statisticsRecorder);
-        }
-    }
-
-    private void applySteal(
-            GameBattingContext context,
-            Base currentBase,
-            Base targetBaseOfSteal,
-            StealResult stealResult,
-            GameStatisticsRecorder statisticsRecorder) {
-        BasesState nextBaseState =
-                switch (stealResult) {
-                    case NOT_TRY -> context.getCurrentBaseState();
-                    case FAILURE -> failSteal(context, currentBase);
-                    case SUCCESS ->
-                            succeedSteal(
-                                    context, currentBase, targetBaseOfSteal, statisticsRecorder);
-                };
-        context.replaceBaseState(nextBaseState);
-    }
-
-    private BasesState failSteal(GameBattingContext context, Base currentBase) {
-        context.addOutCounts(1);
-        return context.getCurrentBaseState().withRunnerAt(currentBase, null);
-    }
-
-    private BasesState succeedSteal(
-            GameBattingContext context,
-            Base currentBase,
-            Base targetBase,
-            GameStatisticsRecorder statisticsRecorder) {
-        statisticsRecorder.recordSteal();
-        BatterEntity runner = context.getCurrentBaseState().runnerAt(currentBase);
-        return context.getCurrentBaseState()
-                .withRunnerAt(targetBase, runner)
-                .withRunnerAt(currentBase, null);
+    private BasesState applyTransition(GameBattingContext context, BaseTransition transition) {
+        context.addScore(transition.scoredRuns());
+        return transition.nextState();
     }
 }

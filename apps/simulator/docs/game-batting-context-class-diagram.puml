@@ -1,0 +1,202 @@
+@startuml
+title GameBattingContext 周辺クラス図
+
+hide empty members
+skinparam classAttributeIconSize 0
+
+package "model" {
+  class GameBattingContext {
+    - inning: long
+    - totalScore: long
+    - outCount: OutCount
+    - currentBaseState: BasesState
+    - batterEntityOrders: List<BatterEntity>
+    - numberOfNextBatter: int
+    - isGameOver: boolean
+    + GameBattingContext(lineUp: LineUpEntity)
+    + addScore(runs: long): void
+    + addOutCounts(diff: long): void
+    + nextAtBat(): void
+    + getGameStatistics(): GameStatistics
+    ~ replaceBaseState(baseState: BasesState): void
+  }
+
+  class AtBatProcessor <<domain service>> {
+    ~ process(context: GameBattingContext, batter: BatterEntity,
+      statisticsRecorder: GameStatisticsRecorder): void
+  }
+}
+
+package "model.player" {
+  abstract class Player
+
+  class BatterEntity {
+    - name: String
+    - onBasePercentage: float
+    - sluggish: float
+    - buntSuccessRate: float
+    - stealSuccessRate: float
+    + swing(): BattingResult
+    + bunt(outCount: OutCount, basesState: BasesState): BuntResult
+    + stealToDouble(): StealResult
+    + stealToTriple(): StealResult
+  }
+
+  class LineUpEntity {
+    - batterEntities: List<BatterEntity>
+    + getBatterEntities(): List<BatterEntity>
+  }
+}
+
+package "model.behavior" {
+  interface AtBatBehavior {
+    + batting(onBasePercentage: float, sluggish: float): BattingResult
+  }
+
+  interface BuntStrategy {
+    + bunt(successRate: float, outCount: OutCount, basesState: BasesState): BuntResult
+  }
+
+  interface StealStrategy {
+    + runToDouble(successRate: float): StealResult
+    + runToTriple(successRate: float): StealResult
+  }
+}
+
+package "model.state" {
+  abstract class BasesState {
+    - firstRunner: BatterEntity
+    - secondRunner: BatterEntity
+    - thirdRunner: BatterEntity
+    + runnerAt(base: Base): BatterEntity
+    + runnerCount(): int
+    + advance(bases: Base): BasesState
+    + withRunnerAt(base: Base, runner: BatterEntity): BasesState
+    + out(context: GameBattingContext): void
+    + {abstract} hitSingle(context: GameBattingContext, batter: BatterEntity): BasesState
+    + {abstract} hitDouble(context: GameBattingContext, batter: BatterEntity): BasesState
+    + {abstract} hitTriple(context: GameBattingContext, batter: BatterEntity): BasesState
+    + {abstract} hitHomer(context: GameBattingContext, batter: BatterEntity): BasesState
+    + {static} empty(): BasesState
+  }
+
+  interface Stealable
+
+  interface StealableToDoubleBase {
+    + runnerOnFirst(): BatterEntity
+  }
+
+  interface StealableToTripleBase {
+    + runnerOnSecond(): BatterEntity
+  }
+
+  class NoBasesState
+  class SingleBasesState
+  class DoubleBaseState
+  class ThirdBaseState
+  class FirstDoubleBaseState
+  class FirstThirdBaseState
+  class DoubleThirdBaseState
+  class FullBasesState
+}
+
+package "model.statistics" {
+  class GameStatisticsRecorder {
+    + recordHomeRun(runnerCount: int): void
+    + recordBunt(): void
+    + recordSteal(): void
+    + snapshot(): GameStatistics
+  }
+
+  class GameStatistics <<record>> {
+    + homeRunCount: int
+    + soloHomeRunCount: int
+    + twoRunHomeRunCount: int
+    + threeRunHomeRunCount: int
+    + grandSlamCount: int
+    + buntCount: int
+    + stealCount: int
+  }
+}
+
+package "code" {
+  enum Base {
+    FIRST
+    SECOND
+    THIRD
+  }
+  enum OutCount {
+    NO_OUT
+    ONE_OUT
+    TWO_OUT
+    THREE_OUT
+  }
+  enum BattingResult {
+    OUT
+    HIT_SINGLE
+    HIT_DOUBLE
+    HIT_TRIPLE
+    HIT_HOMER
+  }
+  enum BuntResult {
+    NOT_TRY
+    FAILURE
+    SUCCESS
+  }
+  enum StealResult {
+    NOT_TRY
+    FAILURE
+    SUCCESS
+  }
+}
+
+GameBattingContext *-- "1" AtBatProcessor
+GameBattingContext *-- "1" GameStatisticsRecorder
+GameBattingContext --> "1" OutCount
+GameBattingContext --> "1" BasesState
+GameBattingContext --> "1" LineUpEntity : creates from
+GameBattingContext --> "0..9" BatterEntity : batting order
+
+AtBatProcessor --> GameBattingContext : updates
+AtBatProcessor --> BatterEntity : processes
+AtBatProcessor --> GameStatisticsRecorder : records
+AtBatProcessor --> BasesState : applies results
+AtBatProcessor ..> Base
+AtBatProcessor ..> BattingResult
+AtBatProcessor ..> BuntResult
+AtBatProcessor ..> StealResult
+
+LineUpEntity *-- "0..9" BatterEntity
+BatterEntity --|> Player
+BatterEntity *-- AtBatBehavior
+BatterEntity *-- BuntStrategy
+BatterEntity *-- StealStrategy
+BatterEntity ..> OutCount
+BatterEntity ..> BasesState
+BatterEntity ..> BattingResult
+BatterEntity ..> BuntResult
+BatterEntity ..> StealResult
+
+BasesState o-- "0..1" BatterEntity : firstRunner
+BasesState o-- "0..1" BatterEntity : secondRunner
+BasesState o-- "0..1" BatterEntity : thirdRunner
+BasesState ..> GameBattingContext : scores / outs
+BasesState ..> Base
+
+NoBasesState --|> BasesState
+SingleBasesState --|> BasesState
+DoubleBaseState --|> BasesState
+ThirdBaseState --|> BasesState
+FirstDoubleBaseState --|> BasesState
+FirstThirdBaseState --|> BasesState
+DoubleThirdBaseState --|> BasesState
+FullBasesState --|> BasesState
+SingleBasesState ..|> StealableToDoubleBase
+FirstThirdBaseState ..|> StealableToDoubleBase
+DoubleBaseState ..|> StealableToTripleBase
+FirstDoubleBaseState ..|> StealableToTripleBase
+StealableToDoubleBase --|> Stealable
+StealableToTripleBase --|> Stealable
+
+GameStatisticsRecorder --> GameStatistics : creates
+@enduml
