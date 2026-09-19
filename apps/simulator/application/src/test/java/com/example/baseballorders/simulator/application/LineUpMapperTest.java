@@ -12,6 +12,7 @@ import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
+import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
@@ -51,13 +52,15 @@ class LineUpMapperTest {
                                 org.mockito.ArgumentMatchers.any(SingleBasesState.class)))
                 .thenReturn(BuntResult.SUCCESS);
         var mapper = new LineUpMapper((hit, slug) -> BattingResult.OUT, strategy, buntStrategy);
+        var statisticsRecorder = new GameStatisticsRecorder();
 
         // when
         var batter =
                 mapper.map(java.util.Collections.nCopies(9, player)).getBatterEntities().getFirst();
-        var doubleResult = batter.stealToDouble();
-        var tripleResult = batter.stealToTriple();
-        var buntResult = batter.bunt(OutCount.NO_OUT, new SingleBasesState(batter));
+        var observedBatter = batter.observedBy(statisticsRecorder);
+        var doubleResult = observedBatter.stealToDouble();
+        var tripleResult = observedBatter.stealToTriple();
+        var buntResult = observedBatter.bunt(OutCount.NO_OUT, new SingleBasesState(observedBatter));
 
         // then
         assertAll(
@@ -126,7 +129,9 @@ class LineUpMapperTest {
 
         // when
         var result = mapper.map(players);
-        BattingResult battingResult = result.getBatterEntities().getFirst().swing();
+        var statisticsRecorder = new GameStatisticsRecorder();
+        var observedBatter = result.getBatterEntities().getFirst().observedBy(statisticsRecorder);
+        BattingResult battingResult = observedBatter.swing(0);
 
         // then
         assertAll(
@@ -134,20 +139,13 @@ class LineUpMapperTest {
                 () -> assertEquals(1.0f, receivedOnBasePercentage.get()),
                 () -> assertEquals(0.0f, receivedSlugging.get()),
                 () -> assertEquals(BattingResult.HIT_SINGLE, battingResult),
-                () ->
-                        assertEquals(
-                                StealResult.NOT_TRY,
-                                result.getBatterEntities().getFirst().stealToDouble()),
+                () -> assertEquals(StealResult.NOT_TRY, observedBatter.stealToDouble()),
                 () -> assertEquals(0.9f, stealStrategy.receivedSuccessRate),
                 () ->
                         assertEquals(
                                 BuntResult.NOT_TRY,
-                                result.getBatterEntities()
-                                        .getFirst()
-                                        .bunt(
-                                                OutCount.NO_OUT,
-                                                new SingleBasesState(
-                                                        result.getBatterEntities().getFirst()))));
+                                observedBatter.bunt(
+                                        OutCount.NO_OUT, new SingleBasesState(observedBatter))));
     }
 
     private static final class FixedStealStrategy implements StealStrategy {

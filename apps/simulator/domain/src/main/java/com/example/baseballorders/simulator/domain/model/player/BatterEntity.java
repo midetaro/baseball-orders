@@ -8,14 +8,26 @@ import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
+import com.example.baseballorders.simulator.domain.model.statistics.PlayResultObserver;
+import java.util.Objects;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 /** 打者 */
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class BatterEntity extends Player {
 
-    /** 選手名 */
-    private final String name;
+    private static final PlayResultObserver NO_OPERATION_OBSERVER =
+            new PlayResultObserver() {
+                @Override
+                public void onBattingResult(BattingResult battingResult, int runnerCount) {}
+
+                @Override
+                public void onBuntResult(BuntResult buntResult) {}
+
+                @Override
+                public void onStealResult(StealResult stealResult) {}
+            };
 
     /** 出塁率 */
     private final float onBasePercentage;
@@ -38,31 +50,71 @@ public class BatterEntity extends Player {
     /** バント戦略 */
     private final BuntStrategy buntStrategy;
 
+    /** プレー結果の通知先 */
+    private final PlayResultObserver playResultObserver;
+
+    /**
+     * Creates a batter without a play-result observer.
+     *
+     * @param onBasePercentage on-base percentage
+     * @param sluggish slugging percentage
+     * @param buntSuccessRate bunt success rate
+     * @param stealSuccessRate steal success rate
+     * @param atBatBehavior batting behavior
+     * @param stealStrategy steal strategy
+     * @param buntStrategy bunt strategy
+     */
+    public BatterEntity(
+            float onBasePercentage,
+            float sluggish,
+            float buntSuccessRate,
+            float stealSuccessRate,
+            AtBatBehavior atBatBehavior,
+            StealStrategy stealStrategy,
+            BuntStrategy buntStrategy) {
+        this(
+                onBasePercentage,
+                sluggish,
+                buntSuccessRate,
+                stealSuccessRate,
+                atBatBehavior,
+                stealStrategy,
+                buntStrategy,
+                NO_OPERATION_OBSERVER);
+    }
+
     /**
      * 打撃戦略に従って打撃する。
      *
-     * @return 打席結果
+     * @param runnerCount 打撃前の走者数
+     * @return 打席結果。結果を購読者へ通知する
      */
-    public BattingResult swing() {
-        return atBatBehavior.batting(this.onBasePercentage, this.sluggish);
+    public BattingResult swing(int runnerCount) {
+        BattingResult battingResult = atBatBehavior.batting(this.onBasePercentage, this.sluggish);
+        playResultObserver.onBattingResult(battingResult, runnerCount);
+        return battingResult;
     }
 
     /**
      * 二塁への盗塁を試みる。
      *
-     * @return 盗塁結果
+     * @return 盗塁結果。結果を購読者へ通知する
      */
     public StealResult stealToDouble() {
-        return stealStrategy.runToDouble(stealSuccessRate);
+        StealResult stealResult = stealStrategy.runToDouble(stealSuccessRate);
+        playResultObserver.onStealResult(stealResult);
+        return stealResult;
     }
 
     /**
      * 三塁への盗塁を試みる。
      *
-     * @return 盗塁結果
+     * @return 盗塁結果。結果を購読者へ通知する
      */
     public StealResult stealToTriple() {
-        return stealStrategy.runToTriple(stealSuccessRate);
+        StealResult stealResult = stealStrategy.runToTriple(stealSuccessRate);
+        playResultObserver.onStealResult(stealResult);
+        return stealResult;
     }
 
     /**
@@ -70,9 +122,29 @@ public class BatterEntity extends Player {
      *
      * @param outCount アウトカウント
      * @param basesState 現在の塁状態
-     * @return バント結果
+     * @return バント結果。結果を購読者へ通知する
      */
     public BuntResult bunt(OutCount outCount, BasesState basesState) {
-        return buntStrategy.bunt(buntSuccessRate, outCount, basesState);
+        BuntResult buntResult = buntStrategy.bunt(buntSuccessRate, outCount, basesState);
+        playResultObserver.onBuntResult(buntResult);
+        return buntResult;
+    }
+
+    /**
+     * Creates a copy that notifies the supplied observer of each play result.
+     *
+     * @param observer observer for a single game's play results
+     * @return batter copy bound to the observer
+     */
+    public BatterEntity observedBy(PlayResultObserver observer) {
+        return new BatterEntity(
+                onBasePercentage,
+                sluggish,
+                buntSuccessRate,
+                stealSuccessRate,
+                atBatBehavior,
+                stealStrategy,
+                buntStrategy,
+                Objects.requireNonNull(observer));
     }
 }

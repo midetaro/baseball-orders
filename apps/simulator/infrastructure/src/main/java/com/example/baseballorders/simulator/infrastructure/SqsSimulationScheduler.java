@@ -107,7 +107,13 @@ public class SqsSimulationScheduler {
                                                             .threeRunHomeRunCount(),
                                                     simulationResult.statistics().grandSlamCount(),
                                                     simulationResult.statistics().buntCount(),
-                                                    simulationResult.statistics().stealCount()));
+                                                    simulationResult.statistics().stealCount(),
+                                                    simulationResult
+                                                            .statistics()
+                                                            .buntFailureCount(),
+                                                    simulationResult
+                                                            .statistics()
+                                                            .stealFailureCount()));
                             sqsClient.sendMessage(
                                     SendMessageRequest.builder()
                                             .queueUrl(resultQueueUrl)

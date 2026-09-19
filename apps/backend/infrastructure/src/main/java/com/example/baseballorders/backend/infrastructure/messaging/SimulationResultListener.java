@@ -48,7 +48,9 @@ public final class SimulationResultListener {
                                         statistics.threeRunHomeRunCount(),
                                         statistics.grandSlamCount(),
                                         statistics.buntCount(),
-                                        statistics.stealCount())));
+                                        statistics.stealCount(),
+                                        statistics.buntFailureCount(),
+                                        statistics.stealFailureCount())));
         if (!completed) {
             LOGGER.warn("simulation result ignored simulationId={}", message.simulationId());
         }

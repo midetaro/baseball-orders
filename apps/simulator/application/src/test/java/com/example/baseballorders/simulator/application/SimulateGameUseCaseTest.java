@@ -29,7 +29,6 @@ class SimulateGameUseCaseTest {
                         .mapToObj(
                                 number ->
                                         new BatterEntity(
-                                                "batter" + number,
                                                 0.4f,
                                                 0.4f,
                                                 0.7f,

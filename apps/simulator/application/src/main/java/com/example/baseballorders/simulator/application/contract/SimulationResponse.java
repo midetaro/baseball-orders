@@ -20,6 +20,6 @@ public record SimulationResponse(int score, int runs, GameStatistics gameStatist
      * @param runs allowed runs
      */
     public SimulationResponse(int score, int runs) {
-        this(score, runs, new GameStatistics(0, 0, 0, 0, 0, 0, 0));
+        this(score, runs, new GameStatistics(0, 0, 0, 0, 0, 0, 0, 0, 0));
     }
 }

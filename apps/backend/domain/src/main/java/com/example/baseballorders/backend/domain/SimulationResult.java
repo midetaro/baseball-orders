@@ -36,6 +36,8 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
      * @param grandSlamCount 満塁本塁打数
      * @param buntCount 成功バント数
      * @param stealCount 成功盗塁数
+     * @param buntFailureCount 失敗バント数
+     * @param stealFailureCount 失敗盗塁数
      */
     @Builder(style = BuilderStyle.STAGED)
     public record Statistics(
@@ -50,7 +52,55 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
             int threeRunHomeRunCount,
             int grandSlamCount,
             int buntCount,
-            int stealCount) {
+            int stealCount,
+            int buntFailureCount,
+            int stealFailureCount) {
+
+        /**
+         * Creates statistics with no failed tactical-play counts.
+         *
+         * @param averageScore 平均得点
+         * @param medianScore 中央値得点
+         * @param maximumScore 最大得点
+         * @param gameCount シミュレーションした試合数
+         * @param scoreDistribution 得点ごとの試合数
+         * @param homeRunCount 本塁打数
+         * @param soloHomeRunCount ソロ本塁打数
+         * @param twoRunHomeRunCount ツーラン本塁打数
+         * @param threeRunHomeRunCount スリーラン本塁打数
+         * @param grandSlamCount 満塁本塁打数
+         * @param buntCount 成功バント数
+         * @param stealCount 成功盗塁数
+         */
+        public Statistics(
+                double averageScore,
+                double medianScore,
+                int maximumScore,
+                int gameCount,
+                Map<Integer, Integer> scoreDistribution,
+                int homeRunCount,
+                int soloHomeRunCount,
+                int twoRunHomeRunCount,
+                int threeRunHomeRunCount,
+                int grandSlamCount,
+                int buntCount,
+                int stealCount) {
+            this(
+                    averageScore,
+                    medianScore,
+                    maximumScore,
+                    gameCount,
+                    scoreDistribution,
+                    homeRunCount,
+                    soloHomeRunCount,
+                    twoRunHomeRunCount,
+                    threeRunHomeRunCount,
+                    grandSlamCount,
+                    buntCount,
+                    stealCount,
+                    0,
+                    0);
+        }
 
         /**
          * Creates score-only statistics with no batting-event counts.
@@ -60,7 +110,7 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
          * @param maximumScore 最大得点
          */
         public Statistics(double averageScore, double medianScore, int maximumScore) {
-            this(averageScore, medianScore, maximumScore, 0, Map.of(), 0, 0, 0, 0, 0, 0, 0);
+            this(averageScore, medianScore, maximumScore, 0, Map.of(), 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
     }
 
