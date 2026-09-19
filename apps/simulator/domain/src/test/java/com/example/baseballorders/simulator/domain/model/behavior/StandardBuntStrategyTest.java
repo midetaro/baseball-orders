@@ -10,9 +10,7 @@ import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.model.BatterTestDataFactory;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
-import com.example.baseballorders.simulator.domain.model.state.DoubleBaseState;
 import com.example.baseballorders.simulator.domain.model.state.FirstDoubleBaseState;
-import com.example.baseballorders.simulator.domain.model.state.NoBasesState;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.stream.Stream;
@@ -25,7 +23,7 @@ import org.mockito.MockedStatic;
 class StandardBuntStrategyTest {
     private static final BatterEntity RUNNER = BatterTestDataFactory.mock().getFirst();
 
-    @DisplayName("標準戦略は無死一塁と無死一二塁だけバントする")
+    @DisplayName("標準戦略は無死のときだけバントする")
     @ParameterizedTest(name = "{0}")
     @MethodSource("buntTestCases")
     void determinesBuntResult(
@@ -75,15 +73,9 @@ class StandardBuntStrategyTest {
                         0.1f,
                         BuntResult.NOT_TRY),
                 arguments(
-                        "無死二塁ならバントしない",
-                        OutCount.NO_OUT,
-                        new DoubleBaseState(RUNNER),
-                        0.1f,
-                        BuntResult.NOT_TRY),
-                arguments(
-                        "無死走者なしならバントしない",
-                        OutCount.NO_OUT,
-                        new NoBasesState(),
+                        "二死一塁ならバントしない",
+                        OutCount.ONE_OUT,
+                        new SingleBasesState(RUNNER),
                         0.1f,
                         BuntResult.NOT_TRY));
     }

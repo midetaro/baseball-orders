@@ -1,6 +1,5 @@
 package com.example.baseballorders.simulator.domain.model.behavior;
 
-import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
@@ -12,22 +11,9 @@ public class EagerBuntStrategy implements BuntStrategy {
     @Override
     public BuntResult bunt(float successRate, OutCount outCount, BasesState basesState) {
         return switch (outCount) {
-            case NO_OUT -> buntWithNoOut(successRate, basesState);
-            case ONE_OUT -> buntWithOneOut(successRate, basesState);
+            case NO_OUT, ONE_OUT -> attempt(successRate);
             case TWO_OUT, THREE_OUT -> BuntResult.NOT_TRY;
         };
-    }
-
-    private BuntResult buntWithNoOut(float successRate, BasesState basesState) {
-        return basesState.buntOpportunity().isPresent() ? attempt(successRate) : BuntResult.NOT_TRY;
-    }
-
-    private BuntResult buntWithOneOut(float successRate, BasesState basesState) {
-        return basesState.buntOpportunity().isPresent()
-                        && basesState.isOccupied(Base.FIRST)
-                        && !basesState.isOccupied(Base.SECOND)
-                ? attempt(successRate)
-                : BuntResult.NOT_TRY;
     }
 
     private BuntResult attempt(float successRate) {
