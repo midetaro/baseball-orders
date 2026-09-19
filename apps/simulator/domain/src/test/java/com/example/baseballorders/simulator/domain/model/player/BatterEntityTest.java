@@ -8,12 +8,7 @@ import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
-import com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.LongDistanceBattingBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.MiddleDistanceBattingBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.NowayBuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.StandardBuntStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
@@ -33,9 +28,9 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        new MiddleDistanceBattingBehavior(),
-                        new NowayStealBehavior(),
-                        new StandardBuntStrategy());
+                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.noSteal(),
+                        BehaviorStrategies.standardBunt());
 
         var statisticsRecorder = new GameStatisticsRecorder();
 
@@ -65,9 +60,9 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        new MiddleDistanceBattingBehavior(),
-                        new EagerStealBehavior(),
-                        new StandardBuntStrategy());
+                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.eagerSteal(),
+                        BehaviorStrategies.standardBunt());
 
         var statisticsRecorder = new GameStatisticsRecorder();
 
@@ -115,9 +110,9 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        new MiddleDistanceBattingBehavior(),
-                        new NowayStealBehavior(),
-                        new StandardBuntStrategy());
+                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.noSteal(),
+                        BehaviorStrategies.standardBunt());
         var statisticsRecorder = new GameStatisticsRecorder();
 
         // when
@@ -164,8 +159,8 @@ class BatterEntityTest {
                 0.4f,
                 0.75f,
                 0.85f,
-                new LongDistanceBattingBehavior(),
-                new NowayStealBehavior(),
-                new NowayBuntStrategy());
+                BehaviorStrategies.longDistanceAtBat(),
+                BehaviorStrategies.noSteal(),
+                BehaviorStrategies.noBunt());
     }
 }

@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.model.behavior;
+package com.example.baseballorders.simulator.domain.model.behavior.bunt;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -10,9 +10,7 @@ import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.model.BatterTestDataFactory;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
-import com.example.baseballorders.simulator.domain.model.state.DoubleBaseState;
 import com.example.baseballorders.simulator.domain.model.state.FirstDoubleBaseState;
-import com.example.baseballorders.simulator.domain.model.state.NoBasesState;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.stream.Stream;
@@ -22,22 +20,22 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 
-class EagerBuntStrategyTest {
+class StandardBuntStrategyTest {
     private static final BatterEntity RUNNER = BatterTestDataFactory.mock().getFirst();
 
-    @DisplayName("積極的戦略は試合状況によらず指定された成功率でバント結果を判定する")
+    @DisplayName("標準戦略は無死のときだけバントする")
     @ParameterizedTest(name = "{0}")
     @MethodSource("buntTestCases")
-    void determinesBuntResultBySuccessRate(
+    void determinesBuntResult(
             String description,
             OutCount outCount,
             BasesState basesState,
             float random,
             BuntResult expectedResult) {
         // given
-        var strategy = new EagerBuntStrategy();
+        var strategy = new StandardBuntStrategy();
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            // バントの成否判定に使う乱数を固定する
+            // バント判定に使う乱数を固定する
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
 
             // when
@@ -51,11 +49,17 @@ class EagerBuntStrategyTest {
     static Stream<Arguments> buntTestCases() {
         return Stream.of(
                 arguments(
-                        "無死一塁ならバントする",
+                        "無死一塁で成功率未満なら成功する",
                         OutCount.NO_OUT,
                         new SingleBasesState(RUNNER),
-                        0.1f,
+                        0.69f,
                         BuntResult.SUCCESS),
+                arguments(
+                        "無死一塁で成功率と等しければ失敗する",
+                        OutCount.NO_OUT,
+                        new SingleBasesState(RUNNER),
+                        0.7f,
+                        BuntResult.FAILURE),
                 arguments(
                         "無死一二塁ならバントする",
                         OutCount.NO_OUT,
@@ -63,38 +67,14 @@ class EagerBuntStrategyTest {
                         0.1f,
                         BuntResult.SUCCESS),
                 arguments(
-                        "無死二塁ならバントする",
-                        OutCount.NO_OUT,
-                        new DoubleBaseState(RUNNER),
-                        0.1f,
-                        BuntResult.SUCCESS),
-                arguments(
-                        "一死一塁ならバントする",
+                        "一死一塁ならバントしない",
                         OutCount.ONE_OUT,
                         new SingleBasesState(RUNNER),
                         0.1f,
-                        BuntResult.SUCCESS),
+                        BuntResult.NOT_TRY),
                 arguments(
-                        "成功率と等しければ失敗する",
-                        OutCount.NO_OUT,
-                        new SingleBasesState(RUNNER),
-                        0.7f,
-                        BuntResult.FAILURE),
-                arguments(
-                        "無死走者なしでも成功率に従って判定する",
-                        OutCount.NO_OUT,
-                        new NoBasesState(),
-                        0.1f,
-                        BuntResult.SUCCESS),
-                arguments(
-                        "一死二塁でも成功率に従って判定する",
+                        "二死一塁ならバントしない",
                         OutCount.ONE_OUT,
-                        new DoubleBaseState(RUNNER),
-                        0.1f,
-                        BuntResult.SUCCESS),
-                arguments(
-                        "二死のときバントを実行しない",
-                        OutCount.TWO_OUT,
                         new SingleBasesState(RUNNER),
                         0.1f,
                         BuntResult.NOT_TRY));

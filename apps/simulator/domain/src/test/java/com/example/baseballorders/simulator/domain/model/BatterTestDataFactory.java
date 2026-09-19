@@ -1,11 +1,9 @@
 package com.example.baseballorders.simulator.domain.model;
 
-import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.MiddleDistanceBattingBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.StandardBuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.bunt.BuntStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import java.util.List;
 
@@ -13,10 +11,10 @@ public final class BatterTestDataFactory {
 
     private BatterTestDataFactory() {}
 
-    static AtBatBehavior atBatBehavior = new MiddleDistanceBattingBehavior();
-    static EagerStealBehavior eagerStealBehavior = new EagerStealBehavior();
-    static NowayStealBehavior nowayStealBehavior = new NowayStealBehavior();
-    static StandardBuntStrategy standardBuntStrategy = new StandardBuntStrategy();
+    static AtBatBehavior atBatBehavior = BehaviorStrategies.middleDistanceAtBat();
+    static StealStrategy eagerStealBehavior = BehaviorStrategies.eagerSteal();
+    static StealStrategy nowayStealBehavior = BehaviorStrategies.noSteal();
+    static BuntStrategy standardBuntStrategy = BehaviorStrategies.standardBunt();
 
     public static List<BatterEntity> mock() {
         return List.of(

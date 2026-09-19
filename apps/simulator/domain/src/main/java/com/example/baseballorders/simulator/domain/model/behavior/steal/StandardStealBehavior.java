@@ -1,9 +1,9 @@
-package com.example.baseballorders.simulator.domain.model.behavior;
+package com.example.baseballorders.simulator.domain.model.behavior.steal;
 
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 
-public final class MiddleStealBehavior implements StealStrategy {
+final class StandardStealBehavior implements StealStrategy {
 
     private final float TRY_AVERAGE = 0.2f;
     private final float NOT_TRY = 1 - TRY_AVERAGE;

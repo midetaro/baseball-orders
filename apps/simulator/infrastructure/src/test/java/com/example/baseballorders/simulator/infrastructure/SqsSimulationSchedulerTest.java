@@ -18,8 +18,9 @@ import com.example.baseballorders.simulator.application.LineUpMapper;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
-import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
 import com.example.baseballorders.simulator.domain.model.statistics.ScoreAccumulator;
@@ -149,17 +150,10 @@ class SqsSimulationSchedulerTest {
         // given
         SqsClient sqsClient = mock(SqsClient.class);
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
-        AtBatBehavior atBatBehavior =
-                new com.example.baseballorders.simulator.domain.model.behavior
-                        .MiddleDistanceBattingBehavior();
-        StealStrategy stealStrategy =
-                new com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior();
+        AtBatBehavior atBatBehavior = BehaviorStrategies.middleDistanceAtBat();
+        StealStrategy stealStrategy = BehaviorStrategies.eagerSteal();
         LineUpMapper mapper =
-                new LineUpMapper(
-                        atBatBehavior,
-                        stealStrategy,
-                        new com.example.baseballorders.simulator.domain.model.behavior
-                                .StandardBuntStrategy());
+                new LineUpMapper(atBatBehavior, stealStrategy, BehaviorStrategies.standardBunt());
         ObjectMapper objectMapper = new ObjectMapper();
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
