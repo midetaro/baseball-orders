@@ -62,7 +62,7 @@ public abstract class BasesState {
      *
      * @return 走者を進める犠打を試みられる場合はその候補、できない場合は空
      */
-    public final Optional<Buntable> buntOpportunity() {
+    public final Optional<Buntable> buntOpportunityByBase() {
         return this instanceof Buntable buntable ? Optional.of(buntable) : Optional.empty();
     }
 

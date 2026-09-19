@@ -21,10 +21,7 @@ final class AtBatProcessor {
         trySteal(context, statisticsRecorder);
 
         // バント
-        if (applyBuntResult(
-                context,
-                batter.bunt(context.getOutCount(), context.getCurrentBaseState()),
-                statisticsRecorder)) {
+        if (applyBuntResult(context, buntResult(context, batter), statisticsRecorder)) {
             return; // バントした場合は終了
         }
 
@@ -53,6 +50,13 @@ final class AtBatProcessor {
                             applyTransition(context, context.getCurrentBaseState().hitHomer());
                 };
         context.replaceBaseState(nextBaseState);
+    }
+
+    private BuntResult buntResult(GameBattingContext context, BatterEntity batter) {
+        return context.getCurrentBaseState()
+                .buntOpportunityByBase()
+                .map(_ -> batter.bunt(context.getOutCount(), context.getCurrentBaseState()))
+                .orElse(BuntResult.NOT_TRY);
     }
 
     private void trySteal(GameBattingContext context, GameStatisticsRecorder statisticsRecorder) {

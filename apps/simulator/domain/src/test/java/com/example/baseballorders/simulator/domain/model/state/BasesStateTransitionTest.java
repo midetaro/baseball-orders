@@ -245,11 +245,11 @@ class BasesStateTransitionTest {
     @DisplayName("バント候補はバント可能インタフェースを実装した塁状態だけが返す")
     @ParameterizedTest(name = "{0}")
     @MethodSource("buntOpportunities")
-    void findsBuntOpportunity(String description, BasesState state, boolean expected) {
+    void findsBuntOpportunityByBase(String description, BasesState state, boolean expected) {
         // given
 
         // when
-        var opportunity = state.buntOpportunity();
+        var opportunity = state.buntOpportunityByBase();
 
         // then
         assertAll(() -> assertEquals(expected, opportunity.isPresent(), description));

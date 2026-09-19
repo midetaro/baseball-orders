@@ -25,10 +25,10 @@ import org.mockito.MockedStatic;
 class EagerBuntStrategyTest {
     private static final BatterEntity RUNNER = BatterTestDataFactory.mock().getFirst();
 
-    @DisplayName("積極的戦略は指定された走者とアウトの状況だけバントする")
+    @DisplayName("積極的戦略は試合状況によらず指定された成功率でバント結果を判定する")
     @ParameterizedTest(name = "{0}")
     @MethodSource("buntTestCases")
-    void buntsOnlyInEagerSituations(
+    void determinesBuntResultBySuccessRate(
             String description,
             OutCount outCount,
             BasesState basesState,
@@ -81,19 +81,19 @@ class EagerBuntStrategyTest {
                         0.7f,
                         BuntResult.FAILURE),
                 arguments(
-                        "無死走者なしならバントしない",
+                        "無死走者なしでも成功率に従って判定する",
                         OutCount.NO_OUT,
                         new NoBasesState(),
                         0.1f,
-                        BuntResult.NOT_TRY),
+                        BuntResult.SUCCESS),
                 arguments(
-                        "一死二塁ならバントしない",
+                        "一死二塁でも成功率に従って判定する",
                         OutCount.ONE_OUT,
                         new DoubleBaseState(RUNNER),
                         0.1f,
-                        BuntResult.NOT_TRY),
+                        BuntResult.SUCCESS),
                 arguments(
-                        "二死一塁ならバントしない",
+                        "二死のときバントを実行しない",
                         OutCount.TWO_OUT,
                         new SingleBasesState(RUNNER),
                         0.1f,
