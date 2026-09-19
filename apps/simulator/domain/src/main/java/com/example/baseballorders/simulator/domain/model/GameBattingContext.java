@@ -1,9 +1,10 @@
 package com.example.baseballorders.simulator.domain.model;
 
 import com.example.baseballorders.simulator.domain.code.OutCount;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
+import com.example.baseballorders.simulator.domain.model.state.base.BaseStateFactory;
 import com.example.baseballorders.simulator.domain.model.statistics.GameCompletionObserver;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
@@ -18,11 +19,12 @@ public class GameBattingContext {
     private long inning = 1;
     @Getter private long totalScore = 0;
     @Getter private OutCount outCount = OutCount.NO_OUT;
-    @Getter private BasesState currentBaseState = BasesState.empty();
+    @Getter private BasesState currentBaseState;
 
     private final GameStatisticsRecorder statisticsRecorder = new GameStatisticsRecorder();
     private final GameCompletionObserver gameCompletionObserver;
     private final List<BatterEntity> batterEntityOrders;
+    private final BaseStateFactory baseStateFactory;
     private final AtBatProcessor atBatProcessor = new AtBatProcessor();
 
     private int numberOfNextBatter;
@@ -34,7 +36,7 @@ public class GameBattingContext {
      * @param batterEntityOrders 試合で使用する打順
      */
     public GameBattingContext(LineUpEntity batterEntityOrders) {
-        this(batterEntityOrders, NO_OPERATION_OBSERVER);
+        this(batterEntityOrders, NO_OPERATION_OBSERVER, new BaseStateFactory());
     }
 
     /**
@@ -45,11 +47,27 @@ public class GameBattingContext {
      */
     public GameBattingContext(
             LineUpEntity batterEntityOrders, GameCompletionObserver gameCompletionObserver) {
+        this(batterEntityOrders, gameCompletionObserver, new BaseStateFactory());
+    }
+
+    /**
+     * 指定された打順、試合終了時の通知先、塁状態ファクトリで試合状態を作成する。
+     *
+     * @param batterEntityOrders 試合で使用する打順
+     * @param gameCompletionObserver 試合終了時の通知先
+     * @param baseStateFactory 塁状態を生成するファクトリ
+     */
+    public GameBattingContext(
+            LineUpEntity batterEntityOrders,
+            GameCompletionObserver gameCompletionObserver,
+            BaseStateFactory baseStateFactory) {
         this.batterEntityOrders =
                 batterEntityOrders.getBatterEntities().stream()
                         .map(batter -> batter.observedBy(statisticsRecorder))
                         .toList();
         this.gameCompletionObserver = gameCompletionObserver;
+        this.baseStateFactory = baseStateFactory;
+        this.currentBaseState = baseStateFactory.empty();
         this.numberOfNextBatter = 0;
     }
 
@@ -123,6 +141,6 @@ public class GameBattingContext {
     }
 
     private void cleanAllBases() {
-        this.currentBaseState = BasesState.empty();
+        this.currentBaseState = baseStateFactory.empty();
     }
 }

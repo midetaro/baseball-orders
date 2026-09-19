@@ -1,17 +1,30 @@
 package com.example.baseballorders.simulator.domain.model.state;
 
 import com.example.baseballorders.simulator.domain.code.Base;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.model.state.base.BaseStateFactory;
+import com.example.baseballorders.simulator.domain.model.state.transaction.Buntable;
+import com.example.baseballorders.simulator.domain.model.state.transaction.Stealable;
 import java.util.Optional;
 
 /** 走者配置と、その配置における打撃結果の適用規則を表す不変の塁状態。 */
 public abstract class BasesState {
+    private final BaseStateFactory factory;
     private final BatterEntity firstRunner;
     private final BatterEntity secondRunner;
     private final BatterEntity thirdRunner;
 
     protected BasesState(
             BatterEntity firstRunner, BatterEntity secondRunner, BatterEntity thirdRunner) {
+        this(new BaseStateFactory(), firstRunner, secondRunner, thirdRunner);
+    }
+
+    protected BasesState(
+            BaseStateFactory factory,
+            BatterEntity firstRunner,
+            BatterEntity secondRunner,
+            BatterEntity thirdRunner) {
+        this.factory = factory;
         this.firstRunner = firstRunner;
         this.secondRunner = secondRunner;
         this.thirdRunner = thirdRunner;
@@ -159,24 +172,11 @@ public abstract class BasesState {
         };
     }
 
-    /**
-     * 走者なしの塁状態を返す。
-     *
-     * @return 走者がいない塁状態
-     */
-    public static BasesState empty() {
-        return new NoBasesState();
+    private BasesState empty() {
+        return factory.empty();
     }
 
-    private static BasesState of(BatterEntity first, BatterEntity second, BatterEntity third) {
-        if (first != null && second != null && third != null)
-            return new FullBasesState(first, second, third);
-        if (first != null && second != null) return new FirstDoubleBaseState(first, second);
-        if (first != null && third != null) return new FirstThirdBaseState(first, third);
-        if (first != null) return new SingleBasesState(first);
-        if (second != null && third != null) return new DoubleThirdBaseState(second, third);
-        if (second != null) return new DoubleBaseState(second);
-        if (third != null) return new ThirdBaseState(third);
-        return empty();
+    private BasesState of(BatterEntity first, BatterEntity second, BatterEntity third) {
+        return factory.create(first, second, third);
     }
 }

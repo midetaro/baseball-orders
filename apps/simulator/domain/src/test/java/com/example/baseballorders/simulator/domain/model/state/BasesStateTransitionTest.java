@@ -7,10 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.code.Base;
+import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.BatterTestDataFactory;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.model.state.base.*;
+import com.example.baseballorders.simulator.domain.model.state.transaction.AdvancingBuntable;
+import com.example.baseballorders.simulator.domain.model.state.transaction.Buntable;
+import com.example.baseballorders.simulator.domain.model.state.transaction.SqueezeBuntable;
+import com.example.baseballorders.simulator.domain.model.state.transaction.Stealable;
 import java.util.Collections;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
