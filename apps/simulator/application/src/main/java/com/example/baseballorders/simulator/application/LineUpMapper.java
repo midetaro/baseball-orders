@@ -52,7 +52,6 @@ public class LineUpMapper {
                         .map(
                                 player ->
                                         new BatterEntity(
-                                                player.name(),
                                                 player.hitAverage(),
                                                 player.sluggish(),
                                                 player.buntSuccessRate(),

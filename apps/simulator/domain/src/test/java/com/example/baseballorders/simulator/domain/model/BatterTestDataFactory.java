@@ -34,7 +34,6 @@ public final class BatterTestDataFactory {
     private static BatterEntity batter(
             String name, float hitAverage, float slugging, StealStrategy stealStrategy) {
         return new BatterEntity(
-                name,
                 hitAverage,
                 slugging,
                 0.7f,

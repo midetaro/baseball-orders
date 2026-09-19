@@ -1,7 +1,11 @@
 package com.example.baseballorders.simulator.domain.model.statistics;
 
+import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.code.StealResult;
+
 /** 1試合で発生したプレーを集計し、その時点の試合統計を生成する。 */
-public final class GameStatisticsRecorder {
+public final class GameStatisticsRecorder implements PlayResultObserver {
 
     private int homeRunCount;
     private int soloHomeRunCount;
@@ -10,14 +14,36 @@ public final class GameStatisticsRecorder {
     private int grandSlamCount;
     private int buntCount;
     private int stealCount;
+    private int buntFailureCount;
+    private int stealFailureCount;
 
-    /**
-     * 塁上の走者数に応じた本塁打の種類と本塁打総数を記録する。
-     *
-     * @param runnerCount 本塁打直前の走者数（0～3）
-     * @throws IllegalStateException 走者数が0～3以外の場合
-     */
-    public void recordHomeRun(int runnerCount) {
+    @Override
+    public void onBattingResult(BattingResult battingResult, int runnerCount) {
+        switch (battingResult) {
+            case OUT, HIT_SINGLE, HIT_DOUBLE, HIT_TRIPLE -> {}
+            case HIT_HOMER -> recordHomeRun(runnerCount);
+        }
+    }
+
+    @Override
+    public void onBuntResult(BuntResult buntResult) {
+        switch (buntResult) {
+            case NOT_TRY -> {}
+            case SUCCESS -> buntCount++;
+            case FAILURE -> buntFailureCount++;
+        }
+    }
+
+    @Override
+    public void onStealResult(StealResult stealResult) {
+        switch (stealResult) {
+            case NOT_TRY -> {}
+            case SUCCESS -> stealCount++;
+            case FAILURE -> stealFailureCount++;
+        }
+    }
+
+    private void recordHomeRun(int runnerCount) {
         Runnable recordHomeRunType =
                 switch (runnerCount) {
                     case 0 -> () -> soloHomeRunCount++;
@@ -29,16 +55,6 @@ public final class GameStatisticsRecorder {
                 };
         homeRunCount++;
         recordHomeRunType.run();
-    }
-
-    /** 成功したバントを一つ記録する。 */
-    public void recordBunt() {
-        buntCount++;
-    }
-
-    /** 成功した盗塁を一つ記録する。 */
-    public void recordSteal() {
-        stealCount++;
     }
 
     /**
@@ -54,6 +70,8 @@ public final class GameStatisticsRecorder {
                 threeRunHomeRunCount,
                 grandSlamCount,
                 buntCount,
-                stealCount);
+                stealCount,
+                buntFailureCount,
+                stealFailureCount);
     }
 }

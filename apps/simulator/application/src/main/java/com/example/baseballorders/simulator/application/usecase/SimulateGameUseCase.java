@@ -1,11 +1,9 @@
 package com.example.baseballorders.simulator.application.usecase;
 
-import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.model.statistics.ScoreStatisticsCalculator;
-import java.util.List;
+import com.example.baseballorders.simulator.domain.model.statistics.ScoreAccumulator;
 import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,7 +13,6 @@ import org.springframework.stereotype.Service;
 public class SimulateGameUseCase {
 
     private final int gameCount;
-    private final ScoreStatisticsCalculator scoreStatisticsCalculator;
 
     /**
      * Creates a game simulation use case.
@@ -24,7 +21,6 @@ public class SimulateGameUseCase {
      */
     public SimulateGameUseCase(@Value("${simulation.game-count}") int gameCount) {
         this.gameCount = gameCount;
-        this.scoreStatisticsCalculator = new ScoreStatisticsCalculator();
     }
 
     /**
@@ -40,24 +36,17 @@ public class SimulateGameUseCase {
             throw new IllegalArgumentException("LineUpEntity size must be 9");
         }
         IO.println("試合数：" + gameCount);
-        List<SimulationResponse> results =
-                IntStream.range(0, gameCount).mapToObj(ignored -> simulate(lineUpEntity)).toList();
-        return new SimulationResult(
-                scoreStatisticsCalculator
-                        .calculate(results.stream().map(SimulationResponse::score).toList())
-                        .withGameStatistics(
-                                results.stream().map(SimulationResponse::gameStatistics).toList()));
+        ScoreAccumulator scoreAccumulator = new ScoreAccumulator();
+        IntStream.range(0, gameCount).forEach(ignored -> simulate(lineUpEntity, scoreAccumulator));
+        return new SimulationResult(scoreAccumulator.toScoreStatistics());
     }
 
-    private SimulationResponse simulate(LineUpEntity lineUpEntity) {
+    private void simulate(LineUpEntity lineUpEntity, ScoreAccumulator scoreAccumulator) {
         // 1. 試合開始前にIDを確定
         // 2. Stateパターンで試合実行（gameIdをコンテキストに保持）
-        GameBattingContext ctx = new GameBattingContext(lineUpEntity);
+        GameBattingContext ctx = new GameBattingContext(lineUpEntity, scoreAccumulator);
         while (!ctx.isGameOver()) {
             ctx.nextAtBat();
         }
-
-        return new SimulationResponse(
-                Math.toIntExact(ctx.getTotalScore()), 4, ctx.getGameStatistics());
     }
 }

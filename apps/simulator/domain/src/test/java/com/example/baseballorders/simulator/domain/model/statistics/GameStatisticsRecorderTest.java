@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import com.example.baseballorders.simulator.domain.code.BattingResult;
+import com.example.baseballorders.simulator.domain.code.BuntResult;
+import com.example.baseballorders.simulator.domain.code.StealResult;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +31,7 @@ class GameStatisticsRecorderTest {
         GameStatisticsRecorder recorder = new GameStatisticsRecorder();
 
         // when
-        recorder.recordHomeRun(runnerCount);
+        recorder.onBattingResult(BattingResult.HIT_HOMER, runnerCount);
 
         // then
         GameStatistics statistics = recorder.snapshot();
@@ -57,7 +60,9 @@ class GameStatisticsRecorderTest {
 
         // when
         IllegalStateException exception =
-                assertThrows(IllegalStateException.class, () -> recorder.recordHomeRun(4));
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> recorder.onBattingResult(BattingResult.HIT_HOMER, 4));
 
         // then
         assertAll(
@@ -72,13 +77,51 @@ class GameStatisticsRecorderTest {
         GameStatisticsRecorder recorder = new GameStatisticsRecorder();
 
         // when
-        recorder.recordBunt();
-        recorder.recordSteal();
+        recorder.onBuntResult(BuntResult.SUCCESS);
+        recorder.onStealResult(StealResult.SUCCESS);
 
         // then
         GameStatistics statistics = recorder.snapshot();
         assertAll(
                 () -> assertEquals(1, statistics.buntCount()),
                 () -> assertEquals(1, statistics.stealCount()));
+    }
+
+    @Test
+    @DisplayName("失敗したバントと盗塁を記録する")
+    void recordsFailedBuntAndSteal() {
+        // given
+        GameStatisticsRecorder recorder = new GameStatisticsRecorder();
+
+        // when
+        recorder.onBuntResult(BuntResult.FAILURE);
+        recorder.onStealResult(StealResult.FAILURE);
+
+        // then
+        GameStatistics statistics = recorder.snapshot();
+        assertAll(
+                () -> assertEquals(1, statistics.buntFailureCount()),
+                () -> assertEquals(1, statistics.stealFailureCount()),
+                () -> assertEquals(0, statistics.buntCount()),
+                () -> assertEquals(0, statistics.stealCount()));
+    }
+
+    @Test
+    @DisplayName("実行しなかったバントと盗塁は成功・失敗のいずれにも記録しない")
+    void doesNotRecordUnattemptedBuntAndSteal() {
+        // given
+        GameStatisticsRecorder recorder = new GameStatisticsRecorder();
+
+        // when
+        recorder.onBuntResult(BuntResult.NOT_TRY);
+        recorder.onStealResult(StealResult.NOT_TRY);
+
+        // then
+        GameStatistics statistics = recorder.snapshot();
+        assertAll(
+                () -> assertEquals(0, statistics.buntCount()),
+                () -> assertEquals(0, statistics.stealCount()),
+                () -> assertEquals(0, statistics.buntFailureCount()),
+                () -> assertEquals(0, statistics.stealFailureCount()));
     }
 }

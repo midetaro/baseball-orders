@@ -23,7 +23,8 @@ import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
-import com.example.baseballorders.simulator.domain.model.statistics.ScoreStatisticsCalculator;
+import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
+import com.example.baseballorders.simulator.domain.model.statistics.ScoreAccumulator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
@@ -181,12 +182,19 @@ class SqsSimulationSchedulerIntegrationTest {
         var expectedSteal = stealEnabled ? StealResult.SUCCESS : StealResult.NOT_TRY;
         var expectedBunt = buntEnabled ? BuntResult.SUCCESS : BuntResult.NOT_TRY;
         assertAll(
-                () -> assertEquals(expectedSteal, batter.stealToDouble()),
-                () -> assertEquals(expectedSteal, batter.stealToTriple()),
+                () ->
+                        assertEquals(
+                                expectedSteal,
+                                batter.observedBy(new GameStatisticsRecorder()).stealToDouble()),
+                () ->
+                        assertEquals(
+                                expectedSteal,
+                                batter.observedBy(new GameStatisticsRecorder()).stealToTriple()),
                 () ->
                         assertEquals(
                                 expectedBunt,
-                                batter.bunt(OutCount.NO_OUT, new SingleBasesState(batter))));
+                                batter.observedBy(new GameStatisticsRecorder())
+                                        .bunt(OutCount.NO_OUT, new SingleBasesState(batter))));
     }
 
     private static SqsClient createClient() {
@@ -219,9 +227,11 @@ class SqsSimulationSchedulerIntegrationTest {
     }
 
     private static SimulationResult simulationResult(List<SimulationResponse> responses) {
-        return new SimulationResult(
-                new ScoreStatisticsCalculator()
-                        .calculate(responses.stream().map(SimulationResponse::score).toList()));
+        ScoreAccumulator accumulator = new ScoreAccumulator();
+        responses.forEach(
+                response ->
+                        accumulator.onGameCompleted(response.score(), response.gameStatistics()));
+        return new SimulationResult(accumulator.toScoreStatistics());
     }
 
     private static final class FixedStealStrategy implements StealStrategy {

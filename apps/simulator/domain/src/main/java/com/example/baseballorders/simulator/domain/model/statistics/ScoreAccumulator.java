@@ -6,19 +6,45 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-/** Accumulates scores and creates their aggregate statistics. */
-final class ScoreAccumulator {
+/** Accumulates completed-game scores and play statistics. */
+public final class ScoreAccumulator implements GameCompletionObserver {
     private final List<Integer> scores = new ArrayList<>();
     private final Map<Integer, Integer> scoreDistribution = new TreeMap<>();
     private long totalScore;
+    private int homeRunCount;
+    private int soloHomeRunCount;
+    private int twoRunHomeRunCount;
+    private int threeRunHomeRunCount;
+    private int grandSlamCount;
+    private int buntCount;
+    private int stealCount;
+    private int buntFailureCount;
+    private int stealFailureCount;
 
-    void add(int score) {
+    @Override
+    public void onGameCompleted(long totalScore, GameStatistics gameStatistics) {
+        int score = Math.toIntExact(totalScore);
         scores.add(score);
-        totalScore += score;
+        this.totalScore += score;
         scoreDistribution.merge(score, 1, Integer::sum);
+        homeRunCount += gameStatistics.homeRunCount();
+        soloHomeRunCount += gameStatistics.soloHomeRunCount();
+        twoRunHomeRunCount += gameStatistics.twoRunHomeRunCount();
+        threeRunHomeRunCount += gameStatistics.threeRunHomeRunCount();
+        grandSlamCount += gameStatistics.grandSlamCount();
+        buntCount += gameStatistics.buntCount();
+        stealCount += gameStatistics.stealCount();
+        buntFailureCount += gameStatistics.buntFailureCount();
+        stealFailureCount += gameStatistics.stealFailureCount();
     }
 
-    ScoreStatistics toScoreStatistics() {
+    /**
+     * Creates immutable aggregate statistics from all observed completed games.
+     *
+     * @return aggregate score and play statistics
+     * @throws IllegalArgumentException when no completed game has been observed
+     */
+    public ScoreStatistics toScoreStatistics() {
         if (scores.isEmpty()) {
             throw new IllegalArgumentException("scores must not be empty");
         }
@@ -34,12 +60,14 @@ final class ScoreAccumulator {
                 scores.getLast(),
                 scores.size(),
                 new LinkedHashMap<>(scoreDistribution),
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0);
+                homeRunCount,
+                soloHomeRunCount,
+                twoRunHomeRunCount,
+                threeRunHomeRunCount,
+                grandSlamCount,
+                buntCount,
+                stealCount,
+                buntFailureCount,
+                stealFailureCount);
     }
 }

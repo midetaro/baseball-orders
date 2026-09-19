@@ -10,10 +10,12 @@ package "model" {
     - totalScore: long
     - outCount: OutCount
     - currentBaseState: BasesState
+    - gameCompletionObserver: GameCompletionObserver
     - batterEntityOrders: List<BatterEntity>
     - numberOfNextBatter: int
     - isGameOver: boolean
     + GameBattingContext(lineUp: LineUpEntity)
+    + GameBattingContext(lineUp: LineUpEntity, observer: GameCompletionObserver)
     + addScore(runs: long): void
     + addOutCounts(diff: long): void
     + nextAtBat(): void
@@ -31,15 +33,15 @@ package "model.player" {
   abstract class Player
 
   class BatterEntity {
-    - name: String
     - onBasePercentage: float
     - sluggish: float
     - buntSuccessRate: float
     - stealSuccessRate: float
-    + swing(): BattingResult
+    + swing(runnerCount: int): BattingResult
     + bunt(outCount: OutCount, basesState: BasesState): BuntResult
     + stealToDouble(): StealResult
     + stealToTriple(): StealResult
+    + observedBy(observer: PlayResultObserver): BatterEntity
   }
 
   class LineUpEntity {
@@ -101,11 +103,26 @@ package "model.state" {
 }
 
 package "model.statistics" {
+  class ScoreAccumulator {
+    + onGameCompleted(totalScore: long, statistics: GameStatistics): void
+    + toScoreStatistics(): ScoreStatistics
+  }
+
   class GameStatisticsRecorder {
-    + recordHomeRun(runnerCount: int): void
-    + recordBunt(): void
-    + recordSteal(): void
+    + onBattingResult(result: BattingResult, runnerCount: int): void
+    + onBuntResult(result: BuntResult): void
+    + onStealResult(result: StealResult): void
     + snapshot(): GameStatistics
+  }
+
+  interface PlayResultObserver {
+    + onBattingResult(result: BattingResult, runnerCount: int): void
+    + onBuntResult(result: BuntResult): void
+    + onStealResult(result: StealResult): void
+  }
+
+  interface GameCompletionObserver {
+    + onGameCompleted(totalScore: long, statistics: GameStatistics): void
   }
 
   class GameStatistics <<record>> {
@@ -116,6 +133,8 @@ package "model.statistics" {
     + grandSlamCount: int
     + buntCount: int
     + stealCount: int
+    + buntFailureCount: int
+    + stealFailureCount: int
   }
 }
 
@@ -152,6 +171,7 @@ package "code" {
 
 GameBattingContext *-- "1" AtBatProcessor
 GameBattingContext *-- "1" GameStatisticsRecorder
+GameBattingContext --> GameCompletionObserver : notifies
 GameBattingContext --> "1" OutCount
 GameBattingContext --> "1" BasesState
 GameBattingContext --> "1" LineUpEntity : creates from
@@ -159,7 +179,6 @@ GameBattingContext --> "0..9" BatterEntity : batting order
 
 AtBatProcessor --> GameBattingContext : updates
 AtBatProcessor --> BatterEntity : processes
-AtBatProcessor --> GameStatisticsRecorder : records
 AtBatProcessor --> BasesState : applies results
 AtBatProcessor ..> Base
 AtBatProcessor ..> BattingResult
@@ -173,6 +192,8 @@ BatterEntity *-- BuntStrategy
 BatterEntity *-- StealStrategy
 BatterEntity ..> OutCount
 BatterEntity ..> BasesState
+BatterEntity --> PlayResultObserver : notifies
+BatterEntity ..> GameStatisticsRecorder : binds per game
 BatterEntity ..> BattingResult
 BatterEntity ..> BuntResult
 BatterEntity ..> StealResult
@@ -198,5 +219,7 @@ FirstDoubleBaseState ..|> StealableToTripleBase
 StealableToDoubleBase --|> Stealable
 StealableToTripleBase --|> Stealable
 
+GameStatisticsRecorder ..|> PlayResultObserver
 GameStatisticsRecorder --> GameStatistics : creates
+ScoreAccumulator ..|> GameCompletionObserver
 @enduml

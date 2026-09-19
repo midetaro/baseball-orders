@@ -18,7 +18,9 @@ public record ScoreStatistics(
         int threeRunHomeRunCount,
         int grandSlamCount,
         int buntCount,
-        int stealCount) {
+        int stealCount,
+        int buntFailureCount,
+        int stealFailureCount) {
 
     /**
      * Creates score-only statistics with no recorded batting events.
@@ -28,45 +30,6 @@ public record ScoreStatistics(
      * @param maximumScore maximum score
      */
     public ScoreStatistics(double averageScore, double medianScore, int maximumScore) {
-        this(averageScore, medianScore, maximumScore, 0, Map.of(), 0, 0, 0, 0, 0, 0, 0);
-    }
-
-    /**
-     * Adds the supplied per-game batting-event counts to these score statistics.
-     *
-     * @param gameStatistics statistics from each simulated game
-     * @return score statistics including the aggregated batting events
-     */
-    public ScoreStatistics withGameStatistics(java.util.List<GameStatistics> gameStatistics) {
-        GameStatistics battingEventCounts =
-                gameStatistics.stream()
-                        .reduce(
-                                new GameStatistics(0, 0, 0, 0, 0, 0, 0),
-                                (total, statistics) ->
-                                        new GameStatistics(
-                                                total.homeRunCount() + statistics.homeRunCount(),
-                                                total.soloHomeRunCount()
-                                                        + statistics.soloHomeRunCount(),
-                                                total.twoRunHomeRunCount()
-                                                        + statistics.twoRunHomeRunCount(),
-                                                total.threeRunHomeRunCount()
-                                                        + statistics.threeRunHomeRunCount(),
-                                                total.grandSlamCount()
-                                                        + statistics.grandSlamCount(),
-                                                total.buntCount() + statistics.buntCount(),
-                                                total.stealCount() + statistics.stealCount()));
-        return new ScoreStatistics(
-                averageScore,
-                medianScore,
-                maximumScore,
-                gameCount,
-                scoreDistribution,
-                battingEventCounts.homeRunCount(),
-                battingEventCounts.soloHomeRunCount(),
-                battingEventCounts.twoRunHomeRunCount(),
-                battingEventCounts.threeRunHomeRunCount(),
-                battingEventCounts.grandSlamCount(),
-                battingEventCounts.buntCount(),
-                battingEventCounts.stealCount());
+        this(averageScore, medianScore, maximumScore, 0, Map.of(), 0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
 }

@@ -7,29 +7,22 @@ import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.state.BaseTransition;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
 import com.example.baseballorders.simulator.domain.model.state.Stealable;
-import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 
 /** 盗塁、バント、打撃の順で一打席を進行するドメインサービス。 */
 final class AtBatProcessor {
 
-    void process(
-            GameBattingContext context,
-            BatterEntity batter,
-            GameStatisticsRecorder statisticsRecorder) {
+    void process(GameBattingContext context, BatterEntity batter) {
 
         // 盗塁
-        trySteal(context, statisticsRecorder);
+        trySteal(context);
 
         // バント
-        if (applyBuntResult(context, buntResult(context, batter), statisticsRecorder)) {
+        if (applyBuntResult(context, buntResult(context, batter))) {
             return; // バントした場合は終了
         }
 
         // ヒッティング
-        BattingResult battingResult = batter.swing();
-        if (battingResult == BattingResult.HIT_HOMER) {
-            statisticsRecorder.recordHomeRun(context.getCurrentBaseState().runnerCount());
-        }
+        BattingResult battingResult = batter.swing(context.getCurrentBaseState().runnerCount());
 
         BasesState nextBaseState =
                 switch (battingResult) {
@@ -59,7 +52,7 @@ final class AtBatProcessor {
                 .orElse(BuntResult.NOT_TRY);
     }
 
-    private void trySteal(GameBattingContext context, GameStatisticsRecorder statisticsRecorder) {
+    private void trySteal(GameBattingContext context) {
 
         context.getCurrentBaseState()
                 .stealOpportunity()
@@ -74,13 +67,11 @@ final class AtBatProcessor {
                                             context.getCurrentBaseState()
                                                     .caughtStealing(opportunity));
                                 }
-                                case SUCCESS -> {
-                                    statisticsRecorder.recordSteal();
-                                    applyTransition(
-                                            context,
-                                            context.getCurrentBaseState()
-                                                    .succeedSteal(opportunity));
-                                }
+                                case SUCCESS ->
+                                        applyTransition(
+                                                context,
+                                                context.getCurrentBaseState()
+                                                        .succeedSteal(opportunity));
                             }
                         });
     }
@@ -93,10 +84,7 @@ final class AtBatProcessor {
         };
     }
 
-    private boolean applyBuntResult(
-            GameBattingContext context,
-            BuntResult buntResult,
-            GameStatisticsRecorder statisticsRecorder) {
+    private boolean applyBuntResult(GameBattingContext context, BuntResult buntResult) {
         return switch (buntResult) {
             case NOT_TRY -> false;
             case FAILURE -> {
@@ -104,7 +92,6 @@ final class AtBatProcessor {
                 yield true;
             }
             case SUCCESS -> {
-                statisticsRecorder.recordBunt();
                 applyTransition(context, context.getCurrentBaseState().sacrificeBunt());
                 context.addOutCounts(1);
                 yield true;

@@ -30,7 +30,7 @@ SQS request
 | State | `BasesState` と各塁配置クラス | 塁上の走者配置をオブジェクトで表し、打撃・盗塁・犠打後の次状態を返す。状態遷移を明示的な値として扱う。 |
 | Context | `GameBattingContext` | イニング、アウト、得点、現在の `BasesState`、打順を保持し、一打席ずつ試合を進める。State パターンの文脈では Context に当たる。 |
 | Value Object | `BaseTransition`、`GameStatistics`、`ScoreStatistics` | プレー結果や統計値を値として受け渡す。不変な結果を返し、状態更新と得点加算を明示する。 |
-| Accumulator | `ScoreAccumulator`、`GameStatisticsRecorder` | 多数の試合得点、または一試合中のプレー統計を逐次集計してスナップショットを生成する。 |
+| Accumulator | `ScoreAccumulator`、`GameStatisticsRecorder` | 試合終了通知で多数試合の得点・プレー統計を、または一試合中のプレー統計を逐次集計してスナップショットを生成する。 |
 
 ## Strategy: 選手の行動を差し替える
 

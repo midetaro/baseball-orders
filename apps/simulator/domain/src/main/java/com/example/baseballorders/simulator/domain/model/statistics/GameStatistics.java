@@ -12,4 +12,6 @@ public record GameStatistics(
         int threeRunHomeRunCount,
         int grandSlamCount,
         int buntCount,
-        int stealCount) {}
+        int stealCount,
+        int buntFailureCount,
+        int stealFailureCount) {}
