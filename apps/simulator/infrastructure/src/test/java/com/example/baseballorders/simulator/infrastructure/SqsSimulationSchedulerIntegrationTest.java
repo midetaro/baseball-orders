@@ -186,7 +186,7 @@ class SqsSimulationSchedulerIntegrationTest {
                 () ->
                         assertEquals(
                                 expectedBunt,
-                                batter.bunt(OutCount.NO_OUT, new SingleBasesState())));
+                                batter.bunt(OutCount.NO_OUT, new SingleBasesState(batter))));
     }
 
     private static SqsClient createClient() {

@@ -3,6 +3,7 @@ package com.example.baseballorders.simulator.domain.model.state;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.code.Base;
@@ -35,12 +36,13 @@ class BasesStateTransitionTest {
                 new GameBattingContext(new LineUpEntity(Collections.nCopies(9, BATTER)));
 
         // when
-        BasesState next = hit.apply(state, context);
+        BaseTransition transition = hit.apply(state, BATTER);
 
         // then
         assertAll(
-                () -> assertInstanceOf(expected, next, description),
-                () -> assertEquals(score, context.getTotalScore(), description));
+                () -> assertInstanceOf(expected, transition.nextState(), description),
+                () -> assertEquals(score, transition.scoredRuns(), description),
+                () -> assertEquals(0, context.getTotalScore(), description));
     }
 
     static Stream<Arguments> transitions() {
@@ -82,49 +84,215 @@ class BasesStateTransitionTest {
                         1));
     }
 
-    @DisplayName("進塁と塁上走者の置換は次の状態を返す")
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("advances")
-    void advances(String description, Base base, Class<? extends BasesState> expected) {
+    @DisplayName("塁状態の打撃遷移は試合コンテキストを変更しない")
+    @org.junit.jupiter.api.Test
+    void hitTransitionDoesNotMutateGameContext() {
         // given
-        BasesState state = new FullBasesState(RUNNER, RUNNER, RUNNER);
+        BasesState state = new ThirdBaseState(RUNNER);
+        GameBattingContext context =
+                new GameBattingContext(new LineUpEntity(Collections.nCopies(9, BATTER)));
 
         // when
-        BasesState next = state.advance(base);
+        BaseTransition transition = state.hitSingle(BATTER);
 
         // then
-        assertAll(() -> assertInstanceOf(expected, next, description));
+        assertAll(
+                () -> assertEquals(1, transition.scoredRuns()),
+                () -> assertEquals(0, context.getTotalScore()));
     }
 
-    static Stream<Arguments> advances() {
+    @DisplayName("成功犠打は走者を一つ進めた次の状態を返す")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("sacrificeBunts")
+    void appliesSacrificeBunt(
+            String description, BasesState state, Class<? extends BasesState> expected) {
+        // given
+
+        // when
+        BaseTransition transition = state.sacrificeBunt();
+
+        // then
+        assertAll(
+                () -> assertInstanceOf(expected, transition.nextState(), description),
+                () -> assertEquals(0, transition.scoredRuns(), description));
+    }
+
+    static Stream<Arguments> sacrificeBunts() {
         return Stream.of(
-                arguments("一つ進塁", Base.FIRST, DoubleThirdBaseState.class),
-                arguments("二つ進塁", Base.SECOND, ThirdBaseState.class),
-                arguments("走者消去", Base.THIRD, NoBasesState.class));
+                arguments("一塁走者", new SingleBasesState(RUNNER), DoubleBaseState.class),
+                arguments(
+                        "一二塁走者",
+                        new FirstDoubleBaseState(RUNNER, RUNNER),
+                        DoubleThirdBaseState.class));
+    }
+
+    @DisplayName("盗塁結果は走者配置だけを遷移させる")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("stealTransitions")
+    void appliesStealTransition(
+            String description,
+            BasesState state,
+            StealResult result,
+            Class<? extends BasesState> expected) {
+        // given
+
+        // when
+        BaseTransition transition =
+                switch (result) {
+                    case SUCCESS -> state.succeedSteal(state.stealOpportunity().orElseThrow());
+                    case FAILURE -> state.caughtStealing(state.stealOpportunity().orElseThrow());
+                };
+
+        // then
+        assertAll(
+                () -> assertInstanceOf(expected, transition.nextState(), description),
+                () -> assertEquals(0, transition.scoredRuns(), description));
+    }
+
+    static Stream<Arguments> stealTransitions() {
+        return Stream.of(
+                arguments(
+                        "一塁走者の盗塁成功",
+                        new SingleBasesState(RUNNER),
+                        StealResult.SUCCESS,
+                        DoubleBaseState.class),
+                arguments(
+                        "二塁走者の盗塁死",
+                        new DoubleBaseState(RUNNER),
+                        StealResult.FAILURE,
+                        NoBasesState.class));
+    }
+
+    @DisplayName("盗塁能力は許可した派生インタフェースだけを持つsealed型である")
+    @org.junit.jupiter.api.Test
+    void stealableIsSealed() {
+        // given
+
+        // when
+        boolean sealed = Stealable.class.isSealed();
+
+        // then
+        assertAll(() -> assertTrue(sealed));
+    }
+
+    @DisplayName("盗塁候補は盗塁可能インタフェースを実装した塁状態だけが返す")
+    @org.junit.jupiter.api.Test
+    void findsStealOpportunityOnlyForStealableState() {
+        // given
+        BasesState state = new BasesState(RUNNER, null, null) {};
+
+        // when
+        var opportunity = state.stealOpportunity();
+
+        // then
+        assertAll(() -> assertEquals(false, opportunity.isPresent()));
+    }
+
+    @DisplayName("盗塁候補は空いている次の塁へ進む走者を返す")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("stealOpportunities")
+    void findsStealOpportunity(
+            String description, BasesState state, Base source, Base destination, boolean expected) {
+        // given
+
+        // when
+        var opportunity = state.stealOpportunity();
+
+        // then
+        assertAll(
+                () -> assertEquals(expected, opportunity.isPresent(), description),
+                () -> {
+                    if (expected) {
+                        assertEquals(source, opportunity.orElseThrow().sourceBase(), description);
+                        assertEquals(
+                                destination, opportunity.orElseThrow().targetBase(), description);
+                    }
+                });
+    }
+
+    static Stream<Arguments> stealOpportunities() {
+        return Stream.of(
+                arguments("一塁走者", new SingleBasesState(RUNNER), Base.FIRST, Base.SECOND, true),
+                arguments(
+                        "一三塁走者",
+                        new FirstThirdBaseState(RUNNER, RUNNER),
+                        Base.FIRST,
+                        Base.SECOND,
+                        true),
+                arguments("二塁走者", new DoubleBaseState(RUNNER), Base.SECOND, Base.THIRD, true),
+                arguments(
+                        "一二塁走者",
+                        new FirstDoubleBaseState(RUNNER, RUNNER),
+                        Base.SECOND,
+                        Base.THIRD,
+                        true),
+                arguments("二三塁走者", new DoubleThirdBaseState(RUNNER, RUNNER), null, null, false),
+                arguments("走者なし", new NoBasesState(), null, null, false));
+    }
+
+    @DisplayName("バント能力は許可した塁状態だけを持つsealed型である")
+    @org.junit.jupiter.api.Test
+    void buntableIsSealed() {
+        // given
+
+        // when
+        boolean sealed = Buntable.class.isSealed();
+
+        // then
+        assertAll(() -> assertTrue(sealed));
+    }
+
+    @DisplayName("バント候補はバント可能インタフェースを実装した塁状態だけが返す")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("buntOpportunities")
+    void findsBuntOpportunity(String description, BasesState state, boolean expected) {
+        // given
+
+        // when
+        var opportunity = state.buntOpportunity();
+
+        // then
+        assertAll(() -> assertEquals(expected, opportunity.isPresent(), description));
+    }
+
+    static Stream<Arguments> buntOpportunities() {
+        return Stream.of(
+                arguments("一塁走者", new SingleBasesState(RUNNER), true),
+                arguments("二塁走者", new DoubleBaseState(RUNNER), true),
+                arguments("一二塁走者", new FirstDoubleBaseState(RUNNER, RUNNER), true),
+                arguments("一三塁走者", new FirstThirdBaseState(RUNNER, RUNNER), false),
+                arguments("二三塁走者", new DoubleThirdBaseState(RUNNER, RUNNER), false),
+                arguments("満塁", new FullBasesState(RUNNER, RUNNER, RUNNER), false),
+                arguments("走者なし", new NoBasesState(), false));
     }
 
     private enum Hit {
         SINGLE {
-            BasesState apply(BasesState state, GameBattingContext context) {
-                return state.hitSingle(context, BATTER);
+            BaseTransition apply(BasesState state, BatterEntity batter) {
+                return state.hitSingle(batter);
             }
         },
         DOUBLE {
-            BasesState apply(BasesState state, GameBattingContext context) {
-                return state.hitDouble(context, BATTER);
+            BaseTransition apply(BasesState state, BatterEntity batter) {
+                return state.hitDouble(batter);
             }
         },
         TRIPLE {
-            BasesState apply(BasesState state, GameBattingContext context) {
-                return state.hitTriple(context, BATTER);
+            BaseTransition apply(BasesState state, BatterEntity batter) {
+                return state.hitTriple(batter);
             }
         },
         HOMER {
-            BasesState apply(BasesState state, GameBattingContext context) {
-                return state.hitHomer(context, BATTER);
+            BaseTransition apply(BasesState state, BatterEntity batter) {
+                return state.hitHomer();
             }
         };
 
-        abstract BasesState apply(BasesState state, GameBattingContext context);
+        abstract BaseTransition apply(BasesState state, BatterEntity batter);
+    }
+
+    private enum StealResult {
+        SUCCESS,
+        FAILURE
     }
 }

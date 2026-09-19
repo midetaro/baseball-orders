@@ -35,7 +35,7 @@ class BatterEntityTest {
                         });
 
         // when
-        BuntResult result = batter.bunt(OutCount.NO_OUT, new SingleBasesState());
+        BuntResult result = batter.bunt(OutCount.NO_OUT, new SingleBasesState(batter));
 
         // then
         assertAll(

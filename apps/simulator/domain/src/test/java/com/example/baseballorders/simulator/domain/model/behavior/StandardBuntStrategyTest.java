@@ -7,6 +7,8 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
+import com.example.baseballorders.simulator.domain.model.BatterTestDataFactory;
+import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
 import com.example.baseballorders.simulator.domain.model.state.DoubleBaseState;
 import com.example.baseballorders.simulator.domain.model.state.FirstDoubleBaseState;
@@ -21,6 +23,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 
 class StandardBuntStrategyTest {
+    private static final BatterEntity RUNNER = BatterTestDataFactory.mock().getFirst();
 
     @DisplayName("標準戦略は無死一塁と無死一二塁だけバントする")
     @ParameterizedTest(name = "{0}")
@@ -50,31 +53,31 @@ class StandardBuntStrategyTest {
                 arguments(
                         "無死一塁で成功率未満なら成功する",
                         OutCount.NO_OUT,
-                        new SingleBasesState(),
+                        new SingleBasesState(RUNNER),
                         0.69f,
                         BuntResult.SUCCESS),
                 arguments(
                         "無死一塁で成功率と等しければ失敗する",
                         OutCount.NO_OUT,
-                        new SingleBasesState(),
+                        new SingleBasesState(RUNNER),
                         0.7f,
                         BuntResult.FAILURE),
                 arguments(
                         "無死一二塁ならバントする",
                         OutCount.NO_OUT,
-                        new FirstDoubleBaseState(),
+                        new FirstDoubleBaseState(RUNNER, RUNNER),
                         0.1f,
                         BuntResult.SUCCESS),
                 arguments(
                         "一死一塁ならバントしない",
                         OutCount.ONE_OUT,
-                        new SingleBasesState(),
+                        new SingleBasesState(RUNNER),
                         0.1f,
                         BuntResult.NOT_TRY),
                 arguments(
                         "無死二塁ならバントしない",
                         OutCount.NO_OUT,
-                        new DoubleBaseState(),
+                        new DoubleBaseState(RUNNER),
                         0.1f,
                         BuntResult.NOT_TRY),
                 arguments(

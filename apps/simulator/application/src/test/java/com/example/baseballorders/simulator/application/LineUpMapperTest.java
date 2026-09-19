@@ -57,7 +57,7 @@ class LineUpMapperTest {
                 mapper.map(java.util.Collections.nCopies(9, player)).getBatterEntities().getFirst();
         var doubleResult = batter.stealToDouble();
         var tripleResult = batter.stealToTriple();
-        var buntResult = batter.bunt(OutCount.NO_OUT, new SingleBasesState());
+        var buntResult = batter.bunt(OutCount.NO_OUT, new SingleBasesState(batter));
 
         // then
         assertAll(
@@ -144,7 +144,10 @@ class LineUpMapperTest {
                                 BuntResult.NOT_TRY,
                                 result.getBatterEntities()
                                         .getFirst()
-                                        .bunt(OutCount.NO_OUT, new SingleBasesState())));
+                                        .bunt(
+                                                OutCount.NO_OUT,
+                                                new SingleBasesState(
+                                                        result.getBatterEntities().getFirst()))));
     }
 
     private static final class FixedStealStrategy implements StealStrategy {
