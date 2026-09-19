@@ -18,6 +18,9 @@ import com.example.baseballorders.simulator.application.usecase.SimulateGameUseC
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
+import com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.MiddleDistanceBattingBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.StandardBuntStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
@@ -86,12 +89,9 @@ class SqsSimulationSchedulerIntegrationTest {
                 .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =
                 new LineUpMapper(
-                        new com.example.baseballorders.simulator.domain.model.behavior
-                                .MiddleDistanceBattingBehavior(),
-                        new com.example.baseballorders.simulator.domain.model.behavior
-                                .EagerStealBehavior(),
-                        new com.example.baseballorders.simulator.domain.model.behavior
-                                .StandardBuntStrategy());
+                        new MiddleDistanceBattingBehavior(),
+                        new EagerStealBehavior(),
+                        new StandardBuntStrategy());
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
                         .mapToObj(
