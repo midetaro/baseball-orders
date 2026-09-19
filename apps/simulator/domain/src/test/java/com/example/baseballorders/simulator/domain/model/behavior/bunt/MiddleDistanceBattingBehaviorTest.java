@@ -6,7 +6,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.MiddleDistanceBattingBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.MiddleDistanceHittingStrategy;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +22,7 @@ class MiddleDistanceBattingBehaviorTest {
     @MethodSource("battingTestCases")
     void determinesBattingResult(String description, float random, BattingResult expectedResult) {
         // given
-        var behavior = new MiddleDistanceBattingBehavior();
+        var behavior = new MiddleDistanceHittingStrategy();
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
 

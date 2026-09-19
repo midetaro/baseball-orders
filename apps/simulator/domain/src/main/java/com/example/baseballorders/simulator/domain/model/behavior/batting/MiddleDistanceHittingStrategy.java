@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 /** 中距離バッター */
 @Component("middleDistanceAtBat")
-public final class MiddleDistanceBattingBehavior implements AtBatBehavior {
+public final class MiddleDistanceHittingStrategy implements HittingStrategy {
 
     public BattingResult batting(float onBasePercentage, float slugging) {
         float random = RandomGenerator.nextFloat();

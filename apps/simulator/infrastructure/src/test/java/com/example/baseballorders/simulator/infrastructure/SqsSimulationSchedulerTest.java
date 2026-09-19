@@ -19,7 +19,7 @@ import com.example.baseballorders.simulator.application.contract.SimulationRespo
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
@@ -150,10 +150,10 @@ class SqsSimulationSchedulerTest {
         // given
         SqsClient sqsClient = mock(SqsClient.class);
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
-        AtBatBehavior atBatBehavior = BehaviorStrategies.middleDistanceAtBat();
+        HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceAtBat();
         StealStrategy stealStrategy = BehaviorStrategies.eagerSteal();
         LineUpMapper mapper =
-                new LineUpMapper(atBatBehavior, stealStrategy, BehaviorStrategies.standardBunt());
+                new LineUpMapper(hittingStrategy, stealStrategy, BehaviorStrategies.standardBunt());
         ObjectMapper objectMapper = new ObjectMapper();
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)

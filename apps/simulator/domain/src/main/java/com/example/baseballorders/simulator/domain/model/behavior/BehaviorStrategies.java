@@ -1,14 +1,14 @@
 package com.example.baseballorders.simulator.domain.model.behavior;
 
-import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.LongDistanceBattingBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.MiddleDistanceBattingBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.LongDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.MiddleDistanceHittingStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.bunt.EagerBuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.bunt.NowayBuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.bunt.StandardBuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.steal.EagerStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.steal.NowayStealBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.steal.EagerStealStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.steal.NowayStealStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
 
 /** Provides behavior strategy instances without exposing their concrete implementations. */
@@ -21,8 +21,8 @@ public final class BehaviorStrategies {
      *
      * @return a middle-distance batting behavior
      */
-    public static AtBatBehavior middleDistanceAtBat() {
-        return new MiddleDistanceBattingBehavior();
+    public static HittingStrategy middleDistanceAtBat() {
+        return new MiddleDistanceHittingStrategy();
     }
 
     /**
@@ -30,8 +30,8 @@ public final class BehaviorStrategies {
      *
      * @return a long-distance batting behavior
      */
-    public static AtBatBehavior longDistanceAtBat() {
-        return new LongDistanceBattingBehavior();
+    public static HittingStrategy longDistanceAtBat() {
+        return new LongDistanceHittingStrategy();
     }
 
     /**
@@ -40,7 +40,7 @@ public final class BehaviorStrategies {
      * @return an eager stealing behavior
      */
     public static StealStrategy eagerSteal() {
-        return new EagerStealBehavior();
+        return new EagerStealStrategy();
     }
 
     /**
@@ -49,7 +49,7 @@ public final class BehaviorStrategies {
      * @return a no-steal behavior
      */
     public static StealStrategy noSteal() {
-        return new NowayStealBehavior();
+        return new NowayStealStrategy();
     }
 
     /**

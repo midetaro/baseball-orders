@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 /** 短距離バッター */
 @Component("shortDistanceAtBat")
-public final class ShortDistanceAtBatBehavior implements AtBatBehavior {
+public final class ShortDistanceHittingStrategy implements HittingStrategy {
 
     @Override
     public BattingResult batting(float onBasePercentage, float sluggish) {

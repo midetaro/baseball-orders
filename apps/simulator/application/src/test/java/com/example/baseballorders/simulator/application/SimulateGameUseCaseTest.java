@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import java.util.List;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 class SimulateGameUseCaseTest {
 
-    AtBatBehavior atBatBehavior = BehaviorStrategies.middleDistanceAtBat();
+    HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceAtBat();
 
     SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(3);
 
@@ -32,7 +32,7 @@ class SimulateGameUseCaseTest {
                                                 0.4f,
                                                 0.7f,
                                                 0.8f,
-                                                atBatBehavior,
+                                                hittingStrategy,
                                                 BehaviorStrategies.noSteal(),
                                                 BehaviorStrategies.standardBunt()))
                         .toList();

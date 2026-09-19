@@ -4,7 +4,7 @@ import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
@@ -42,7 +42,7 @@ public class BatterEntity extends Player {
     private final float stealSuccessRate;
 
     /** 打撃戦略 */
-    private final AtBatBehavior atBatBehavior;
+    private final HittingStrategy hittingStrategy;
 
     /** 走塁戦略 */
     private final StealStrategy stealStrategy;
@@ -60,7 +60,7 @@ public class BatterEntity extends Player {
      * @param sluggish slugging percentage
      * @param buntSuccessRate bunt success rate
      * @param stealSuccessRate steal success rate
-     * @param atBatBehavior batting behavior
+     * @param hittingStrategy batting behavior
      * @param stealStrategy steal strategy
      * @param buntStrategy bunt strategy
      */
@@ -69,7 +69,7 @@ public class BatterEntity extends Player {
             float sluggish,
             float buntSuccessRate,
             float stealSuccessRate,
-            AtBatBehavior atBatBehavior,
+            HittingStrategy hittingStrategy,
             StealStrategy stealStrategy,
             BuntStrategy buntStrategy) {
         this(
@@ -77,7 +77,7 @@ public class BatterEntity extends Player {
                 sluggish,
                 buntSuccessRate,
                 stealSuccessRate,
-                atBatBehavior,
+                hittingStrategy,
                 stealStrategy,
                 buntStrategy,
                 NO_OPERATION_OBSERVER);
@@ -90,7 +90,7 @@ public class BatterEntity extends Player {
      * @return 打席結果。結果を購読者へ通知する
      */
     public BattingResult swing(int runnerCount) {
-        BattingResult battingResult = atBatBehavior.batting(this.onBasePercentage, this.sluggish);
+        BattingResult battingResult = hittingStrategy.batting(this.onBasePercentage, this.sluggish);
         playResultObserver.onBattingResult(battingResult, runnerCount);
         return battingResult;
     }
@@ -142,7 +142,7 @@ public class BatterEntity extends Player {
                 sluggish,
                 buntSuccessRate,
                 stealSuccessRate,
-                atBatBehavior,
+                hittingStrategy,
                 stealStrategy,
                 buntStrategy,
                 Objects.requireNonNull(observer));
