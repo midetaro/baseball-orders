@@ -1,9 +1,9 @@
 package com.example.baseballorders.simulator.domain.model.state.base;
 
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.state.AdvancingBuntable;
+import com.example.baseballorders.simulator.domain.model.state.transaction.AdvancingBuntable;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
-import com.example.baseballorders.simulator.domain.model.state.StealableToTripleBase;
+import com.example.baseballorders.simulator.domain.model.state.transaction.StealableToTripleBase;
 
 public final class DoubleBaseState extends BasesState
         implements StealableToTripleBase, AdvancingBuntable {

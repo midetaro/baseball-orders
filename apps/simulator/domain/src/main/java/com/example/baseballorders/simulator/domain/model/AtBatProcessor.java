@@ -6,7 +6,7 @@ import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.state.BaseTransition;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
-import com.example.baseballorders.simulator.domain.model.state.Stealable;
+import com.example.baseballorders.simulator.domain.model.state.transaction.Stealable;
 
 /** 盗塁、バント、打撃の順で一打席を進行するドメインサービス。 */
 final class AtBatProcessor {
