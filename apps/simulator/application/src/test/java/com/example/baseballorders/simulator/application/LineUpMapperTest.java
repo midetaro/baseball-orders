@@ -2,25 +2,79 @@ package com.example.baseballorders.simulator.application;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mockStatic;
 
+import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.MiddleDistanceBattingBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.StandardBuntStrategy;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
+import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 class LineUpMapperTest {
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(PlayerPersonality.class)
+    @DisplayName("選手の性格に対応する既存の行動戦略を適用する")
+    void mapsPersonalityToBehavior(PlayerPersonality personality) {
+        // given
+        var mapper =
+                new LineUpMapper(
+                        new MiddleDistanceBattingBehavior(),
+                        new EagerStealBehavior(),
+                        new StandardBuntStrategy());
+        var player =
+                new SimulationPlayerMessage("1番", 0.3f, 0.4f, 0.0f, true, 0.8f, true, personality);
+
+        // when
+        BattingResult battingResult;
+        StealResult stealResult;
+        BuntResult buntResult;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator
+                    .when(RandomGenerator::nextFloat)
+                    .thenReturn(
+                            personality == PlayerPersonality.EAGER_SLUGGISH ? 0.23f : 0.8f,
+                            0.9f,
+                            0.1f);
+            var batter =
+                    mapper.map(java.util.Collections.nCopies(9, player))
+                            .getBatterEntities()
+                            .getFirst();
+            battingResult = batter.swing(0);
+            stealResult = batter.stealToDouble();
+            buntResult = batter.bunt(OutCount.ONE_OUT, new SingleBasesState(batter));
+        }
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                personality == PlayerPersonality.EAGER_SLUGGISH
+                                        ? BattingResult.HIT_HOMER
+                                        : BattingResult.OUT,
+                                battingResult),
+                () -> assertEquals(StealResult.SUCCESS, stealResult),
+                () ->
+                        assertEquals(
+                                personality == PlayerPersonality.EAGER_BUNT
+                                        ? BuntResult.FAILURE
+                                        : BuntResult.NOT_TRY,
+                                buntResult));
+    }
 
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.CsvSource({
@@ -41,26 +95,32 @@ class LineUpMapperTest {
                 """
                                         .formatted(buntEnabled, stealEnabled),
                                 SimulationPlayerMessage.class);
-        var strategy = org.mockito.Mockito.mock(StealStrategy.class);
-        org.mockito.Mockito.when(strategy.runToDouble(0.8f)).thenReturn(StealResult.SUCCESS);
-        org.mockito.Mockito.when(strategy.runToTriple(0.8f)).thenReturn(StealResult.SUCCESS);
-        var buntStrategy = org.mockito.Mockito.mock(BuntStrategy.class);
-        org.mockito.Mockito.when(
-                        buntStrategy.bunt(
-                                org.mockito.ArgumentMatchers.eq(0.7f),
-                                org.mockito.ArgumentMatchers.eq(OutCount.NO_OUT),
-                                org.mockito.ArgumentMatchers.any(SingleBasesState.class)))
-                .thenReturn(BuntResult.SUCCESS);
-        var mapper = new LineUpMapper((hit, slug) -> BattingResult.OUT, strategy, buntStrategy);
+        var mapper =
+                new LineUpMapper(
+                        new MiddleDistanceBattingBehavior(),
+                        new EagerStealBehavior(),
+                        new StandardBuntStrategy());
         var statisticsRecorder = new GameStatisticsRecorder();
 
         // when
-        var batter =
-                mapper.map(java.util.Collections.nCopies(9, player)).getBatterEntities().getFirst();
-        var observedBatter = batter.observedBy(statisticsRecorder);
-        var doubleResult = observedBatter.stealToDouble();
-        var tripleResult = observedBatter.stealToTriple();
-        var buntResult = observedBatter.bunt(OutCount.NO_OUT, new SingleBasesState(observedBatter));
+        StealResult doubleResult;
+        StealResult tripleResult;
+        BuntResult buntResult;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            if (stealEnabled) {
+                randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.8f, 0.9f, 0.1f);
+            } else {
+                randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.1f);
+            }
+            var batter =
+                    mapper.map(java.util.Collections.nCopies(9, player))
+                            .getBatterEntities()
+                            .getFirst();
+            var observedBatter = batter.observedBy(statisticsRecorder);
+            doubleResult = observedBatter.stealToDouble();
+            tripleResult = observedBatter.stealToTriple();
+            buntResult = observedBatter.bunt(OutCount.NO_OUT, new SingleBasesState(observedBatter));
+        }
 
         // then
         assertAll(
@@ -75,9 +135,9 @@ class LineUpMapperTest {
                 () ->
                         assertEquals(
                                 buntEnabled ? BuntResult.SUCCESS : BuntResult.NOT_TRY, buntResult),
-                () -> {
-                    if (!stealEnabled) org.mockito.Mockito.verifyNoInteractions(strategy);
-                });
+                () ->
+                        assertEquals(
+                                stealEnabled ? 2 : 0, statisticsRecorder.snapshot().stealCount()));
     }
 
     @Test
@@ -99,20 +159,10 @@ class LineUpMapperTest {
     @DisplayName("SQSの選手情報を打順へ変換すると全選手の能力と振る舞いが保持される")
     void mapsSqsPlayersToLineUpEntity() {
         // given
-        AtomicReference<Float> receivedOnBasePercentage = new AtomicReference<>();
-        AtomicReference<Float> receivedSlugging = new AtomicReference<>();
-        AtBatBehavior atBatBehavior =
-                (onBasePercentage, slugging) -> {
-                    receivedOnBasePercentage.set(onBasePercentage);
-                    receivedSlugging.set(slugging);
-                    return BattingResult.HIT_SINGLE;
-                };
-        FixedStealStrategy stealStrategy = new FixedStealStrategy();
+        AtBatBehavior atBatBehavior = new MiddleDistanceBattingBehavior();
         LineUpMapper mapper =
                 new LineUpMapper(
-                        atBatBehavior,
-                        stealStrategy,
-                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
+                        atBatBehavior, new EagerStealBehavior(), new StandardBuntStrategy());
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
                         .mapToObj(
@@ -130,37 +180,20 @@ class LineUpMapperTest {
         // when
         var result = mapper.map(players);
         var statisticsRecorder = new GameStatisticsRecorder();
-        var observedBatter = result.getBatterEntities().getFirst().observedBy(statisticsRecorder);
-        BattingResult battingResult = observedBatter.swing(0);
+        BattingResult battingResult;
+        StealResult stealResult;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.1f, 0.8f);
+            var observedBatter =
+                    result.getBatterEntities().getFirst().observedBy(statisticsRecorder);
+            battingResult = observedBatter.swing(0);
+            stealResult = observedBatter.stealToDouble();
+        }
 
         // then
         assertAll(
                 () -> assertEquals(9, result.getBatterEntities().size()),
-                () -> assertEquals(1.0f, receivedOnBasePercentage.get()),
-                () -> assertEquals(0.0f, receivedSlugging.get()),
                 () -> assertEquals(BattingResult.HIT_SINGLE, battingResult),
-                () -> assertEquals(StealResult.NOT_TRY, observedBatter.stealToDouble()),
-                () -> assertEquals(0.9f, stealStrategy.receivedSuccessRate),
-                () ->
-                        assertEquals(
-                                BuntResult.NOT_TRY,
-                                observedBatter.bunt(
-                                        OutCount.NO_OUT, new SingleBasesState(observedBatter))));
-    }
-
-    private static final class FixedStealStrategy implements StealStrategy {
-
-        private float receivedSuccessRate;
-
-        @Override
-        public StealResult runToDouble(float successRate) {
-            receivedSuccessRate = successRate;
-            return StealResult.NOT_TRY;
-        }
-
-        @Override
-        public StealResult runToTriple(float successRate) {
-            return StealResult.NOT_TRY;
-        }
+                () -> assertEquals(StealResult.SUCCESS, stealResult));
     }
 }

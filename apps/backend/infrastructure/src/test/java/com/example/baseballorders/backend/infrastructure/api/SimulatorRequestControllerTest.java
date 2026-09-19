@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.domain.PlayerPersonality;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -21,7 +22,7 @@ class SimulatorRequestControllerTest {
         "false,true",
         "false,false"
     })
-    @DisplayName("画面の盗塁とバント選択を共有メッセージまで保持する")
+    @DisplayName("画面の盗塁・バント選択と性格を共有メッセージまで保持する")
     void propagatesStrategyOptions(boolean stealEnabled, boolean buntEnabled) {
         // given
         var template = org.mockito.Mockito.mock(io.awspring.cloud.sqs.operations.SqsTemplate.class);
@@ -49,7 +50,14 @@ class SimulatorRequestControllerTest {
         // when
         controller.send(
                 playersWith(
-                        new PlayerInputRequest(0.3f, 0.4f, 0.7f, 0.8f, buntEnabled, stealEnabled)));
+                        new PlayerInputRequest(
+                                0.3f,
+                                0.4f,
+                                0.7f,
+                                0.8f,
+                                buntEnabled,
+                                stealEnabled,
+                                PlayerPersonality.EAGER_STEAL)));
 
         // then
         org.mockito.Mockito.verify(template)
@@ -64,6 +72,10 @@ class SimulatorRequestControllerTest {
                         assertEquals(
                                 buntEnabled,
                                 json.path("players").get(0).required("buntEnabled").asBoolean()),
+                () ->
+                        assertEquals(
+                                "EAGER_STEAL",
+                                json.path("players").get(0).required("personality").asText()),
                 () -> assertEquals("1番", captor.getValue().players().getFirst().name()),
                 () -> assertEquals(9, captor.getValue().players().size()));
     }

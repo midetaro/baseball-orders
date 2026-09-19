@@ -3,7 +3,7 @@ package com.example.baseballorders.simulator.domain.model.behavior;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 
-public class MiddleStealBehavior implements StealStrategy {
+public final class MiddleStealBehavior implements StealStrategy {
 
     private final float TRY_AVERAGE = 0.2f;
     private final float NOT_TRY = 1 - TRY_AVERAGE;

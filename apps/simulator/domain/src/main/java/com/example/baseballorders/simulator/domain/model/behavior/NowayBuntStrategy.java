@@ -5,7 +5,7 @@ import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
 
 /** A bunt strategy that never attempts a bunt. */
-public class NowayBuntStrategy implements BuntStrategy {
+public final class NowayBuntStrategy implements BuntStrategy {
 
     @Override
     public BuntResult bunt(float successRate, OutCount outCount, BasesState basesState) {

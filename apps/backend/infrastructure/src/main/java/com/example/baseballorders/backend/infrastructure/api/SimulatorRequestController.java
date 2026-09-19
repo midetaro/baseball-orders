@@ -39,7 +39,8 @@ public final class SimulatorRequestController {
                                             player.buntSuccessRate(),
                                             player.buntEnabled(),
                                             player.stealSuccessRate(),
-                                            player.stealEnabled());
+                                            player.stealEnabled(),
+                                            player.personality());
                                 })
                         .toList());
     }

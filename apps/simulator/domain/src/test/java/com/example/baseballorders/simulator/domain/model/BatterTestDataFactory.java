@@ -1,8 +1,8 @@
 package com.example.baseballorders.simulator.domain.model;
 
-import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.MiddleDistanceBattingBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StandardBuntStrategy;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
@@ -13,7 +13,7 @@ public final class BatterTestDataFactory {
 
     private BatterTestDataFactory() {}
 
-    static AtBatBehavior atBatBehavior = (onBasePercentage, slugging) -> BattingResult.OUT;
+    static AtBatBehavior atBatBehavior = new MiddleDistanceBattingBehavior();
     static EagerStealBehavior eagerStealBehavior = new EagerStealBehavior();
     static NowayStealBehavior nowayStealBehavior = new NowayStealBehavior();
     static StandardBuntStrategy standardBuntStrategy = new StandardBuntStrategy();

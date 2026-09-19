@@ -18,9 +18,6 @@ import com.example.baseballorders.simulator.application.LineUpMapper;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
-import com.example.baseballorders.simulator.domain.code.BattingResult;
-import com.example.baseballorders.simulator.domain.code.BuntResult;
-import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
@@ -152,13 +149,17 @@ class SqsSimulationSchedulerTest {
         // given
         SqsClient sqsClient = mock(SqsClient.class);
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
-        AtBatBehavior atBatBehavior = (hitAverage, sluggish) -> BattingResult.OUT;
-        StealStrategy stealStrategy = new FixedStealStrategy();
+        AtBatBehavior atBatBehavior =
+                new com.example.baseballorders.simulator.domain.model.behavior
+                        .MiddleDistanceBattingBehavior();
+        StealStrategy stealStrategy =
+                new com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior();
         LineUpMapper mapper =
                 new LineUpMapper(
                         atBatBehavior,
                         stealStrategy,
-                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
+                        new com.example.baseballorders.simulator.domain.model.behavior
+                                .StandardBuntStrategy());
         ObjectMapper objectMapper = new ObjectMapper();
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
@@ -401,18 +402,5 @@ class SqsSimulationSchedulerTest {
                                     .queueUrl(request.queueName().replace("-queue", "-url"))
                                     .build();
                         });
-    }
-
-    private static final class FixedStealStrategy implements StealStrategy {
-
-        @Override
-        public StealResult runToDouble(float successRate) {
-            return StealResult.NOT_TRY;
-        }
-
-        @Override
-        public StealResult runToTriple(float successRate) {
-            return StealResult.NOT_TRY;
-        }
     }
 }

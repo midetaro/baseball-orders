@@ -1,6 +1,8 @@
 package com.example.baseballorders.backend.infrastructure.web;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import java.net.URI;
@@ -146,6 +148,30 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("home-run-legend")),
                 () -> assertTrue(response.body().contains("本塁打なし")),
                 () -> assertTrue(response.body().contains("tactics-comparison")));
+    }
+
+    @Test
+    @DisplayName("トップ画面は選手性格を選択して全員をデフォルトへ初期化できる")
+    void rendersPlayerPersonalityControls() throws Exception {
+        // given
+        var request =
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+
+        // when
+        HttpResponse<String> response;
+        try (var client = HttpClient.newHttpClient()) {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+
+        // then
+        assertAll(
+                () -> assertEquals(200, response.statusCode()),
+                () -> assertTrue(response.body().contains("id=\"reset-all-personalities\"")),
+                () -> assertTrue(response.body().contains("性格")),
+                () -> assertTrue(response.body().contains("EagerSluggish")),
+                () -> assertTrue(response.body().contains("EagerSteal")),
+                () -> assertTrue(response.body().contains("EagerBunt")),
+                () -> assertTrue(response.body().contains("personality:player.personality")));
     }
 
     @Test

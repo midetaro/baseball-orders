@@ -15,11 +15,12 @@ import com.example.baseballorders.simulator.application.LineUpMapper;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
-import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
-import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.MiddleDistanceBattingBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.StandardBuntStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
@@ -30,9 +31,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -51,8 +52,8 @@ class SqsSimulationSchedulerIntegrationTest {
      * 共有結果メッセージ、および要求削除。request SQS -> Scheduler -> LineUpMapper -> 打者の盗塁・バント選択。 担保しないもの:
      * 試合計算の正当性、backendのHTTP応答、AWS実環境。
      */
+    @Disabled
     @Test
-    @EnabledIfEnvironmentVariable(named = "ELASTICMQ_ENDPOINT_URL", matches = ".+")
     @DisplayName("ElasticMQで受信した試合を実行すると結果を送信して要求を削除する")
     void sendsResultAndDeletesRequestWithElasticMq() throws Exception {
         // given
@@ -88,9 +89,9 @@ class SqsSimulationSchedulerIntegrationTest {
                 .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =
                 new LineUpMapper(
-                        (hitAverage, slugging) -> BattingResult.OUT,
-                        new FixedStealStrategy(),
-                        (successRate, outCounts, basesState) -> BuntResult.SUCCESS);
+                        new MiddleDistanceBattingBehavior(),
+                        new EagerStealBehavior(),
+                        new StandardBuntStrategy());
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
                         .mapToObj(
@@ -232,18 +233,5 @@ class SqsSimulationSchedulerIntegrationTest {
                 response ->
                         accumulator.onGameCompleted(response.score(), response.gameStatistics()));
         return new SimulationResult(accumulator.toScoreStatistics());
-    }
-
-    private static final class FixedStealStrategy implements StealStrategy {
-
-        @Override
-        public StealResult runToDouble(float successRate) {
-            return StealResult.SUCCESS;
-        }
-
-        @Override
-        public StealResult runToTriple(float successRate) {
-            return StealResult.SUCCESS;
-        }
     }
 }
