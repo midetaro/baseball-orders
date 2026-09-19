@@ -5,7 +5,6 @@ import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.state.base.BaseStateFactory;
 import com.example.baseballorders.simulator.domain.model.state.transaction.Buntable;
 import com.example.baseballorders.simulator.domain.model.state.transaction.Stealable;
-
 import java.util.Optional;
 
 /** 走者配置と、その配置における打撃結果の適用規則を表す不変の塁状態。 */

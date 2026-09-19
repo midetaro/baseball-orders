@@ -12,13 +12,12 @@ import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.BatterTestDataFactory;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.state.base.*;
-import java.util.Collections;
-import java.util.stream.Stream;
-
 import com.example.baseballorders.simulator.domain.model.state.transaction.AdvancingBuntable;
 import com.example.baseballorders.simulator.domain.model.state.transaction.Buntable;
 import com.example.baseballorders.simulator.domain.model.state.transaction.SqueezeBuntable;
 import com.example.baseballorders.simulator.domain.model.state.transaction.Stealable;
+import java.util.Collections;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
