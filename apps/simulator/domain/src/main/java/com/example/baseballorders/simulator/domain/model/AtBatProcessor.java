@@ -3,7 +3,7 @@ package com.example.baseballorders.simulator.domain.model;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.state.BaseTransition;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
 import com.example.baseballorders.simulator.domain.model.state.Stealable;

@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
+import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;

@@ -18,10 +18,10 @@ import com.example.baseballorders.simulator.application.usecase.SimulateGameUseC
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
+import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
+import com.example.baseballorders.simulator.domain.model.state.base.SingleBasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import com.example.baseballorders.simulator.domain.model.statistics.ScoreAccumulator;
 import com.fasterxml.jackson.databind.ObjectMapper;

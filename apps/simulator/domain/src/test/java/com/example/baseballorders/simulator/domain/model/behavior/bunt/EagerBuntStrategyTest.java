@@ -7,13 +7,13 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
+import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.BatterTestDataFactory;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.state.BasesState;
-import com.example.baseballorders.simulator.domain.model.state.DoubleBaseState;
-import com.example.baseballorders.simulator.domain.model.state.FirstDoubleBaseState;
-import com.example.baseballorders.simulator.domain.model.state.NoBasesState;
-import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
+import com.example.baseballorders.simulator.domain.model.state.base.DoubleBaseState;
+import com.example.baseballorders.simulator.domain.model.state.base.FirstDoubleBaseState;
+import com.example.baseballorders.simulator.domain.model.state.base.NoBasesState;
+import com.example.baseballorders.simulator.domain.model.state.base.SingleBasesState;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;

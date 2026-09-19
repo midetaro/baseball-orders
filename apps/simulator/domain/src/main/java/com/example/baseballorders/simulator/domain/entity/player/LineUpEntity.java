@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.model.player;
+package com.example.baseballorders.simulator.domain.entity.player;
 
 import java.util.List;
 import lombok.AllArgsConstructor;

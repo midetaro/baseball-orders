@@ -1,7 +1,7 @@
 package com.example.baseballorders.simulator.domain.model.state;
 
 import com.example.baseballorders.simulator.domain.code.Base;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 
 /** 一塁走者が二塁へ盗塁できる塁状態。 */
 public non-sealed interface StealableToDoubleBase extends Stealable {

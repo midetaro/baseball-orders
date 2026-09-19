@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.model.player;
+package com.example.baseballorders.simulator.domain.entity.player;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;

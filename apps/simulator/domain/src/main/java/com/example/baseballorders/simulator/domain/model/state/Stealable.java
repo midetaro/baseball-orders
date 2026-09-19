@@ -1,7 +1,7 @@
 package com.example.baseballorders.simulator.domain.model.state;
 
 import com.example.baseballorders.simulator.domain.code.Base;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 
 /** 盗塁を試みる走者と進塁経路を表す塁状態の能力。 */
 public sealed interface Stealable permits StealableToDoubleBase, StealableToTripleBase {
