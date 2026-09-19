@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.model.behavior.steal;
+package com.example.baseballorders.simulator.domain.entity.behavior.steal;
 
 import com.example.baseballorders.simulator.domain.code.StealResult;
 

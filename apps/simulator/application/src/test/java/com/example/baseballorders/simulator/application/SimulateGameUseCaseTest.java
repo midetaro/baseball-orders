@@ -6,8 +6,8 @@ import com.example.baseballorders.simulator.application.contract.SimulationResul
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.entity.behavior.batting.HittingStrategy;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;

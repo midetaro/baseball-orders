@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.model.behavior.batting;
+package com.example.baseballorders.simulator.domain.entity.behavior.batting;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 

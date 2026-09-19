@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.model.behavior.bunt;
+package com.example.baseballorders.simulator.domain.entity.behavior.bunt;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -6,7 +6,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.ShortDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.batting.ShortDistanceHittingStrategy;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;

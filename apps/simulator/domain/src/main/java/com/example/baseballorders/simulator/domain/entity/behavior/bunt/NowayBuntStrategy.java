@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.model.behavior.bunt;
+package com.example.baseballorders.simulator.domain.entity.behavior.bunt;
 
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;

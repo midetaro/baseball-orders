@@ -1,10 +1,10 @@
 package com.example.baseballorders.simulator.domain.model;
 
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.bunt.BuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.entity.behavior.batting.HittingStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.bunt.BuntStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.steal.StealStrategy;
 import java.util.List;
 
 public final class BatterTestDataFactory {

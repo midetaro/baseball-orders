@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.model.behavior.bunt;
+package com.example.baseballorders.simulator.domain.entity.behavior.bunt;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;

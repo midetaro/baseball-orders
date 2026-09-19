@@ -1,15 +1,15 @@
-package com.example.baseballorders.simulator.domain.model.behavior;
+package com.example.baseballorders.simulator.domain.entity.behavior;
 
-import com.example.baseballorders.simulator.domain.model.behavior.batting.HittingStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.LongDistanceHittingStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.MiddleDistanceHittingStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.bunt.BuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.bunt.EagerBuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.bunt.NowayBuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.bunt.StandardBuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.steal.EagerStealStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.steal.NowayStealStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.batting.HittingStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.batting.LongDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.batting.MiddleDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.bunt.BuntStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.bunt.EagerBuntStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.bunt.NowayBuntStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.bunt.StandardBuntStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.steal.EagerStealStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.steal.NowayStealStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.steal.StealStrategy;
 
 /** Provides behavior strategy instances without exposing their concrete implementations. */
 public final class BehaviorStrategies {
