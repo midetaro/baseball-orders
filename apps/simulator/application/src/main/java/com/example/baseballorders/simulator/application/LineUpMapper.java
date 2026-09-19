@@ -2,13 +2,10 @@ package com.example.baseballorders.simulator.application;
 
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
-import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.BuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.EagerBuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.LongDistanceBattingBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.NowayBuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.StealStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
+import com.example.baseballorders.simulator.domain.model.behavior.bunt.BuntStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import java.util.List;
@@ -22,8 +19,8 @@ public class LineUpMapper {
     private final AtBatBehavior atBatBehavior;
     private final StealStrategy eagerStealStrategy;
     private final BuntStrategy buntStrategy;
-    private final StealStrategy noStealStrategy = new NowayStealBehavior();
-    private final BuntStrategy noBuntStrategy = new NowayBuntStrategy();
+    private final StealStrategy noStealStrategy = BehaviorStrategies.noSteal();
+    private final BuntStrategy noBuntStrategy = BehaviorStrategies.noBunt();
 
     /**
      * Creates a mapper using the default batting and stealing strategies.
@@ -73,7 +70,7 @@ public class LineUpMapper {
     private AtBatBehavior atBatBehaviorFor(PlayerPersonality personality) {
         return switch (personality) {
             case DEFAULT, EAGER_STEAL, EAGER_BUNT -> atBatBehavior;
-            case EAGER_SLUGGISH -> new LongDistanceBattingBehavior();
+            case EAGER_SLUGGISH -> BehaviorStrategies.longDistanceAtBat();
         };
     }
 
@@ -86,7 +83,7 @@ public class LineUpMapper {
     private BuntStrategy buntStrategyFor(PlayerPersonality personality) {
         return switch (personality) {
             case DEFAULT, EAGER_SLUGGISH, EAGER_STEAL -> buntStrategy;
-            case EAGER_BUNT -> new EagerBuntStrategy();
+            case EAGER_BUNT -> BehaviorStrategies.eagerBunt();
         };
     }
 }

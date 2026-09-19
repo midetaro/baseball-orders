@@ -10,10 +10,8 @@ import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
-import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.EagerStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.MiddleDistanceBattingBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.StandardBuntStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.state.SingleBasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
@@ -33,9 +31,9 @@ class LineUpMapperTest {
         // given
         var mapper =
                 new LineUpMapper(
-                        new MiddleDistanceBattingBehavior(),
-                        new EagerStealBehavior(),
-                        new StandardBuntStrategy());
+                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.eagerSteal(),
+                        BehaviorStrategies.standardBunt());
         var player =
                 new SimulationPlayerMessage("1番", 0.3f, 0.4f, 0.0f, true, 0.8f, true, personality);
 
@@ -97,9 +95,9 @@ class LineUpMapperTest {
                                 SimulationPlayerMessage.class);
         var mapper =
                 new LineUpMapper(
-                        new MiddleDistanceBattingBehavior(),
-                        new EagerStealBehavior(),
-                        new StandardBuntStrategy());
+                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.eagerSteal(),
+                        BehaviorStrategies.standardBunt());
         var statisticsRecorder = new GameStatisticsRecorder();
 
         // when
@@ -159,10 +157,12 @@ class LineUpMapperTest {
     @DisplayName("SQSの選手情報を打順へ変換すると全選手の能力と振る舞いが保持される")
     void mapsSqsPlayersToLineUpEntity() {
         // given
-        AtBatBehavior atBatBehavior = new MiddleDistanceBattingBehavior();
+        AtBatBehavior atBatBehavior = BehaviorStrategies.middleDistanceAtBat();
         LineUpMapper mapper =
                 new LineUpMapper(
-                        atBatBehavior, new EagerStealBehavior(), new StandardBuntStrategy());
+                        atBatBehavior,
+                        BehaviorStrategies.eagerSteal(),
+                        BehaviorStrategies.standardBunt());
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
                         .mapToObj(

@@ -4,10 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
-import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.MiddleDistanceBattingBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.StandardBuntStrategy;
+import com.example.baseballorders.simulator.domain.model.behavior.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.model.behavior.batting.AtBatBehavior;
 import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
 import java.util.List;
@@ -17,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 class SimulateGameUseCaseTest {
 
-    AtBatBehavior atBatBehavior = new MiddleDistanceBattingBehavior();
+    AtBatBehavior atBatBehavior = BehaviorStrategies.middleDistanceAtBat();
 
     SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(3);
 
@@ -35,8 +33,8 @@ class SimulateGameUseCaseTest {
                                                 0.7f,
                                                 0.8f,
                                                 atBatBehavior,
-                                                new NowayStealBehavior(),
-                                                new StandardBuntStrategy()))
+                                                BehaviorStrategies.noSteal(),
+                                                BehaviorStrategies.standardBunt()))
                         .toList();
         // when
         SimulationResult result = simulateGameUseCase.invoke(new LineUpEntity(batterEntities));

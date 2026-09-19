@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.model.behavior;
+package com.example.baseballorders.simulator.domain.model.behavior.steal;
 
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
