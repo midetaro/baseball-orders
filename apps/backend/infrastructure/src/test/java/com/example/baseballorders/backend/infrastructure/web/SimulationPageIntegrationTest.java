@@ -98,7 +98,7 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("盗塁")),
                 () -> assertTrue(response.body().contains("得点サマリー")),
                 () -> assertTrue(response.body().contains("本塁打の内訳")),
-                () -> assertTrue(response.body().contains("戦術の成功数")),
+                () -> assertTrue(response.body().contains("戦術の成否")),
                 () -> assertTrue(response.body().contains("id=\"share-results\"")),
                 () -> assertTrue(response.body().contains("navigator.share")),
                 () -> assertTrue(response.body().contains("clipboard.writeText")),

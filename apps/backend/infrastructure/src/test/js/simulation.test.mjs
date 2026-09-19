@@ -30,7 +30,9 @@ assert.ok(!html.includes("hitAverage:'.32'"), '小数点前のゼロを省略し
 assert.ok(html.includes("input.value.startsWith('.') ? `0${input.value}` : input.value"), '入力時も小数点前のゼロを表示する');
 assert.ok(html.includes('hasAtMostTwoDecimalPlaces'), '小数第3位以降の入力では実行できないようにする');
 assert.ok(html.includes('本塁打の内訳'), '本塁打統計を構造化して表示する');
-assert.ok(html.includes('戦術の成功数'), '戦術統計を構造化して表示する');
+assert.ok(html.includes('戦術の成否'), '戦術統計を構造化して表示する');
+assert.ok(html.includes("Array.of('失敗バント',statistics.buntFailureCount)"), '失敗バント数を表示する');
+assert.ok(html.includes("Array.of('失敗盗塁',statistics.stealFailureCount)"), '失敗盗塁数を表示する');
 assert.ok(html.includes('id="share-results"'), '結果をSNS共有できる操作を表示する');
 assert.ok(html.includes('navigator.share'), '対応ブラウザではネイティブ共有を使う');
 assert.ok(html.includes('clipboard.writeText'), 'ネイティブ共有非対応時は共有文をコピーする');
