@@ -5,12 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.example.baseballorders.simulator.domain.code.BuntResult;
-import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.base.*;
-
+import com.example.baseballorders.simulator.domain.model.base.capability.Buntable;
+import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
@@ -32,18 +31,15 @@ class StatePatternStructureTest {
                     FullBasesState.class);
 
     @Test
-    @DisplayName("BasesStateはinterfaceで全Stateが7種類のプレーメソッドをoverrideする")
+    @DisplayName("BasesStateはinterfaceで全Stateが共通の打撃プレーをoverrideする")
     void overridesPlayMethodsDeclaredByBasesState() throws ReflectiveOperationException {
         // given
         var methods =
                 List.of(
-                        expectedMethod("bunt", BuntResult.class, BatterEntity.class),
                         expectedMethod("hitSingle", void.class, BatterEntity.class),
                         expectedMethod("hitDouble", void.class, BatterEntity.class),
                         expectedMethod("hitTriple", void.class, BatterEntity.class),
-                        expectedMethod("hitHomer", void.class),
-                        expectedMethod("stealToDouble", StealResult.class),
-                        expectedMethod("stealToTriple", StealResult.class));
+                        expectedMethod("hitHomer", void.class));
 
         // when
         List<Executable> inheritanceChecks =
@@ -95,36 +91,50 @@ class StatePatternStructureTest {
     }
 
     @Test
-    @DisplayName("Contextと全Stateは結果Enumの各定数に対応するイベントメソッドを持つ")
-    void exposesOneMethodForEachResultConstant() throws ReflectiveOperationException {
+    @DisplayName("バントと盗塁のメソッドはそれぞれの能力interfaceが契約する")
+    void capabilityInterfacesOwnTheirPlayMethods() {
         // given
-        List<Class<?>> eventReceivers =
-                java.util.stream.Stream.concat(
-                                java.util.stream.Stream.of(GameBattingContext.class),
-                                STATE_TYPES.stream())
+        var baseStateMethodNames =
+                Arrays.stream(BasesState.class.getDeclaredMethods())
+                        .map(java.lang.reflect.Method::getName)
                         .toList();
 
         // when
-        List<Executable> methodChecks =
-                eventReceivers.stream()
-                        .flatMap(
-                                type ->
-                                        java.util.stream.Stream.of(
-                                                methodCheck(type, "out"),
-                                                methodCheck(type, "hitSingle", BatterEntity.class),
-                                                methodCheck(type, "hitDouble", BatterEntity.class),
-                                                methodCheck(type, "hitTriple", BatterEntity.class),
-                                                methodCheck(type, "hitHomer"),
-                                                methodCheck(type, "buntNotTry"),
-                                                methodCheck(type, "buntFailure"),
-                                                methodCheck(type, "buntSuccess"),
-                                                methodCheck(type, "stealNotTry"),
-                                                methodCheck(type, "stealFailure"),
-                                                methodCheck(type, "stealSuccess")))
+        var buntMethodNames =
+                Arrays.stream(Buntable.class.getDeclaredMethods())
+                        .map(java.lang.reflect.Method::getName)
+                        .toList();
+        var stealMethodNames =
+                Arrays.stream(Stealable.class.getDeclaredMethods())
+                        .map(java.lang.reflect.Method::getName)
                         .toList();
 
         // then
-        assertAll(methodChecks);
+        assertAll(
+                () ->
+                        assertFalse(
+                                baseStateMethodNames.stream()
+                                        .anyMatch(
+                                                name ->
+                                                        name.startsWith("bunt")
+                                                                || name.startsWith("steal"))),
+                () ->
+                        assertTrue(
+                                buntMethodNames.containsAll(
+                                        List.of(
+                                                "bunt",
+                                                "buntNotTry",
+                                                "buntFailure",
+                                                "buntSuccess"))),
+                () ->
+                        assertTrue(
+                                stealMethodNames.containsAll(
+                                        List.of(
+                                                "stealToDouble",
+                                                "stealToTriple",
+                                                "stealNotTry",
+                                                "stealFailure",
+                                                "stealSuccess"))));
     }
 
     @Test

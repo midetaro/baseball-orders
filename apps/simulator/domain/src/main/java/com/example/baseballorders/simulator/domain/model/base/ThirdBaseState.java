@@ -1,13 +1,13 @@
 package com.example.baseballorders.simulator.domain.model.base;
 
 import com.example.baseballorders.simulator.domain.code.BuntResult;
-import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.base.capability.SqueezeBuntable;
 
 /** 走者配置4のイベントを処理する試合固有のState。 */
-public final class ThirdBaseState extends AbstractBasesState implements BasesState, SqueezeBuntable {
+public final class ThirdBaseState extends AbstractBasesState
+        implements BasesState, SqueezeBuntable {
     ThirdBaseState(GameBattingContext context, InningState inningState) {
         super(context, inningState);
     }
@@ -35,15 +35,5 @@ public final class ThirdBaseState extends AbstractBasesState implements BasesSta
     @Override
     public void hitHomer() {
         applyHitHomer();
-    }
-
-    @Override
-    public StealResult stealToDouble() {
-        return attemptStealToDouble();
-    }
-
-    @Override
-    public StealResult stealToTriple() {
-        return attemptStealToTriple();
     }
 }

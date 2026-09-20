@@ -4,7 +4,8 @@ import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.base.*;
 import com.example.baseballorders.simulator.domain.model.base.InningState;
-import com.example.baseballorders.simulator.domain.model.situation.base.*;
+import com.example.baseballorders.simulator.domain.model.base.capability.AdvancingBuntable;
+import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
 import com.example.baseballorders.simulator.domain.model.statistics.GameCompletionObserver;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
@@ -190,8 +191,8 @@ public class GameBattingContext {
 
     /** バント見送りを適用する。試合終了後は何もしない。 */
     public void buntNotTry() {
-        if (!isGameOver) {
-            currentState.buntNotTry();
+        if (!isGameOver && currentState instanceof AdvancingBuntable buntable) {
+            buntable.buntNotTry();
         }
     }
 
@@ -202,7 +203,7 @@ public class GameBattingContext {
      */
     public void buntFailure() {
         if (!isGameOver) {
-            currentState.buntFailure();
+            requireBuntable().buntFailure();
         }
     }
 
@@ -213,14 +214,14 @@ public class GameBattingContext {
      */
     public void buntSuccess() {
         if (!isGameOver) {
-            currentState.buntSuccess();
+            requireBuntable().buntSuccess();
         }
     }
 
     /** 盗塁見送りを適用する。試合終了後は何もしない。 */
     public void stealNotTry() {
-        if (!isGameOver) {
-            currentState.stealNotTry();
+        if (!isGameOver && currentState instanceof Stealable stealable) {
+            stealable.stealNotTry();
         }
     }
 
@@ -231,7 +232,7 @@ public class GameBattingContext {
      */
     public void stealFailure() {
         if (!isGameOver) {
-            currentState.stealFailure();
+            requireStealable().stealFailure();
         }
     }
 
@@ -242,7 +243,21 @@ public class GameBattingContext {
      */
     public void stealSuccess() {
         if (!isGameOver) {
-            currentState.stealSuccess();
+            requireStealable().stealSuccess();
         }
+    }
+
+    private AdvancingBuntable requireBuntable() {
+        if (currentState instanceof AdvancingBuntable buntable) {
+            return buntable;
+        }
+        throw new IllegalStateException("犠打機会がありません");
+    }
+
+    private Stealable requireStealable() {
+        if (currentState instanceof Stealable stealable) {
+            return stealable;
+        }
+        throw new IllegalStateException("盗塁機会がありません");
     }
 }

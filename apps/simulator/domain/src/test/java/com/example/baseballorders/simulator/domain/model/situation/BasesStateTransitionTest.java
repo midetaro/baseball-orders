@@ -9,16 +9,15 @@ import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.BatterTestDataFactory;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.base.*;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
 import com.example.baseballorders.simulator.domain.model.base.capability.AdvancingBuntable;
 import com.example.baseballorders.simulator.domain.model.base.capability.Buntable;
 import com.example.baseballorders.simulator.domain.model.base.capability.SqueezeBuntable;
 import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -203,12 +202,13 @@ class BasesStateTransitionTest {
         // given
         var state = context(mask, 0).getCurrentState();
         // when
-        var steal = state.stealOpportunity();
-        var bunt = state.buntOpportunityByBase();
+        Optional<Stealable> steal =
+                state instanceof Stealable stealable ? Optional.of(stealable) : Optional.empty();
+        var bunt = state instanceof AdvancingBuntable;
         // then
         assertAll(
                 () -> assertEquals(List.of(1, 2, 3, 5).contains(mask), steal.isPresent()),
-                () -> assertEquals(List.of(1, 2, 3).contains(mask), bunt.isPresent()),
+                () -> assertEquals(List.of(1, 2, 3).contains(mask), bunt),
                 () ->
                         steal.ifPresent(
                                 opportunity -> {

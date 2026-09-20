@@ -4,10 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.example.baseballorders.simulator.domain.model.base.*;
 import java.util.List;
 import java.util.stream.Stream;
-
-import com.example.baseballorders.simulator.domain.model.base.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;

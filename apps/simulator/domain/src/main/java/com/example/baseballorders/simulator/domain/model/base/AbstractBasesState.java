@@ -10,8 +10,6 @@ import com.example.baseballorders.simulator.domain.model.base.capability.Buntabl
 import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
 import com.example.baseballorders.simulator.domain.model.base.capability.StealableToDoubleBase;
 import com.example.baseballorders.simulator.domain.model.base.capability.StealableToTripleBase;
-import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 
 /** 試合とイニング状態を共有するStateの共通基底実装。 */
@@ -39,14 +37,6 @@ public abstract class AbstractBasesState {
         return runnerAt(base) != null;
     }
 
-    public final Optional<Stealable> stealOpportunity() {
-        return this instanceof Stealable stealable ? Optional.of(stealable) : Optional.empty();
-    }
-
-    public final Optional<Buntable> buntOpportunityByBase() {
-        return this instanceof Buntable buntable ? Optional.of(buntable) : Optional.empty();
-    }
-
     public final void out() {
         inningState.addOut();
         boolean completed =
@@ -62,7 +52,7 @@ public abstract class AbstractBasesState {
     }
 
     protected final BuntResult attemptBunt(BasesState state, BatterEntity batter) {
-        return buntOpportunityByBase().map(_ -> batter.bunt(state)).orElse(BuntResult.NOT_TRY);
+        return batter.bunt(state);
     }
 
     protected final void applyHitTriple(BatterEntity batter) {
@@ -129,10 +119,15 @@ public abstract class AbstractBasesState {
     }
 
     private void requireBunt() {
-        buntOpportunityByBase().orElseThrow(() -> new IllegalStateException("犠打機会がありません"));
+        if (!(this instanceof Buntable)) {
+            throw new IllegalStateException("犠打機会がありません");
+        }
     }
 
     private Stealable requireSteal() {
-        return stealOpportunity().orElseThrow(() -> new IllegalStateException("盗塁機会がありません"));
+        if (this instanceof Stealable stealable) {
+            return stealable;
+        }
+        throw new IllegalStateException("盗塁機会がありません");
     }
 }

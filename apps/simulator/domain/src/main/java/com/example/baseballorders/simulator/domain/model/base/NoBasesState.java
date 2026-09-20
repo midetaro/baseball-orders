@@ -1,7 +1,5 @@
 package com.example.baseballorders.simulator.domain.model.base;
 
-import com.example.baseballorders.simulator.domain.code.BuntResult;
-import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 
@@ -9,11 +7,6 @@ import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 public final class NoBasesState extends AbstractBasesState implements BasesState {
     NoBasesState(GameBattingContext context, InningState inningState) {
         super(context, inningState);
-    }
-
-    @Override
-    public BuntResult bunt(BatterEntity batter) {
-        return attemptBunt(this, batter);
     }
 
     @Override
@@ -34,15 +27,5 @@ public final class NoBasesState extends AbstractBasesState implements BasesState
     @Override
     public void hitHomer() {
         applyHitHomer();
-    }
-
-    @Override
-    public StealResult stealToDouble() {
-        return attemptStealToDouble();
-    }
-
-    @Override
-    public StealResult stealToTriple() {
-        return attemptStealToTriple();
     }
 }
