@@ -1,0 +1,21 @@
+package com.example.baseballorders.simulator.domain.player.strategy.bunt;
+
+import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.OutCount;
+import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+
+/** 選手のバント成功率に基づく標準的なバント戦略。 */
+public final class StandardBuntStrategy implements BuntStrategy {
+
+    @Override
+    public BuntResult bunt(float successRate, OutCount outCount) {
+        return switch (outCount) {
+            case NO_OUT -> attempt(successRate);
+            case ONE_OUT, TWO_OUT, THREE_OUT -> BuntResult.NOT_TRY;
+        };
+    }
+
+    private BuntResult attempt(float successRate) {
+        return RandomGenerator.nextFloat() < successRate ? BuntResult.SUCCESS : BuntResult.FAILURE;
+    }
+}

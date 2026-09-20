@@ -1,3 +1,5 @@
+status: done
+
 4. 中: domain.model と domain.model.base が循環依存しています。
 
 domain/src/main/java/com/example/baseballorders/simulator/domain/model/GameBattingContext.java:5 がbaseパッケージへ依存し、domain/src/main/java/com/example/baseballorders/
