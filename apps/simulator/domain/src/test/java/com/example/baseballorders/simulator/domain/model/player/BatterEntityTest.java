@@ -10,7 +10,6 @@ import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.behavior.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.state.base.SingleBasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import org.junit.jupiter.api.DisplayName;
@@ -42,7 +41,12 @@ class BatterEntityTest {
         BuntResult result;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.1f);
-            result = observedBatter.bunt(OutCount.NO_OUT, new SingleBasesState(observedBatter));
+            result =
+                    observedBatter.bunt(
+                            com.example.baseballorders.simulator.domain.model.situation
+                                    .GameStateTestFixture.context(
+                                            observedBatter, null, null, OutCount.NO_OUT)
+                                    .getCurrentState());
         }
 
         // then
@@ -121,7 +125,10 @@ class BatterEntityTest {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.99f, 0.99f);
             var observedBatter = batter.observedBy(statisticsRecorder);
             observedBatter.swing(0);
-            observedBatter.bunt(OutCount.NO_OUT, new SingleBasesState(observedBatter));
+            observedBatter.bunt(
+                    com.example.baseballorders.simulator.domain.model.situation.GameStateTestFixture
+                            .context(observedBatter, null, null, OutCount.NO_OUT)
+                            .getCurrentState());
             observedBatter.stealToDouble();
             observedBatter.stealToTriple();
         }

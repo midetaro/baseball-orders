@@ -3,7 +3,7 @@ package com.example.baseballorders.simulator.application.usecase;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
-import com.example.baseballorders.simulator.domain.model.state.base.BaseStateFactory;
+import com.example.baseballorders.simulator.domain.model.base.BaseStateFactory;
 import com.example.baseballorders.simulator.domain.model.statistics.ScoreAccumulator;
 import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;

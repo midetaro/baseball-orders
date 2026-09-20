@@ -1,12 +1,13 @@
-package com.example.baseballorders.simulator.domain.model.state.base;
+package com.example.baseballorders.simulator.domain.model.situation.base;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.example.baseballorders.simulator.domain.model.state.BasesState;
 import java.util.List;
 import java.util.stream.Stream;
+
+import com.example.baseballorders.simulator.domain.model.base.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -32,7 +33,7 @@ class BaseStateComponentTest {
         // when
         Class<?> factory =
                 Class.forName(
-                        "com.example.baseballorders.simulator.domain.model.state.base.BaseStateFactory");
+                        "com.example.baseballorders.simulator.domain.model.base.BaseStateFactory");
 
         // then
         assertAll(

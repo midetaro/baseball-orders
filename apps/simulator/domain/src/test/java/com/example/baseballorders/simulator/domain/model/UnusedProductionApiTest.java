@@ -7,7 +7,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.state.BasesState;
+import com.example.baseballorders.simulator.domain.model.base.BasesState;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,7 +37,11 @@ class UnusedProductionApiTest {
 
     static Stream<Arguments> unusedMethodTestCases() {
         return Stream.of(
-                arguments("イニング getter", GameBattingContext.class, "getInning", new Class<?>[0]),
+                arguments(
+                        "Contextのアウト数 getter",
+                        GameBattingContext.class,
+                        "getOutCount",
+                        new Class<?>[0]),
                 arguments(
                         "打順 getter",
                         GameBattingContext.class,

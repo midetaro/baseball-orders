@@ -1,37 +1,39 @@
 package com.example.baseballorders.simulator.domain.model;
 
-import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.model.state.BasesState;
-import com.example.baseballorders.simulator.domain.model.state.base.BaseStateFactory;
+import com.example.baseballorders.simulator.domain.model.base.*;
+import com.example.baseballorders.simulator.domain.model.base.InningState;
+import com.example.baseballorders.simulator.domain.model.situation.base.*;
 import com.example.baseballorders.simulator.domain.model.statistics.GameCompletionObserver;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import java.util.List;
 import lombok.Getter;
 
+/** 試合全体の情報を保持し、プレーを現在の塁Stateへ委譲するContext。 */
 public class GameBattingContext {
-
-    private static final GameCompletionObserver NO_OPERATION_OBSERVER =
-            (totalScore, gameStatistics) -> {};
-
-    private long inning = 1;
-    @Getter private long totalScore = 0;
-    @Getter private OutCount outCount = OutCount.NO_OUT;
-    @Getter private BasesState currentBaseState;
-
+    private static final GameCompletionObserver NO_OPERATION_OBSERVER = (score, statistics) -> {};
+    @Getter private long inning = 1;
+    @Getter private long totalScore;
+    @Getter private BasesState currentState;
+    private final NoBasesState noBasesState;
+    private final SingleBasesState singleBasesState;
+    private final DoubleBaseState doubleBaseState;
+    private final FirstDoubleBaseState firstDoubleBaseState;
+    private final ThirdBaseState thirdBaseState;
+    private final FirstThirdBaseState firstThirdBaseState;
+    private final DoubleThirdBaseState doubleThirdBaseState;
+    private final FullBasesState fullBasesState;
     private final GameStatisticsRecorder statisticsRecorder = new GameStatisticsRecorder();
     private final GameCompletionObserver gameCompletionObserver;
     private final List<BatterEntity> batterEntityOrders;
-    private final BaseStateFactory baseStateFactory;
     private final AtBatProcessor atBatProcessor = new AtBatProcessor();
-
     private int numberOfNextBatter;
-    @Getter private boolean isGameOver = false;
+    @Getter private boolean isGameOver;
 
     /**
-     * 指定された打順で、初回・無死・走者なし・無得点の試合状態を作成する。
+     * 初回・無死・走者なしの試合を作成する。
      *
      * @param batterEntityOrders 試合で使用する打順
      */
@@ -40,7 +42,7 @@ public class GameBattingContext {
     }
 
     /**
-     * 指定された打順と試合終了時の通知先で、初回・無死・走者なし・無得点の試合状態を作成する。
+     * 終了通知先を指定して試合を作成する。
      *
      * @param batterEntityOrders 試合で使用する打順
      * @param gameCompletionObserver 試合終了時の通知先
@@ -51,11 +53,11 @@ public class GameBattingContext {
     }
 
     /**
-     * 指定された打順、試合終了時の通知先、塁状態ファクトリで試合状態を作成する。
+     * 同一イニング状態を共有する8種類のStateと試合を作成する。
      *
      * @param batterEntityOrders 試合で使用する打順
      * @param gameCompletionObserver 試合終了時の通知先
-     * @param baseStateFactory 塁状態を生成するファクトリ
+     * @param baseStateFactory 試合固有のStateを生成するファクトリ
      */
     public GameBattingContext(
             LineUpEntity batterEntityOrders,
@@ -66,81 +68,181 @@ public class GameBattingContext {
                         .map(batter -> batter.observedBy(statisticsRecorder))
                         .toList();
         this.gameCompletionObserver = gameCompletionObserver;
-        this.baseStateFactory = baseStateFactory;
-        this.currentBaseState = baseStateFactory.empty();
-        this.numberOfNextBatter = 0;
+        InningState inningState = new InningState();
+        noBasesState = baseStateFactory.createNoBasesState(this, inningState);
+        singleBasesState = baseStateFactory.createSingleBasesState(this, inningState);
+        doubleBaseState = baseStateFactory.createDoubleBaseState(this, inningState);
+        firstDoubleBaseState = baseStateFactory.createFirstDoubleBaseState(this, inningState);
+        thirdBaseState = baseStateFactory.createThirdBaseState(this, inningState);
+        firstThirdBaseState = baseStateFactory.createFirstThirdBaseState(this, inningState);
+        doubleThirdBaseState = baseStateFactory.createDoubleThirdBaseState(this, inningState);
+        fullBasesState = baseStateFactory.createFullBasesState(this, inningState);
+        currentState = noBasesState;
     }
 
     /**
-     * 総得点に指定した得点を加算し、加算内容を標準出力に表示する。
+     * Stateが算出した得点を試合に加算する。
      *
-     * @param runs 加算する得点
+     * @param runs 加算得点
      */
     public void addScore(long runs) {
         totalScore += runs;
     }
 
     /**
-     * アウト数を加算する。三死になると走者とアウト数をリセットし、次の回へ進むか、九回なら試合終了にする。
+     * Stateから走者配置に一致する、この試合のStateへ切り替える。
      *
-     * @param diff 加算するアウト数（0 以上）
+     * @param configuration 一塁・二塁・三塁の在塁を下位3ビットで表した値
+     * @throws IllegalArgumentException 0から7以外の配置を指定した場合
      */
-    public void addOutCounts(long diff) {
+    public void changeState(int configuration) {
+        currentState =
+                switch (configuration) {
+                    case 0 -> noBasesState;
+                    case 1 -> singleBasesState;
+                    case 2 -> doubleBaseState;
+                    case 3 -> firstDoubleBaseState;
+                    case 4 -> thirdBaseState;
+                    case 5 -> firstThirdBaseState;
+                    case 6 -> doubleThirdBaseState;
+                    case 7 -> fullBasesState;
+                    default -> throw new IllegalArgumentException("不正な走者配置: " + configuration);
+                };
+    }
+
+    /** Stateによる三死の初期化後に次の回へ進め、九回終了なら一度だけ結果を通知する。 */
+    public void completeInning() {
         if (isGameOver) {
             return;
         }
-        outCount = outCount.add(diff);
-        boolean inningOver =
-                switch (outCount) {
-                    case NO_OUT, ONE_OUT, TWO_OUT -> false;
-                    case THREE_OUT -> true;
-                };
-        if (inningOver) {
-            this.goToNextInning();
-        }
-    }
-
-    private void goToNextInning() {
         if (inning == 9) {
-            this.cleanAllBases();
-            outCount = OutCount.NO_OUT;
             isGameOver = true;
             gameCompletionObserver.onGameCompleted(totalScore, statisticsRecorder.snapshot());
+        } else {
+            inning++;
+        }
+    }
+
+    /** 盗塁・バント・打撃を処理し、打席が完了した場合だけ打順を進める。 */
+    public void nextAtBat() {
+        if (isGameOver) {
             return;
         }
-        inning++;
-        this.cleanAllBases();
-        outCount = OutCount.NO_OUT;
+        if (atBatProcessor.process(this, batterEntityOrders.get(numberOfNextBatter))) {
+            if (numberOfNextBatter == 8) {
+                numberOfNextBatter = 0;
+            }
+            numberOfNextBatter++;
+        }
     }
 
-    /** 盗塁を試みた後に現在の打者の打撃結果を適用し、塁状態と次の打者の位置を更新する。 */
-    public void nextAtBat() {
-        var batter = batterEntityOrders.get(numberOfNextBatter);
-        atBatProcessor.process(this, batter);
-        this.toNextBatter();
-    }
-
-    /**
-     * Returns the batting statistics accumulated in this game.
-     *
-     * @return completed-game statistics at the time of this call
-     */
+    /** 試合中に累積した打撃統計を返す。 @return 現時点の打撃統計 */
     public GameStatistics getGameStatistics() {
         return statisticsRecorder.snapshot();
     }
 
-    private void toNextBatter() {
-        if (this.numberOfNextBatter == 8) {
-            this.numberOfNextBatter = 0;
+    /** アウトを適用する。試合終了後は何もしない。 */
+    public void out() {
+        if (!isGameOver) {
+            currentState.out();
         }
-        this.numberOfNextBatter++;
     }
 
-    void replaceBaseState(BasesState baseState) {
-        this.currentBaseState = baseState;
+    /**
+     * 単打を適用する。試合終了後は何もしない。
+     *
+     * @param batter 打撃した打者
+     */
+    public void hitSingle(BatterEntity batter) {
+        if (!isGameOver) {
+            currentState.hitSingle(batter);
+        }
     }
 
-    private void cleanAllBases() {
-        this.currentBaseState = baseStateFactory.empty();
+    /**
+     * 二塁打を適用する。試合終了後は何もしない。
+     *
+     * @param batter 打撃した打者
+     */
+    public void hitDouble(BatterEntity batter) {
+        if (!isGameOver) {
+            currentState.hitDouble(batter);
+        }
+    }
+
+    /**
+     * 三塁打を適用する。試合終了後は何もしない。
+     *
+     * @param batter 打撃した打者
+     */
+    public void hitTriple(BatterEntity batter) {
+        if (!isGameOver) {
+            currentState.hitTriple(batter);
+        }
+    }
+
+    /** 本塁打を適用する。試合終了後は何もしない。 */
+    public void hitHomer() {
+        if (!isGameOver) {
+            currentState.hitHomer();
+        }
+    }
+
+    /** バント見送りを適用する。試合終了後は何もしない。 */
+    public void buntNotTry() {
+        if (!isGameOver) {
+            currentState.buntNotTry();
+        }
+    }
+
+    /**
+     * バント失敗を適用する。試合終了後は何もしない。
+     *
+     * @throws IllegalStateException 対応するプレー機会がない場合
+     */
+    public void buntFailure() {
+        if (!isGameOver) {
+            currentState.buntFailure();
+        }
+    }
+
+    /**
+     * バント成功を適用する。試合終了後は何もしない。
+     *
+     * @throws IllegalStateException 対応するプレー機会がない場合
+     */
+    public void buntSuccess() {
+        if (!isGameOver) {
+            currentState.buntSuccess();
+        }
+    }
+
+    /** 盗塁見送りを適用する。試合終了後は何もしない。 */
+    public void stealNotTry() {
+        if (!isGameOver) {
+            currentState.stealNotTry();
+        }
+    }
+
+    /**
+     * 盗塁失敗を適用する。試合終了後は何もしない。
+     *
+     * @throws IllegalStateException 対応するプレー機会がない場合
+     */
+    public void stealFailure() {
+        if (!isGameOver) {
+            currentState.stealFailure();
+        }
+    }
+
+    /**
+     * 盗塁成功を適用する。試合終了後は何もしない。
+     *
+     * @throws IllegalStateException 対応するプレー機会がない場合
+     */
+    public void stealSuccess() {
+        if (!isGameOver) {
+            currentState.stealSuccess();
+        }
     }
 }

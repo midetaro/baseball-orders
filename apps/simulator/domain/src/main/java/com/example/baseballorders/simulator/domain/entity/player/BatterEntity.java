@@ -2,12 +2,11 @@ package com.example.baseballorders.simulator.domain.entity.player;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
-import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.behavior.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.entity.behavior.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.entity.behavior.steal.StealStrategy;
-import com.example.baseballorders.simulator.domain.model.state.BasesState;
+import com.example.baseballorders.simulator.domain.model.base.BasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.PlayResultObserver;
 import java.util.Objects;
 import lombok.AccessLevel;
@@ -120,12 +119,11 @@ public class BatterEntity extends Player {
     /**
      * アウト数と塁状態を考慮し、バント戦略に従ってバントする。
      *
-     * @param outCount アウトカウント
      * @param basesState 現在の塁状態
      * @return バント結果。結果を購読者へ通知する
      */
-    public BuntResult bunt(OutCount outCount, BasesState basesState) {
-        BuntResult buntResult = buntStrategy.bunt(buntSuccessRate, outCount, basesState);
+    public BuntResult bunt(BasesState basesState) {
+        BuntResult buntResult = buntStrategy.bunt(buntSuccessRate, basesState);
         playResultObserver.onBuntResult(buntResult);
         return buntResult;
     }

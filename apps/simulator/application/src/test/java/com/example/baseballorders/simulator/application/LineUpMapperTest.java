@@ -12,7 +12,6 @@ import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.behavior.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.entity.behavior.batting.HittingStrategy;
-import com.example.baseballorders.simulator.domain.model.state.base.SingleBasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.List;
@@ -54,7 +53,12 @@ class LineUpMapperTest {
                             .getFirst();
             battingResult = batter.swing(0);
             stealResult = batter.stealToDouble();
-            buntResult = batter.bunt(OutCount.ONE_OUT, new SingleBasesState(batter));
+            buntResult =
+                    batter.bunt(
+                            com.example.baseballorders.simulator.domain.model.situation
+                                    .GameStateTestFixture.context(
+                                            batter, null, null, OutCount.ONE_OUT)
+                                    .getCurrentState());
         }
 
         // then
@@ -117,7 +121,12 @@ class LineUpMapperTest {
             var observedBatter = batter.observedBy(statisticsRecorder);
             doubleResult = observedBatter.stealToDouble();
             tripleResult = observedBatter.stealToTriple();
-            buntResult = observedBatter.bunt(OutCount.NO_OUT, new SingleBasesState(observedBatter));
+            buntResult =
+                    observedBatter.bunt(
+                            com.example.baseballorders.simulator.domain.model.situation
+                                    .GameStateTestFixture.context(
+                                            observedBatter, null, null, OutCount.NO_OUT)
+                                    .getCurrentState());
         }
 
         // then

@@ -21,7 +21,6 @@ import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.behavior.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.model.state.base.SingleBasesState;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import com.example.baseballorders.simulator.domain.model.statistics.ScoreAccumulator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -193,7 +192,11 @@ class SqsSimulationSchedulerIntegrationTest {
                         assertEquals(
                                 expectedBunt,
                                 batter.observedBy(new GameStatisticsRecorder())
-                                        .bunt(OutCount.NO_OUT, new SingleBasesState(batter))));
+                                        .bunt(
+                                                com.example.baseballorders.simulator.domain.model
+                                                        .situation.GameStateTestFixture.context(
+                                                                batter, null, null, OutCount.NO_OUT)
+                                                        .getCurrentState())));
     }
 
     private static SqsClient createClient() {
