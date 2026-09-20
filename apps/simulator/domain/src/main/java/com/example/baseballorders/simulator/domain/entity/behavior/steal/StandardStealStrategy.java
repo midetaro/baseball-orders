@@ -2,7 +2,9 @@ package com.example.baseballorders.simulator.domain.entity.behavior.steal;
 
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
+import org.springframework.stereotype.Component;
 
+@Component("standardStealStrategy")
 final class StandardStealStrategy implements StealStrategy {
 
     private final float TRY_AVERAGE = 0.2f;

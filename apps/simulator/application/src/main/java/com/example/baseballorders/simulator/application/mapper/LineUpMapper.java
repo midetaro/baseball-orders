@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 public class LineUpMapper {
 
     private final HittingStrategy hittingStrategy;
-    private final StealStrategy eagerStealStrategy;
+    private final StealStrategy stealStrategy;
     private final BuntStrategy buntStrategy;
     private final StealStrategy noStealStrategy = BehaviorStrategies.noSteal();
     private final BuntStrategy noBuntStrategy = BehaviorStrategies.noBunt();
@@ -31,10 +31,10 @@ public class LineUpMapper {
      */
     public LineUpMapper(
             @Qualifier("middleDistanceHittingStrategy") HittingStrategy hittingStrategy,
-            @Qualifier("eagerStealBehavior") StealStrategy stealStrategy,
+            @Qualifier("standardStealStrategy") StealStrategy stealStrategy,
             @Qualifier("standardBuntStrategy") BuntStrategy buntStrategy) {
         this.hittingStrategy = hittingStrategy;
-        this.eagerStealStrategy = stealStrategy;
+        this.stealStrategy = stealStrategy;
         this.buntStrategy = buntStrategy;
     }
 
@@ -76,7 +76,8 @@ public class LineUpMapper {
 
     private StealStrategy stealStrategyFor(PlayerPersonality personality) {
         return switch (personality) {
-            case DEFAULT, EAGER_SLUGGISH, EAGER_STEAL, EAGER_BUNT -> eagerStealStrategy;
+            case DEFAULT, EAGER_SLUGGISH, EAGER_BUNT -> stealStrategy;
+            case EAGER_STEAL -> BehaviorStrategies.eagerSteal();
         };
     }
 
