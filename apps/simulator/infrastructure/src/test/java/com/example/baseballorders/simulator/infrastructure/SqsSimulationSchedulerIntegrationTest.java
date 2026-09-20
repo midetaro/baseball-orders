@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
-import com.example.baseballorders.simulator.application.LineUpMapper;
+import com.example.baseballorders.simulator.application.mapper.LineUpMapper;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
@@ -86,7 +86,7 @@ class SqsSimulationSchedulerIntegrationTest {
                 .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =
                 new LineUpMapper(
-                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.middleDistanceHittingStrategy(),
                         BehaviorStrategies.eagerSteal(),
                         BehaviorStrategies.standardBunt());
         List<SimulationPlayerMessage> players =

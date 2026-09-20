@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
+import com.example.baseballorders.simulator.application.mapper.LineUpMapper;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
@@ -30,7 +31,7 @@ class LineUpMapperTest {
         // given
         var mapper =
                 new LineUpMapper(
-                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.middleDistanceHittingStrategy(),
                         BehaviorStrategies.eagerSteal(),
                         BehaviorStrategies.standardBunt());
         var player =
@@ -94,7 +95,7 @@ class LineUpMapperTest {
                                 SimulationPlayerMessage.class);
         var mapper =
                 new LineUpMapper(
-                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.middleDistanceHittingStrategy(),
                         BehaviorStrategies.eagerSteal(),
                         BehaviorStrategies.standardBunt());
         var statisticsRecorder = new GameStatisticsRecorder();
@@ -139,7 +140,7 @@ class LineUpMapperTest {
 
     @Test
     @DisplayName("既定の打撃戦略には中距離バッターを指定する")
-    void usesMiddleDistanceAtBatAsDefault() {
+    void usesmiddleDistanceHittingStrategyAsDefault() {
         // given
         var constructor = LineUpMapper.class.getConstructors()[0];
 
@@ -148,7 +149,7 @@ class LineUpMapperTest {
 
         // then
         assertAll(
-                () -> assertEquals("middleDistanceAtBat", qualifier.value()),
+                () -> assertEquals("middleDistanceHittingStrategy", qualifier.value()),
                 () ->
                         assertEquals(
                                 HittingStrategy.class, constructor.getParameters()[0].getType()));
@@ -158,7 +159,7 @@ class LineUpMapperTest {
     @DisplayName("SQSの選手情報を打順へ変換すると全選手の能力と振る舞いが保持される")
     void mapsSqsPlayersToLineUpEntity() {
         // given
-        HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceAtBat();
+        HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceHittingStrategy();
         LineUpMapper mapper =
                 new LineUpMapper(
                         hittingStrategy,

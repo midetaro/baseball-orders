@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
-import com.example.baseballorders.simulator.application.LineUpMapper;
+import com.example.baseballorders.simulator.application.mapper.LineUpMapper;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
@@ -150,7 +150,7 @@ class SqsSimulationSchedulerTest {
         // given
         SqsClient sqsClient = mock(SqsClient.class);
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
-        HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceAtBat();
+        HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceHittingStrategy();
         StealStrategy stealStrategy = BehaviorStrategies.eagerSteal();
         LineUpMapper mapper =
                 new LineUpMapper(hittingStrategy, stealStrategy, BehaviorStrategies.standardBunt());

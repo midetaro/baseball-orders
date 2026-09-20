@@ -8,7 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.example.baseballorders.simulator.SimulatorApplication;
-import com.example.baseballorders.simulator.application.LineUpMapper;
+import com.example.baseballorders.simulator.application.mapper.LineUpMapper;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;

@@ -11,7 +11,7 @@ public final class BatterTestDataFactory {
 
     private BatterTestDataFactory() {}
 
-    static HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceAtBat();
+    static HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceHittingStrategy();
     static StealStrategy eagerStealBehavior = BehaviorStrategies.eagerSteal();
     static StealStrategy nowayStealBehavior = BehaviorStrategies.noSteal();
     static BuntStrategy standardBuntStrategy = BehaviorStrategies.standardBunt();

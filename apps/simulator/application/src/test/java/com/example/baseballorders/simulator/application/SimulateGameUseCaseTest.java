@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 class SimulateGameUseCaseTest {
 
-    HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceAtBat();
+    HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceHittingStrategy();
 
     SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(3);
 

@@ -239,7 +239,7 @@ class BasesStateTransitionTest {
                         0.0f,
                         1.0f,
                         0.0f,
-                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.middleDistanceHittingStrategy(),
                         BehaviorStrategies.noSteal(),
                         BehaviorStrategies.standardBunt());
         var state = (Buntable) context(mask, outCount.ordinal()).getCurrentState();

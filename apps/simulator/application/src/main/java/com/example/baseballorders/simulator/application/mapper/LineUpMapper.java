@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.application;
+package com.example.baseballorders.simulator.application.mapper;
 
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
@@ -30,7 +30,7 @@ public class LineUpMapper {
      * @param buntStrategy bunt strategy assigned to each batter
      */
     public LineUpMapper(
-            @Qualifier("middleDistanceAtBat") HittingStrategy hittingStrategy,
+            @Qualifier("middleDistanceHittingStrategy") HittingStrategy hittingStrategy,
             @Qualifier("eagerStealBehavior") StealStrategy stealStrategy,
             @Qualifier("standardBuntStrategy") BuntStrategy buntStrategy) {
         this.hittingStrategy = hittingStrategy;
@@ -56,7 +56,7 @@ public class LineUpMapper {
                                                 player.sluggish(),
                                                 player.buntSuccessRate(),
                                                 player.stealSuccessRate(),
-                                                atBatBehaviorFor(player.personality()),
+                                                battingBehaviorFor(player.personality()),
                                                 player.stealEnabled()
                                                         ? stealStrategyFor(player.personality())
                                                         : noStealStrategy,
@@ -67,7 +67,7 @@ public class LineUpMapper {
         return new LineUpEntity(batters);
     }
 
-    private HittingStrategy atBatBehaviorFor(PlayerPersonality personality) {
+    private HittingStrategy battingBehaviorFor(PlayerPersonality personality) {
         return switch (personality) {
             case DEFAULT, EAGER_STEAL, EAGER_BUNT -> hittingStrategy;
             case EAGER_SLUGGISH -> BehaviorStrategies.longDistanceAtBat();

@@ -28,7 +28,7 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.middleDistanceHittingStrategy(),
                         BehaviorStrategies.noSteal(),
                         BehaviorStrategies.standardBunt());
 
@@ -60,7 +60,7 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.middleDistanceHittingStrategy(),
                         BehaviorStrategies.eagerSteal(),
                         BehaviorStrategies.standardBunt());
 
@@ -110,7 +110,7 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.middleDistanceHittingStrategy(),
                         BehaviorStrategies.noSteal(),
                         BehaviorStrategies.standardBunt());
         var statisticsRecorder = new GameStatisticsRecorder();
