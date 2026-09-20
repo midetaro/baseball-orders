@@ -1,6 +1,7 @@
-package com.example.baseballorders.simulator.domain.model.state.transaction;
+package com.example.baseballorders.simulator.domain.model.base.capability;
 
 import com.example.baseballorders.simulator.domain.code.Base;
+import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 
 /** 盗塁を試みる走者と進塁経路を表す塁状態の能力。 */
@@ -26,4 +27,19 @@ public sealed interface Stealable permits StealableToDoubleBase, StealableToTrip
      * @return 盗塁先の塁
      */
     Base targetBase();
+
+    /** 一塁走者に二塁盗塁を試みさせる。 @return 走者の盗塁結果 */
+    StealResult stealToDouble();
+
+    /** 二塁走者に三塁盗塁を試みさせる。 @return 走者の盗塁結果 */
+    StealResult stealToTriple();
+
+    /** 盗塁を試みないため状態を維持する。 */
+    void stealNotTry();
+
+    /** 盗塁死の走者を除去して一死を加算する。 */
+    void stealFailure();
+
+    /** 盗塁対象の走者を次の塁へ移す。 */
+    void stealSuccess();
 }

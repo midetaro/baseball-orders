@@ -1,102 +1,41 @@
 package com.example.baseballorders.simulator.domain.entity.behavior.bunt;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.mockito.Mockito.mockStatic;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
-import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.BatterTestDataFactory;
-import com.example.baseballorders.simulator.domain.model.state.BasesState;
-import com.example.baseballorders.simulator.domain.model.state.base.DoubleBaseState;
-import com.example.baseballorders.simulator.domain.model.state.base.FirstDoubleBaseState;
-import com.example.baseballorders.simulator.domain.model.state.base.NoBasesState;
-import com.example.baseballorders.simulator.domain.model.state.base.SingleBasesState;
+import com.example.baseballorders.simulator.domain.model.base.BasesState;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.params.provider.EnumSource;
 
 class EagerBuntStrategyTest {
-    private static final BatterEntity RUNNER = BatterTestDataFactory.mock().getFirst();
-
-    @DisplayName("積極的戦略は試合状況によらず指定された成功率でバント結果を判定する")
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("buntTestCases")
-    void determinesBuntResultBySuccessRate(
-            String description,
-            OutCount outCount,
-            BasesState basesState,
-            float random,
-            BuntResult expectedResult) {
+    @ParameterizedTest
+    @EnumSource(OutCount.class)
+    @DisplayName("積極戦略はStateのアウト数からバントの実行を判定する")
+    void respectsOutCount(OutCount outs) {
         // given
+        var state = mock(BasesState.class);
+        when(state.getOutCount()).thenReturn(outs);
         var strategy = new EagerBuntStrategy();
-        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            // バントの成否判定に使う乱数を固定する
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
-
+        boolean attempts =
+                switch (outs) {
+                    case NO_OUT -> true;
+                    case ONE_OUT -> true;
+                    case TWO_OUT, THREE_OUT -> false;
+                };
+        try (var random = mockStatic(RandomGenerator.class)) {
+            random.when(RandomGenerator::nextFloat).thenReturn(0.69f, 0.7f);
             // when
-            BuntResult result = strategy.bunt(0.7f, outCount, basesState);
-
+            var success = strategy.bunt(0.7f, state);
+            var failure = strategy.bunt(0.7f, state);
             // then
-            assertAll(() -> assertEquals(expectedResult, result, description));
+            assertAll(
+                    () -> assertEquals(attempts ? BuntResult.SUCCESS : BuntResult.NOT_TRY, success),
+                    () -> assertEquals(attempts ? BuntResult.FAILURE : BuntResult.NOT_TRY, failure),
+                    () -> random.verify(RandomGenerator::nextFloat, times(attempts ? 2 : 0)));
         }
-    }
-
-    static Stream<Arguments> buntTestCases() {
-        return Stream.of(
-                arguments(
-                        "無死一塁ならバントする",
-                        OutCount.NO_OUT,
-                        new SingleBasesState(RUNNER),
-                        0.1f,
-                        BuntResult.SUCCESS),
-                arguments(
-                        "無死一二塁ならバントする",
-                        OutCount.NO_OUT,
-                        new FirstDoubleBaseState(RUNNER, RUNNER),
-                        0.1f,
-                        BuntResult.SUCCESS),
-                arguments(
-                        "無死二塁ならバントする",
-                        OutCount.NO_OUT,
-                        new DoubleBaseState(RUNNER),
-                        0.1f,
-                        BuntResult.SUCCESS),
-                arguments(
-                        "一死一塁ならバントする",
-                        OutCount.ONE_OUT,
-                        new SingleBasesState(RUNNER),
-                        0.1f,
-                        BuntResult.SUCCESS),
-                arguments(
-                        "成功率と等しければ失敗する",
-                        OutCount.NO_OUT,
-                        new SingleBasesState(RUNNER),
-                        0.7f,
-                        BuntResult.FAILURE),
-                arguments(
-                        "無死走者なしでも成功率に従って判定する",
-                        OutCount.NO_OUT,
-                        new NoBasesState(),
-                        0.1f,
-                        BuntResult.SUCCESS),
-                arguments(
-                        "一死二塁でも成功率に従って判定する",
-                        OutCount.ONE_OUT,
-                        new DoubleBaseState(RUNNER),
-                        0.1f,
-                        BuntResult.SUCCESS),
-                arguments(
-                        "二死のときバントを実行しない",
-                        OutCount.TWO_OUT,
-                        new SingleBasesState(RUNNER),
-                        0.1f,
-                        BuntResult.NOT_TRY));
     }
 }

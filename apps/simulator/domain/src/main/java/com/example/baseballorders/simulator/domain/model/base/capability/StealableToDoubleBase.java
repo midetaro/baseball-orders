@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.domain.model.state.transaction;
+package com.example.baseballorders.simulator.domain.model.base.capability;
 
 import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;

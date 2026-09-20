@@ -1,106 +1,67 @@
 package com.example.baseballorders.simulator.domain.model;
 
-import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.state.BaseTransition;
-import com.example.baseballorders.simulator.domain.model.state.BasesState;
-import com.example.baseballorders.simulator.domain.model.state.transaction.Stealable;
+import com.example.baseballorders.simulator.domain.model.base.capability.Buntable;
+import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
 
-/** 盗塁、バント、打撃の順で一打席を進行するドメインサービス。 */
+/** プレー結果を取得し、対応するStateイベントをContextへ送る。 */
 final class AtBatProcessor {
 
-    void process(GameBattingContext context, BatterEntity batter) {
+    boolean process(GameBattingContext context, BatterEntity batter) {
 
-        // 盗塁
-        trySteal(context);
+        long inningBeforeSteal = context.getInning();
 
-        // バント
-        if (applyBuntResult(context, buntResult(context, batter))) {
-            return; // バントした場合は終了
+        var stealable =
+                context.getCurrentState() instanceof Stealable opportunity ? opportunity : null;
+
+        StealResult stealResult = stealable == null ? StealResult.NOT_TRY : stealResult(stealable);
+        switch (stealResult) {
+            case NOT_TRY -> context.stealNotTry();
+            case FAILURE -> context.stealFailure();
+            case SUCCESS -> context.stealSuccess();
+        }
+        if (context.isGameOver() || context.getInning() != inningBeforeSteal) {
+            return false;
         }
 
-        // ヒッティング
-        BattingResult battingResult = batter.swing(context.getCurrentBaseState().runnerCount());
-
-        BasesState nextBaseState =
-                switch (battingResult) {
-                    case OUT -> {
-                        context.addOutCounts(1);
-                        yield context.getCurrentBaseState();
+        var buntable =
+                context.getCurrentState() instanceof Buntable opportunity ? opportunity : null;
+        BuntResult buntResult = buntable == null ? BuntResult.NOT_TRY : buntable.bunt(batter);
+        boolean bunted =
+                switch (buntResult) {
+                    case NOT_TRY -> {
+                        context.buntNotTry();
+                        yield false;
                     }
-                    case HIT_SINGLE ->
-                            applyTransition(
-                                    context, context.getCurrentBaseState().hitSingle(batter));
-                    case HIT_DOUBLE ->
-                            applyTransition(
-                                    context, context.getCurrentBaseState().hitDouble(batter));
-                    case HIT_TRIPLE ->
-                            applyTransition(
-                                    context, context.getCurrentBaseState().hitTriple(batter));
-                    case HIT_HOMER ->
-                            applyTransition(context, context.getCurrentBaseState().hitHomer());
+                    case FAILURE -> {
+                        context.buntFailure();
+                        yield true;
+                    }
+                    case SUCCESS -> {
+                        context.buntSuccess();
+                        yield true;
+                    }
                 };
-        context.replaceBaseState(nextBaseState);
-    }
-
-    private BuntResult buntResult(GameBattingContext context, BatterEntity batter) {
-        return context.getCurrentBaseState()
-                .buntOpportunityByBase()
-                .map(_ -> batter.bunt(context.getOutCount(), context.getCurrentBaseState()))
-                .orElse(BuntResult.NOT_TRY);
-    }
-
-    private void trySteal(GameBattingContext context) {
-
-        context.getCurrentBaseState()
-                .stealOpportunity()
-                .ifPresent(
-                        opportunity -> {
-                            switch (stealResult(opportunity)) {
-                                case NOT_TRY -> {}
-                                case FAILURE -> {
-                                    context.addOutCounts(1);
-                                    applyTransition(
-                                            context,
-                                            context.getCurrentBaseState()
-                                                    .caughtStealing(opportunity));
-                                }
-                                case SUCCESS ->
-                                        applyTransition(
-                                                context,
-                                                context.getCurrentBaseState()
-                                                        .succeedSteal(opportunity));
-                            }
-                        });
+        if (bunted) {
+            return true;
+        }
+        switch (batter.swing(context.getCurrentState().runnerCount())) {
+            case OUT -> context.out();
+            case HIT_SINGLE -> context.hitSingle(batter);
+            case HIT_DOUBLE -> context.hitDouble(batter);
+            case HIT_TRIPLE -> context.hitTriple(batter);
+            case HIT_HOMER -> context.hitHomer();
+        }
+        return true;
     }
 
     private StealResult stealResult(Stealable stealable) {
         return switch (stealable.targetBase()) {
             case FIRST -> throw new IllegalArgumentException("盗塁先は二塁または三塁である必要があります");
-            case SECOND -> stealable.runner().stealToDouble();
-            case THIRD -> stealable.runner().stealToTriple();
+            case SECOND -> stealable.stealToDouble();
+            case THIRD -> stealable.stealToTriple();
         };
-    }
-
-    private boolean applyBuntResult(GameBattingContext context, BuntResult buntResult) {
-        return switch (buntResult) {
-            case NOT_TRY -> false;
-            case FAILURE -> {
-                context.addOutCounts(1);
-                yield true;
-            }
-            case SUCCESS -> {
-                applyTransition(context, context.getCurrentBaseState().sacrificeBunt());
-                context.addOutCounts(1);
-                yield true;
-            }
-        };
-    }
-
-    private BasesState applyTransition(GameBattingContext context, BaseTransition transition) {
-        context.addScore(transition.scoredRuns());
-        return transition.nextState();
     }
 }
