@@ -13,7 +13,6 @@ import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
-import com.example.baseballorders.simulator.application.mapper.LineUpMapper;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
@@ -23,6 +22,7 @@ import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatisticsRecorder;
 import com.example.baseballorders.simulator.domain.model.statistics.ScoreAccumulator;
+import com.example.baseballorders.simulator.infrastructure.messaging.LineUpMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
@@ -44,10 +44,16 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 class SqsSimulationSchedulerIntegrationTest {
 
     /**
-     * 実物: SQS互換サービス（ElasticMQ/Floci）、Scheduler、ObjectMapper、LineUpMapper。 モック:
-     * SimulateGameUseCase、固定の打撃・盗塁・バント戦略。 担保する疎通: request SQS -> Scheduler -> result SQS ->
-     * 共有結果メッセージ、および要求削除。request SQS -> Scheduler -> LineUpMapper -> 打者の盗塁・バント選択。 担保しないもの:
-     * 試合計算の正当性、backendのHTTP応答、AWS実環境。
+     * Integration Test
+     *
+     * <p>実物: SQS互換サービス（ElasticMQ/Floci）、Scheduler、ObjectMapper、LineUpMapper、打撃・盗塁・バント戦略。
+     *
+     * <p>モック: SimulateGameUseCase。
+     *
+     * <p>担保する疎通: request SQS -> Scheduler -> result SQS -> 共有結果メッセージ、および要求削除。request SQS ->
+     * Scheduler -> LineUpMapper -> 打者の盗塁・バント選択。
+     *
+     * <p>担保しないもの: 試合計算の正当性、backendのHTTP応答、AWS実環境。
      */
     @Disabled
     @Test

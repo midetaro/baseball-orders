@@ -2,10 +2,12 @@ package com.example.baseballorders.simulator.domain.model.situation;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
+import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.behavior.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.BatterTestDataFactory;
@@ -15,6 +17,7 @@ import com.example.baseballorders.simulator.domain.model.base.capability.Advanci
 import com.example.baseballorders.simulator.domain.model.base.capability.Buntable;
 import com.example.baseballorders.simulator.domain.model.base.capability.SqueezeBuntable;
 import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
+import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.MockedStatic;
 
 class BasesStateTransitionTest {
     private static final List<BatterEntity> BATTERS = BatterTestDataFactory.mock();
@@ -195,6 +199,47 @@ class BasesStateTransitionTest {
 
     static IntStream configurations() {
         return IntStream.range(0, 8);
+    }
+
+    @ParameterizedTest(name = "配置{0}・二塁への盗塁{1}")
+    @MethodSource("unsupportedStealDestinations")
+    @DisplayName("現在の走者配置から選べない進塁先には盗塁を試行しない")
+    void doesNotAttemptStealToUnsupportedDestination(int mask, boolean toDouble) {
+        // given
+        var state = (Stealable) context(mask, 0).getCurrentState();
+
+        // when
+        StealResult result = toDouble ? state.stealToDouble() : state.stealToTriple();
+
+        // then
+        assertAll(() -> assertEquals(StealResult.NOT_TRY, result));
+    }
+
+    static Stream<Arguments> unsupportedStealDestinations() {
+        return Stream.of(
+                arguments(1, false), arguments(5, false), arguments(2, true), arguments(3, true));
+    }
+
+    @ParameterizedTest(name = "配置{0}・二塁への盗塁{1}")
+    @MethodSource("supportedStealDestinations")
+    @DisplayName("複数走者の配置で対象走者に盗塁を試行させる")
+    void attemptsStealToSupportedDestination(int mask, boolean toDouble) {
+        // given
+        var state = (Stealable) context(mask, 0).getCurrentState();
+
+        // when
+        StealResult result;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.0f);
+            result = toDouble ? state.stealToDouble() : state.stealToTriple();
+        }
+
+        // then
+        assertAll(() -> assertEquals(StealResult.NOT_TRY, result));
+    }
+
+    static Stream<Arguments> supportedStealDestinations() {
+        return Stream.of(arguments(5, true), arguments(3, false));
     }
 
     @ParameterizedTest(name = "配置{0}")

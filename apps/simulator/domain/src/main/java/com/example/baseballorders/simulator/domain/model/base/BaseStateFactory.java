@@ -1,10 +1,8 @@
 package com.example.baseballorders.simulator.domain.model.base;
 
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
-import org.springframework.stereotype.Component;
 
 /** 試合ごとのStateを初期生成する、状態を持たないファクトリ。 */
-@Component
 public class BaseStateFactory {
     /**
      * NoBasesStateを生成する。

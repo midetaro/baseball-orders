@@ -16,7 +16,6 @@ import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
-import com.example.baseballorders.simulator.application.mapper.LineUpMapper;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.entity.behavior.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.entity.behavior.batting.HittingStrategy;
@@ -24,6 +23,7 @@ import com.example.baseballorders.simulator.domain.entity.behavior.steal.StealSt
 import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
 import com.example.baseballorders.simulator.domain.model.statistics.ScoreAccumulator;
+import com.example.baseballorders.simulator.infrastructure.messaging.LineUpMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;

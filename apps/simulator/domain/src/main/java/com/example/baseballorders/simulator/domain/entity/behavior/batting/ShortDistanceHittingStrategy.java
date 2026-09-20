@@ -2,10 +2,8 @@ package com.example.baseballorders.simulator.domain.entity.behavior.batting;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
-import org.springframework.stereotype.Component;
 
 /** 短距離バッター */
-@Component("shortDistanceAtBat")
 public final class ShortDistanceHittingStrategy implements HittingStrategy {
 
     @Override

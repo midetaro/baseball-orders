@@ -6,6 +6,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.code.StealResult;
+import com.example.baseballorders.simulator.domain.entity.behavior.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.entity.behavior.steal.EagerStealStrategy;
 import com.example.baseballorders.simulator.domain.entity.behavior.steal.NowayStealStrategy;
 import com.example.baseballorders.simulator.domain.entity.behavior.steal.StealStrategy;
@@ -108,6 +109,54 @@ class StealBehaviorTest {
                         new EagerStealStrategy(),
                         Destination.THIRD,
                         0.985f,
+                        StealResult.FAILURE),
+                arguments(
+                        "標準戦略で二塁への試行確率未満なら試行しない",
+                        BehaviorStrategies.standardSteal(),
+                        Destination.SECOND,
+                        0.79f,
+                        StealResult.NOT_TRY),
+                arguments(
+                        "標準戦略で二塁への試行境界と等しければ失敗する",
+                        BehaviorStrategies.standardSteal(),
+                        Destination.SECOND,
+                        0.8f,
+                        StealResult.FAILURE),
+                arguments(
+                        "標準戦略で二塁への成功範囲内なら成功する",
+                        BehaviorStrategies.standardSteal(),
+                        Destination.SECOND,
+                        0.9f,
+                        StealResult.SUCCESS),
+                arguments(
+                        "標準戦略で二塁への成功上限と等しければ失敗する",
+                        BehaviorStrategies.standardSteal(),
+                        Destination.SECOND,
+                        0.98f,
+                        StealResult.FAILURE),
+                arguments(
+                        "標準戦略で三塁への試行確率未満なら試行しない",
+                        BehaviorStrategies.standardSteal(),
+                        Destination.THIRD,
+                        0.94f,
+                        StealResult.NOT_TRY),
+                arguments(
+                        "標準戦略で三塁への試行境界と等しければ失敗する",
+                        BehaviorStrategies.standardSteal(),
+                        Destination.THIRD,
+                        0.95f,
+                        StealResult.FAILURE),
+                arguments(
+                        "標準戦略で三塁への成功範囲内なら成功する",
+                        BehaviorStrategies.standardSteal(),
+                        Destination.THIRD,
+                        0.97f,
+                        StealResult.SUCCESS),
+                arguments(
+                        "標準戦略で三塁への成功上限と等しければ失敗する",
+                        BehaviorStrategies.standardSteal(),
+                        Destination.THIRD,
+                        0.995f,
                         StealResult.FAILURE));
     }
 

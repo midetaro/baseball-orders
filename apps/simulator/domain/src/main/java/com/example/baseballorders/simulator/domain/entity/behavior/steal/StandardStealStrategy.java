@@ -2,10 +2,9 @@ package com.example.baseballorders.simulator.domain.entity.behavior.steal;
 
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
-import org.springframework.stereotype.Component;
 
-@Component("standardStealStrategy")
-final class StandardStealStrategy implements StealStrategy {
+/** 選手の盗塁成功率に基づく標準的な盗塁戦略。 */
+public final class StandardStealStrategy implements StealStrategy {
 
     private final float TRY_AVERAGE = 0.2f;
     private final float NOT_TRY = 1 - TRY_AVERAGE;

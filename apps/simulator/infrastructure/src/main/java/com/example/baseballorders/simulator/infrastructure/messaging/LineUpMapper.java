@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.application.mapper;
+package com.example.baseballorders.simulator.infrastructure.messaging;
 
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
@@ -9,10 +9,9 @@ import com.example.baseballorders.simulator.domain.entity.behavior.steal.StealSt
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-/** Maps player data received by the application to the simulation domain model. */
+/** Maps player data received through SQS to the simulation domain model. */
 @Component
 public class LineUpMapper {
 
@@ -30,9 +29,9 @@ public class LineUpMapper {
      * @param buntStrategy bunt strategy assigned to each batter
      */
     public LineUpMapper(
-            @Qualifier("middleDistanceHittingStrategy") HittingStrategy hittingStrategy,
-            @Qualifier("standardStealStrategy") StealStrategy stealStrategy,
-            @Qualifier("standardBuntStrategy") BuntStrategy buntStrategy) {
+            HittingStrategy hittingStrategy,
+            StealStrategy stealStrategy,
+            BuntStrategy buntStrategy) {
         this.hittingStrategy = hittingStrategy;
         this.stealStrategy = stealStrategy;
         this.buntStrategy = buntStrategy;
