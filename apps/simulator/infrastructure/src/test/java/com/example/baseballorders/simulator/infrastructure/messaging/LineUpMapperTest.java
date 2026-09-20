@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.application;
+package com.example.baseballorders.simulator.infrastructure.messaging;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -6,7 +6,6 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
-import com.example.baseballorders.simulator.application.mapper.LineUpMapper;
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
@@ -20,7 +19,6 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 class LineUpMapperTest {
 
@@ -136,23 +134,6 @@ class LineUpMapperTest {
                 () ->
                         assertEquals(
                                 stealEnabled ? 2 : 0, statisticsRecorder.snapshot().stealCount()));
-    }
-
-    @Test
-    @DisplayName("既定の打撃戦略には中距離バッターを指定する")
-    void usesmiddleDistanceHittingStrategyAsDefault() {
-        // given
-        var constructor = LineUpMapper.class.getConstructors()[0];
-
-        // when
-        Qualifier qualifier = constructor.getParameters()[0].getAnnotation(Qualifier.class);
-
-        // then
-        assertAll(
-                () -> assertEquals("middleDistanceHittingStrategy", qualifier.value()),
-                () ->
-                        assertEquals(
-                                HittingStrategy.class, constructor.getParameters()[0].getType()));
     }
 
     @Test

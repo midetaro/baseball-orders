@@ -8,24 +8,36 @@ package "model" {
   class GameBattingContext {
     - inning: long
     - totalScore: long
-    - outCount: OutCount
-    - currentBaseState: BasesState
+    - currentState: BasesState
+    - statisticsRecorder: GameStatisticsRecorder
     - gameCompletionObserver: GameCompletionObserver
     - batterEntityOrders: List<BatterEntity>
     - numberOfNextBatter: int
     - isGameOver: boolean
     + GameBattingContext(lineUp: LineUpEntity)
     + GameBattingContext(lineUp: LineUpEntity, observer: GameCompletionObserver)
+    + GameBattingContext(lineUp: LineUpEntity, observer: GameCompletionObserver, baseStateFactory: BaseStateFactory)
     + addScore(runs: long): void
-    + addOutCounts(diff: long): void
+    + changeState(configuration: int): void
+    + completeInning(): void
     + nextAtBat(): void
     + getGameStatistics(): GameStatistics
-    ~ replaceBaseState(baseState: BasesState): void
+    + out(): void
+    + hitSingle(batter: BatterEntity): void
+    + hitDouble(batter: BatterEntity): void
+    + hitTriple(batter: BatterEntity): void
+    + hitHomer(): void
+    + buntNotTry(): void
+    + buntFailure(): void
+    + buntSuccess(): void
+    + isBuntable(): boolean
+    + stealNotTry(): void
+    + stealFailure(): void
+    + stealSuccess(): void
   }
 
   class AtBatProcessor <<domain service>> {
-    ~ process(context: GameBattingContext, batter: BatterEntity,
-      statisticsRecorder: GameStatisticsRecorder): void
+    ~ process(context: GameBattingContext, batter: BatterEntity): boolean
   }
 }
 
@@ -37,8 +49,12 @@ package "model.player" {
     - sluggish: float
     - buntSuccessRate: float
     - stealSuccessRate: float
+    - hittingStrategy: HittingStrategy
+    - stealStrategy: StealStrategy
+    - buntStrategy: BuntStrategy
+    - playResultObserver: PlayResultObserver
     + swing(runnerCount: int): BattingResult
-    + bunt(outCount: OutCount, basesState: BasesState): BuntResult
+    + bunt(outCount: OutCount): BuntResult
     + stealToDouble(): StealResult
     + stealToTriple(): StealResult
     + observedBy(observer: PlayResultObserver): BatterEntity
@@ -51,45 +67,74 @@ package "model.player" {
 }
 
 package "model.behavior" {
-  interface AtBatBehavior {
+  interface HittingStrategy <<sealed>> {
     + batting(onBasePercentage: float, sluggish: float): BattingResult
   }
 
-  interface BuntStrategy {
-    + bunt(successRate: float, outCount: OutCount, basesState: BasesState): BuntResult
+  interface BuntStrategy <<sealed>> {
+    + bunt(successRate: float, outCount: OutCount): BuntResult
   }
 
-  interface StealStrategy {
+  interface StealStrategy <<sealed>> {
     + runToDouble(successRate: float): StealResult
     + runToTriple(successRate: float): StealResult
   }
 }
 
-package "model.state" {
-  abstract class BasesState {
-    - firstRunner: BatterEntity
-    - secondRunner: BatterEntity
-    - thirdRunner: BatterEntity
+package "model.base" {
+  interface BasesState {
+    + getOutCount(): OutCount
     + runnerAt(base: Base): BatterEntity
     + runnerCount(): int
-    + advance(bases: Base): BasesState
-    + withRunnerAt(base: Base, runner: BatterEntity): BasesState
-    + out(context: GameBattingContext): void
-    + {abstract} hitSingle(context: GameBattingContext, batter: BatterEntity): BasesState
-    + {abstract} hitDouble(context: GameBattingContext, batter: BatterEntity): BasesState
-    + {abstract} hitTriple(context: GameBattingContext, batter: BatterEntity): BasesState
-    + {abstract} hitHomer(context: GameBattingContext, batter: BatterEntity): BasesState
-    + {static} empty(): BasesState
+    + isOccupied(base: Base): boolean
+    + out(): void
+    + hitSingle(batter: BatterEntity): void
+    + hitDouble(batter: BatterEntity): void
+    + hitTriple(batter: BatterEntity): void
+    + hitHomer(): void
   }
 
-  interface Stealable
-
-  interface StealableToDoubleBase {
-    + runnerOnFirst(): BatterEntity
+  abstract class AbstractBasesState {
+    # context: GameBattingContext
+    - inningState: InningState
+    + runnerAt(base: Base): BatterEntity
+    + getOutCount(): OutCount
+    + runnerCount(): int
+    + isOccupied(base: Base): boolean
+    + out(): void
+    + advanceRunnersByBunt(): void
+    + retireRunnerOnThird(): void
+    + scoreRunnerOnThird(): void
+    + stealNotTry(): void
+    + stealFailure(): void
+    + stealSuccess(): void
+    # attemptBunt(batter: BatterEntity): BuntResult
+    # attemptStealToDouble(): StealResult
+    # attemptStealToTriple(): StealResult
+    # transition(first: BatterEntity, second: BatterEntity, third: BatterEntity, runs: long): void
   }
 
-  interface StealableToTripleBase {
-    + runnerOnSecond(): BatterEntity
+  class InningState {
+    - outCount: OutCount
+    - first: BatterEntity
+    - second: BatterEntity
+    - third: BatterEntity
+    + getOutCount(): OutCount
+    + runnerAt(base: Base): BatterEntity
+    ~ place(first: BatterEntity, second: BatterEntity, third: BatterEntity): void
+    ~ addOut(): void
+    ~ reset(): void
+  }
+
+  class BaseStateFactory {
+    + createNoBasesState(context: GameBattingContext, inningState: InningState): NoBasesState
+    + createSingleBasesState(context: GameBattingContext, inningState: InningState): SingleBasesState
+    + createDoubleBaseState(context: GameBattingContext, inningState: InningState): DoubleBaseState
+    + createFirstDoubleBaseState(context: GameBattingContext, inningState: InningState): FirstDoubleBaseState
+    + createThirdBaseState(context: GameBattingContext, inningState: InningState): ThirdBaseState
+    + createFirstThirdBaseState(context: GameBattingContext, inningState: InningState): FirstThirdBaseState
+    + createDoubleThirdBaseState(context: GameBattingContext, inningState: InningState): DoubleThirdBaseState
+    + createFullBasesState(context: GameBattingContext, inningState: InningState): FullBasesState
   }
 
   class NoBasesState
@@ -100,6 +145,43 @@ package "model.state" {
   class FirstThirdBaseState
   class DoubleThirdBaseState
   class FullBasesState
+}
+
+package "model.base.capability" {
+  interface Buntable <<sealed>> {
+    + bunt(batter: BatterEntity): BuntResult
+    + buntNotTry(): void
+    + buntFailure(): void
+    + buntSuccess(): void
+  }
+
+  interface AdvancingBuntable <<non-sealed>> {
+    + advanceRunnersByBunt(): void
+  }
+
+  interface SqueezeBuntable <<non-sealed>> {
+    + retireRunnerOnThird(): void
+    + scoreRunnerOnThird(): void
+  }
+
+  interface Stealable <<sealed>> {
+    + runner(): BatterEntity
+    + sourceBase(): Base
+    + targetBase(): Base
+    + stealToDouble(): StealResult
+    + stealToTriple(): StealResult
+    + stealNotTry(): void
+    + stealFailure(): void
+    + stealSuccess(): void
+  }
+
+  interface StealableToDoubleBase <<non-sealed>> {
+    + runnerOnFirst(): BatterEntity
+  }
+
+  interface StealableToTripleBase <<non-sealed>> {
+    + runnerOnSecond(): BatterEntity
+  }
 }
 
 package "model.statistics" {
@@ -136,6 +218,23 @@ package "model.statistics" {
     + buntFailureCount: int
     + stealFailureCount: int
   }
+
+  class ScoreStatistics <<record>> {
+    + averageScore: double
+    + medianScore: double
+    + maximumScore: int
+    + gameCount: int
+    + scoreDistribution: Map<Integer, Integer>
+    + homeRunCount: int
+    + soloHomeRunCount: int
+    + twoRunHomeRunCount: int
+    + threeRunHomeRunCount: int
+    + grandSlamCount: int
+    + buntCount: int
+    + stealCount: int
+    + buntFailureCount: int
+    + stealFailureCount: int
+  }
 }
 
 package "code" {
@@ -149,6 +248,7 @@ package "code" {
     ONE_OUT
     TWO_OUT
     THREE_OUT
+    + add(increment: long): OutCount
   }
   enum BattingResult {
     OUT
@@ -172,54 +272,74 @@ package "code" {
 GameBattingContext *-- "1" AtBatProcessor
 GameBattingContext *-- "1" GameStatisticsRecorder
 GameBattingContext --> GameCompletionObserver : notifies
-GameBattingContext --> "1" OutCount
-GameBattingContext --> "1" BasesState
+GameBattingContext --> "1" BasesState : currentState
+GameBattingContext *-- "8" AbstractBasesState : game-specific states
+GameBattingContext ..> BaseStateFactory : creates states through
 GameBattingContext --> "1" LineUpEntity : creates from
 GameBattingContext --> "0..9" BatterEntity : batting order
 
 AtBatProcessor --> GameBattingContext : updates
 AtBatProcessor --> BatterEntity : processes
-AtBatProcessor --> BasesState : applies results
-AtBatProcessor ..> Base
-AtBatProcessor ..> BattingResult
-AtBatProcessor ..> BuntResult
-AtBatProcessor ..> StealResult
+AtBatProcessor ..> BasesState
+AtBatProcessor ..> Stealable
 
 LineUpEntity *-- "0..9" BatterEntity
 BatterEntity --|> Player
-BatterEntity *-- AtBatBehavior
+BatterEntity *-- HittingStrategy
 BatterEntity *-- BuntStrategy
 BatterEntity *-- StealStrategy
-BatterEntity ..> OutCount
-BatterEntity ..> BasesState
 BatterEntity --> PlayResultObserver : notifies
-BatterEntity ..> GameStatisticsRecorder : binds per game
 BatterEntity ..> BattingResult
 BatterEntity ..> BuntResult
 BatterEntity ..> StealResult
 
-BasesState o-- "0..1" BatterEntity : firstRunner
-BasesState o-- "0..1" BatterEntity : secondRunner
-BasesState o-- "0..1" BatterEntity : thirdRunner
-BasesState ..> GameBattingContext : scores / outs
-BasesState ..> Base
+AbstractBasesState --> GameBattingContext : updates
+AbstractBasesState --> "1" InningState : shared state
+AbstractBasesState ..> Base
+AbstractBasesState ..> BatterEntity
+InningState o-- "0..3" BatterEntity : runners
+InningState --> "1" OutCount
+BaseStateFactory ..> AbstractBasesState : creates concrete states
 
-NoBasesState --|> BasesState
-SingleBasesState --|> BasesState
-DoubleBaseState --|> BasesState
-ThirdBaseState --|> BasesState
-FirstDoubleBaseState --|> BasesState
-FirstThirdBaseState --|> BasesState
-DoubleThirdBaseState --|> BasesState
-FullBasesState --|> BasesState
+NoBasesState --|> AbstractBasesState
+SingleBasesState --|> AbstractBasesState
+DoubleBaseState --|> AbstractBasesState
+ThirdBaseState --|> AbstractBasesState
+FirstDoubleBaseState --|> AbstractBasesState
+FirstThirdBaseState --|> AbstractBasesState
+DoubleThirdBaseState --|> AbstractBasesState
+FullBasesState --|> AbstractBasesState
+
+NoBasesState ..|> BasesState
+SingleBasesState ..|> BasesState
+DoubleBaseState ..|> BasesState
+ThirdBaseState ..|> BasesState
+FirstDoubleBaseState ..|> BasesState
+FirstThirdBaseState ..|> BasesState
+DoubleThirdBaseState ..|> BasesState
+FullBasesState ..|> BasesState
+
+Buntable --|> BasesState
+AdvancingBuntable --|> Buntable
+SqueezeBuntable --|> Buntable
+SingleBasesState ..|> AdvancingBuntable
+DoubleBaseState ..|> AdvancingBuntable
+FirstDoubleBaseState ..|> AdvancingBuntable
+ThirdBaseState ..|> SqueezeBuntable
+FirstThirdBaseState ..|> SqueezeBuntable
+DoubleThirdBaseState ..|> SqueezeBuntable
+FullBasesState ..|> SqueezeBuntable
+
+StealableToDoubleBase --|> Stealable
+StealableToTripleBase --|> Stealable
 SingleBasesState ..|> StealableToDoubleBase
 FirstThirdBaseState ..|> StealableToDoubleBase
 DoubleBaseState ..|> StealableToTripleBase
 FirstDoubleBaseState ..|> StealableToTripleBase
-StealableToDoubleBase --|> Stealable
-StealableToTripleBase --|> Stealable
 
 GameStatisticsRecorder ..|> PlayResultObserver
 GameStatisticsRecorder --> GameStatistics : creates
 ScoreAccumulator ..|> GameCompletionObserver
+ScoreAccumulator --> GameStatistics : aggregates
+ScoreAccumulator --> ScoreStatistics : creates
 @enduml

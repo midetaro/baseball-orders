@@ -2,10 +2,8 @@ package com.example.baseballorders.simulator.domain.entity.behavior.batting;
 
 import com.example.baseballorders.simulator.domain.code.BattingResult;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
-import org.springframework.stereotype.Component;
 
 /** 中距離バッター */
-@Component("middleDistanceHittingStrategy")
 public final class MiddleDistanceHittingStrategy implements HittingStrategy {
 
     public BattingResult batting(float onBasePercentage, float slugging) {

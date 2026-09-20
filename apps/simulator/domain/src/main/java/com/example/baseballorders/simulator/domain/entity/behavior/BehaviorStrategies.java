@@ -9,6 +9,7 @@ import com.example.baseballorders.simulator.domain.entity.behavior.bunt.NowayBun
 import com.example.baseballorders.simulator.domain.entity.behavior.bunt.StandardBuntStrategy;
 import com.example.baseballorders.simulator.domain.entity.behavior.steal.EagerStealStrategy;
 import com.example.baseballorders.simulator.domain.entity.behavior.steal.NowayStealStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.steal.StandardStealStrategy;
 import com.example.baseballorders.simulator.domain.entity.behavior.steal.StealStrategy;
 
 /** Provides behavior strategy instances without exposing their concrete implementations. */
@@ -41,6 +42,15 @@ public final class BehaviorStrategies {
      */
     public static StealStrategy eagerSteal() {
         return new EagerStealStrategy();
+    }
+
+    /**
+     * Creates the standard stealing behavior.
+     *
+     * @return a standard stealing behavior
+     */
+    public static StealStrategy standardSteal() {
+        return new StandardStealStrategy();
     }
 
     /**

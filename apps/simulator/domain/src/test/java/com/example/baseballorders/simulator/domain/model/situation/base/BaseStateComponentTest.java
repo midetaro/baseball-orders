@@ -2,59 +2,48 @@ package com.example.baseballorders.simulator.domain.model.situation.base;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.example.baseballorders.simulator.domain.model.base.*;
+import com.example.baseballorders.simulator.domain.entity.behavior.batting.LongDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.batting.MiddleDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.batting.ShortDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.bunt.StandardBuntStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.steal.EagerStealStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.steal.NowayStealStrategy;
+import com.example.baseballorders.simulator.domain.entity.behavior.steal.StandardStealStrategy;
+import com.example.baseballorders.simulator.domain.model.base.BaseStateFactory;
 import java.util.List;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-import org.springframework.stereotype.Component;
 
 class BaseStateComponentTest {
 
-    @DisplayName("塁状態はBean化せず状態ファクトリだけをSpringコンポーネントにする")
+    @DisplayName("domainの状態ファクトリと戦略はSpringアノテーションに依存しない")
     @Test
-    void onlyBaseStateFactoryIsComponent() throws ClassNotFoundException {
+    void domainTypesDoNotDependOnSpringAnnotations() {
         // given
-        List<Class<? extends BasesState>> baseStates =
+        List<Class<?>> domainTypes =
                 List.of(
-                        DoubleBaseState.class,
-                        DoubleThirdBaseState.class,
-                        FirstDoubleBaseState.class,
-                        FirstThirdBaseState.class,
-                        FullBasesState.class,
-                        NoBasesState.class,
-                        SingleBasesState.class,
-                        ThirdBaseState.class);
+                        BaseStateFactory.class,
+                        LongDistanceHittingStrategy.class,
+                        MiddleDistanceHittingStrategy.class,
+                        ShortDistanceHittingStrategy.class,
+                        StandardBuntStrategy.class,
+                        EagerStealStrategy.class,
+                        NowayStealStrategy.class,
+                        StandardStealStrategy.class);
 
         // when
-        Class<?> factory =
-                Class.forName(
-                        "com.example.baseballorders.simulator.domain.model.base.BaseStateFactory");
+        var annotationTypeNames =
+                domainTypes.stream()
+                        .flatMap(type -> java.util.Arrays.stream(type.getAnnotations()))
+                        .map(annotation -> annotation.annotationType().getName())
+                        .toList();
 
         // then
         assertAll(
-                Stream.concat(
-                                Stream.of(
-                                        (Executable)
-                                                () ->
-                                                        assertTrue(
-                                                                factory.isAnnotationPresent(
-                                                                        Component.class))),
-                                baseStates.stream()
-                                        .map(
-                                                baseState ->
-                                                        (Executable)
-                                                                () ->
-                                                                        assertFalse(
-                                                                                baseState
-                                                                                        .isAnnotationPresent(
-                                                                                                Component
-                                                                                                        .class),
-                                                                                baseState
-                                                                                        ::getSimpleName)))
-                        .toList());
+                () ->
+                        assertFalse(
+                                annotationTypeNames.stream()
+                                        .anyMatch(name -> name.startsWith("org.springframework"))));
     }
 }
