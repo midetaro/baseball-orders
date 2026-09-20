@@ -6,7 +6,6 @@ import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
-import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
 import com.example.baseballorders.simulator.domain.model.base.capability.StealableToDoubleBase;
 import com.example.baseballorders.simulator.domain.model.base.capability.StealableToTripleBase;
 import lombok.RequiredArgsConstructor;
@@ -50,8 +49,8 @@ public abstract class AbstractBasesState {
         }
     }
 
-    protected final BuntResult attemptBunt(BasesState state, BatterEntity batter) {
-        return batter.bunt(state);
+    protected final BuntResult attemptBunt(BatterEntity batter) {
+        return batter.bunt(inningState.getOutCount());
     }
 
     protected final void applyHitTriple(BatterEntity batter) {
@@ -92,8 +91,7 @@ public abstract class AbstractBasesState {
     public final void stealNotTry() {}
 
     public final void stealFailure() {
-        Stealable opportunity = requireSteal();
-        if (opportunity instanceof StealableToDoubleBase) {
+        if (this instanceof StealableToDoubleBase) {
             transition(null, runnerAt(Base.SECOND), runnerAt(Base.THIRD), 0);
         } else {
             transition(runnerAt(Base.FIRST), null, runnerAt(Base.THIRD), 0);
@@ -102,8 +100,7 @@ public abstract class AbstractBasesState {
     }
 
     public final void stealSuccess() {
-        Stealable opportunity = requireSteal();
-        if (opportunity instanceof StealableToDoubleBase) {
+        if (this instanceof StealableToDoubleBase) {
             transition(null, runnerAt(Base.FIRST), runnerAt(Base.THIRD), 0);
         } else {
             transition(runnerAt(Base.FIRST), null, runnerAt(Base.SECOND), 0);
@@ -117,12 +114,5 @@ public abstract class AbstractBasesState {
         int configuration =
                 (first == null ? 0 : 1) | (second == null ? 0 : 2) | (third == null ? 0 : 4);
         context.changeState(configuration);
-    }
-
-    private Stealable requireSteal() {
-        if (this instanceof Stealable stealable) {
-            return stealable;
-        }
-        throw new IllegalStateException("盗塁機会がありません");
     }
 }

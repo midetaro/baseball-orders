@@ -1,7 +1,7 @@
 package com.example.baseballorders.simulator.domain.entity.behavior.bunt;
 
 import com.example.baseballorders.simulator.domain.code.BuntResult;
-import com.example.baseballorders.simulator.domain.model.base.BasesState;
+import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import org.springframework.stereotype.Component;
 
@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 public final class StandardBuntStrategy implements BuntStrategy {
 
     @Override
-    public BuntResult bunt(float successRate, BasesState basesState) {
-        return switch (basesState.getOutCount()) {
+    public BuntResult bunt(float successRate, OutCount outCount) {
+        return switch (outCount) {
             case NO_OUT -> attempt(successRate);
             case ONE_OUT, TWO_OUT, THREE_OUT -> BuntResult.NOT_TRY;
         };

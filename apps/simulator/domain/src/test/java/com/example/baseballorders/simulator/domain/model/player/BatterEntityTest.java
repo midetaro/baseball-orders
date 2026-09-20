@@ -41,12 +41,7 @@ class BatterEntityTest {
         BuntResult result;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.1f);
-            result =
-                    observedBatter.bunt(
-                            com.example.baseballorders.simulator.domain.model.situation
-                                    .GameStateTestFixture.context(
-                                            observedBatter, null, null, OutCount.NO_OUT)
-                                    .getCurrentState());
+            result = observedBatter.bunt(OutCount.NO_OUT);
         }
 
         // then
@@ -125,10 +120,7 @@ class BatterEntityTest {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.99f, 0.99f);
             var observedBatter = batter.observedBy(statisticsRecorder);
             observedBatter.swing(0);
-            observedBatter.bunt(
-                    com.example.baseballorders.simulator.domain.model.situation.GameStateTestFixture
-                            .context(observedBatter, null, null, OutCount.NO_OUT)
-                            .getCurrentState());
+            observedBatter.bunt(OutCount.NO_OUT);
             observedBatter.stealToDouble();
             observedBatter.stealToTriple();
         }

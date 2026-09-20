@@ -4,7 +4,11 @@ import com.example.baseballorders.simulator.domain.code.Base;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 
-/** 盗塁を試みる走者と進塁経路を表す塁状態の能力。 */
+/**
+ * 盗塁を試みる走者と進塁経路を表す塁状態の能力。
+ *
+ * <p>盗塁は、打者ではなくランナーの情報を受け取る必要がある。
+ */
 public sealed interface Stealable permits StealableToDoubleBase, StealableToTripleBase {
 
     /**

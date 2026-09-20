@@ -236,6 +236,11 @@ public class GameBattingContext {
         }
     }
 
+    /** 現在の走者配置でバントを試みられるかを返す。 @return バントを試みられる場合は {@code true} */
+    public final boolean isBuntable() {
+        return currentState instanceof Buntable;
+    }
+
     /**
      * 盗塁成功を適用する。試合終了後は何もしない。
      *
