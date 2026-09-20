@@ -484,3 +484,4 @@ If and only if:
 - blocking findings = 0,
 
 update the feature specification status from `in_progress` to `done`.
+rename the feature specification file with prefix of `done`.

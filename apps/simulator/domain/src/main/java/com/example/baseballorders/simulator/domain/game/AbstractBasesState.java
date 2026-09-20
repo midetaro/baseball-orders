@@ -6,11 +6,16 @@ import com.example.baseballorders.simulator.domain.play.BuntResult;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
 import lombok.RequiredArgsConstructor;
 
 /** 試合とイニング状態を共有するStateの共通基底実装。 */
 @RequiredArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public abstract class AbstractBasesState {
+
+    private static final float ADVANCE_FROM_FIRST_PROBABILITY = 0.2f;
+    private static final float ADVANCE_FROM_SECOND_PROBABILITY = 0.2f;
+    private static final float ADVANCE_FROM_THIRD_PROBABILITY = 0.1f;
 
     protected final GameBattingContext context;
     private final InningState inningState;
@@ -45,6 +50,22 @@ public abstract class AbstractBasesState {
             context.changeState(0);
             context.completeInning();
         }
+    }
+
+    /** 打撃による凡退を適用し、三死目でなければ塁ごとの確率で先頭走者だけを進める。 */
+    public final void battingOut() {
+        Base leadRunnerBase = leadRunnerBase();
+        boolean canAdvance =
+                switch (getOutCount()) {
+                    case NO_OUT, ONE_OUT -> true;
+                    case TWO_OUT, THREE_OUT -> false;
+                };
+        if (canAdvance
+                && leadRunnerBase != null
+                && RandomGenerator.nextFloat() < advancementProbability(leadRunnerBase)) {
+            advanceLeadRunner(leadRunnerBase);
+        }
+        out();
     }
 
     protected final BuntResult attemptBunt(BatterEntity batter) {
@@ -113,4 +134,37 @@ public abstract class AbstractBasesState {
                 (first == null ? 0 : 1) | (second == null ? 0 : 2) | (third == null ? 0 : 4);
         context.changeState(configuration);
     }
+
+    private Base leadRunnerBase() {
+        if (isOccupied(Base.THIRD)) {
+            return Base.THIRD;
+        }
+        if (isOccupied(Base.SECOND)) {
+            return Base.SECOND;
+        }
+        return isOccupied(Base.FIRST) ? Base.FIRST : null;
+    }
+
+    private float advancementProbability(Base base) {
+        return switch (base) {
+            case FIRST -> ADVANCE_FROM_FIRST_PROBABILITY;
+            case SECOND -> ADVANCE_FROM_SECOND_PROBABILITY;
+            case THIRD -> ADVANCE_FROM_THIRD_PROBABILITY;
+        };
+    }
+
+    private void advanceLeadRunner(Base base) {
+        RunnerAdvance advance =
+                switch (base) {
+                    case FIRST -> new RunnerAdvance(null, runnerAt(Base.FIRST), null, 0);
+                    case SECOND ->
+                            new RunnerAdvance(runnerAt(Base.FIRST), null, runnerAt(Base.SECOND), 0);
+                    case THIRD ->
+                            new RunnerAdvance(runnerAt(Base.FIRST), runnerAt(Base.SECOND), null, 1);
+                };
+        transition(advance.first(), advance.second(), advance.third(), advance.runs());
+    }
+
+    private record RunnerAdvance(
+            BatterEntity first, BatterEntity second, BatterEntity third, long runs) {}
 }

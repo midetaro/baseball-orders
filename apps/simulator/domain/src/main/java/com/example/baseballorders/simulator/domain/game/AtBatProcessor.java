@@ -52,7 +52,7 @@ final class AtBatProcessor {
         }
 
         switch (batter.swing(context.getCurrentState().runnerCount())) {
-            case OUT -> context.out();
+            case OUT -> context.battingOut();
             case HIT_SINGLE -> context.hitSingle(batter);
             case HIT_DOUBLE -> context.hitDouble(batter);
             case HIT_TRIPLE -> context.hitTriple(batter);
