@@ -2,6 +2,7 @@ package com.example.baseballorders.backend.infrastructure.web;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.awspring.cloud.sqs.operations.SqsTemplate;
@@ -169,7 +170,8 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("id=\"reset-all-personalities\"")),
                 () -> assertTrue(response.body().contains("性格")),
                 () -> assertTrue(response.body().contains("DEFAULT:'標準'")),
-                () -> assertTrue(response.body().contains("EAGER_SLUGGISH:'長打重視'")),
+                () -> assertTrue(response.body().contains("EAGER_SLUGGISH:'ブンブン丸'")),
+                () -> assertFalse(response.body().contains("EAGER_SLUGGISH:'長打重視'")),
                 () -> assertTrue(response.body().contains("EAGER_STEAL:'盗塁重視'")),
                 () -> assertTrue(response.body().contains("EAGER_BUNT:'バント重視'")),
                 () -> assertTrue(response.body().contains("personality:player.personality")));
@@ -194,10 +196,24 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("シミュレーションの仕組み")),
-                () -> assertContainsPattern(response.body(), "\\d+回"),
+                () -> assertTrue(response.body().contains("盗塁判定 → バント判定 → 通常打撃")),
+                () -> assertTrue(response.body().contains("各選手の入力項目")),
+                () -> assertTrue(response.body().contains("出塁率")),
+                () -> assertTrue(response.body().contains("長打率")),
+                () -> assertTrue(response.body().contains("バント成功率")),
+                () -> assertTrue(response.body().contains("盗塁成功率")),
+                () -> assertTrue(response.body().contains("バント・盗塁のオン／オフ")),
+                () -> assertTrue(response.body().contains("性格による違い")),
+                () -> assertTrue(response.body().contains("標準")),
+                () -> assertTrue(response.body().contains("盗塁は通常の頻度、バントは無死のときに試みます")),
+                () -> assertTrue(response.body().contains("ブンブン丸")),
+                () -> assertTrue(response.body().contains("標準より本塁打の割合が増える")),
+                () -> assertTrue(response.body().contains("盗塁重視")),
+                () -> assertTrue(response.body().contains("標準より一塁・二塁走者の盗塁を試みやすくなります")),
+                () -> assertTrue(response.body().contains("バント重視")),
+                () -> assertTrue(response.body().contains("一死でもバントを試みます")),
                 () -> assertTrue(response.body().contains("平均得点")),
                 () -> assertTrue(response.body().contains("盗塁死となり、アウトが一つ増えます")),
-                () -> assertTrue(response.body().contains("三塁走者がいない一・二塁の状況で、無死の場合だけ")),
                 () -> assertTrue(response.body().contains("打順を組み立てる")));
     }
 
