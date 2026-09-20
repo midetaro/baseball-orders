@@ -7,6 +7,7 @@ import com.example.baseballorders.simulator.application.usecase.SimulateGameUseC
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 /** Polls SQS for simulation requests and invokes the game simulation use case. */
 @Component
+@Slf4j
 public class SqsSimulationScheduler {
 
     private static final int MAX_MESSAGES_PER_POLL = 10;
@@ -59,9 +61,8 @@ public class SqsSimulationScheduler {
      * Receives pending requests from SQS, sends all simulation results in one message to the
      * configured result queue, and deletes the source message only after that send succeeds.
      * Rejects missing request fields before mapping or simulation, leaving invalid messages on SQS.
-     *
-     * @throws IllegalArgumentException when the request is invalid or the result cannot be
-     *     serialized
+     * A failure processing one message is logged without interrupting later messages in the same
+     * poll.
      */
     @Scheduled(fixedDelayString = "${simulation.sqs.poll-fixed-delay}")
     public void poll() {
@@ -75,55 +76,48 @@ public class SqsSimulationScheduler {
                                 .waitTimeSeconds(LONG_POLL_SECONDS)
                                 .maxNumberOfMessages(MAX_MESSAGES_PER_POLL)
                                 .build());
-        response.messages()
-                .forEach(
-                        message -> {
-                            // 送信
-                            SimulationRequestMessage request = deserialize(message.body());
-                            SimulationResult simulationResult =
-                                    simulateGameUseCase.invoke(lineUpMapper.map(request.players()));
-                            var resultMessage =
-                                    new SimulationResultMessage(
-                                            request.simulationId(),
-                                            request.version(),
-                                            new SimulationResultMessage.Statistics(
-                                                    simulationResult.statistics().averageScore(),
-                                                    simulationResult.statistics().medianScore(),
-                                                    simulationResult.statistics().maximumScore(),
-                                                    simulationResult.statistics().gameCount(),
-                                                    simulationResult
-                                                            .statistics()
-                                                            .scoreDistribution(),
-                                                    simulationResult.statistics().homeRunCount(),
-                                                    simulationResult
-                                                            .statistics()
-                                                            .soloHomeRunCount(),
-                                                    simulationResult
-                                                            .statistics()
-                                                            .twoRunHomeRunCount(),
-                                                    simulationResult
-                                                            .statistics()
-                                                            .threeRunHomeRunCount(),
-                                                    simulationResult.statistics().grandSlamCount(),
-                                                    simulationResult.statistics().buntCount(),
-                                                    simulationResult.statistics().stealCount(),
-                                                    simulationResult
-                                                            .statistics()
-                                                            .buntFailureCount(),
-                                                    simulationResult
-                                                            .statistics()
-                                                            .stealFailureCount()));
-                            sqsClient.sendMessage(
-                                    SendMessageRequest.builder()
-                                            .queueUrl(resultQueueUrl)
-                                            .messageBody(serialize(resultMessage))
-                                            .build());
-                            sqsClient.deleteMessage(
-                                    DeleteMessageRequest.builder()
-                                            .queueUrl(requestQueueUrl)
-                                            .receiptHandle(message.receiptHandle())
-                                            .build());
-                        });
+        for (var message : response.messages()) {
+            try {
+                // 送信
+                SimulationRequestMessage request = deserialize(message.body());
+                SimulationResult simulationResult =
+                        simulateGameUseCase.invoke(lineUpMapper.map(request.players()));
+                var resultMessage =
+                        new SimulationResultMessage(
+                                request.simulationId(),
+                                request.version(),
+                                new SimulationResultMessage.Statistics(
+                                        simulationResult.statistics().averageScore(),
+                                        simulationResult.statistics().medianScore(),
+                                        simulationResult.statistics().maximumScore(),
+                                        simulationResult.statistics().gameCount(),
+                                        simulationResult.statistics().scoreDistribution(),
+                                        simulationResult.statistics().homeRunCount(),
+                                        simulationResult.statistics().soloHomeRunCount(),
+                                        simulationResult.statistics().twoRunHomeRunCount(),
+                                        simulationResult.statistics().threeRunHomeRunCount(),
+                                        simulationResult.statistics().grandSlamCount(),
+                                        simulationResult.statistics().buntCount(),
+                                        simulationResult.statistics().stealCount(),
+                                        simulationResult.statistics().buntFailureCount(),
+                                        simulationResult.statistics().stealFailureCount()));
+                sqsClient.sendMessage(
+                        SendMessageRequest.builder()
+                                .queueUrl(resultQueueUrl)
+                                .messageBody(serialize(resultMessage))
+                                .build());
+                sqsClient.deleteMessage(
+                        DeleteMessageRequest.builder()
+                                .queueUrl(requestQueueUrl)
+                                .receiptHandle(message.receiptHandle())
+                                .build());
+            } catch (Throwable throwable) {
+                log.error(
+                        "Failed to process SQS simulation request messageId={}",
+                        message.messageId(),
+                        throwable);
+            }
+        }
     }
 
     private SimulationRequestMessage deserialize(String body) {

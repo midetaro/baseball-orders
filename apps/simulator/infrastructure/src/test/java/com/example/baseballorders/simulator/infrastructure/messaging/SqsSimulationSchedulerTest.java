@@ -2,7 +2,6 @@ package com.example.baseballorders.simulator.infrastructure.messaging;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -72,14 +71,10 @@ class SqsSimulationSchedulerTest {
                         "result-queue");
 
         // when
-        var exception = assertThrows(IllegalArgumentException.class, scheduler::poll);
+        scheduler.poll();
 
         // then
         assertAll(
-                () ->
-                        assertEquals(
-                                "Failed to deserialize an SQS simulation request",
-                                exception.getMessage()),
                 () -> verifyNoInteractions(useCase, mapper),
                 () -> verify(sqsClient, never()).sendMessage(any(SendMessageRequest.class)),
                 () -> verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class)));
@@ -240,6 +235,53 @@ class SqsSimulationSchedulerTest {
     }
 
     @Test
+    @DisplayName("先行メッセージでJVM致命Errorが発生しても後続メッセージを処理する")
+    void continuesWithNextMessageWhenPreviousMessageRaisesError() throws Exception {
+        // given
+        SqsClient sqsClient = mock(SqsClient.class);
+        SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
+        LineUpMapper mapper = mock(LineUpMapper.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        var request = new SimulationRequestMessage(UUID.randomUUID(), "1", List.of());
+        String body = objectMapper.writeValueAsString(request);
+        Message failingMessage =
+                Message.builder()
+                        .messageId("failing")
+                        .body(body)
+                        .receiptHandle("receipt-1")
+                        .build();
+        Message succeedingMessage =
+                Message.builder()
+                        .messageId("succeeding")
+                        .body(body)
+                        .receiptHandle("receipt-2")
+                        .build();
+        when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
+                .thenReturn(
+                        ReceiveMessageResponse.builder()
+                                .messages(failingMessage, succeedingMessage)
+                                .build());
+        when(useCase.invoke(any()))
+                .thenThrow(new OutOfMemoryError("fatal simulation failure"))
+                .thenReturn(simulationResult(List.of(new SimulationResponse(5, 4))));
+        stubQueueUrls(sqsClient);
+        var scheduler =
+                new SqsSimulationScheduler(
+                        sqsClient, objectMapper, useCase, mapper, "request-queue", "result-queue");
+        var deleteCaptor = ArgumentCaptor.forClass(DeleteMessageRequest.class);
+
+        // when
+        scheduler.poll();
+
+        // then
+        assertAll(
+                () -> verify(useCase, org.mockito.Mockito.times(2)).invoke(any()),
+                () -> verify(sqsClient).sendMessage(any(SendMessageRequest.class)),
+                () -> verify(sqsClient).deleteMessage(deleteCaptor.capture()),
+                () -> assertEquals("receipt-2", deleteCaptor.getValue().receiptHandle()));
+    }
+
+    @Test
     @DisplayName("シミュレーション結果をJSONへ変換できない場合はSQSへ送信せず元メッセージも削除しない")
     void doesNotSendOrDeleteWhenResponseSerializationFails() throws Exception {
         // given
@@ -263,15 +305,10 @@ class SqsSimulationSchedulerTest {
         stubQueueUrls(sqsClient);
 
         // when
-        IllegalArgumentException exception =
-                assertThrows(IllegalArgumentException.class, scheduler::poll);
+        scheduler.poll();
 
         // then
         assertAll(
-                () ->
-                        assertEquals(
-                                "Failed to serialize an SQS simulation response",
-                                exception.getMessage()),
                 () -> verify(sqsClient, never()).sendMessage(any(SendMessageRequest.class)),
                 () -> verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class)));
     }
@@ -302,11 +339,10 @@ class SqsSimulationSchedulerTest {
         stubQueueUrls(sqsClient);
 
         // when
-        SqsException exception = assertThrows(SqsException.class, scheduler::poll);
+        scheduler.poll();
 
         // then
         assertAll(
-                () -> assertEquals("send failed", exception.getMessage()),
                 () -> verify(sqsClient).sendMessage(any(SendMessageRequest.class)),
                 () -> verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class)));
     }
@@ -328,15 +364,10 @@ class SqsSimulationSchedulerTest {
         stubQueueUrls(sqsClient);
 
         // when
-        IllegalArgumentException exception =
-                assertThrows(IllegalArgumentException.class, scheduler::poll);
+        scheduler.poll();
 
         // then
         assertAll(
-                () ->
-                        assertEquals(
-                                "Failed to deserialize an SQS simulation request",
-                                exception.getMessage()),
                 () -> verifyNoInteractions(useCase),
                 () -> verify(sqsClient, never()).sendMessage(any(SendMessageRequest.class)),
                 () -> verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class)));
@@ -369,13 +400,14 @@ class SqsSimulationSchedulerTest {
         var ordered = inOrder(sqsClient);
 
         // when
-        IllegalArgumentException exception =
-                assertThrows(IllegalArgumentException.class, scheduler::poll);
+        scheduler.poll();
 
         // then
-        ordered.verify(sqsClient, never()).sendMessage(any(SendMessageRequest.class));
-        ordered.verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class));
-        assertAll(() -> assertEquals("scores must not be empty", exception.getMessage()));
+        assertAll(
+                () -> ordered.verify(sqsClient, never()).sendMessage(any(SendMessageRequest.class)),
+                () ->
+                        ordered.verify(sqsClient, never())
+                                .deleteMessage(any(DeleteMessageRequest.class)));
     }
 
     private static SimulationResult simulationResult(List<SimulationResponse> responses) {
