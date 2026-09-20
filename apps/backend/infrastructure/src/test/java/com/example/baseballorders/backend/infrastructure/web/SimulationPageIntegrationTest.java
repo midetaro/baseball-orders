@@ -168,9 +168,10 @@ class SimulationPageIntegrationTest {
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("id=\"reset-all-personalities\"")),
                 () -> assertTrue(response.body().contains("性格")),
-                () -> assertTrue(response.body().contains("EagerSluggish")),
-                () -> assertTrue(response.body().contains("EagerSteal")),
-                () -> assertTrue(response.body().contains("EagerBunt")),
+                () -> assertTrue(response.body().contains("DEFAULT:'標準'")),
+                () -> assertTrue(response.body().contains("EAGER_SLUGGISH:'長打重視'")),
+                () -> assertTrue(response.body().contains("EAGER_STEAL:'盗塁重視'")),
+                () -> assertTrue(response.body().contains("EAGER_BUNT:'バント重視'")),
                 () -> assertTrue(response.body().contains("personality:player.personality")));
     }
 
