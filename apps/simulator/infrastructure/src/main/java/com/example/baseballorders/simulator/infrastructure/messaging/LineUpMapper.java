@@ -2,12 +2,12 @@ package com.example.baseballorders.simulator.infrastructure.messaging;
 
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
-import com.example.baseballorders.simulator.domain.entity.behavior.BehaviorStrategies;
-import com.example.baseballorders.simulator.domain.entity.behavior.batting.HittingStrategy;
-import com.example.baseballorders.simulator.domain.entity.behavior.bunt.BuntStrategy;
-import com.example.baseballorders.simulator.domain.entity.behavior.steal.StealStrategy;
-import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
 import java.util.List;
 import org.springframework.stereotype.Component;
 

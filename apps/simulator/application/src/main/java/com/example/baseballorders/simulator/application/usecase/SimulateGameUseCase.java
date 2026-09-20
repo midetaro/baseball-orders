@@ -1,10 +1,10 @@
 package com.example.baseballorders.simulator.application.usecase;
 
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
-import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.model.GameBattingContext;
-import com.example.baseballorders.simulator.domain.model.base.BaseStateFactory;
-import com.example.baseballorders.simulator.domain.model.statistics.ScoreAccumulator;
+import com.example.baseballorders.simulator.domain.game.BaseStateFactory;
+import com.example.baseballorders.simulator.domain.game.GameBattingContext;
+import com.example.baseballorders.simulator.domain.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.statistics.ScoreAccumulator;
 import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

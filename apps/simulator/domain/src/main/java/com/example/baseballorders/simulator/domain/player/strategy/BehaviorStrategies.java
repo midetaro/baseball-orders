@@ -1,0 +1,91 @@
+package com.example.baseballorders.simulator.domain.player.strategy;
+
+import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.batting.LongDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.batting.MiddleDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.bunt.EagerBuntStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.bunt.NowayBuntStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.bunt.StandardBuntStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.steal.EagerStealStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.steal.NowayStealStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.steal.StandardStealStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
+
+/** Provides behavior strategy instances without exposing their concrete implementations. */
+public final class BehaviorStrategies {
+
+    private BehaviorStrategies() {}
+
+    /**
+     * Creates the middle-distance batting behavior.
+     *
+     * @return a middle-distance batting behavior
+     */
+    public static HittingStrategy middleDistanceHittingStrategy() {
+        return new MiddleDistanceHittingStrategy();
+    }
+
+    /**
+     * Creates the long-distance batting behavior.
+     *
+     * @return a long-distance batting behavior
+     */
+    public static HittingStrategy longDistanceAtBat() {
+        return new LongDistanceHittingStrategy();
+    }
+
+    /**
+     * Creates the eager stealing behavior.
+     *
+     * @return an eager stealing behavior
+     */
+    public static StealStrategy eagerSteal() {
+        return new EagerStealStrategy();
+    }
+
+    /**
+     * Creates the standard stealing behavior.
+     *
+     * @return a standard stealing behavior
+     */
+    public static StealStrategy standardSteal() {
+        return new StandardStealStrategy();
+    }
+
+    /**
+     * Creates the stealing behavior that never attempts a steal.
+     *
+     * @return a no-steal behavior
+     */
+    public static StealStrategy noSteal() {
+        return new NowayStealStrategy();
+    }
+
+    /**
+     * Creates the standard bunt strategy.
+     *
+     * @return a standard bunt strategy
+     */
+    public static BuntStrategy standardBunt() {
+        return new StandardBuntStrategy();
+    }
+
+    /**
+     * Creates the eager bunt strategy.
+     *
+     * @return an eager bunt strategy
+     */
+    public static BuntStrategy eagerBunt() {
+        return new EagerBuntStrategy();
+    }
+
+    /**
+     * Creates the bunt strategy that never attempts a bunt.
+     *
+     * @return a no-bunt strategy
+     */
+    public static BuntStrategy noBunt() {
+        return new NowayBuntStrategy();
+    }
+}

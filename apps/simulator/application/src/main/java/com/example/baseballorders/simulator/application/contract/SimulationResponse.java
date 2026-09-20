@@ -1,6 +1,6 @@
 package com.example.baseballorders.simulator.application.contract;
 
-import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
+import com.example.baseballorders.simulator.domain.statistics.GameStatistics;
 import org.jilt.Builder;
 import org.jilt.BuilderStyle;
 
