@@ -4,7 +4,7 @@ import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.entity.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.model.base.*;
 import com.example.baseballorders.simulator.domain.model.base.InningState;
-import com.example.baseballorders.simulator.domain.model.base.capability.AdvancingBuntable;
+import com.example.baseballorders.simulator.domain.model.base.capability.Buntable;
 import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
 import com.example.baseballorders.simulator.domain.model.statistics.GameCompletionObserver;
 import com.example.baseballorders.simulator.domain.model.statistics.GameStatistics;
@@ -191,7 +191,7 @@ public class GameBattingContext {
 
     /** バント見送りを適用する。試合終了後は何もしない。 */
     public void buntNotTry() {
-        if (!isGameOver && currentState instanceof AdvancingBuntable buntable) {
+        if (!isGameOver && currentState instanceof Buntable buntable) {
             buntable.buntNotTry();
         }
     }
@@ -247,8 +247,8 @@ public class GameBattingContext {
         }
     }
 
-    private AdvancingBuntable requireBuntable() {
-        if (currentState instanceof AdvancingBuntable buntable) {
+    private Buntable requireBuntable() {
+        if (currentState instanceof Buntable buntable) {
             return buntable;
         }
         throw new IllegalStateException("犠打機会がありません");

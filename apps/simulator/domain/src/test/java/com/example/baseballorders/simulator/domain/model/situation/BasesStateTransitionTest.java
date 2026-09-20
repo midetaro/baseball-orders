@@ -49,7 +49,7 @@ class BasesStateTransitionTest {
         var context = context(mask, outs);
         var before = context.getCurrentState();
         var expected = expected(mask, event);
-        boolean reset = expected.outs() == 1 && outs == 2;
+        boolean reset = expected.outs() > 0 && outs + expected.outs() >= 3;
         int expectedMask = reset ? 0 : expected.mask();
 
         // when
@@ -128,20 +128,20 @@ class BasesStateTransitionTest {
             case BUNT_NOT_TRY, STEAL_NOT_TRY -> new Expected(mask, 0, 0, first, second, third);
             case BUNT_FAILURE ->
                     new Expected(
-                            new int[] {-1, 1, 2, 3, -1, -1, -1, -1}[mask],
-                            1,
+                            new int[] {-1, 1, 2, 3, 0, 1, 2, 3}[mask],
+                            mask < 4 ? 1 : 2,
                             0,
                             first,
                             second,
-                            third);
+                            mask < 4 ? third : null);
             case BUNT_SUCCESS ->
                     new Expected(
-                            new int[] {-1, 2, 4, 6, -1, -1, -1, -1}[mask],
+                            new int[] {-1, 2, 4, 6, 0, 1, 2, 3}[mask],
                             1,
-                            0,
-                            null,
-                            first,
-                            second);
+                            mask < 4 ? 0 : 1,
+                            mask < 4 ? null : first,
+                            mask < 4 ? first : second,
+                            mask < 4 ? second : null);
             case STEAL_FAILURE ->
                     new Expected(
                             new int[] {-1, 0, 0, 1, -1, 4, -1, -1}[mask],
@@ -204,11 +204,11 @@ class BasesStateTransitionTest {
         // when
         Optional<Stealable> steal =
                 state instanceof Stealable stealable ? Optional.of(stealable) : Optional.empty();
-        var bunt = state instanceof AdvancingBuntable;
+        var bunt = state instanceof Buntable;
         // then
         assertAll(
                 () -> assertEquals(List.of(1, 2, 3, 5).contains(mask), steal.isPresent()),
-                () -> assertEquals(List.of(1, 2, 3).contains(mask), bunt),
+                () -> assertEquals(mask != 0, bunt),
                 () ->
                         steal.ifPresent(
                                 opportunity -> {

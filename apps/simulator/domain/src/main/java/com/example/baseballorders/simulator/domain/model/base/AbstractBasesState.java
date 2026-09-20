@@ -6,7 +6,6 @@ import com.example.baseballorders.simulator.domain.code.OutCount;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
-import com.example.baseballorders.simulator.domain.model.base.capability.Buntable;
 import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
 import com.example.baseballorders.simulator.domain.model.base.capability.StealableToDoubleBase;
 import com.example.baseballorders.simulator.domain.model.base.capability.StealableToTripleBase;
@@ -75,17 +74,19 @@ public abstract class AbstractBasesState {
                 : StealResult.NOT_TRY;
     }
 
-    public final void buntNotTry() {}
-
-    public final void buntFailure() {
-        requireBunt();
-        out();
+    /** 進塁バントの対象走者を一つ先の塁へ進める。 */
+    public final void advanceRunnersByBunt() {
+        transition(null, runnerAt(Base.FIRST), runnerAt(Base.SECOND), 0);
     }
 
-    public final void buntSuccess() {
-        requireBunt();
-        transition(null, runnerAt(Base.FIRST), runnerAt(Base.SECOND), 0);
-        context.out();
+    /** スクイズ失敗でアウトになった三塁走者を取り除く。 */
+    public final void retireRunnerOnThird() {
+        transition(runnerAt(Base.FIRST), runnerAt(Base.SECOND), null, 0);
+    }
+
+    /** スクイズ成功で三塁走者を生還させる。 */
+    public final void scoreRunnerOnThird() {
+        transition(runnerAt(Base.FIRST), runnerAt(Base.SECOND), null, 1);
     }
 
     public final void stealNotTry() {}
@@ -116,12 +117,6 @@ public abstract class AbstractBasesState {
         int configuration =
                 (first == null ? 0 : 1) | (second == null ? 0 : 2) | (third == null ? 0 : 4);
         context.changeState(configuration);
-    }
-
-    private void requireBunt() {
-        if (!(this instanceof Buntable)) {
-            throw new IllegalStateException("犠打機会がありません");
-        }
     }
 
     private Stealable requireSteal() {

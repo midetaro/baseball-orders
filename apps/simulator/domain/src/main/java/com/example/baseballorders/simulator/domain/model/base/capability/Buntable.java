@@ -2,9 +2,10 @@ package com.example.baseballorders.simulator.domain.model.base.capability;
 
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.model.base.BasesState;
 
 /** 犠打を試みられる走者配置の能力。 */
-public sealed interface Buntable permits AdvancingBuntable,SqueezeBuntable {
+public sealed interface Buntable extends BasesState permits AdvancingBuntable, SqueezeBuntable {
 
     /**
      * 現在の走者配置で打者にバントを試みさせる。
@@ -16,16 +17,14 @@ public sealed interface Buntable permits AdvancingBuntable,SqueezeBuntable {
 
     /**
      * バントを試みないため状態を維持する。
-     * <p>シチュエーションに関わらず同じ結果のためConcreteStateクラスには実装させない。</p>
-     * */
-    void buntNotTry();
+     *
+     * <p>シチュエーションに関わらず同じ結果のためConcreteStateクラスには実装させない。
+     */
+    default void buntNotTry() {}
 
-    /**
-     * バント失敗で一死を加算する。
-     * <p>シチュエーションに関わらず同じ結果のためConcreteStateクラスには実装させない。</p>
-     * */
+    /** バント種別に応じた失敗結果を適用する。 */
     void buntFailure();
 
-    /** 犠打で走者を進めて一死を加算する。 */
+    /** バント種別に応じた成功結果を適用する。 */
     void buntSuccess();
 }

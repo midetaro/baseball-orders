@@ -8,7 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
 import com.example.baseballorders.simulator.domain.model.base.*;
+import com.example.baseballorders.simulator.domain.model.base.capability.AdvancingBuntable;
 import com.example.baseballorders.simulator.domain.model.base.capability.Buntable;
+import com.example.baseballorders.simulator.domain.model.base.capability.SqueezeBuntable;
 import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -118,14 +120,21 @@ class StatePatternStructureTest {
                                                 name ->
                                                         name.startsWith("bunt")
                                                                 || name.startsWith("steal"))),
+                () -> assertTrue(buntMethodNames.containsAll(List.of("bunt", "buntNotTry"))),
                 () ->
                         assertTrue(
-                                buntMethodNames.containsAll(
-                                        List.of(
-                                                "bunt",
-                                                "buntNotTry",
-                                                "buntFailure",
-                                                "buntSuccess"))),
+                                Arrays.stream(AdvancingBuntable.class.getDeclaredMethods())
+                                        .filter(method -> method.isDefault())
+                                        .map(java.lang.reflect.Method::getName)
+                                        .toList()
+                                        .containsAll(List.of("buntFailure", "buntSuccess"))),
+                () ->
+                        assertTrue(
+                                Arrays.stream(SqueezeBuntable.class.getDeclaredMethods())
+                                        .filter(method -> method.isDefault())
+                                        .map(java.lang.reflect.Method::getName)
+                                        .toList()
+                                        .containsAll(List.of("buntFailure", "buntSuccess"))),
                 () ->
                         assertTrue(
                                 stealMethodNames.containsAll(

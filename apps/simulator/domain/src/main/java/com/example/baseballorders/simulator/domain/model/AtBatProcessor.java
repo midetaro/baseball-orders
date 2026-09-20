@@ -3,15 +3,19 @@ package com.example.baseballorders.simulator.domain.model;
 import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.base.capability.AdvancingBuntable;
+import com.example.baseballorders.simulator.domain.model.base.capability.Buntable;
 import com.example.baseballorders.simulator.domain.model.base.capability.Stealable;
 
 /** プレー結果を取得し、対応するStateイベントをContextへ送る。 */
 final class AtBatProcessor {
+
     boolean process(GameBattingContext context, BatterEntity batter) {
+
         long inningBeforeSteal = context.getInning();
+
         var stealable =
                 context.getCurrentState() instanceof Stealable opportunity ? opportunity : null;
+
         StealResult stealResult = stealable == null ? StealResult.NOT_TRY : stealResult(stealable);
         switch (stealResult) {
             case NOT_TRY -> context.stealNotTry();
@@ -23,9 +27,7 @@ final class AtBatProcessor {
         }
 
         var buntable =
-                context.getCurrentState() instanceof AdvancingBuntable opportunity
-                        ? opportunity
-                        : null;
+                context.getCurrentState() instanceof Buntable opportunity ? opportunity : null;
         BuntResult buntResult = buntable == null ? BuntResult.NOT_TRY : buntable.bunt(batter);
         boolean bunted =
                 switch (buntResult) {
