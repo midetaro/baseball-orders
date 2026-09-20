@@ -53,12 +53,7 @@ class LineUpMapperTest {
                             .getFirst();
             battingResult = batter.swing(0);
             stealResult = batter.stealToDouble();
-            buntResult =
-                    batter.bunt(
-                            com.example.baseballorders.simulator.domain.model.situation
-                                    .GameStateTestFixture.context(
-                                            batter, null, null, OutCount.ONE_OUT)
-                                    .getCurrentState());
+            buntResult = batter.bunt(OutCount.ONE_OUT);
         }
 
         // then
@@ -121,12 +116,7 @@ class LineUpMapperTest {
             var observedBatter = batter.observedBy(statisticsRecorder);
             doubleResult = observedBatter.stealToDouble();
             tripleResult = observedBatter.stealToTriple();
-            buntResult =
-                    observedBatter.bunt(
-                            com.example.baseballorders.simulator.domain.model.situation
-                                    .GameStateTestFixture.context(
-                                            observedBatter, null, null, OutCount.NO_OUT)
-                                    .getCurrentState());
+            buntResult = observedBatter.bunt(OutCount.NO_OUT);
         }
 
         // then

@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.code.Base;
+import com.example.baseballorders.simulator.domain.code.BuntResult;
 import com.example.baseballorders.simulator.domain.code.OutCount;
+import com.example.baseballorders.simulator.domain.entity.behavior.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.entity.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.model.BatterTestDataFactory;
 import com.example.baseballorders.simulator.domain.model.GameBattingContext;
@@ -200,7 +202,8 @@ class BasesStateTransitionTest {
     @DisplayName("走者配置に対応する盗塁と犠打の能力を返す")
     void exposesOpportunities(int mask) {
         // given
-        var state = context(mask, 0).getCurrentState();
+        var context = context(mask, 0);
+        var state = context.getCurrentState();
         // when
         Optional<Stealable> steal =
                 state instanceof Stealable stealable ? Optional.of(stealable) : Optional.empty();
@@ -209,6 +212,7 @@ class BasesStateTransitionTest {
         assertAll(
                 () -> assertEquals(List.of(1, 2, 3, 5).contains(mask), steal.isPresent()),
                 () -> assertEquals(mask != 0, bunt),
+                () -> assertEquals(bunt, context.isBuntable()),
                 () ->
                         steal.ifPresent(
                                 opportunity -> {
@@ -222,6 +226,44 @@ class BasesStateTransitionTest {
                                             mask == 1 || mask == 5 ? FIRST : SECOND,
                                             opportunity.runner());
                                 }));
+    }
+
+    @ParameterizedTest(name = "配置{0}・{1}")
+    @MethodSource("buntOpportunities")
+    @DisplayName("各走者配置は現在のアウトカウントをバント戦略へ渡す")
+    void passesOutCountToBuntStrategy(int mask, OutCount outCount) {
+        // given
+        var batter =
+                new BatterEntity(
+                        0.0f,
+                        0.0f,
+                        1.0f,
+                        0.0f,
+                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.noSteal(),
+                        BehaviorStrategies.standardBunt());
+        var state = (Buntable) context(mask, outCount.ordinal()).getCurrentState();
+
+        // when
+        var result = state.bunt(batter);
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                outCount == OutCount.NO_OUT
+                                        ? BuntResult.SUCCESS
+                                        : BuntResult.NOT_TRY,
+                                result));
+    }
+
+    static Stream<Arguments> buntOpportunities() {
+        return IntStream.range(1, 8)
+                .boxed()
+                .flatMap(
+                        mask ->
+                                Stream.of(OutCount.NO_OUT, OutCount.ONE_OUT)
+                                        .map(outCount -> arguments(mask, outCount)));
     }
 
     @Test

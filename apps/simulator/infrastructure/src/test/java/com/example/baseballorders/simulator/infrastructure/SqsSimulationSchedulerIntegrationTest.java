@@ -192,11 +192,7 @@ class SqsSimulationSchedulerIntegrationTest {
                         assertEquals(
                                 expectedBunt,
                                 batter.observedBy(new GameStatisticsRecorder())
-                                        .bunt(
-                                                com.example.baseballorders.simulator.domain.model
-                                                        .situation.GameStateTestFixture.context(
-                                                                batter, null, null, OutCount.NO_OUT)
-                                                        .getCurrentState())));
+                                        .bunt(OutCount.NO_OUT)));
     }
 
     private static SqsClient createClient() {

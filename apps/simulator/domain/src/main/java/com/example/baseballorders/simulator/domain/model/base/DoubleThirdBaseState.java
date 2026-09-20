@@ -15,7 +15,7 @@ public final class DoubleThirdBaseState extends AbstractBasesState
 
     @Override
     public BuntResult bunt(BatterEntity batter) {
-        return attemptBunt(this, batter);
+        return attemptBunt(batter);
     }
 
     @Override
