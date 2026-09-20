@@ -31,6 +31,9 @@ public interface BasesState {
     /** アウトを一つ加算し、三死ならイニング状態を初期化して試合を進める。 */
     void out();
 
+    /** 打撃による凡退を適用し、三死目でなければ一定確率で先頭走者だけを進める。 */
+    void battingOut();
+
     /** 単打による進塁・得点を適用する。 @param batter 単打を打った打者 */
     void hitSingle(BatterEntity batter);
 

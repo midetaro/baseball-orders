@@ -147,6 +147,13 @@ public class GameBattingContext {
         }
     }
 
+    /** 打撃による凡退を適用し、三死目でなければ一定確率で先頭走者だけを進める。 */
+    public void battingOut() {
+        if (!isGameOver) {
+            currentState.battingOut();
+        }
+    }
+
     /**
      * 単打を適用する。試合終了後は何もしない。
      *
