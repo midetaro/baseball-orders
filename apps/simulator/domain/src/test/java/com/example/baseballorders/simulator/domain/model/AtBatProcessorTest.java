@@ -82,7 +82,7 @@ class AtBatProcessorTest {
                 0.0f,
                 buntSuccessRate,
                 0.0f,
-                BehaviorStrategies.middleDistanceAtBat(),
+                BehaviorStrategies.middleDistanceHittingStrategy(),
                 BehaviorStrategies.noSteal(),
                 buntStrategy);
     }

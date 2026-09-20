@@ -19,7 +19,7 @@ public final class GameStateTestFixture {
                         0,
                         0,
                         0,
-                        BehaviorStrategies.middleDistanceAtBat(),
+                        BehaviorStrategies.middleDistanceHittingStrategy(),
                         BehaviorStrategies.noSteal(),
                         BehaviorStrategies.noBunt());
         var context = new GameBattingContext(new LineUpEntity(Collections.nCopies(9, batter)));

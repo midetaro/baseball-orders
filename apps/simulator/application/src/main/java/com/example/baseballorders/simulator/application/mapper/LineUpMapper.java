@@ -1,4 +1,4 @@
-package com.example.baseballorders.simulator.application;
+package com.example.baseballorders.simulator.application.mapper;
 
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 public class LineUpMapper {
 
     private final HittingStrategy hittingStrategy;
-    private final StealStrategy eagerStealStrategy;
+    private final StealStrategy stealStrategy;
     private final BuntStrategy buntStrategy;
     private final StealStrategy noStealStrategy = BehaviorStrategies.noSteal();
     private final BuntStrategy noBuntStrategy = BehaviorStrategies.noBunt();
@@ -30,11 +30,11 @@ public class LineUpMapper {
      * @param buntStrategy bunt strategy assigned to each batter
      */
     public LineUpMapper(
-            @Qualifier("middleDistanceAtBat") HittingStrategy hittingStrategy,
-            @Qualifier("eagerStealBehavior") StealStrategy stealStrategy,
+            @Qualifier("middleDistanceHittingStrategy") HittingStrategy hittingStrategy,
+            @Qualifier("standardStealStrategy") StealStrategy stealStrategy,
             @Qualifier("standardBuntStrategy") BuntStrategy buntStrategy) {
         this.hittingStrategy = hittingStrategy;
-        this.eagerStealStrategy = stealStrategy;
+        this.stealStrategy = stealStrategy;
         this.buntStrategy = buntStrategy;
     }
 
@@ -56,7 +56,7 @@ public class LineUpMapper {
                                                 player.sluggish(),
                                                 player.buntSuccessRate(),
                                                 player.stealSuccessRate(),
-                                                atBatBehaviorFor(player.personality()),
+                                                battingBehaviorFor(player.personality()),
                                                 player.stealEnabled()
                                                         ? stealStrategyFor(player.personality())
                                                         : noStealStrategy,
@@ -67,7 +67,7 @@ public class LineUpMapper {
         return new LineUpEntity(batters);
     }
 
-    private HittingStrategy atBatBehaviorFor(PlayerPersonality personality) {
+    private HittingStrategy battingBehaviorFor(PlayerPersonality personality) {
         return switch (personality) {
             case DEFAULT, EAGER_STEAL, EAGER_BUNT -> hittingStrategy;
             case EAGER_SLUGGISH -> BehaviorStrategies.longDistanceAtBat();
@@ -76,7 +76,8 @@ public class LineUpMapper {
 
     private StealStrategy stealStrategyFor(PlayerPersonality personality) {
         return switch (personality) {
-            case DEFAULT, EAGER_SLUGGISH, EAGER_STEAL, EAGER_BUNT -> eagerStealStrategy;
+            case DEFAULT, EAGER_SLUGGISH, EAGER_BUNT -> stealStrategy;
+            case EAGER_STEAL -> BehaviorStrategies.eagerSteal();
         };
     }
 

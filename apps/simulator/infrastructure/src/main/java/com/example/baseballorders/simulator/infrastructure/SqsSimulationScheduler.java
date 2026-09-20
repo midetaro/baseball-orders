@@ -2,8 +2,8 @@ package com.example.baseballorders.simulator.infrastructure;
 
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
-import com.example.baseballorders.simulator.application.LineUpMapper;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
+import com.example.baseballorders.simulator.application.mapper.LineUpMapper;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -21,7 +21,7 @@ public final class BehaviorStrategies {
      *
      * @return a middle-distance batting behavior
      */
-    public static HittingStrategy middleDistanceAtBat() {
+    public static HittingStrategy middleDistanceHittingStrategy() {
         return new MiddleDistanceHittingStrategy();
     }
 

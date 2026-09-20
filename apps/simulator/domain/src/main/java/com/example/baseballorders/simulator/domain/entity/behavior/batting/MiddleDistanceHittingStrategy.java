@@ -5,7 +5,7 @@ import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import org.springframework.stereotype.Component;
 
 /** 中距離バッター */
-@Component("middleDistanceAtBat")
+@Component("middleDistanceHittingStrategy")
 public final class MiddleDistanceHittingStrategy implements HittingStrategy {
 
     public BattingResult batting(float onBasePercentage, float slugging) {

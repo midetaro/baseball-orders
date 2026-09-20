@@ -4,7 +4,7 @@ import com.example.baseballorders.simulator.domain.code.StealResult;
 import com.example.baseballorders.simulator.domain.util.RandomGenerator;
 import org.springframework.stereotype.Component;
 
-@Component("eagerStealBehavior")
+@Component("eagerStealStrategy")
 public final class EagerStealStrategy implements StealStrategy {
 
     private final float TO_DOUBLE_TRY_AVERAGE = 0.3f;
