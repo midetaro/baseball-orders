@@ -18,7 +18,9 @@ class SimulationPlayerMessageTest {
         var exception =
                 assertThrows(
                         NullPointerException.class,
-                        () -> new SimulationPlayerMessage("選手1", 0.3f, 0.4f, 0.7f, null, 0.8f));
+                        () ->
+                                new SimulationPlayerMessage(
+                                        "選手1", 0.3f, 0.4f, 0.7f, null, 0.8f, true));
 
         // then
         assertAll(() -> assertEquals("buntEnabled must not be null", exception.getMessage()));

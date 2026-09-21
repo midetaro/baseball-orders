@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.domain.PlayerData;
+import com.example.baseballorders.backend.domain.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import java.util.List;
@@ -35,7 +36,7 @@ class SqsSimulatorMessagePublisherTest {
     }
 
     @Test
-    @DisplayName("backendの選手データをバントと盗塁の成功率を含む共有要求へ変換する")
+    @DisplayName("backendの選手データを性格を含む共有要求へ変換する")
     void mapsSuccessRatesToSharedRequest() {
         // given
         SqsTemplate sqsTemplate = mock(SqsTemplate.class);
@@ -44,7 +45,16 @@ class SqsSimulatorMessagePublisherTest {
                 new SimulationRequest(
                         UUID.randomUUID(),
                         "1",
-                        List.of(new PlayerData("選手1", 0.321f, 0.456f, 0.789f, true, 0.678f)));
+                        List.of(
+                                new PlayerData(
+                                        "選手1",
+                                        0.321f,
+                                        0.456f,
+                                        0.789f,
+                                        true,
+                                        0.678f,
+                                        true,
+                                        PlayerPersonality.EAGER_BUNT)));
         var messageCaptor = ArgumentCaptor.forClass(SimulationRequestMessage.class);
 
         // when
@@ -63,6 +73,10 @@ class SqsSimulatorMessagePublisherTest {
                 () ->
                         assertEquals(
                                 0.678f,
-                                messageCaptor.getValue().players().getFirst().stealSuccessRate()));
+                                messageCaptor.getValue().players().getFirst().stealSuccessRate()),
+                () ->
+                        assertEquals(
+                                com.example.baseballorders.messaging.PlayerPersonality.EAGER_BUNT,
+                                messageCaptor.getValue().players().getFirst().personality()));
     }
 }

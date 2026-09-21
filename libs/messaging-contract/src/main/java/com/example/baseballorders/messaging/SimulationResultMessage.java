@@ -2,6 +2,7 @@ package com.example.baseballorders.messaging;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -9,14 +10,10 @@ import java.util.UUID;
  *
  * @param simulationId 要求と同じ相関ID
  * @param version メッセージスキーマのバージョン
- * @param results 実行順の得点・失点の組
  * @param statistics 全試合の得点統計
  */
 public record SimulationResultMessage(
-        @JsonProperty("simulation_id") UUID simulationId,
-        String version,
-        List<Result> results,
-        Statistics statistics) {
+        @JsonProperty("simulation_id") UUID simulationId, String version, Statistics statistics) {
 
     /**
      * 全試合の得点統計。
@@ -24,25 +21,116 @@ public record SimulationResultMessage(
      * @param averageScore 平均得点
      * @param medianScore 中央値得点
      * @param maximumScore 最大得点
+     * @param gameCount シミュレーションした試合数
+     * @param scoreDistribution 得点ごとの試合数
+     * @param homeRunCount 本塁打数
+     * @param soloHomeRunCount ソロ本塁打数
+     * @param twoRunHomeRunCount ツーラン本塁打数
+     * @param threeRunHomeRunCount スリーラン本塁打数
+     * @param grandSlamCount 満塁本塁打数
+     * @param buntCount 成功バント数
+     * @param stealCount 成功盗塁数
+     * @param buntFailureCount 失敗バント数
+     * @param stealFailureCount 失敗盗塁数
      */
-    public record Statistics(double averageScore, double medianScore, int maximumScore) {}
+    public record Statistics(
+            double averageScore,
+            double medianScore,
+            int maximumScore,
+            int gameCount,
+            Map<Integer, Integer> scoreDistribution,
+            int homeRunCount,
+            int soloHomeRunCount,
+            int twoRunHomeRunCount,
+            int threeRunHomeRunCount,
+            int grandSlamCount,
+            int buntCount,
+            int stealCount,
+            int buntFailureCount,
+            int stealFailureCount) {
 
-    /**
-     * Backwards-compatible constructor for callers that do not yet supply statistics.
-     *
-     * @param simulationId 要求と同じ相関ID
-     * @param version メッセージスキーマのバージョン
-     * @param results 実行順の得点・失点の組
-     */
-    public SimulationResultMessage(UUID simulationId, String version, List<Result> results) {
-        this(simulationId, version, results, null);
+        /**
+         * Creates statistics with no failed tactical-play counts.
+         *
+         * @param averageScore 平均得点
+         * @param medianScore 中央値得点
+         * @param maximumScore 最大得点
+         * @param gameCount シミュレーションした試合数
+         * @param scoreDistribution 得点ごとの試合数
+         * @param homeRunCount 本塁打数
+         * @param soloHomeRunCount ソロ本塁打数
+         * @param twoRunHomeRunCount ツーラン本塁打数
+         * @param threeRunHomeRunCount スリーラン本塁打数
+         * @param grandSlamCount 満塁本塁打数
+         * @param buntCount 成功バント数
+         * @param stealCount 成功盗塁数
+         */
+        public Statistics(
+                double averageScore,
+                double medianScore,
+                int maximumScore,
+                int gameCount,
+                Map<Integer, Integer> scoreDistribution,
+                int homeRunCount,
+                int soloHomeRunCount,
+                int twoRunHomeRunCount,
+                int threeRunHomeRunCount,
+                int grandSlamCount,
+                int buntCount,
+                int stealCount) {
+            this(
+                    averageScore,
+                    medianScore,
+                    maximumScore,
+                    gameCount,
+                    scoreDistribution,
+                    homeRunCount,
+                    soloHomeRunCount,
+                    twoRunHomeRunCount,
+                    threeRunHomeRunCount,
+                    grandSlamCount,
+                    buntCount,
+                    stealCount,
+                    0,
+                    0);
+        }
+
+        /**
+         * Creates score-only statistics with no batting-event counts.
+         *
+         * @param averageScore 平均得点
+         * @param medianScore 中央値得点
+         * @param maximumScore 最大得点
+         */
+        public Statistics(double averageScore, double medianScore, int maximumScore) {
+            this(averageScore, medianScore, maximumScore, 0, Map.of(), 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        }
     }
 
     /**
-     * 1試合の結果。
+     * Creates a result message while discarding legacy per-game results.
      *
-     * @param score 得点
-     * @param runs 失点
+     * @param simulationId 要求と同じ相関ID
+     * @param version メッセージスキーマのバージョン
+     * @param ignoredResults 廃止された試合ごとの結果
+     * @param statistics 画面表示用の集計統計
      */
+    public SimulationResultMessage(
+            UUID simulationId, String version, List<Result> ignoredResults, Statistics statistics) {
+        this(simulationId, version, statistics);
+    }
+
+    /**
+     * Creates a result message with no statistics while discarding legacy per-game results.
+     *
+     * @param simulationId 要求と同じ相関ID
+     * @param version メッセージスキーマのバージョン
+     * @param ignoredResults 廃止された試合ごとの結果
+     */
+    public SimulationResultMessage(UUID simulationId, String version, List<Result> ignoredResults) {
+        this(simulationId, version, (Statistics) null);
+    }
+
+    /** 廃止された1試合の結果を表す移行用型。 */
     public record Result(int score, int runs) {}
 }

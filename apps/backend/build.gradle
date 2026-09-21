@@ -22,6 +22,11 @@ subprojects {
         }
     }
     plugins.withType(JavaPlugin).configureEach {
+        dependencies {
+            compileOnly 'cc.jilt:jilt:1.9.1'
+            annotationProcessor 'cc.jilt:jilt:1.9.1'
+        }
+
         java {
             toolchain {
                 languageVersion = JavaLanguageVersion.of(25)
@@ -30,6 +35,7 @@ subprojects {
 
         tasks.withType(Test).configureEach {
             useJUnitPlatform()
+            dependsOn(tasks.named('spotlessCheck'))
         }
     }
 }

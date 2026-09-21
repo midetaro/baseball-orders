@@ -5,17 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>シミュレーションの仕組み | Batting Order Lab</title>
   <style>
-    :root { color-scheme:dark; --ink:#f7f3e8; --muted:#a8b0ad; --panel:#17201f; --line:#31423e; --lime:#d8ff62; }
+    :root { color-scheme:dark; --ink:#fffaf1; --muted:#bdc7d7; --panel:rgba(13,20,42,.9); --line:rgba(86,122,181,.42); --lime:#d9ff43; --cyan:#25d9ff; --pink:#ff4da6; --violet:#875cff; }
     * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; color:var(--ink); background:#0c1212; font-family:Inter,"Noto Sans JP",sans-serif; }
+    body { margin:0; min-height:100vh; color:var(--ink); background:radial-gradient(circle at 15% 10%,rgba(37,217,255,.2),transparent 29%),radial-gradient(circle at 88% 18%,rgba(255,77,166,.2),transparent 28%),radial-gradient(circle at 52% 92%,rgba(135,92,255,.19),transparent 34%),#070b18; background-attachment:fixed; font-family:Inter,"Noto Sans JP",sans-serif; }
+    body::before { position:fixed; inset:0; z-index:-1; content:""; opacity:.22; background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px); background-size:32px 32px; mask-image:linear-gradient(to bottom,#000,transparent 85%); }
     main { width:min(780px,calc(100% - 32px)); margin:auto; padding:48px 0 64px; }
-    .eyebrow { color:var(--lime); font:700 12px/1 monospace; letter-spacing:.18em; text-transform:uppercase; }
-    h1 { margin:10px 0 28px; font-size:clamp(36px,7vw,64px); letter-spacing:-.05em; line-height:1; }
-    section { margin-top:16px; padding:24px; background:var(--panel); border:1px solid var(--line); border-radius:16px; }
-    h2 { margin:0 0 12px; font-size:20px; }
-    p,li { color:var(--muted); line-height:1.8; }
-    strong { color:var(--ink); }
-    a { color:var(--lime); }
+    .eyebrow { display:inline-flex; padding:7px 11px; border:1px solid rgba(37,217,255,.55); border-radius:999px; color:var(--cyan); background:rgba(37,217,255,.09); font:800 11px/1 monospace; letter-spacing:.18em; text-transform:uppercase; box-shadow:0 0 24px rgba(37,217,255,.14); }
+    h1 { margin:16px 0 32px; font-size:clamp(38px,7vw,66px); letter-spacing:-.06em; line-height:1; color:transparent; background:linear-gradient(110deg,var(--ink) 10%,var(--cyan) 52%,var(--lime) 88%); background-clip:text; filter:drop-shadow(0 10px 26px rgba(37,217,255,.17)); }
+    section { position:relative; margin-top:18px; padding:26px; background:linear-gradient(155deg,rgba(21,32,66,.94),var(--panel)); border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:0 18px 50px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.05); }
+    section::before { position:absolute; top:0; right:22px; left:22px; height:2px; content:""; background:linear-gradient(90deg,transparent,var(--cyan),var(--pink),transparent); opacity:.85; }
+    section:nth-of-type(even)::before { background:linear-gradient(90deg,transparent,var(--pink),var(--lime),transparent); }
+    h2 { margin:0 0 12px; color:var(--ink); font-size:20px; } h2::first-letter { color:var(--pink); }
+    p,li,dd { color:var(--muted); line-height:1.8; }
+    dl { display:grid; grid-template-columns:minmax(110px,.3fr) 1fr; gap:10px 18px; margin:0; }
+    dt { font-weight:800; color:var(--cyan); }
+    dd { margin:0; }
+    strong { color:var(--lime); text-shadow:0 0 14px rgba(217,255,67,.16); }
+    a { color:var(--cyan); font-weight:800; text-underline-offset:4px; } a:hover { color:var(--lime); }
+    @media (max-width:600px) { dl { grid-template-columns:1fr; gap:2px; } dd { margin-bottom:10px; } }
   </style>
 </head>
 <body>
@@ -23,16 +30,40 @@
   <div class="eyebrow">Baseball Orders / Simulator</div>
   <h1>シミュレーションの仕組み</h1>
   <section>
-    <h2>1. 打順を入力する</h2>
-    <p>打者一覧の先頭9人が初期打順として入っています。打順は上下ボタンで並べ替え、別の選手を追加・削除できます。実行時には、表示順の9人の選手IDをシミュレータへ送ります。</p>
+    <h2>1. 打順と成績を入力する</h2>
+    <p>1番から9番まで、各選手の成績・性格・戦術を設定します。入力した順番がそのままシミュレーションの打順になります。</p>
   </section>
   <section>
-    <h2>2. 9回の試合を進める</h2>
-    <p>各試合は<strong>9回</strong>まで進み、3アウトで次の回へ移ります。打者は入力した打順を繰り返し、打率・長打率、バント成功率、盗塁成功率を使った確率的なプレーで走者と得点が変化します。</p>
+    <h2>2. 試合シミュレーションを進める</h2>
+    <p>各試合は<strong>9回</strong>まで進み、3アウトで走者とアウト数を初期化して次の回へ移ります。打席ごとに、対象となる走者の<strong>盗塁判定 → バント判定 → 通常打撃</strong>の順でプレーを進めます。盗塁もバントも行わない場合に通常打撃を行い、単打・二塁打・三塁打・本塁打・アウトのいずれかになります。</p>
   </section>
   <section>
-    <h2>3. 複数試合を集計する</h2>
-    <p>同じ打順で複数試合をシミュレーションし、各試合の得点と失点を表示します。<strong>平均得点</strong>、中央値得点、最大得点は、その試合群の得点から算出します。乱数を使うため、同じ打順でも実行ごとに結果は変わります。</p>
+    <h2>3. 各選手の入力項目</h2>
+    <dl>
+      <dt>出塁率</dt><dd>通常打撃でアウト以外になる確率の基準です。<strong>0.01〜0.60</strong>を小数で入力します。</dd>
+      <dt>長打率</dt><dd>通常打撃のうち、二塁打・三塁打・本塁打への配分を決める基準です。<strong>0.10〜0.60</strong>を小数で入力します。</dd>
+      <dt>バント成功率</dt><dd>バントを試みたときの成功確率です。<strong>0.00〜0.95</strong>を小数で入力します。</dd>
+      <dt>盗塁成功率</dt><dd>走者が盗塁を試みたときの成功確率です。<strong>0.10〜0.90</strong>を小数で入力します。</dd>
+      <dt>バント・盗塁のオン／オフ</dt><dd>オフの戦術は試みません。オンのときだけ、走者配置と性格に応じて試行を判定します。</dd>
+      <dt>性格</dt><dd>通常打撃の配分や、盗塁・バントを試みる頻度を変えます。成功率の入力値そのものは変えません。</dd>
+    </dl>
+  </section>
+  <section>
+    <h2>4. 性格による違い</h2>
+    <dl>
+      <dt>標準</dt><dd>標準の打撃配分で、盗塁は通常の頻度、バントは無死のときに試みます。</dd>
+      <dt>ブンブン丸</dt><dd>通常打撃を本塁打寄りにします。標準より本塁打の割合が増える一方、単打などが減り、アウトも増えます。</dd>
+      <dt>盗塁重視</dt><dd>盗塁がオンのとき、標準より一塁・二塁走者の盗塁を試みやすくなります。</dd>
+      <dt>バント重視</dt><dd>バントがオンのとき、無死だけでなく<strong>一死でもバントを試みます</strong>。</dd>
+    </dl>
+  </section>
+  <section>
+    <h2>5. バントと盗塁の結果</h2>
+    <p>走者がいる対象の場面でのみ試行を判定します。盗塁は成功すれば次の塁へ進み、失敗すると<strong>盗塁死となり、アウトが一つ増えます</strong>。三塁走者がいない場合のバントは、成功時に打者がアウトになって走者を一つ進めます。三塁走者がいる場合はスクイズとなり、成功すればその走者が得点します。バント失敗時は打者がアウトになり、スクイズ失敗では三塁走者もアウトになります。</p>
+  </section>
+  <section>
+    <h2>6. 複数試合を集計する</h2>
+    <p>同じ入力で複数試合をシミュレーションし、<strong>平均得点</strong>、中央値得点、最大得点、得点分布、本塁打の内訳、バントと盗塁の成否を集計します。各プレーは確率的に決まるため、同じ入力でも実行ごとに結果は変わります。</p>
   </section>
   <p><a href="/">打順を組み立てる</a></p>
 </main>

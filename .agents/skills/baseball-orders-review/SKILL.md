@@ -20,6 +20,7 @@ description: Use when reviewing a completed baseball-orders feature, checking th
 * Integration Testの疎通範囲の明確化
 * Architecture boundary確認
 * 不要な変更・過剰実装の検出
+* 不要な処理の削除
 
 決定的に検証可能な事項を、モデルの推測だけでPASS判定してはならない。
 
@@ -99,6 +100,7 @@ Out of Scopeの機能が追加されている場合は指摘する。
 または対象moduleのfocused test。
 
 実行可能なtestを「コードを見る限り通りそう」という理由でPASSにしてはならない。
+src/main配下で使用箇所のないpublicメソッドを削除する。クラスは削除しない。
 
 ---
 
@@ -482,3 +484,4 @@ If and only if:
 - blocking findings = 0,
 
 update the feature specification status from `in_progress` to `done`.
+rename the feature specification file with prefix of `done`.

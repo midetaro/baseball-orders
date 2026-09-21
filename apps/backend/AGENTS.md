@@ -9,6 +9,15 @@ Inherit the repository rules from `../../AGENTS.md`.
 - Preserve the synchronous HTTP-to-asynchronous-SQS correlation through `WaitingResultRegistry`.
 - Keep queue names configurable through `SIMULATION_REQUEST_QUEUE_NAME` and `SIMULATION_RESULT_QUEUE_NAME`.
 
+## Class design
+
+- `domain` contains framework-independent business data and result models. Do not put HTTP, SQS, JPA, or Spring types in this module.
+- `application` contains use-case coordination, request-scoped or in-memory application state, application DTOs, and ports. Define ports here when a use case needs an external capability; implementations belong in `infrastructure`.
+- `infrastructure` contains adapters for external I/O: `api` for HTTP APIs, `web` for server-rendered pages, `messaging` for SQS, and `persistence` for JPA. `InfrastructureConfiguration` composes application services with adapter implementations.
+- An `infrastructure` adapter must not directly reference another `infrastructure` adapter's implementation class, entity, repository, or framework client. In particular, `api`, `web`, `messaging`, and `persistence` must communicate through an `application` use case or port, not through each other.
+- `InfrastructureConfiguration` is the only exception to the adapter-to-adapter restriction: it may reference application types and adapter implementations solely to compose Spring beans.
+- When repairing an existing direct adapter reference, migrate it to an `application` port or use case; do not introduce additional violations.
+
 ## Tests
 
 - Every Java test method has a Japanese `@DisplayName` and `// given`, `// when`, `// then` sections.

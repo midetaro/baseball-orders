@@ -13,3 +13,40 @@ tasks.register('clean') {
     dependsOn gradle.includedBuild('backend').task(':clean')
     dependsOn gradle.includedBuild('simulator').task(':clean')
 }
+
+tasks.register('test') {
+    group = 'verification'
+    description = 'Runs tests in both applications and the integration-test project.'
+    dependsOn project(':integration-test').tasks.named('test')
+    dependsOn gradle.includedBuild('backend').task(':application:test')
+    dependsOn gradle.includedBuild('backend').task(':domain:test')
+    dependsOn gradle.includedBuild('backend').task(':infrastructure:test')
+    dependsOn gradle.includedBuild('backend').task(':messaging-contract:test')
+    dependsOn gradle.includedBuild('simulator').task(':application:test')
+    dependsOn gradle.includedBuild('simulator').task(':domain:test')
+    dependsOn gradle.includedBuild('simulator').task(':infrastructure:test')
+}
+
+tasks.register('spotlessCheck') {
+    group = 'verification'
+    description = 'Checks Java formatting in both applications.'
+    dependsOn gradle.includedBuild('backend').task(':application:spotlessCheck')
+    dependsOn gradle.includedBuild('backend').task(':domain:spotlessCheck')
+    dependsOn gradle.includedBuild('backend').task(':infrastructure:spotlessCheck')
+    dependsOn gradle.includedBuild('backend').task(':messaging-contract:spotlessCheck')
+    dependsOn gradle.includedBuild('simulator').task(':application:spotlessCheck')
+    dependsOn gradle.includedBuild('simulator').task(':domain:spotlessCheck')
+    dependsOn gradle.includedBuild('simulator').task(':infrastructure:spotlessCheck')
+}
+
+tasks.register('spotlessApply') {
+    group = 'formatting'
+    description = 'Applies Java formatting in both applications.'
+    dependsOn gradle.includedBuild('backend').task(':application:spotlessApply')
+    dependsOn gradle.includedBuild('backend').task(':domain:spotlessApply')
+    dependsOn gradle.includedBuild('backend').task(':infrastructure:spotlessApply')
+    dependsOn gradle.includedBuild('backend').task(':messaging-contract:spotlessApply')
+    dependsOn gradle.includedBuild('simulator').task(':application:spotlessApply')
+    dependsOn gradle.includedBuild('simulator').task(':domain:spotlessApply')
+    dependsOn gradle.includedBuild('simulator').task(':infrastructure:spotlessApply')
+}

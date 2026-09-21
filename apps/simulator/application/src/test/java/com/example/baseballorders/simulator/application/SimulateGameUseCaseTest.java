@@ -2,28 +2,24 @@ package com.example.baseballorders.simulator.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
-import com.example.baseballorders.simulator.domain.model.behavior.AtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.NowayStealBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.ShortDistanceAtBatBehavior;
-import com.example.baseballorders.simulator.domain.model.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.model.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class SimulateGameUseCaseTest {
 
-    ShortDistanceAtBatBehavior shortDistanceAtBatBehavior = new ShortDistanceAtBatBehavior();
-    Map<String, AtBatBehavior> map = Map.of("shortDistanceAtBat", shortDistanceAtBatBehavior);
+    HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceHittingStrategy();
 
-    SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(map, 3);
+    SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(3);
 
-    @DisplayName("9人の打順でシミュレーションを実行すると設定された試合数分の結果を返す")
+    @DisplayName("9人の打順でシミュレーションを実行すると表示用の集計統計を返す")
     @Test
     public void invoke() {
         // given
@@ -32,40 +28,48 @@ class SimulateGameUseCaseTest {
                         .mapToObj(
                                 number ->
                                         new BatterEntity(
-                                                "batter" + number,
                                                 0.4f,
                                                 0.4f,
                                                 0.7f,
-                                                true,
                                                 0.8f,
-                                                shortDistanceAtBatBehavior,
-                                                new NowayStealBehavior(),
-                                                (successRate, outCounts, basesState) ->
-                                                        com.example.baseballorders.simulator.domain
-                                                                .code.BuntResult.SUCCESS))
+                                                hittingStrategy,
+                                                BehaviorStrategies.noSteal(),
+                                                BehaviorStrategies.standardBunt()))
                         .toList();
         // when
         SimulationResult result = simulateGameUseCase.invoke(new LineUpEntity(batterEntities));
         // then
         assertAll(
-                () -> assertEquals(3, result.results().size(), "設定された3試合分の結果であること"),
+                () -> assertEquals(3, result.statistics().gameCount(), "設定された3試合であること"),
                 () ->
                         assertTrue(
-                                result.results().stream()
-                                        .allMatch(response -> response.score() >= 0),
-                                "すべての得点が0以上であること"),
-                () ->
-                        assertTrue(
-                                result.results().stream()
-                                        .allMatch(response -> response.runs() == 4),
-                                "すべての失点が設定されていること"),
+                                result.statistics().scoreDistribution().entrySet().stream()
+                                        .allMatch(entry -> entry.getKey() >= 0),
+                                "分布上のすべての得点が0以上であること"),
                 () ->
                         assertEquals(
-                                result.results().stream()
-                                        .mapToInt(SimulationResponse::score)
+                                3,
+                                result.statistics().scoreDistribution().values().stream()
+                                        .mapToInt(Integer::intValue)
+                                        .sum(),
+                                "得点分布の合計は試合数と一致すること"),
+                () ->
+                        assertEquals(
+                                result.statistics().maximumScore(),
+                                result.statistics().scoreDistribution().keySet().stream()
+                                        .mapToInt(Integer::intValue)
                                         .max()
                                         .orElseThrow(),
-                                result.statistics().maximumScore(),
-                                "最大得点が全試合の結果から計算されること"));
+                                "最大得点が全試合の結果から計算されること"),
+                () ->
+                        assertEquals(
+                                result.statistics().homeRunCount(),
+                                result.statistics().soloHomeRunCount()
+                                        + result.statistics().twoRunHomeRunCount()
+                                        + result.statistics().threeRunHomeRunCount()
+                                        + result.statistics().grandSlamCount(),
+                                "本塁打数は全試合の内訳の合計であること"),
+                () -> assertTrue(result.statistics().buntCount() >= 0, "成功バント数は0以上であること"),
+                () -> assertTrue(result.statistics().stealCount() >= 0, "成功盗塁数は0以上であること"));
     }
 }
