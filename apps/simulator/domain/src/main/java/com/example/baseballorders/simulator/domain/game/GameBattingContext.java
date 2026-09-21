@@ -155,6 +155,17 @@ public class GameBattingContext {
     }
 
     /**
+     * 四球を適用する。試合終了後は何もしない。
+     *
+     * @param batter 四球の打者
+     */
+    public void walk(BatterEntity batter) {
+        if (!isGameOver) {
+            currentState.walk(batter);
+        }
+    }
+
+    /**
      * 単打を適用する。試合終了後は何もしない。
      *
      * @param batter 打撃した打者

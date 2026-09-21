@@ -20,7 +20,7 @@ public final class GameStatisticsRecorder implements PlayResultObserver {
     @Override
     public void onBattingResult(BattingResult battingResult, int runnerCount) {
         switch (battingResult) {
-            case OUT, HIT_SINGLE, HIT_DOUBLE, HIT_TRIPLE -> {}
+            case STRIKEOUT, BATTED_OUT, WALK, HIT_SINGLE, HIT_DOUBLE, HIT_TRIPLE -> {}
             case HIT_HOMER -> recordHomeRun(runnerCount);
         }
     }

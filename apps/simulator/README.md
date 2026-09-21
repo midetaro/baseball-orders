@@ -18,6 +18,7 @@ classDiagram
         +nextAtBat()
         +changeState(int configuration)
         +completeInning()
+        +walk(BatterEntity batter)
         +hitSingle(BatterEntity batter)
         +buntSuccess()
         +stealSuccess()
@@ -33,6 +34,7 @@ classDiagram
         +runnerCount() int
         +out()
         +battingOut()
+        +walk(BatterEntity batter)
         +hitSingle(BatterEntity batter)
         +hitDouble(BatterEntity batter)
         +hitTriple(BatterEntity batter)
@@ -128,7 +130,7 @@ classDiagram
 
 ### GoF State パターン
 
-State パターンの `Context` が `GameBattingContext`、`State` が `BasesState`、`ConcreteState` が走者配置ごとの8クラスです。たとえば `SingleBasesState.hitDouble()` は打者を二塁、一塁走者を三塁へ置き、配置 `110` に対応する State へ Context を切り替えます。呼び出し側は現在の走者配置を条件分岐せず、同じ `hitDouble` を呼べます。
+State パターンの `Context` が `GameBattingContext`、`State` が `BasesState`、`ConcreteState` が走者配置ごとの8クラスです。たとえば `SingleBasesState.hitDouble()` は打者を二塁、一塁走者を三塁へ置き、配置 `110` に対応する State へ Context を切り替えます。`walk()` は打者を一塁へ置き、一塁から連続する走者だけを押し出します。呼び出し側は現在の走者配置を条件分岐せず、同じイベントを呼べます。
 
 全 ConcreteState は同じ試合の `InningState` を共有します。`AbstractBasesState.transition(...)` が走者の配置、得点加算、State 切り替えを一つの操作として行うため、State オブジェクトを切り替えても走者とアウト数は失われません。`out()` で三死になった場合は `InningState` を初期化し、Context の `completeInning()` へ進みます。
 
@@ -245,7 +247,7 @@ classDiagram
 
 Strategy パターンの `Context` は `BatterEntity`、Strategy は `HittingStrategy`、`StealStrategy`、`BuntStrategy` の三つです。各インターフェースは sealed で実装候補を限定しています。
 
-- 打撃 Strategy は、出塁率と長打率を各打撃結果へ配分する方法を変えます。
+- 打撃 Strategy は、出塁率と長打率を四球と4種類の安打へ配分します。四球は出塁率のうち5%まで、非出塁は三振25%と凡退75%に分けます。
 - 盗塁 Strategy は、二塁・三塁への挑戦頻度と成功判定を変えます。
 - バント Strategy は、アウト数に応じて試みるかどうかと成功判定を変えます。
 

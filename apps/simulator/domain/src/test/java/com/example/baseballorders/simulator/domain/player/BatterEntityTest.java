@@ -88,7 +88,7 @@ class BatterEntityTest {
         // when
         BattingResult result;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.23f);
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.29f);
             result = batter.observedBy(statisticsRecorder).swing(2);
         }
 
@@ -141,7 +141,7 @@ class BatterEntityTest {
         // when
         BattingResult result;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.23f);
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.29f);
             result = batter.swing(1);
         }
 

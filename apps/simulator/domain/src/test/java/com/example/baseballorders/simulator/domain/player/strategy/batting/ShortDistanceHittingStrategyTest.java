@@ -35,9 +35,10 @@ class ShortDistanceHittingStrategyTest {
 
     static Stream<Arguments> battingTestCases() {
         return Stream.of(
-                arguments("単打確率未満なら単打になる", 0.29f, BattingResult.HIT_SINGLE),
-                arguments("単打確率と等しければ二塁打になる", 0.3f, BattingResult.HIT_DOUBLE),
-                arguments("安打確率未満なら二塁打になる", 0.39f, BattingResult.HIT_DOUBLE),
-                arguments("安打確率と等しければアウトになる", 0.4f, BattingResult.OUT));
+                arguments("5%未満なら四球になる", 0.04f, BattingResult.WALK),
+                arguments("単打配分なら単打になる", 0.30f, BattingResult.HIT_SINGLE),
+                arguments("二塁打配分なら二塁打になる", 0.35f, BattingResult.HIT_DOUBLE),
+                arguments("出塁率と等しければ三振になる", 0.4f, BattingResult.STRIKEOUT),
+                arguments("非出塁の25%以降なら凡退になる", 0.55f, BattingResult.BATTED_OUT));
     }
 }

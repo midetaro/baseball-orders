@@ -6,9 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
+import com.example.baseballorders.simulator.domain.play.BattingResult;
+import com.example.baseballorders.simulator.domain.play.BuntResult;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
@@ -25,6 +29,27 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 
 class AtBatProcessorTest {
+
+    @Test
+    @DisplayName("三振では走者を進めずアウトだけを加算する")
+    void strikeoutAddsOutWithoutAdvancingRunner() {
+        // given
+        var runner = runner();
+        var batter = mock(BatterEntity.class);
+        when(batter.bunt(OutCount.NO_OUT)).thenReturn(BuntResult.NOT_TRY);
+        when(batter.swing(1)).thenReturn(BattingResult.STRIKEOUT);
+        var context = GameStateTestFixture.context(runner, null, null, OutCount.NO_OUT);
+
+        // when
+        var completed = new AtBatProcessor().process(context, batter);
+
+        // then
+        assertAll(
+                () -> assertTrue(completed),
+                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentState().getOutCount()),
+                () -> assertSame(runner, context.getCurrentState().runnerAt(Base.FIRST)),
+                () -> assertEquals(1, context.getCurrentState().runnerCount()));
+    }
 
     @Test
     @DisplayName("バント機会がなければバントせず打撃する")

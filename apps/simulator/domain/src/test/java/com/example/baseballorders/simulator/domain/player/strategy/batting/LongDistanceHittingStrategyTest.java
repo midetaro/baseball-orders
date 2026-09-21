@@ -35,10 +35,12 @@ class LongDistanceHittingStrategyTest {
 
     static Stream<Arguments> battingTestCases() {
         return Stream.of(
-                arguments("単打確率未満なら単打になる", 0.24f, BattingResult.HIT_SINGLE),
-                arguments("単打確率と等しければ二塁打になる", 0.25f, BattingResult.HIT_DOUBLE),
-                arguments("二塁打確率と等しければ三塁打になる", 0.26875f, BattingResult.HIT_TRIPLE),
-                arguments("三塁打確率を超えれば本塁打になる", 0.29f, BattingResult.HIT_HOMER),
-                arguments("長距離バッターの安打確率と等しければアウトになる", 0.3625f, BattingResult.OUT));
+                arguments("5%未満なら四球になる", 0.04f, BattingResult.WALK),
+                arguments("長距離打者の単打配分なら単打になる", 0.29f, BattingResult.HIT_SINGLE),
+                arguments("長距離打者の二塁打配分なら二塁打になる", 0.30f, BattingResult.HIT_DOUBLE),
+                arguments("長距離打者の三塁打配分なら三塁打になる", 0.32f, BattingResult.HIT_TRIPLE),
+                arguments("長距離打者の本塁打配分なら本塁打になる", 0.35f, BattingResult.HIT_HOMER),
+                arguments("出塁率と等しければ三振になる", 0.4f, BattingResult.STRIKEOUT),
+                arguments("非出塁の25%以降なら凡退になる", 0.55f, BattingResult.BATTED_OUT));
     }
 }

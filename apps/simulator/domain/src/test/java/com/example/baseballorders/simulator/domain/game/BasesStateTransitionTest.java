@@ -197,6 +197,32 @@ class BasesStateTransitionTest {
         return IntStream.range(0, 8);
     }
 
+    @ParameterizedTest(name = "配置{0}")
+    @MethodSource("configurations")
+    @DisplayName("四球では一塁から連続して埋まった走者だけを押し出す")
+    void forcesOnlyContiguousRunnersOnWalk(int mask) {
+        // given
+        var context = context(mask, 0);
+        BatterEntity first = (mask & 1) != 0 ? FIRST : null;
+        BatterEntity second = (mask & 2) != 0 ? SECOND : null;
+        BatterEntity third = (mask & 4) != 0 ? THIRD : null;
+        BatterEntity expectedSecond = first == null ? second : first;
+        BatterEntity expectedThird = first != null && second != null ? second : third;
+        long expectedScore = mask == 7 ? 1 : 0;
+
+        // when
+        context.walk(BATTER);
+
+        // then
+        var state = context.getCurrentState();
+        assertAll(
+                () -> assertSame(BATTER, state.runnerAt(Base.FIRST)),
+                () -> assertSame(expectedSecond, state.runnerAt(Base.SECOND)),
+                () -> assertSame(expectedThird, state.runnerAt(Base.THIRD)),
+                () -> assertEquals(expectedScore, context.getTotalScore()),
+                () -> assertEquals(OutCount.NO_OUT, state.getOutCount()));
+    }
+
     @ParameterizedTest(name = "配置{0}・二塁への盗塁{1}")
     @MethodSource("unsupportedStealDestinations")
     @DisplayName("現在の走者配置から選べない進塁先には盗塁を試行しない")
