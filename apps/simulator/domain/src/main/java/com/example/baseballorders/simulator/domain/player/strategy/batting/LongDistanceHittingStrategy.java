@@ -20,27 +20,12 @@ public final class LongDistanceHittingStrategy implements HittingStrategy {
 
         float singleProbability = onBasePercentage - extraBaseProbability;
 
-        float cumulative = singleProbability;
-
-        if (random < cumulative) {
-            return BattingResult.HIT_SINGLE;
-        }
-
-        cumulative += doubleProbability;
-        if (random < cumulative) {
-            return BattingResult.HIT_DOUBLE;
-        }
-
-        cumulative += tripleProbability;
-        if (random < cumulative) {
-            return BattingResult.HIT_TRIPLE;
-        }
-
-        cumulative += homeRunProbability;
-        if (random < cumulative) {
-            return BattingResult.HIT_HOMER;
-        }
-
-        return BattingResult.OUT;
+        return BattingResultSelector.select(
+                random,
+                onBasePercentage,
+                singleProbability,
+                doubleProbability,
+                tripleProbability,
+                homeRunProbability);
     }
 }

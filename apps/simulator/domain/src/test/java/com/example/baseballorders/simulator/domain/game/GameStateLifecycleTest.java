@@ -24,7 +24,7 @@ class GameStateLifecycleTest {
         var second = batter();
         when(first.swing(0)).thenReturn(BattingResult.HIT_SINGLE);
         when(first.stealToDouble()).thenReturn(StealResult.FAILURE);
-        when(second.swing(0)).thenReturn(BattingResult.OUT);
+        when(second.swing(0)).thenReturn(BattingResult.STRIKEOUT);
         var context = new GameBattingContext(new LineUpEntity(List.of(first, second)));
         for (int i = 0; i < (inning - 1) * 3 + 2; i++) {
             context.out();
@@ -72,6 +72,7 @@ class GameStateLifecycleTest {
         context.hitDouble(batter);
         context.hitTriple(batter);
         context.hitHomer();
+        context.walk(batter);
         context.buntNotTry();
         context.buntFailure();
         context.buntSuccess();
@@ -105,14 +106,17 @@ class GameStateLifecycleTest {
         assertAll(
                 () ->
                         assertEquals(
-                                result == BattingResult.OUT ? OutCount.ONE_OUT : OutCount.NO_OUT,
+                                result == BattingResult.STRIKEOUT
+                                                || result == BattingResult.BATTED_OUT
+                                        ? OutCount.ONE_OUT
+                                        : OutCount.NO_OUT,
                                 context.getCurrentState().getOutCount()),
                 () ->
                         assertEquals(
                                 result == BattingResult.HIT_HOMER ? 1 : 0, context.getTotalScore()),
                 () ->
                         assertEquals(
-                                result == BattingResult.HIT_SINGLE,
+                                result == BattingResult.HIT_SINGLE || result == BattingResult.WALK,
                                 context.getCurrentState().isOccupied(Base.FIRST)),
                 () ->
                         assertEquals(

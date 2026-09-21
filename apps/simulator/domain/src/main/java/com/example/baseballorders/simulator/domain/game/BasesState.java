@@ -34,6 +34,13 @@ public interface BasesState {
     /** 打撃による凡退を適用し、三死目でなければ一定確率で先頭走者だけを進める。 */
     void battingOut();
 
+    /**
+     * 四球を適用し、一塁から連続して埋まっている走者だけを押し出す。
+     *
+     * @param batter 四球の打者
+     */
+    void walk(BatterEntity batter);
+
     /** 単打による進塁・得点を適用する。 @param batter 単打を打った打者 */
     void hitSingle(BatterEntity batter);
 

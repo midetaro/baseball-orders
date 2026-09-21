@@ -43,7 +43,7 @@ class LineUpMapperTest {
             randomGenerator
                     .when(RandomGenerator::nextFloat)
                     .thenReturn(
-                            personality == PlayerPersonality.EAGER_SLUGGISH ? 0.23f : 0.8f,
+                            personality == PlayerPersonality.EAGER_SLUGGISH ? 0.27f : 0.8f,
                             0.9f,
                             0.1f);
             var batter =
@@ -61,7 +61,7 @@ class LineUpMapperTest {
                         assertEquals(
                                 personality == PlayerPersonality.EAGER_SLUGGISH
                                         ? BattingResult.HIT_HOMER
-                                        : BattingResult.OUT,
+                                        : BattingResult.BATTED_OUT,
                                 battingResult),
                 () -> assertEquals(StealResult.SUCCESS, stealResult),
                 () ->

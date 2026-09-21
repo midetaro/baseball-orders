@@ -13,11 +13,7 @@ public final class ShortDistanceHittingStrategy implements HittingStrategy {
         float singleProbability = onBasePercentage * (1 - sluggish);
         float doubleProbability = onBasePercentage * sluggish;
 
-        if (random < singleProbability) {
-            return BattingResult.HIT_SINGLE;
-        } else if (random < singleProbability + doubleProbability) {
-            return BattingResult.HIT_DOUBLE;
-        }
-        return BattingResult.OUT;
+        return BattingResultSelector.select(
+                random, onBasePercentage, singleProbability, doubleProbability, 0, 0);
     }
 }
