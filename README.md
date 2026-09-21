@@ -59,6 +59,20 @@ BACKEND_PORT=18080 python3 infra/docker/smoke-test.py
 構成、キュー名の変更、トラブルシューティングなどは
 [ローカル Docker 環境の詳細](infra/docker/README.md)を参照してください。
 
+## リリースイメージのECR公開
+
+GitHub Releaseを公開すると、BackendとSimulatorのコンテナイメージをビルドし、Amazon ECRへ自動でpushします。
+各イメージにはGitHub Releaseのタグと`latest`タグが付きます。
+
+GitHub Environment `aws-production`に、次のVariablesを設定してください。
+
+- `AWS_ECR_ROLE_ARN`: ECRへのpush権限を持ち、GitHub OIDCから引き受け可能なIAMロールARN
+- `AWS_REGION`: ECRのAWSリージョン（未設定時は`ap-northeast-1`）
+- `ECR_BACKEND_REPOSITORY`: 作成済みのBackend用ECRリポジトリ名
+- `ECR_SIMULATOR_REPOSITORY`: 作成済みのSimulator用ECRリポジトリ名
+
+リリースタグはDockerイメージタグとして利用できる形式（例: `v1.2.3`）にしてください。
+
 ## Simulator のドメイン設計
 
 `apps/simulator/domain` の主要なドメインクラスと関係を次に示します。図を読みやすくするため、
