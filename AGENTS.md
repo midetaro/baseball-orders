@@ -8,6 +8,11 @@
 - `infra/aws-terraform`: native HCL for AWS messaging resources.
 - `.agents/skills/baseball-orders-development`: task workflow and verification commands.
 
+Before a broad implementation search, use `docs/architecture.md` to select the
+smallest relevant production path and test set. Then confirm that focused path
+against the current source and Gradle files; the map is navigation guidance, not
+a substitute for the code.
+
 Read the nearest nested `AGENTS.md` before changing an application. Use the
 `baseball-orders-development` skill for Java, SQS-contract, cross-application, or
 Terraform changes.
@@ -19,6 +24,80 @@ Terraform changes.
 - Do not wait on interactive commands, foreground servers, credentials, or selectors.
 - Keep SQS wire types in `libs/messaging-contract`; do not create application-local copies.
 - Keep domain and application models independent from transport types unless the boundary mapper itself consumes a shared message.
+- Before implementation, inspect the related production path, tests, specifications,
+  and build files. Protect existing code and all uncommitted user changes; never
+  discard or overwrite work outside the assigned scope.
+
+## Application and module boundaries
+
+- `apps/backend` owns the synchronous HTTP API, server-rendered Thymeleaf UI,
+  application coordination, result waiting, and SQS adapters. It must not contain
+  simulator business rules or directly depend on simulator classes.
+- `apps/simulator` owns simulation use cases and business rules and consumes and
+  produces SQS messages through adapters. It must not directly depend on backend
+  classes.
+- `libs/messaging-contract` is limited to the existing SQS wire contract. Do not
+  move domain models, persistence entities, forms, or view models into it.
+- `integration-test` verifies the assembled backend -> SQS -> simulator -> SQS ->
+  backend path. `infra` owns deployment and local-environment definitions.
+- Within each application, dependencies point inward: `infrastructure ->
+  application -> domain`. Existing direct dependencies declared in Gradle are the
+  authority; do not introduce a reverse dependency. Framework, Thymeleaf, SQS,
+  HTTP, and persistence details are forbidden in domain code.
+- Controllers and listeners translate and delegate. They must not implement
+  business rules. Keep transport DTOs, backend internal models, simulator internal
+  models, and persistence entities separate at their boundaries.
+- Preserve the current modules, composite builds, and dependency directions. Do
+  not add, remove, rename, or move modules to complete a feature.
+
+## Feature graph workflow
+
+Use the custom agents in `.codex/agents` for a feature that crosses independent
+areas. Small, single-area changes should remain in the parent agent when delegation
+would cost more coordination than it saves.
+
+1. Run `explorer` first to map the execution path, dependencies, tests, candidate
+   files, and conflicts without editing.
+2. The parent agent turns that evidence into a dependency graph and assigns each
+   writable file to exactly one node.
+3. Run only independent worker nodes concurrently. A node that consumes another
+   node's contract or output must wait for that upstream node.
+4. Wait for every worker to finish. A blocked, failed, or incomplete worker is not
+   a successful node.
+5. Run `integrator` only after all required workers are complete.
+6. Run `reviewer` in a fresh context using the specification, final diff, and test
+   evidence rather than worker conversation history.
+7. Fix blocking findings, rerun affected checks, then run the full verification.
+
+Prefer parallel read-heavy exploration, tests, and review. Parallelization being
+possible does not make it worthwhile: do not parallelize tightly coupled edits or
+small changes. Never assign the same file to multiple agents at the same time.
+Give every writing agent an explicit writable file or directory scope. The parent
+agent must wait for all spawned agents before integration and final reporting.
+
+Each worker may perform at most five implementation loops: implement, run its
+owning-module tests, identify the failure, fix the single most fundamental cause,
+and rerun. Stop earlier when all tests and acceptance criteria pass, or stop and
+report when five loops are exhausted, an out-of-scope change is required, or an
+ambiguous decision would materially change behavior. Every worker reports:
+
+```text
+## Result
+
+- Status: completed | blocked | failed
+- Files changed:
+- Tests executed:
+- Test result:
+- Decisions:
+- Remaining risks:
+- Required follow-up:
+```
+
+The simulator's stochastic behavior must be reproducible for the same explicit
+seed and input when a feature introduces or changes seeded simulation. Do not add
+hidden entropy or replace a supplied seed. The current code still uses
+`Math.random()` and has no seed input; changing that public behavior requires an
+explicit feature specification rather than an incidental refactor.
 
 ## Module dependency protection
 

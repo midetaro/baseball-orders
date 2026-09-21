@@ -1,5 +1,20 @@
-approval_policy = "never"
-sandbox_mode = "workspace-write"
+default_permissions = "project-config-edit"
 
-[sandbox_workspace_write]
-network_access = true
+[permissions.project-config-edit]
+description = "Allow project and .codex configuration edits."
+extends = ":workspace"
+
+[permissions.project-config-edit.filesystem]
+":minimal" = "read"
+
+[permissions.project-config-edit.filesystem.":workspace_roots"]
+"." = "write"
+".codex" = "write"
+".git" = "write"
+
+[permissions.project-config-edit.network]
+enabled = true
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4
