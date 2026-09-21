@@ -6,6 +6,8 @@ Baseball Orders は、打者の能力と打順を設定し、試合シミュレ�
 ブラウザから受け付けたシミュレーション要求を SQS 互換のメッセージキューへ送り、独立した Simulator が
 試合を計算します。計算結果は同じメッセージキューを経由して Backend に戻り、画面へ同期的に返されます。
 
+[Simulatorの詳細](apps/simulator/README.md)を参照してください。
+
 ## 構成図
 
 ```mermaid

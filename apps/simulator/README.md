@@ -1,88 +1,356 @@
-# Simulator
+# Simulator domain class design
 
-`simulator` は、SQS で受け取った打順を使って野球の試合を複数回シミュレーションし、得点・プレー統計を SQS に返す非同期ワーカーです。
+`simulator` の domain 層は、野球のシミュレーション規則を外部 I/O から独立させたモデルです。この文書では、`domain.game`、`domain.player`、`domain.statistics` の3パッケージを単位に、主要クラスの責務と関係を説明します。
 
-このREADMEでは、実装を読むときの共通言語としてデザインパターンの用語を使います。ここでの名称はコードの意図を説明するためのものであり、すべてを厳密な GoF パターンとして扱うものではありません。
+図では同じ役割の具象クラスを代表例へまとめています。矢印の `--|>` は継承またはインターフェース実装、`-->` は利用、`*--` は所有を表します。`domain.play` の enum は3パッケージ間で受け渡すプレー結果なので、関係を理解するために必要な箇所だけ掲載します。
 
-## 全体像
+## `domain.game`: 試合進行と塁状態
 
-```text
-SQS request
-  -> SqsSimulationScheduler（Inbound Adapter）
-  -> LineUpMapper（Mapper / Anti-corruption boundary）
-  -> SimulateGameUseCase（Application Service）
-  -> GameBattingContext と Domain Model
-  -> SimulationResult
-  -> SqsSimulationScheduler（Outbound Adapter）
-  -> SQS result
+`GameBattingContext` は試合全体の Context です。イニング、得点、打順、現在の `BasesState` を保持し、`AtBatProcessor` に一打席の進行を委譲します。`AtBatProcessor` は「盗塁、バント、打撃」の順に結果を判定し、その結果に対応するイベントを Context へ返します。Context はイベントを現在の State へ委譲し、State が走者、アウト、得点と次の塁状態を更新します。
+
+```mermaid
+classDiagram
+    class GameBattingContext {
+        -long inning
+        -long totalScore
+        -BasesState currentState
+        -List~BatterEntity~ batterEntityOrders
+        +nextAtBat()
+        +changeState(int configuration)
+        +completeInning()
+        +hitSingle(BatterEntity batter)
+        +buntSuccess()
+        +stealSuccess()
+    }
+
+    class AtBatProcessor {
+        ~process(GameBattingContext context, BatterEntity batter) boolean
+    }
+
+    class BasesState {
+        <<interface>>
+        +getOutCount() OutCount
+        +runnerCount() int
+        +out()
+        +battingOut()
+        +hitSingle(BatterEntity batter)
+        +hitDouble(BatterEntity batter)
+        +hitTriple(BatterEntity batter)
+        +hitHomer()
+    }
+
+    class AbstractBasesState {
+        <<abstract>>
+        #GameBattingContext context
+        -InningState inningState
+        #transition(BatterEntity first, BatterEntity second, BatterEntity third, long runs)
+    }
+
+    class NoBasesState
+    class SingleBasesState
+    class OtherBasesStates {
+        <<6 concrete states>>
+        DoubleBaseState
+        FirstDoubleBaseState
+        ThirdBaseState
+        FirstThirdBaseState
+        DoubleThirdBaseState
+        FullBasesState
+    }
+
+    class InningState {
+        -OutCount outCount
+        -BatterEntity first
+        -BatterEntity second
+        -BatterEntity third
+        +runnerAt(Base base) BatterEntity
+        ~place(BatterEntity first, BatterEntity second, BatterEntity third)
+        ~reset()
+    }
+
+    class BaseStateFactory {
+        +createNoBasesState(...) NoBasesState
+        +createSingleBasesState(...) SingleBasesState
+        +createOtherStates(...)
+    }
+
+    class Buntable {
+        <<sealed interface>>
+        +bunt(BatterEntity batter) BuntResult
+        +buntFailure()
+        +buntSuccess()
+    }
+    class AdvancingBuntable {
+        <<interface>>
+    }
+    class SqueezeBuntable {
+        <<interface>>
+    }
+    class Stealable {
+        <<sealed interface>>
+        +runner() BatterEntity
+        +sourceBase() Base
+        +targetBase() Base
+        +stealFailure()
+        +stealSuccess()
+    }
+    class StealableToDoubleBase {
+        <<interface>>
+    }
+    class StealableToTripleBase {
+        <<interface>>
+    }
+
+    GameBattingContext *-- AtBatProcessor
+    GameBattingContext *-- BasesState : currentState
+    GameBattingContext --> BaseStateFactory : creates states
+    GameBattingContext --> BatterEntity : batting order
+    AtBatProcessor --> GameBattingContext : sends events
+    AtBatProcessor --> BatterEntity : requests play result
+
+    AbstractBasesState --> GameBattingContext
+    AbstractBasesState --> InningState : shared by 8 states
+    NoBasesState --|> AbstractBasesState
+    NoBasesState --|> BasesState
+    SingleBasesState --|> AbstractBasesState
+    SingleBasesState --|> BasesState
+    OtherBasesStates --|> AbstractBasesState
+    OtherBasesStates --|> BasesState
+
+    Buntable --|> BasesState
+    AdvancingBuntable --|> Buntable
+    SqueezeBuntable --|> Buntable
+    StealableToDoubleBase --|> Stealable
+    StealableToTripleBase --|> Stealable
+    SingleBasesState --|> AdvancingBuntable
+    SingleBasesState --|> StealableToDoubleBase
 ```
 
-パッケージは `application`、`domain`、`infrastructure` に分かれています。これはレイヤード・アーキテクチャであり、外部 I/O を `infrastructure` に寄せ、試合のルールを `domain` に閉じ込める構成です。`SimulationRequestMessage` の復元と `SimulationResultMessage` の直列化は infrastructure adapter の責務です。この点では Hexagonal Architecture（Ports and Adapters）の考え方も採用しています。
+### GoF State パターン
 
-## 採用しているパターン
+State パターンの `Context` が `GameBattingContext`、`State` が `BasesState`、`ConcreteState` が走者配置ごとの8クラスです。たとえば `SingleBasesState.hitDouble()` は打者を二塁、一塁走者を三塁へ置き、配置 `110` に対応する State へ Context を切り替えます。呼び出し側は現在の走者配置を条件分岐せず、同じ `hitDouble` を呼べます。
 
-| パターン | 主な要素 | このモジュールでの役割 |
-| --- | --- | --- |
-| Adapter | `SqsSimulationScheduler` | AWS SQS の受信・送信を、アプリケーションの呼び出しに変換する。 |
-| Application Service | `SimulateGameUseCase` | ユースケースの流れ（指定回数の試合実行と集計）を調整し、個別の野球ルールは保持しない。 |
-| Mapper | `LineUpMapper` | shared contract の `SimulationPlayerMessage` をドメインの `BatterEntity`/`LineUpEntity` に変換する。プレイヤー転送データの事情をドメインから隔離する。 |
-| Strategy | `HittingStrategy`、`StealStrategy`、`BuntStrategy` と各実装 | 打撃・盗塁・バントの判定アルゴリズムを交換可能にする。`BatterEntity` はインターフェースへ依存する。 |
-| State | `BasesState` と各塁配置クラス | 塁上の走者配置をオブジェクトで表し、打撃・盗塁・犠打後の次状態を返す。状態遷移を明示的な値として扱う。 |
-| Context | `GameBattingContext` | イニング、アウト、得点、現在の `BasesState`、打順を保持し、一打席ずつ試合を進める。State パターンの文脈では Context に当たる。 |
-| Value Object | `BaseTransition`、`GameStatistics`、`ScoreStatistics` | プレー結果や統計値を値として受け渡す。不変な結果を返し、状態更新と得点加算を明示する。 |
-| Accumulator | `ScoreAccumulator`、`GameStatisticsRecorder` | 試合終了通知で多数試合の得点・プレー統計を、または一試合中のプレー統計を逐次集計してスナップショットを生成する。 |
+全 ConcreteState は同じ試合の `InningState` を共有します。`AbstractBasesState.transition(...)` が走者の配置、得点加算、State 切り替えを一つの操作として行うため、State オブジェクトを切り替えても走者とアウト数は失われません。`out()` で三死になった場合は `InningState` を初期化し、Context の `completeInning()` へ進みます。
 
-## Strategy: 選手の行動を差し替える
+### GoF Template Method の考え方と能力インターフェース
 
-`BatterEntity` は、具体的な確率計算を知らずに各戦略へ委譲します。
+`AbstractBasesState` は、三塁打、本塁打、凡退、盗塁などに共通する処理の骨格を提供し、各 ConcreteState は単打・二塁打時の走者配置など差分だけを実装します。厳密に一つの template method が抽象ステップを順番に呼ぶ形ではありませんが、「不変な遷移手順を基底クラスへ集約し、可変部分を派生クラスへ残す」という Template Method の考え方を使っています。
 
-```text
-BatterEntity
-  ├─ AtBatBehavior   -> Middle/Long/ShortDistanceBattingBehavior
-  ├─ StealStrategy   -> Eager/Middle/NowayStealBehavior
-  └─ BuntStrategy    -> Standard/Eager/NowayBuntStrategy
+`Buntable` と `Stealable` は、すべての塁状態に不可能な操作を持たせないための能力インターフェースです。さらにバントは進塁打とスクイズ、盗塁は二塁行きと三塁行きに分かれます。これは GoF パターンそのものではなく、State の種類と「その状態で可能なプレー」を型で表す設計です。
+
+| 走者配置 | ConcreteState | バント能力 | 盗塁能力 |
+| --- | --- | --- | --- |
+| なし | `NoBasesState` | なし | なし |
+| 一塁 | `SingleBasesState` | `AdvancingBuntable` | `StealableToDoubleBase` |
+| 二塁 | `DoubleBaseState` | `AdvancingBuntable` | `StealableToTripleBase` |
+| 一・二塁 | `FirstDoubleBaseState` | `AdvancingBuntable` | `StealableToTripleBase` |
+| 三塁 | `ThirdBaseState` | `SqueezeBuntable` | なし |
+| 一・三塁 | `FirstThirdBaseState` | `SqueezeBuntable` | `StealableToDoubleBase` |
+| 二・三塁 | `DoubleThirdBaseState` | `SqueezeBuntable` | なし |
+| 満塁 | `FullBasesState` | `SqueezeBuntable` | なし |
+
+`BaseStateFactory` は8種類の State を試合単位で生成します。生成処理を集約する点では Factory の役割ですが、サブクラスが生成物を選択する GoF の Factory Method ではなく、状態を持たない Simple Factory です。
+
+## `domain.player`: 選手と行動戦略
+
+`BatterEntity` は選手の確率値を保持し、打撃・盗塁・バントのアルゴリズムを三つの Strategy に委譲します。プレー結果を決めた直後に `PlayResultObserver` へ通知しますが、走者や得点は変更しません。それらの試合規則は `domain.game` の責務です。
+
+```mermaid
+classDiagram
+    class Player {
+        <<abstract>>
+    }
+    class BatterEntity {
+        -float onBasePercentage
+        -float sluggish
+        -float buntSuccessRate
+        -float stealSuccessRate
+        -HittingStrategy hittingStrategy
+        -StealStrategy stealStrategy
+        -BuntStrategy buntStrategy
+        -PlayResultObserver playResultObserver
+        +swing(int runnerCount) BattingResult
+        +stealToDouble() StealResult
+        +stealToTriple() StealResult
+        +bunt(OutCount outCount) BuntResult
+        +observedBy(PlayResultObserver observer) BatterEntity
+    }
+    class LineUpEntity {
+        -List~BatterEntity~ batterEntities
+    }
+
+    class HittingStrategy {
+        <<sealed interface>>
+        +batting(float onBasePercentage, float sluggish) BattingResult
+    }
+    class MiddleDistanceHittingStrategy
+    class OtherHittingStrategies {
+        <<concrete strategies>>
+        LongDistanceHittingStrategy
+        ShortDistanceHittingStrategy
+    }
+
+    class StealStrategy {
+        <<sealed interface>>
+        +runToDouble(float successRate) StealResult
+        +runToTriple(float successRate) StealResult
+    }
+    class StandardStealStrategy
+    class OtherStealStrategies {
+        <<concrete strategies>>
+        EagerStealStrategy
+        NowayStealStrategy
+    }
+
+    class BuntStrategy {
+        <<sealed interface>>
+        +bunt(float successRate, OutCount outCount) BuntResult
+    }
+    class StandardBuntStrategy
+    class OtherBuntStrategies {
+        <<concrete strategies>>
+        EagerBuntStrategy
+        NowayBuntStrategy
+    }
+
+    class BehaviorStrategies {
+        <<static factory>>
+        +middleDistanceHittingStrategy() HittingStrategy
+        +standardSteal() StealStrategy
+        +standardBunt() BuntStrategy
+    }
+    class PlayResultObserver {
+        <<interface, domain.statistics>>
+    }
+
+    BatterEntity --|> Player
+    LineUpEntity *-- "*" BatterEntity
+    BatterEntity --> HittingStrategy
+    BatterEntity --> StealStrategy
+    BatterEntity --> BuntStrategy
+    BatterEntity --> PlayResultObserver : notifies
+
+    MiddleDistanceHittingStrategy --|> HittingStrategy
+    OtherHittingStrategies --|> HittingStrategy
+    StandardStealStrategy --|> StealStrategy
+    OtherStealStrategies --|> StealStrategy
+    StandardBuntStrategy --|> BuntStrategy
+    OtherBuntStrategies --|> BuntStrategy
+    BehaviorStrategies ..> HittingStrategy : creates
+    BehaviorStrategies ..> StealStrategy : creates
+    BehaviorStrategies ..> BuntStrategy : creates
 ```
 
-たとえば「盗塁をしない」選手は `NowayStealStrategy` を持ちます。呼び出し側で `stealEnabled` の分岐を繰り返す代わりに、戦略オブジェクトへ判断を委譲できます。新しい行動を追加するときは、既存の条件分岐を増やすより、対応する Strategy インターフェースの実装を追加し、`LineUpMapper` または設定から選択するのが基本です。
+### GoF Strategy パターン
 
-## State: 塁配置と遷移を表す
+Strategy パターンの `Context` は `BatterEntity`、Strategy は `HittingStrategy`、`StealStrategy`、`BuntStrategy` の三つです。各インターフェースは sealed で実装候補を限定しています。
 
-`BasesState` は走者なし、1・2塁、満塁などの塁配置を表します。`hitSingle` や `sacrificeBunt` などは、状態を破壊的に変更せず `BaseTransition` を返します。
+- 打撃 Strategy は、出塁率と長打率を各打撃結果へ配分する方法を変えます。
+- 盗塁 Strategy は、二塁・三塁への挑戦頻度と成功判定を変えます。
+- バント Strategy は、アウト数に応じて試みるかどうかと成功判定を変えます。
 
-```text
-現在の BasesState
-  -> プレーを適用
-  -> BaseTransition(nextState, scoredRuns)
-  -> GameBattingContext が得点を加算し、nextState に置換
+たとえば消極的な走塁を表現するために呼び出し側へ `if (stealEnabled)` を追加する必要はありません。`NowayStealStrategy` が常に `NOT_TRY` を返すため、`BatterEntity` と試合進行は同じ呼び出し方を維持できます。この具象 Strategy は Null Object の考え方も兼ねています。
+
+`BehaviorStrategies` は具象クラス名を利用側へ露出せず Strategy を生成する静的ファクトリです。これは生成を一箇所へまとめる補助クラスであり、GoF の Factory Method ではありません。
+
+`BatterEntity.observedBy(...)` は能力値と Strategy を共有し、通知先だけを差し替えた新しい打者を返します。これにより、入力された `LineUpEntity` 自体を変更せず、試合ごとの統計記録先を結び付けられます。
+
+## `domain.statistics`: プレー通知と集計結果
+
+統計は二つの Observer 境界で集計されます。一打席ごとの結果は `PlayResultObserver`、一試合の完了は `GameCompletionObserver` を通じて通知されます。この分離により、試合ロジックは複数試合の平均・中央値・分布の計算を知りません。
+
+```mermaid
+classDiagram
+    class PlayResultObserver {
+        <<Observer interface>>
+        +onBattingResult(BattingResult result, int runnerCount)
+        +onBuntResult(BuntResult result)
+        +onStealResult(StealResult result)
+    }
+    class GameStatisticsRecorder {
+        -int homeRunCount
+        -int buntCount
+        -int stealCount
+        +snapshot() GameStatistics
+    }
+    class GameStatistics {
+        <<immutable record>>
+        +int homeRunCount
+        +int buntCount
+        +int stealCount
+        +int buntFailureCount
+        +int stealFailureCount
+    }
+
+    class GameCompletionObserver {
+        <<Observer interface>>
+        +onGameCompleted(long totalScore, GameStatistics statistics)
+    }
+    class ScoreAccumulator {
+        -List~Integer~ scores
+        -Map~Integer,Integer~ scoreDistribution
+        -long totalScore
+        +onGameCompleted(long totalScore, GameStatistics statistics)
+        +toScoreStatistics() ScoreStatistics
+    }
+    class ScoreStatistics {
+        <<value record>>
+        +double averageScore
+        +double medianScore
+        +int maximumScore
+        +int gameCount
+        +Map~Integer,Integer~ scoreDistribution
+    }
+
+    class BatterEntity {
+        <<domain.player Subject>>
+    }
+    class GameBattingContext {
+        <<domain.game Subject>>
+    }
+
+    GameStatisticsRecorder --|> PlayResultObserver
+    BatterEntity --> PlayResultObserver : notifies each play
+    GameStatisticsRecorder --> GameStatistics : snapshot
+
+    ScoreAccumulator --|> GameCompletionObserver
+    GameBattingContext --> GameCompletionObserver : notifies once at game end
+    GameBattingContext --> GameStatisticsRecorder : owns per game
+    ScoreAccumulator --> GameStatistics : accumulates
+    ScoreAccumulator --> ScoreStatistics : creates final result
 ```
 
-これは GoF の State を厳密に実装するというより、State パターンの「状態と遷移を第一級にする」考え方を用いたモデルです。塁状態の遷移規則は `BasesState` 側、試合全体の可変状態（アウト、回、得点、打順）は `GameBattingContext` 側にあります。塁配置を追加・変更する場合は、遷移の不変性と `BaseTransition` の得点を一緒に検証します。
+### GoF Observer パターン
 
-## Adapter: メッセージング境界
+一試合内では `BatterEntity` が Subject、`GameStatisticsRecorder` が Observer です。打撃結果にはプレー適用前の走者数も通知するため、Recorder はソロ、2ラン、3ラン、満塁本塁打を分類できます。バントと盗塁は `SUCCESS` と `FAILURE` をそれぞれ加算し、`NOT_TRY` は記録しません。
 
-`SqsSimulationScheduler` は inbound と outbound の両方の adapter です。
+複数試合の境界では `GameBattingContext` が Subject、`ScoreAccumulator` が Observer です。九回終了時に Context が最終得点と `GameStatistics` を一度だけ通知し、Accumulator は得点一覧、得点分布、プレー回数を一回の通知処理で同時に加算します。`toScoreStatistics()` は全試合終了後に平均、中央値、最大値を含む結果を生成します。
 
-1. request queue から `SimulationRequestMessage` を取得する。
-2. `LineUpMapper` と `SimulateGameUseCase` を呼ぶ。
-3. `SimulationResultMessage` を result queue へ送る。
-4. 結果の送信が成功した後にだけ request message を削除する。
+ここでは Observer の登録・解除を Subject 自身が管理せず、コンストラクタまたは `observedBy(...)` で一つの通知先を注入します。汎用イベント配信機構ではなく、依存方向を `game` / `player` から統計処理のインターフェースへ向けるために Observer の概念を絞って使っています。
 
-この delete-after-send の順序は少なくとも 1 回処理されうる SQS の再配送に備えるための重要な契約です。メッセージの JSON 変換やキュー名解決も adapter の責務であり、domain には置きません。
+`GameStatistics` と `ScoreStatistics` は、可変な Recorder / Accumulator の現在値を切り出す record です。`GameStatistics` は primitive 値だけを持つ不変なスナップショットです。`ScoreStatistics` は得点分布をコピーして Accumulator から分離しますが、保持する `Map` 自体を変更不可にはしていないため、深い不変性までは保証しません。状態を値として切り出す点は GoF の Memento に似ていますが、復元操作を持たないため厳密な Memento パターンではありません。
 
-## 変更時の目安
+## パッケージ間の処理フロー
 
-- 野球の確率・プレー選択を変える: Strategy 実装を変更・追加する。
-- 走者の進塁や得点を変える: `BasesState` と `BaseTransition` を変更する。
-- 試合の進行順・試合回数を変える: `GameBattingContext` または `SimulateGameUseCase` を確認する。
-- SQS の形式・配送処理を変える: messaging contract と `SqsSimulationScheduler` を確認する。wire type は application/domain に漏らさない。
-- 集計項目を増やす: `GameStatisticsRecorder` または `ScoreAccumulator` に一回の走査で加算する。
+```text
+GameBattingContext.nextAtBat()
+  -> AtBatProcessor
+     -> BatterEntity
+        -> Strategy がプレー結果を決定
+        -> GameStatisticsRecorder へ結果を通知
+     -> 現在の BasesState が走者・アウト・得点を更新
+  -> 九回終了時に ScoreAccumulator へ得点と GameStatistics を通知
+  -> ScoreAccumulator.toScoreStatistics() が複数試合の集計結果を生成
+```
 
-## テストと検証
+責務の境界は、`player` が「選手の能力と行動結果」、`game` が「結果を適用する試合規則」、`statistics` が「発生済み結果の観測と集計」です。新しい行動傾向は Strategy、新しい塁遷移は State、集計項目の追加は Observer 実装と不変な統計 record に閉じ込めます。
 
-通常の変更では、まず対象クラスのテストを追加または更新し、その後に次を実行します。
+## 検証
+
+domain 層を変更した場合は、リポジトリ共通の検証スクリプトを実行します。
 
 ```sh
 ../../.agents/skills/baseball-orders-development/scripts/verify.sh simulator
 ```
 
-`ELASTICMQ_ENDPOINT_URL` を設定した場合は、ElasticMQ を使う SQS integration test も実行されます。
+`ELASTICMQ_ENDPOINT_URL` が未設定の場合、ElasticMQ を使う integration test は実行されません。
