@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Configuration;
 /** application層のユースケースをSpringへ登録する構成。 */
 @Configuration
 public class InfrastructureConfiguration {
-
     /**
      * 待機結果レジストリを生成する。
      *
