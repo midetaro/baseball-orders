@@ -33,6 +33,32 @@ assert.ok(html.includes('本塁打の内訳'), '本塁打統計を構造化し�
 assert.ok(html.includes('戦術の成否'), '戦術統計を構造化して表示する');
 assert.ok(html.includes("Array.of('失敗バント',statistics.buntFailureCount)"), '失敗バント数を表示する');
 assert.ok(html.includes("Array.of('失敗盗塁',statistics.stealFailureCount)"), '失敗盗塁数を表示する');
+assert.ok(html.includes('バントの内訳'), 'バント統計を色分けした内訳として表示する');
+assert.ok(html.includes('盗塁の内訳'), '盗塁統計を色分けした内訳として表示する');
+assert.ok(html.includes("Array.of('進塁成功',statistics.advancingBuntCount,'advancing-bunt')"), '進塁バント成功数を表示する');
+assert.ok(html.includes("Array.of('スクイズ成功',statistics.squeezeBuntCount,'squeeze-bunt')"), 'スクイズ成功数を表示する');
+assert.ok(html.includes("Array.of('進塁失敗',statistics.advancingBuntFailureCount,'advancing-bunt-failure')"), '進塁バント失敗数を表示する');
+assert.ok(html.includes("Array.of('スクイズ失敗',statistics.squeezeBuntFailureCount,'squeeze-bunt-failure')"), 'スクイズ失敗数を表示する');
+assert.ok(html.includes("Array.of('二盗成功',statistics.stealToSecondCount,'steal-second')"), '二盗成功数を表示する');
+assert.ok(html.includes("Array.of('三盗成功',statistics.stealToThirdCount,'steal-third')"), '三盗成功数を表示する');
+assert.ok(html.includes("Array.of('失敗',statistics.stealFailureCount,'steal-failure')"), '盗塁失敗数を内訳へ表示する');
+assert.ok(html.includes('const detailTotal=details.reduce'), '内訳項目の合計を割合の分母にする');
+assert.ok(html.includes('Number(count)/detailTotal*100'), '集計総数と内訳合計が異なっても内訳比率を誤表示しない');
+assert.ok(html.includes('id="bunt-count"'), '既存の成功バント総数を表示する');
+assert.ok(html.includes('id="bunt-failure-count"'), '既存の失敗バント総数を表示する');
+assert.ok(html.includes('id="steal-count"'), '既存の成功盗塁総数を表示する');
+assert.ok(html.includes('id="steal-failure-count"'), '既存の失敗盗塁総数を表示する');
+for (const [kind, color] of [
+  ['advancing-bunt', 'var(--cyan)'],
+  ['squeeze-bunt', 'var(--lime)'],
+  ['advancing-bunt-failure', 'var(--orange)'],
+  ['squeeze-bunt-failure', 'var(--pink)'],
+  ['steal-second', 'var(--cyan)'],
+  ['steal-third', 'var(--violet)'],
+  ['steal-failure', 'var(--orange)']
+]) {
+  assert.ok(html.includes(`.${kind} { background:${color}; }`), `${kind}を固有の色で表示する`);
+}
 assert.ok(html.includes('id="share-results"'), '結果をSNS共有できる操作を表示する');
 assert.ok(html.includes('navigator.share'), '対応ブラウザではネイティブ共有を使う');
 assert.ok(html.includes('clipboard.writeText'), 'ネイティブ共有非対応時は共有文をコピーする');

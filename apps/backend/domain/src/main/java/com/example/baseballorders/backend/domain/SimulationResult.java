@@ -38,6 +38,12 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
      * @param stealCount 成功盗塁数
      * @param buntFailureCount 失敗バント数
      * @param stealFailureCount 失敗盗塁数
+     * @param advancingBuntCount 進塁バント成功数
+     * @param squeezeBuntCount スクイズ成功数
+     * @param advancingBuntFailureCount 進塁バント失敗数
+     * @param squeezeBuntFailureCount スクイズ失敗数
+     * @param stealToSecondCount 二盗成功数
+     * @param stealToThirdCount 三盗成功数
      */
     @Builder(style = BuilderStyle.STAGED)
     public record Statistics(
@@ -54,7 +60,13 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
             int buntCount,
             int stealCount,
             int buntFailureCount,
-            int stealFailureCount) {
+            int stealFailureCount,
+            int advancingBuntCount,
+            int squeezeBuntCount,
+            int advancingBuntFailureCount,
+            int squeezeBuntFailureCount,
+            int stealToSecondCount,
+            int stealToThirdCount) {
 
         /**
          * Creates statistics with no failed tactical-play counts.
@@ -99,6 +111,12 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
                     buntCount,
                     stealCount,
                     0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
                     0);
         }
 
@@ -110,7 +128,27 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
          * @param maximumScore 最大得点
          */
         public Statistics(double averageScore, double medianScore, int maximumScore) {
-            this(averageScore, medianScore, maximumScore, 0, Map.of(), 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            this(
+                    averageScore,
+                    medianScore,
+                    maximumScore,
+                    0,
+                    Map.of(),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0);
         }
     }
 
