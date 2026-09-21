@@ -74,7 +74,7 @@ class GameBattingContextTest {
 
         // when
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.23f);
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.29f);
             context.nextAtBat();
         }
 
