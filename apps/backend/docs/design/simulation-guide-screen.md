@@ -72,5 +72,5 @@
 
 - `../features/done-feature-gui-20260907.md`
 - `../features/done-faeture-20260913-3.md`
-- `../features/feature-change-20260919-5.md`
+- `../features/done-feature-change-20260919-5.md`
 - `../features/feature-web-20260920.md`

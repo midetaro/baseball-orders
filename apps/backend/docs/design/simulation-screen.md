@@ -179,7 +179,7 @@
 - `../features/done-feature-front-20260914.md`
 - `../features/done-refactor-20260918.md`
 - `../features/done-feat-web-20260919.md`
-- `../features/feature-change-20260919-5.md`
+- `../features/done-feature-change-20260919-5.md`
 - `../features/feature-web-20260920.md`
 - `../features/yyyymmdd.md`
 

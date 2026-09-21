@@ -37,7 +37,7 @@ assert.ok(html.includes('id="share-results"'), '結果をSNS共有できる操�
 assert.ok(html.includes('navigator.share'), '対応ブラウザではネイティブ共有を使う');
 assert.ok(html.includes('clipboard.writeText'), 'ネイティブ共有非対応時は共有文をコピーする');
 assert.ok(html.includes('.order { width:max-content; min-width:570px;'), '入力欄を親幅いっぱいに広げずコンパクトにする');
-assert.ok(html.includes('grid-template-columns:38px repeat(4,76px) 78px 78px'), '入力列を読みやすい固定幅にする');
+assert.ok(html.includes('grid-template-columns:38px repeat(4,76px) 118px 78px 78px'), '性格列を含む入力列を読みやすい固定幅にする');
 assert.ok(html.includes('class="lineup-workspace"'), '打順入力とシミュレーション操作を横並びに配置する');
 assert.ok(html.includes('.section-head { display:flex;'), '打順入力の見出しと実行操作を横並びにする');
 assert.ok(html.includes('<h2 id="order-heading">打順入力</h2><button class="submit"'), '実行操作を打順入力ラベルの直後に置く');
@@ -71,5 +71,9 @@ assert.ok(html.includes("enabledKey:'stealEnabled'"), '盗塁成功率は盗塁�
 assert.ok(html.includes("input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]);"), 'バント・盗塁をしない場合は対応する成功率を入力不可にする');
 assert.ok(html.includes("fetch('/simulations'"), '直接入力をシミュレーションAPIへ送る');
 assert.ok(!html.includes('name:'), '固定表示の打者名をAPIへ送らない');
+assert.ok(html.includes('--cyan:#25d9ff'), 'ビビットなシアンを画面全体の強調色に使う');
+assert.ok(html.includes('--pink:#ff4da6'), 'ビビットなピンクを画面全体の強調色に使う');
+assert.ok(html.includes('radial-gradient(circle at 15% 10%'), '複数の差し色でページ背景に奥行きを作る');
+assert.ok(html.includes('linear-gradient(135deg,var(--cyan),var(--lime))'), '主要アクションを鮮やかなグラデーションで強調する');
 
 console.log('PASS: 直接入力、必須値・率の範囲制御、バント選択の送信');

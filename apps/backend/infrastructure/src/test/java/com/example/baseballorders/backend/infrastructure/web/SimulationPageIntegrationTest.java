@@ -214,7 +214,10 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("一死でもバントを試みます")),
                 () -> assertTrue(response.body().contains("平均得点")),
                 () -> assertTrue(response.body().contains("盗塁死となり、アウトが一つ増えます")),
-                () -> assertTrue(response.body().contains("打順を組み立てる")));
+                () -> assertTrue(response.body().contains("打順を組み立てる")),
+                () -> assertTrue(response.body().contains("--cyan:#25d9ff")),
+                () -> assertTrue(response.body().contains("--pink:#ff4da6")),
+                () -> assertTrue(response.body().contains("radial-gradient(circle at 15% 10%")));
     }
 
     private static void assertContainsPattern(String actual, String pattern) {
