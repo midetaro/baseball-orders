@@ -8,6 +8,11 @@
 - `infra/aws-terraform`: native HCL for AWS messaging resources.
 - `.agents/skills/baseball-orders-development`: task workflow and verification commands.
 
+Before a broad implementation search, use `docs/architecture.md` to select the
+smallest relevant production path and test set. Then confirm that focused path
+against the current source and Gradle files; the map is navigation guidance, not
+a substitute for the code.
+
 Read the nearest nested `AGENTS.md` before changing an application. Use the
 `baseball-orders-development` skill for Java, SQS-contract, cross-application, or
 Terraform changes.
