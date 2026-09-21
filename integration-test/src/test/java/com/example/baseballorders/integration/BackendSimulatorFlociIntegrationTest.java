@@ -8,12 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.example.baseballorders.backend.BackendApplication;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
-import com.example.baseballorders.simulator.application.LineUpMapper;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
-import com.example.baseballorders.simulator.domain.model.behavior.batting.MiddleDistanceBattingBehavior;
-import com.example.baseballorders.simulator.domain.model.behavior.bunt.StandardBuntStrategy;
-import com.example.baseballorders.simulator.domain.model.behavior.steal.NowayStealBehavior;
-import com.example.baseballorders.simulator.infrastructure.SqsSimulationScheduler;
+import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
+import com.example.baseballorders.simulator.infrastructure.messaging.LineUpMapper;
+import com.example.baseballorders.simulator.infrastructure.messaging.SqsSimulationScheduler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.floci.testcontainers.FlociContainer;
@@ -76,9 +74,9 @@ class BackendSimulatorFlociIntegrationTest {
                     var registry = backend.getBean(WaitingResultRegistry.class);
                     var mapper = new ObjectMapper();
                     var lineupMapper = new LineUpMapper(
-                            new MiddleDistanceBattingBehavior(),
-                            new NowayStealBehavior(),
-                            new StandardBuntStrategy());
+                            BehaviorStrategies.middleDistanceHittingStrategy(),
+                            BehaviorStrategies.noSteal(),
+                            BehaviorStrategies.standardBunt());
                     var simulator = new SqsSimulationScheduler(
                             sqs, mapper, new SimulateGameUseCase(1), lineupMapper, requestQueue, resultQueue);
                     var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/simulations"))
