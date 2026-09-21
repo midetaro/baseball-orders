@@ -1,11 +1,13 @@
+approval_policy = "never"
 default_permissions = "project-config-edit"
 
 [permissions.project-config-edit]
-description = "Allow project and .codex configuration edits."
+description = "Allow project, .codex, .git, and Gradle cache edits."
 extends = ":workspace"
 
 [permissions.project-config-edit.filesystem]
 ":minimal" = "read"
+"~/.gradle" = "write"
 
 [permissions.project-config-edit.filesystem.":workspace_roots"]
 "." = "write"
