@@ -6,6 +6,8 @@ Baseball Orders は、打者の能力と打順を設定し、試合シミュレ�
 ブラウザから受け付けたシミュレーション要求を SQS 互換のメッセージキューへ送り、独立した Simulator が
 試合を計算します。計算結果は同じメッセージキューを経由して Backend に戻り、画面へ同期的に返されます。
 
+[Simulatorの詳細](apps/simulator/README.md)を参照してください。
+
 ## 構成図
 
 ```mermaid
@@ -58,6 +60,20 @@ BACKEND_PORT=18080 python3 infra/docker/smoke-test.py
 
 構成、キュー名の変更、トラブルシューティングなどは
 [ローカル Docker 環境の詳細](infra/docker/README.md)を参照してください。
+
+## リリースイメージのECR公開
+
+GitHub Releaseを公開すると、BackendとSimulatorのコンテナイメージをビルドし、Amazon ECRへ自動でpushします。
+各イメージにはGitHub Releaseのタグと`latest`タグが付きます。
+
+GitHub Environment `aws-production`に、次のVariablesを設定してください。
+
+- `AWS_ECR_ROLE_ARN`: ECRへのpush権限を持ち、GitHub OIDCから引き受け可能なIAMロールARN
+- `AWS_REGION`: ECRのAWSリージョン（未設定時は`ap-northeast-1`）
+- `ECR_BACKEND_REPOSITORY`: 作成済みのBackend用ECRリポジトリ名
+- `ECR_SIMULATOR_REPOSITORY`: 作成済みのSimulator用ECRリポジトリ名
+
+リリースタグはDockerイメージタグとして利用できる形式（例: `v1.2.3`）にしてください。
 
 ## Simulator のドメイン設計
 

@@ -1,0 +1,72 @@
+name: Publish release images to Amazon ECR
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release-ecr-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish ${{ matrix.application }} image
+    runs-on: ubuntu-latest
+    environment: aws-production
+    strategy:
+      fail-fast: false
+      matrix:
+        application: [backend, simulator]
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Configure AWS credentials through GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ECR_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'ap-northeast-1' }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Select ECR repository
+        id: repository
+        env:
+          APPLICATION: ${{ matrix.application }}
+          BACKEND_REPOSITORY: ${{ vars.ECR_BACKEND_REPOSITORY }}
+          SIMULATOR_REPOSITORY: ${{ vars.ECR_SIMULATOR_REPOSITORY }}
+        run: |
+          if [ "$APPLICATION" = "backend" ]; then
+            repository="$BACKEND_REPOSITORY"
+          else
+            repository="$SIMULATOR_REPOSITORY"
+          fi
+
+          if [ -z "$repository" ]; then
+            echo "::error::ECR repository variable is not configured for $APPLICATION"
+            exit 1
+          fi
+
+          echo "name=$repository" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/Dockerfile
+          push: true
+          build-args: APP=${{ matrix.application }}
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ steps.repository.outputs.name }}:${{ github.event.release.tag_name }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ steps.repository.outputs.name }}:latest
