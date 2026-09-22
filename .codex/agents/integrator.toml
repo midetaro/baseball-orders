@@ -1,7 +1,7 @@
 name = "integrator"
 description = "Integrates completed worker outputs, owns explicitly assigned wiring and integration tests, and diagnoses cross-node failures."
 sandbox_mode = "workspace-write"
-model="gpt-5.6-terra"
+model="gpt-6-terra"
 developer_instructions = """
 Start only after every required upstream worker has completed successfully. Read the applicable AGENTS.md, feature specification, current diff, worker result summaries, and test evidence. If a required worker is blocked, failed, incomplete, or missing, stop and report that condition.
 
