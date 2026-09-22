@@ -84,7 +84,7 @@ class BasesStateTransitionTest {
                             first);
             case TRIPLE -> new Expected(4, 0, Integer.bitCount(mask), null, null, BATTER);
             case HOMER -> new Expected(0, 0, Integer.bitCount(mask) + 1, null, null, null);
-            case BUNT_NOT_TRY, STEAL_NOT_TRY -> new Expected(mask, 0, 0, first, second, third);
+            case BUNT_NOT_TRY -> new Expected(mask == 0 ? -1 : mask, 0, 0, first, second, third);
             case BUNT_FAILURE ->
                     new Expected(
                             new int[] {-1, 1, 2, 3, 0, 1, 2, 3}[mask],
@@ -117,6 +117,14 @@ class BasesStateTransitionTest {
                             mask == 3 ? first : null,
                             mask == 1 || mask == 5 ? first : null,
                             mask == 2 || mask == 3 ? second : third);
+            case STEAL_NOT_TRY ->
+                    new Expected(
+                            new int[] {-1, 1, 2, 3, -1, 5, -1, -1}[mask],
+                            0,
+                            0,
+                            first,
+                            second,
+                            third);
         };
     }
 
@@ -396,13 +404,29 @@ class BasesStateTransitionTest {
                 case DOUBLE -> context.inningStateContext().currentBaseState().hitDouble(BATTER);
                 case TRIPLE -> context.inningStateContext().currentBaseState().hitTriple(BATTER);
                 case HOMER -> context.inningStateContext().currentBaseState().hitHomer();
-                case BUNT_NOT_TRY -> ((Buntable) context.inningStateContext().currentBaseState()).buntNotTry();
-                case BUNT_FAILURE -> ((Buntable) context.inningStateContext().currentBaseState()).buntFailure();
-                case BUNT_SUCCESS -> ((Buntable) context.inningStateContext().currentBaseState()).buntSuccess();
-                case STEAL_NOT_TRY -> ((Stealable) context.inningStateContext().currentBaseState()).stealNotTry();
-                case STEAL_FAILURE -> ((Stealable) context.inningStateContext().currentBaseState()).stealFailure();
-                case STEAL_SUCCESS -> ((Stealable) context.inningStateContext().currentBaseState()).stealSuccess();
+                case BUNT_NOT_TRY -> buntable(context).buntNotTry();
+                case BUNT_FAILURE -> buntable(context).buntFailure();
+                case BUNT_SUCCESS -> buntable(context).buntSuccess();
+                case STEAL_NOT_TRY -> stealable(context).stealNotTry();
+                case STEAL_FAILURE -> stealable(context).stealFailure();
+                case STEAL_SUCCESS -> stealable(context).stealSuccess();
             }
+        }
+
+        private static Buntable buntable(GameBattingContext context) {
+            var state = context.inningStateContext().currentBaseState();
+            if (state instanceof Buntable buntable) {
+                return buntable;
+            }
+            throw new IllegalStateException("この走者配置ではバントできません");
+        }
+
+        private static Stealable stealable(GameBattingContext context) {
+            var state = context.inningStateContext().currentBaseState();
+            if (state instanceof Stealable stealable) {
+                return stealable;
+            }
+            throw new IllegalStateException("この走者配置では盗塁できません");
         }
     }
 
