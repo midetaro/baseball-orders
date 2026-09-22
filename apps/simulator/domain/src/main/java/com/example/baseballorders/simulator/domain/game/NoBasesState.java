@@ -4,8 +4,8 @@ import com.example.baseballorders.simulator.domain.player.BatterEntity;
 
 /** 走者配置0のイベントを処理する試合固有のState。 */
 public final class NoBasesState extends AbstractBasesState implements BasesState {
-    NoBasesState(GameBattingContext context, InningState inningState) {
-        super(context, inningState);
+    NoBasesState(InningStateContext context) {
+        super(context);
     }
 
     @Override

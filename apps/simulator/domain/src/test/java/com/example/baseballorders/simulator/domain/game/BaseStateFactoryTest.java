@@ -14,11 +14,20 @@ class BaseStateFactoryTest {
         var first = GameStateTestFixture.context(null, null, null, OutCount.NO_OUT);
         var second = GameStateTestFixture.context(null, null, null, OutCount.NO_OUT);
         // when
-        first.out();
+        first.inningStateContext().out();
         // then
         assertAll(
-                () -> assertNotSame(first.getCurrentBaseState(), second.getCurrentBaseState()),
-                () -> assertEquals(OutCount.ONE_OUT, first.getCurrentBaseState().getOutCount()),
-                () -> assertEquals(OutCount.NO_OUT, second.getCurrentBaseState().getOutCount()));
+                () ->
+                        assertNotSame(
+                                first.inningStateContext().currentBaseState(),
+                                second.inningStateContext().currentBaseState()),
+                () ->
+                        assertEquals(
+                                OutCount.ONE_OUT,
+                                first.inningStateContext().currentBaseState().getOutCount()),
+                () ->
+                        assertEquals(
+                                OutCount.NO_OUT,
+                                second.inningStateContext().currentBaseState().getOutCount()));
     }
 }

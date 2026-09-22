@@ -18,15 +18,14 @@ public abstract class AbstractBasesState {
     private static final float ADVANCE_FROM_SECOND_PROBABILITY = 0.2f;
     private static final float ADVANCE_FROM_THIRD_PROBABILITY = 0.1f;
 
-    protected final GameBattingContext context;
-    private final InningState inningState;
+    protected final InningStateContext context;
 
     public final BatterEntity runnerAt(Base base) {
-        return inningState.runnerAt(base);
+        return context.runnerAt(base);
     }
 
     public final OutCount getOutCount() {
-        return inningState.getOutCount();
+        return context.outCount();
     }
 
     public final int runnerCount() {
@@ -40,14 +39,14 @@ public abstract class AbstractBasesState {
     }
 
     public final void out() {
-        inningState.addOut();
+        context.addOut();
         boolean completed =
                 switch (getOutCount()) {
                     case NO_OUT, ONE_OUT, TWO_OUT -> false;
                     case THREE_OUT -> true;
                 };
         if (completed) {
-            inningState.reset();
+            context.reset();
             context.changeState(0);
             context.completeInning();
         }
@@ -70,7 +69,7 @@ public abstract class AbstractBasesState {
     }
 
     protected final BuntResult attemptBunt(BatterEntity batter, BuntType buntType) {
-        return batter.bunt(inningState.getOutCount(), buntType);
+        return batter.bunt(context.outCount(), buntType);
     }
 
     /**
@@ -141,7 +140,7 @@ public abstract class AbstractBasesState {
 
     protected final void transition(
             BatterEntity first, BatterEntity second, BatterEntity third, long runs) {
-        inningState.place(first, second, third);
+        context.place(first, second, third);
         context.addScore(runs);
         int configuration =
                 (first == null ? 0 : 1) | (second == null ? 0 : 2) | (third == null ? 0 : 4);

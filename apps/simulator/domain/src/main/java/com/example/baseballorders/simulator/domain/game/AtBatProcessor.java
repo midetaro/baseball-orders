@@ -8,11 +8,11 @@ import com.example.baseballorders.simulator.domain.player.BatterEntity;
 /** プレー結果を取得し、対応するStateイベントをContextへ送る。 */
 final class AtBatProcessor {
 
-    boolean process(GameBattingContext context, BatterEntity batter) {
+    boolean process(InningStateContext context, BatterEntity batter) {
 
-        long inningBeforeSteal = context.getInning();
+        long inningBeforeSteal = context.inning();
 
-        if (context.getCurrentBaseState() instanceof Stealable stealable) {
+        if (context.currentBaseState() instanceof Stealable stealable) {
             StealResult stealResult =
                     switch (stealable.targetBase()) {
                         case FIRST -> throw new IllegalStateException("一塁への盗塁はサポートされていません");
@@ -27,11 +27,11 @@ final class AtBatProcessor {
             }
         }
 
-        if (context.isGameOver() || context.getInning() != inningBeforeSteal) {
+        if (context.isGameOver() || context.inning() != inningBeforeSteal) {
             return false;
         }
 
-        if (context.getCurrentBaseState() instanceof Buntable buntable) {
+        if (context.currentBaseState() instanceof Buntable buntable) {
             boolean bunted =
                     switch (buntable.bunt(batter)) {
                         case NOT_TRY -> {
@@ -52,7 +52,7 @@ final class AtBatProcessor {
             }
         }
 
-        switch (batter.swing(context.getCurrentBaseState().runnerCount())) {
+        switch (batter.swing(context.currentBaseState().runnerCount())) {
             case STRIKEOUT -> context.out();
             case BATTED_OUT -> context.battingOut();
             case WALK -> context.walk(batter);

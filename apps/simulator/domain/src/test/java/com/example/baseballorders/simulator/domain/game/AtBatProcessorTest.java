@@ -70,14 +70,24 @@ class AtBatProcessorTest {
         var context = GameStateTestFixture.context(runner, null, null, OutCount.NO_OUT);
 
         // when
-        var completed = new AtBatProcessor().process(context, batter);
+        var completed = new AtBatProcessor().process(context.inningStateContext(), batter);
 
         // then
         assertAll(
                 () -> assertTrue(completed),
-                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
-                () -> assertSame(runner, context.getCurrentBaseState().runnerAt(Base.FIRST)),
-                () -> assertEquals(1, context.getCurrentBaseState().runnerCount()));
+                () ->
+                        assertEquals(
+                                OutCount.ONE_OUT,
+                                context.inningStateContext().currentBaseState().getOutCount()),
+                () ->
+                        assertSame(
+                                runner,
+                                context.inningStateContext()
+                                        .currentBaseState()
+                                        .runnerAt(Base.FIRST)),
+                () ->
+                        assertEquals(
+                                1, context.inningStateContext().currentBaseState().runnerCount()));
     }
 
     @Test
@@ -88,13 +98,19 @@ class AtBatProcessorTest {
         var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
 
         // when
-        var completed = new AtBatProcessor().process(context, batter);
+        var completed = new AtBatProcessor().process(context.inningStateContext(), batter);
 
         // then
         assertAll(
                 () -> assertTrue(completed),
-                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
-                () -> assertFalse(context.getCurrentBaseState() instanceof Buntable));
+                () ->
+                        assertEquals(
+                                OutCount.ONE_OUT,
+                                context.inningStateContext().currentBaseState().getOutCount()),
+                () ->
+                        assertFalse(
+                                context.inningStateContext().currentBaseState()
+                                        instanceof Buntable));
     }
 
     @Test
@@ -104,17 +120,27 @@ class AtBatProcessorTest {
         var runner = batter(0.0f, BehaviorStrategies.noBunt());
         var batter = batter(1.0f, BehaviorStrategies.standardBunt());
         var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
-        context.hitSingle(runner);
+        context.inningStateContext().hitSingle(runner);
 
         // when
-        var completed = new AtBatProcessor().process(context, batter);
+        var completed = new AtBatProcessor().process(context.inningStateContext(), batter);
 
         // then
         assertAll(
                 () -> assertTrue(completed),
-                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
-                () -> assertSame(runner, context.getCurrentBaseState().runnerAt(Base.SECOND)),
-                () -> assertEquals(1, context.getCurrentBaseState().runnerCount()));
+                () ->
+                        assertEquals(
+                                OutCount.ONE_OUT,
+                                context.inningStateContext().currentBaseState().getOutCount()),
+                () ->
+                        assertSame(
+                                runner,
+                                context.inningStateContext()
+                                        .currentBaseState()
+                                        .runnerAt(Base.SECOND)),
+                () ->
+                        assertEquals(
+                                1, context.inningStateContext().currentBaseState().runnerCount()));
     }
 
     @Test
@@ -124,7 +150,7 @@ class AtBatProcessorTest {
         var runner = batter(0.0f, BehaviorStrategies.noBunt());
         var batter = batter(1.0f, BehaviorStrategies.standardBunt());
         var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
-        context.hitSingle(runner);
+        context.inningStateContext().hitSingle(runner);
 
         // when
         context.nextAtBat();
@@ -143,7 +169,7 @@ class AtBatProcessorTest {
         var runner = batter(0.0f, BehaviorStrategies.noBunt());
         var batter = batter(1.0f, BehaviorStrategies.standardBunt());
         var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
-        context.hitTriple(runner);
+        context.inningStateContext().hitTriple(runner);
 
         // when
         context.nextAtBat();
@@ -162,18 +188,28 @@ class AtBatProcessorTest {
         var runner = batter(0.0f, BehaviorStrategies.noBunt());
         var batter = batter(1.0f, BehaviorStrategies.eagerBunt());
         var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
-        context.out();
-        context.hitSingle(runner);
+        context.inningStateContext().out();
+        context.inningStateContext().hitSingle(runner);
 
         // when
-        var completed = new AtBatProcessor().process(context, batter);
+        var completed = new AtBatProcessor().process(context.inningStateContext(), batter);
 
         // then
         assertAll(
                 () -> assertTrue(completed),
-                () -> assertEquals(OutCount.TWO_OUT, context.getCurrentBaseState().getOutCount()),
-                () -> assertSame(runner, context.getCurrentBaseState().runnerAt(Base.SECOND)),
-                () -> assertEquals(1, context.getCurrentBaseState().runnerCount()));
+                () ->
+                        assertEquals(
+                                OutCount.TWO_OUT,
+                                context.inningStateContext().currentBaseState().getOutCount()),
+                () ->
+                        assertSame(
+                                runner,
+                                context.inningStateContext()
+                                        .currentBaseState()
+                                        .runnerAt(Base.SECOND)),
+                () ->
+                        assertEquals(
+                                1, context.inningStateContext().currentBaseState().runnerCount()));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -196,25 +232,32 @@ class AtBatProcessorTest {
         // when
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.99f, advancementRandom);
-            new AtBatProcessor().process(context, batter);
+            new AtBatProcessor().process(context.inningStateContext(), batter);
 
             // then
             assertAll(
                     () ->
                             assertEquals(
-                                    OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
+                                    OutCount.ONE_OUT,
+                                    context.inningStateContext().currentBaseState().getOutCount()),
                     () ->
                             assertSame(
                                     expectedFirst,
-                                    context.getCurrentBaseState().runnerAt(Base.FIRST)),
+                                    context.inningStateContext()
+                                            .currentBaseState()
+                                            .runnerAt(Base.FIRST)),
                     () ->
                             assertSame(
                                     expectedSecond,
-                                    context.getCurrentBaseState().runnerAt(Base.SECOND)),
+                                    context.inningStateContext()
+                                            .currentBaseState()
+                                            .runnerAt(Base.SECOND)),
                     () ->
                             assertSame(
                                     expectedThird,
-                                    context.getCurrentBaseState().runnerAt(Base.THIRD)),
+                                    context.inningStateContext()
+                                            .currentBaseState()
+                                            .runnerAt(Base.THIRD)),
                     () -> assertEquals(expectedScore, context.getTotalScore()),
                     () -> randomGenerator.verify(RandomGenerator::nextFloat, times(2)));
         }
@@ -230,14 +273,18 @@ class AtBatProcessorTest {
         // when
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.99f);
-            new AtBatProcessor().process(context, batter);
+            new AtBatProcessor().process(context.inningStateContext(), batter);
 
             // then
             assertAll(
                     () ->
                             assertEquals(
-                                    OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
-                    () -> assertEquals(0, context.getCurrentBaseState().runnerCount()),
+                                    OutCount.ONE_OUT,
+                                    context.inningStateContext().currentBaseState().getOutCount()),
+                    () ->
+                            assertEquals(
+                                    0,
+                                    context.inningStateContext().currentBaseState().runnerCount()),
                     () -> randomGenerator.verify(RandomGenerator::nextFloat, times(1)));
         }
     }
@@ -252,15 +299,19 @@ class AtBatProcessorTest {
         // when
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.99f);
-            new AtBatProcessor().process(context, batter);
+            new AtBatProcessor().process(context.inningStateContext(), batter);
 
             // then
             assertAll(
                     () -> assertEquals(2, context.getInning()),
                     () ->
                             assertEquals(
-                                    OutCount.NO_OUT, context.getCurrentBaseState().getOutCount()),
-                    () -> assertEquals(0, context.getCurrentBaseState().runnerCount()),
+                                    OutCount.NO_OUT,
+                                    context.inningStateContext().currentBaseState().getOutCount()),
+                    () ->
+                            assertEquals(
+                                    0,
+                                    context.inningStateContext().currentBaseState().runnerCount()),
                     () -> assertEquals(0, context.getTotalScore()),
                     () -> randomGenerator.verify(RandomGenerator::nextFloat, times(1)));
         }

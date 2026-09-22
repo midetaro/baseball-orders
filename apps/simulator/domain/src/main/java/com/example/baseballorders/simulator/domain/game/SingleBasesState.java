@@ -10,8 +10,8 @@ import com.example.baseballorders.simulator.domain.player.BatterEntity;
 /** 走者配置1のイベントを処理する試合固有のState。 */
 public final class SingleBasesState extends AbstractBasesState
         implements BasesState, StealableToDoubleBase, AdvancingBuntable {
-    SingleBasesState(GameBattingContext context, InningState inningState) {
-        super(context, inningState);
+    SingleBasesState(InningStateContext context) {
+        super(context);
     }
 
     @Override

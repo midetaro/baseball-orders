@@ -6,26 +6,33 @@
 
 ## `domain.game`: 試合進行と塁状態
 
-`GameBattingContext` は試合全体の Context です。イニング、得点、打順、現在の `BasesState` を保持し、`AtBatProcessor` に一打席の進行を委譲します。`AtBatProcessor` は「盗塁、バント、打撃」の順に結果を判定し、その結果に対応するイベントを Context へ返します。Context はイベントを現在の State へ委譲し、State が走者、アウト、得点と次の塁状態を更新します。
+`GameBattingContext` は試合全体の Context です。イニング、得点、打順と `InningStateContext` を保持し、`AtBatProcessor` に一打席の進行を委譲します。`InningStateContext` は共有する走者・アウト数、現在の `BasesState`、8種類の ConcreteState を保持します。`AtBatProcessor` は「盗塁、バント、打撃」の順に結果を判定し、その結果に対応するイベントを `InningStateContext` へ送ります。State が走者、アウト、得点と次の塁状態を更新します。
 
 ```mermaid
 classDiagram
     class GameBattingContext {
         -long inning
         -long totalScore
-        -BasesState currentState
+        -InningStateContext inningStateContext
         -List~BatterEntity~ batterEntityOrders
         +nextAtBat()
-        +changeState(int configuration)
         +completeInning()
-        +walk(BatterEntity batter)
-        +hitSingle(BatterEntity batter)
-        +buntSuccess()
-        +stealSuccess()
     }
 
     class AtBatProcessor {
-        ~process(GameBattingContext context, BatterEntity batter) boolean
+        ~process(InningStateContext context, BatterEntity batter) boolean
+    }
+
+    class InningStateContext {
+        -InningState inningState
+        -BasesState currentState
+        -NoBasesState noBasesState
+        -SingleBasesState singleBasesState
+        ~changeState(int configuration)
+        ~walk(BatterEntity batter)
+        ~hitSingle(BatterEntity batter)
+        ~buntSuccess()
+        ~stealSuccess()
     }
 
     class BasesState {
@@ -43,8 +50,7 @@ classDiagram
 
     class AbstractBasesState {
         <<abstract>>
-        #GameBattingContext context
-        -InningState inningState
+        #InningStateContext context
         #transition(BatterEntity first, BatterEntity second, BatterEntity third, long runs)
     }
 
@@ -104,14 +110,18 @@ classDiagram
     }
 
     GameBattingContext *-- AtBatProcessor
-    GameBattingContext *-- BasesState : currentState
-    GameBattingContext --> BaseStateFactory : creates states
+    GameBattingContext *-- InningStateContext
+    InningStateContext *-- BasesState : currentState
+    InningStateContext *-- NoBasesState
+    InningStateContext *-- SingleBasesState
+    InningStateContext *-- OtherBasesStates
+    InningStateContext *-- InningState
+    InningStateContext --> BaseStateFactory : creates states
     GameBattingContext --> BatterEntity : batting order
-    AtBatProcessor --> GameBattingContext : sends events
+    AtBatProcessor --> InningStateContext : sends events
     AtBatProcessor --> BatterEntity : requests play result
 
-    AbstractBasesState --> GameBattingContext
-    AbstractBasesState --> InningState : shared by 8 states
+    AbstractBasesState --> InningStateContext
     NoBasesState --|> AbstractBasesState
     NoBasesState --|> BasesState
     SingleBasesState --|> AbstractBasesState
@@ -130,9 +140,9 @@ classDiagram
 
 ### GoF State パターン
 
-State パターンの `Context` が `GameBattingContext`、`State` が `BasesState`、`ConcreteState` が走者配置ごとの8クラスです。たとえば `SingleBasesState.hitDouble()` は打者を二塁、一塁走者を三塁へ置き、配置 `110` に対応する State へ Context を切り替えます。`walk()` は打者を一塁へ置き、一塁から連続する走者だけを押し出します。呼び出し側は現在の走者配置を条件分岐せず、同じイベントを呼べます。
+State パターンの `Context` が `InningStateContext`、`State` が `BasesState`、`ConcreteState` が走者配置ごとの8クラスです。たとえば `SingleBasesState.hitDouble()` は打者を二塁、一塁走者を三塁へ置き、配置 `110` に対応する State へ `InningStateContext` を切り替えます。`walk()` は打者を一塁へ置き、一塁から連続する走者だけを押し出します。呼び出し側は現在の走者配置を条件分岐せず、同じイベントを呼べます。
 
-全 ConcreteState は同じ試合の `InningState` を共有します。`AbstractBasesState.transition(...)` が走者の配置、得点加算、State 切り替えを一つの操作として行うため、State オブジェクトを切り替えても走者とアウト数は失われません。`out()` で三死になった場合は `InningState` を初期化し、Context の `completeInning()` へ進みます。
+全 ConcreteState は同じ `InningStateContext` を参照し、その内部の `InningState` を共有します。`AbstractBasesState.transition(...)` が走者の配置、得点加算、State 切り替えを一つの操作として行うため、State オブジェクトを切り替えても走者とアウト数は失われません。`out()` で三死になった場合は `InningState` を初期化し、`GameBattingContext.completeInning()` へ進みます。
 
 ### GoF Template Method の考え方と能力インターフェース
 
@@ -352,7 +362,8 @@ GameBattingContext.nextAtBat()
      -> BatterEntity
         -> Strategy がプレー結果を決定
         -> GameStatisticsRecorder へ結果を通知
-     -> 現在の BasesState が走者・アウト・得点を更新
+     -> InningStateContext
+        -> 現在の BasesState が走者・アウト・得点を更新
   -> 九回終了時に ScoreAccumulator へ得点と GameStatistics を通知
   -> ScoreAccumulator.toScoreStatistics() が複数試合の集計結果を生成
 ```

@@ -8,8 +8,8 @@ import com.example.baseballorders.simulator.domain.player.BatterEntity;
 /** 走者配置6のイベントを処理する試合固有のState。 */
 public final class DoubleThirdBaseState extends AbstractBasesState
         implements BasesState, SqueezeBuntable {
-    DoubleThirdBaseState(GameBattingContext context, InningState inningState) {
-        super(context, inningState);
+    DoubleThirdBaseState(InningStateContext context) {
+        super(context);
     }
 
     @Override
