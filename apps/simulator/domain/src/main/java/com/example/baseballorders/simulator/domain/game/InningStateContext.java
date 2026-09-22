@@ -84,5 +84,4 @@ public final class InningStateContext {
                     default -> throw new IllegalArgumentException("不正な走者配置: " + configuration);
                 };
     }
-
 }
