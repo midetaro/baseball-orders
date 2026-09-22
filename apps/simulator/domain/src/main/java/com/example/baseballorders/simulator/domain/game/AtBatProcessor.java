@@ -33,22 +33,16 @@ final class AtBatProcessor {
 
         // バントフェーズ
         if (context.currentBaseState() instanceof Buntable buntable) {
-            boolean bunted =
-                    switch (buntable.bunt(batter)) {
-                        case NOT_TRY -> {
-                            yield false;
-                        }
-                        case FAILURE -> {
-                            buntable.buntFailure();
-                            yield false;
-                        }
-                        case SUCCESS -> {
-                            buntable.bunt(batter);
-                            yield true;
-                        }
-                    };
-            if (bunted) {
-                return true;
+            switch (buntable.bunt(batter)) {
+                case NOT_TRY -> buntable.buntNotTry();
+                case FAILURE -> {
+                    buntable.buntFailure();
+                    return true;
+                }
+                case SUCCESS -> {
+                    buntable.buntSuccess();
+                    return true;
+                }
             }
         }
 
