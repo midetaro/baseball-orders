@@ -11,7 +11,7 @@ final class AtBatProcessor {
     boolean process(InningStateContext context, BatterEntity batter) {
 
         long inningBeforeSteal = context.inning();
-
+        // 盗塁フェーズ
         if (context.currentBaseState() instanceof Stealable stealable) {
             StealResult stealResult =
                     switch (stealable.targetBase()) {
@@ -31,6 +31,7 @@ final class AtBatProcessor {
             return false;
         }
 
+        // バントフェーズ
         if (context.currentBaseState() instanceof Buntable buntable) {
             boolean bunted =
                     switch (buntable.bunt(batter)) {
@@ -51,6 +52,7 @@ final class AtBatProcessor {
             }
         }
 
+        // 打撃フェーズ
         switch (batter.swing(context.currentBaseState().runnerCount())) {
             case STRIKEOUT -> context.currentBaseState().out();
             case BATTED_OUT -> context.currentBaseState().battingOut();
