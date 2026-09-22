@@ -180,7 +180,9 @@ class SqsSimulationSchedulerIntegrationTest {
                                 useCase,
                                 mapper,
                                 "simulation-requests-" + suffix,
-                                "simulation-results-" + suffix);
+                                "simulation-results-" + suffix,
+                                10,
+                                10);
 
                 // when
                 scheduler.poll();

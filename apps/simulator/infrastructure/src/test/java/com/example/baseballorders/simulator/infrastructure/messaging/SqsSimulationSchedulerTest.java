@@ -117,7 +117,9 @@ class SqsSimulationSchedulerTest {
                         useCase,
                         mapper,
                         "request-queue",
-                        "result-queue");
+                        "result-queue",
+                        10,
+                        10);
 
         // when
         scheduler.poll();
@@ -143,6 +145,68 @@ class SqsSimulationSchedulerTest {
                 () ->
                         assertEquals(
                                 "${simulation.sqs.poll-fixed-delay}", result.fixedDelayString()));
+    }
+
+    @Test
+    @DisplayName("受信件数とロングポーリング秒数は設定プロパティから取得する")
+    void obtainsReceiveOptionsFromProperties() {
+        // given
+        var constructors = SqsSimulationScheduler.class.getConstructors();
+
+        // when
+        var propertyNames =
+                java.util.Arrays.stream(constructors)
+                        .flatMap(
+                                constructor -> java.util.Arrays.stream(constructor.getParameters()))
+                        .map(
+                                parameter ->
+                                        parameter.getAnnotation(
+                                                org.springframework.beans.factory.annotation.Value
+                                                        .class))
+                        .filter(java.util.Objects::nonNull)
+                        .map(org.springframework.beans.factory.annotation.Value::value)
+                        .toList();
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                true,
+                                propertyNames.contains("${simulation.sqs.max-messages-per-poll}")),
+                () ->
+                        assertEquals(
+                                true,
+                                propertyNames.contains("${simulation.sqs.long-poll-seconds}")));
+    }
+
+    @Test
+    @DisplayName("設定された受信件数とロングポーリング秒数をSQSへ渡す")
+    void usesConfiguredReceiveOptions() {
+        // given
+        var sqsClient = mock(SqsClient.class);
+        stubQueueUrls(sqsClient);
+        when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
+                .thenReturn(ReceiveMessageResponse.builder().build());
+        var scheduler =
+                new SqsSimulationScheduler(
+                        sqsClient,
+                        new ObjectMapper(),
+                        mock(SimulateGameUseCase.class),
+                        mock(LineUpMapper.class),
+                        "request-queue",
+                        "result-queue",
+                        3,
+                        7);
+
+        // when
+        scheduler.poll();
+
+        // then
+        var request = ArgumentCaptor.forClass(ReceiveMessageRequest.class);
+        verify(sqsClient).receiveMessage(request.capture());
+        assertAll(
+                () -> assertEquals(3, request.getValue().maxNumberOfMessages()),
+                () -> assertEquals(7, request.getValue().waitTimeSeconds()));
     }
 
     @Test
@@ -191,7 +255,14 @@ class SqsSimulationSchedulerTest {
                 .thenReturn(simulationResult(simulationResponses));
         SqsSimulationScheduler scheduler =
                 new SqsSimulationScheduler(
-                        sqsClient, objectMapper, useCase, mapper, "request-queue", "result-queue");
+                        sqsClient,
+                        objectMapper,
+                        useCase,
+                        mapper,
+                        "request-queue",
+                        "result-queue",
+                        10,
+                        10);
         stubQueueUrls(sqsClient);
         var lineUpCaptor = ArgumentCaptor.forClass(LineUpEntity.class);
         var sendMessageCaptor = ArgumentCaptor.forClass(SendMessageRequest.class);
@@ -300,7 +371,14 @@ class SqsSimulationSchedulerTest {
         stubQueueUrls(sqsClient);
         var scheduler =
                 new SqsSimulationScheduler(
-                        sqsClient, objectMapper, useCase, mapper, "request-queue", "result-queue");
+                        sqsClient,
+                        objectMapper,
+                        useCase,
+                        mapper,
+                        "request-queue",
+                        "result-queue",
+                        10,
+                        10);
         var deleteCaptor = ArgumentCaptor.forClass(DeleteMessageRequest.class);
 
         // when
@@ -334,7 +412,14 @@ class SqsSimulationSchedulerTest {
                 .thenThrow(new JsonProcessingException("serialization failed") {});
         SqsSimulationScheduler scheduler =
                 new SqsSimulationScheduler(
-                        sqsClient, objectMapper, useCase, mapper, "request-queue", "result-queue");
+                        sqsClient,
+                        objectMapper,
+                        useCase,
+                        mapper,
+                        "request-queue",
+                        "result-queue",
+                        10,
+                        10);
         stubQueueUrls(sqsClient);
 
         // when
@@ -368,7 +453,14 @@ class SqsSimulationSchedulerTest {
                 .thenThrow(SqsException.builder().message("send failed").build());
         SqsSimulationScheduler scheduler =
                 new SqsSimulationScheduler(
-                        sqsClient, objectMapper, useCase, mapper, "request-queue", "result-queue");
+                        sqsClient,
+                        objectMapper,
+                        useCase,
+                        mapper,
+                        "request-queue",
+                        "result-queue",
+                        10,
+                        10);
         stubQueueUrls(sqsClient);
 
         // when
@@ -393,7 +485,14 @@ class SqsSimulationSchedulerTest {
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
         SqsSimulationScheduler scheduler =
                 new SqsSimulationScheduler(
-                        sqsClient, objectMapper, useCase, mapper, "request-queue", "result-queue");
+                        sqsClient,
+                        objectMapper,
+                        useCase,
+                        mapper,
+                        "request-queue",
+                        "result-queue",
+                        10,
+                        10);
         stubQueueUrls(sqsClient);
 
         // when
@@ -429,7 +528,14 @@ class SqsSimulationSchedulerTest {
         stubQueueUrls(sqsClient);
         var scheduler =
                 new SqsSimulationScheduler(
-                        sqsClient, objectMapper, useCase, mapper, "request-queue", "result-queue");
+                        sqsClient,
+                        objectMapper,
+                        useCase,
+                        mapper,
+                        "request-queue",
+                        "result-queue",
+                        10,
+                        10);
         var ordered = inOrder(sqsClient);
 
         // when

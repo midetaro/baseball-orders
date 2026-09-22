@@ -1,6 +1,6 @@
 # Feature name
 
-Status: todo
+Status: done
 
 # 変更の概要
 - AGENTS.mdおよびskillの修正

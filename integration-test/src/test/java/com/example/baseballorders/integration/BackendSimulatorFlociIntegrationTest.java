@@ -117,7 +117,7 @@ class BackendSimulatorFlociIntegrationTest {
                             BehaviorStrategies.noSteal(),
                             BehaviorStrategies.standardBunt());
                     var simulator = new SqsSimulationScheduler(
-                            sqs, mapper, useCase, lineupMapper, requestQueue, resultQueue);
+                            sqs, mapper, useCase, lineupMapper, requestQueue, resultQueue, 10, 10);
                     var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/simulations"))
                             .timeout(Duration.ofSeconds(30))
                             .header("Content-Type", "application/json")

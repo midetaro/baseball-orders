@@ -29,6 +29,17 @@ Inherit the repository rules from `../../AGENTS.md`.
 
 ## Tests and coverage
 
+- Every concrete class that implements a repository interface or extends an abstract
+  class has a dedicated `ClassNameTest` in the matching test package. Its tests
+  must exercise observable behavior of that concrete class; a name-only test
+  does not satisfy this rule. Shared parameterized tests may add broader coverage.
+- Put configurable operational numbers such as game count and SQS polling limits
+  in `application-local.yml`, `application-dev.yml`, and `application-prod.yml`.
+  Keep defaults in `application.yml` for launches without an active profile.
+  Numeric game-rule values (innings, outs, probabilities, and base transitions)
+  are domain rules and remain in domain code unless a feature changes the rule.
+- Run the simulator convention checker in `baseball-orders-test` after changing
+  concrete subtypes or operational numeric configuration.
 - Every Java test method has a Japanese `@DisplayName` and `// given`, `// when`, `// then` sections.
 - Wrap assertions in `assertAll`, including a single assertion.
 - Put `assertThrows` in the `// when` section and inspect the exception in `// then`.

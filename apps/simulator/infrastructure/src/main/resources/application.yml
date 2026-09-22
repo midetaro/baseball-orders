@@ -1,6 +1,8 @@
 simulation:
-  game-count: 100
+  game-count: ${SIMULATION_GAME_COUNT:100}
   sqs:
+    max-messages-per-poll: ${SIMULATION_SQS_MAX_MESSAGES_PER_POLL:10}
+    long-poll-seconds: ${SIMULATION_SQS_LONG_POLL_SECONDS:10}
     poll-fixed-delay: ${SIMULATION_SQS_POLL_FIXED_DELAY:60s}
     request-queue-name: ${SIMULATION_REQUEST_QUEUE_NAME:simulation-request}
     result-queue-name: ${SIMULATION_RESULT_QUEUE_NAME:simulation-result}

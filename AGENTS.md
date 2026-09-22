@@ -118,8 +118,19 @@ explicit feature specification rather than an incidental refactor.
 5. For shared contracts, run verification for both applications.
 
 Use `./.agents/skills/baseball-orders-development/scripts/verify.sh` as the canonical verification entrypoint.
-When changing a repository skill, also run its official-validator wrapper,
-`./.agents/skills/baseball-orders-development/scripts/validate-skill.sh`.
+Use `baseball-orders-test` for deterministic test and static checks before
+`baseball-orders-review` assesses the completed feature diff. When changing a
+repository skill, validate each changed skill with the official
+`skill-creator/scripts/quick_validate.py`. Use the existing
+`./.agents/skills/baseball-orders-development/scripts/validate-skill.sh` wrapper
+for `baseball-orders-development`.
+
+In the simulator, every concrete class that implements an interface or extends
+an abstract class must have a dedicated test class named after that concrete
+class. Shared behavior tests may supplement those tests. Keep tunable numeric
+values in named properties where practical, with explicit local, dev, and prod
+profile values; retain numeric literals that express fixed rules or indexes in
+code. Run the checks provided by `baseball-orders-test` for these rules.
 
 ## Production Java
 
@@ -267,7 +278,8 @@ A feature is not complete until all of the following are done:
 1. Acceptance criteria are satisfied.
 2. Focused tests pass.
 3. Owning application verification passes.
-4. Run the baseball-orders-review skill against the current feature diff.
+4. Run the baseball-orders-test skill, then the baseball-orders-review skill
+   against the current feature diff.
 5. Fix all blocking findings.
 6. Re-run affected tests.
 7. Report completion.
