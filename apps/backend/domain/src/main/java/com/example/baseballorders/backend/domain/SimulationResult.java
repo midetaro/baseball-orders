@@ -22,6 +22,17 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
     }
 
     /**
+     * Creates a result while discarding legacy per-game results.
+     *
+     * @param simulationId シミュレーションの相関ID
+     * @param ignoredResults 廃止された試合ごとの結果
+     * @param statistics 画面表示用の集計統計
+     */
+    public SimulationResult(UUID simulationId, List<Result> ignoredResults, Statistics statistics) {
+        this(simulationId, statistics);
+    }
+
+    /**
      * 全試合の得点統計。
      *
      * @param averageScore 平均得点
@@ -150,17 +161,6 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
                     0,
                     0);
         }
-    }
-
-    /**
-     * Creates a result while discarding legacy per-game results.
-     *
-     * @param simulationId シミュレーションの相関ID
-     * @param ignoredResults 廃止された試合ごとの結果
-     * @param statistics 画面表示用の集計統計
-     */
-    public SimulationResult(UUID simulationId, List<Result> ignoredResults, Statistics statistics) {
-        this(simulationId, statistics);
     }
 
     /** 廃止された1試合の結果を表す移行用型。 */

@@ -1,9 +1,6 @@
 package com.example.baseballorders.backend.infrastructure.web;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import java.net.URI;
@@ -31,6 +28,10 @@ class SimulationPageIntegrationTest {
     @MockitoBean private SqsTemplate sqsTemplate;
 
     @LocalServerPort private int port;
+
+    private static void assertContainsPattern(String actual, String pattern) {
+        assertTrue(Pattern.compile(pattern).matcher(actual).find());
+    }
 
     @Test
     @DisplayName("トップ画面へアクセスすると打者一覧と打順設定画面がHTMLで表示される")
@@ -243,9 +244,5 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("--cyan:#25d9ff")),
                 () -> assertTrue(response.body().contains("--pink:#ff4da6")),
                 () -> assertTrue(response.body().contains("radial-gradient(circle at 15% 10%")));
-    }
-
-    private static void assertContainsPattern(String actual, String pattern) {
-        assertTrue(Pattern.compile(pattern).matcher(actual).find());
     }
 }

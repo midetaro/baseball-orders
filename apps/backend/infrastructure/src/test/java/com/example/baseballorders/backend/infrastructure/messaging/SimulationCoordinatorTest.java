@@ -1,8 +1,6 @@
 package com.example.baseballorders.backend.infrastructure.messaging;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
@@ -20,6 +18,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class SimulationCoordinatorTest {
+
+    private static List<PlayerData> players(int size) {
+        return java.util.stream.IntStream.rangeClosed(1, size)
+                .mapToObj(
+                        number -> new PlayerData("山田", 0.301f, 0.501f, 0.701f, true, 0.801f, true))
+                .toList();
+    }
 
     @Test
     @DisplayName("画面入力の選手を共有contractへ変換して送信し同じsimulation IDの結果を返す")
@@ -177,12 +182,5 @@ class SimulationCoordinatorTest {
                 () ->
                         assertEquals(
                                 "players must contain exactly 9 entries", exception.getMessage()));
-    }
-
-    private static List<PlayerData> players(int size) {
-        return java.util.stream.IntStream.rangeClosed(1, size)
-                .mapToObj(
-                        number -> new PlayerData("山田", 0.301f, 0.501f, 0.701f, true, 0.801f, true))
-                .toList();
     }
 }

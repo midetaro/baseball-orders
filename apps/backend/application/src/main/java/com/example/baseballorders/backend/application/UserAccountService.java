@@ -20,6 +20,16 @@ public final class UserAccountService {
         this.passwordHasher = Objects.requireNonNull(passwordHasher);
     }
 
+    private static void validate(String username, String password) {
+        if (username == null || !username.matches("[A-Za-z0-9_-]{3,50}")) {
+            throw new IllegalArgumentException(
+                    "username must be 3-50 alphanumeric, underscore, or hyphen characters");
+        }
+        if (password == null || password.length() < 8 || password.length() > 72) {
+            throw new IllegalArgumentException("password must be 8-72 characters");
+        }
+    }
+
     /**
      * 入力値を検証してアクティブなアカウントを登録する。
      *
@@ -60,15 +70,5 @@ public final class UserAccountService {
      */
     public boolean passwordMatches(String password, String passwordHash) {
         return passwordHasher.matches(password, passwordHash);
-    }
-
-    private static void validate(String username, String password) {
-        if (username == null || !username.matches("[A-Za-z0-9_-]{3,50}")) {
-            throw new IllegalArgumentException(
-                    "username must be 3-50 alphanumeric, underscore, or hyphen characters");
-        }
-        if (password == null || password.length() < 8 || password.length() > 72) {
-            throw new IllegalArgumentException("password must be 8-72 characters");
-        }
     }
 }
