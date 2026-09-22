@@ -6,7 +6,7 @@
 
 ## `domain.game`: 試合進行と塁状態
 
-`GameBattingContext` は試合全体の Context です。打順と `InningStateContext` を保持し、`AtBatProcessor` に一打席の進行を委譲します。`InningStateContext` は現在のイニング、その回の得点、共有する走者・アウト数、現在の `BasesState`、8種類の ConcreteState を保持します。イニング終了時には完了通知を通じて `GameBattingContext` が回数、総得点、試合終了を反映します。`AtBatProcessor` は「盗塁、バント、打撃」の順に結果を判定し、能力インターフェースまたは現在の State に結果を適用します。バント成功・失敗時は打席を完了して打撃処理へ進まず、State が走者、アウト、得点と次の塁状態を更新します。
+`GameBattingContext` は試合全体の Context です。打順と `InningStateContext` を保持し、`AtBatProcessor` に一打席の進行を委譲します。`InningStateContext` は現在のイニング、その回の得点、共有する走者・アウト数、現在の `BasesState` と走者配置ごとの `BasesState` キャッシュを保持します。ConcreteState を個別フィールドでは保持せず、必要時に `BaseStateFactory` から生成してキャッシュします。イニング終了時には完了通知を通じて `GameBattingContext` が回数、総得点、試合終了を反映します。`AtBatProcessor` は「盗塁、バント、打撃」の順に結果を判定し、能力インターフェースまたは現在の State に結果を適用します。バント成功・失敗時は打席を完了して打撃処理へ進まず、State が走者、アウト、得点と次の塁状態を更新します。
 
 ```mermaid
 classDiagram
@@ -32,15 +32,9 @@ classDiagram
         -long score
         -boolean gameOver
         -InningCompletionListener inningCompletionListener
+        -BaseStateFactory baseStateFactory
+        -Map~Integer, BasesState~ baseStates
         -BasesState currentBaseState
-        -NoBasesState noBasesState
-        -SingleBasesState singleBasesState
-        -DoubleBaseState doubleBaseState
-        -FirstDoubleBaseState firstDoubleBaseState
-        -ThirdBaseState thirdBaseState
-        -FirstThirdBaseState firstThirdBaseState
-        -DoubleThirdBaseState doubleThirdBaseState
-        -FullBasesState fullBasesState
         ~changeState(int configuration)
         ~addOut()
         ~addScore(long runs)

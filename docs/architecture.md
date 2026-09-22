@@ -139,8 +139,9 @@ implementations after the listed entry points identify them.
 
 - `GameBattingContext` is the aggregate/facade for batting order and game
   completion. Its `InningStateContext` owns the current inning, inning score,
-  current base state, and all eight concrete base states; an inning-completion
-  callback reflects the completed inning into the game aggregate.
+  current base state, and a configuration-keyed `BasesState` cache; an
+  inning-completion callback reflects the completed inning into the game
+  aggregate.
 - `AtBatProcessor` orders a plate appearance as steal, then bunt, then batting,
   sends updates to `InningStateContext`, and advances the batting order only when
   the plate appearance is consumed.

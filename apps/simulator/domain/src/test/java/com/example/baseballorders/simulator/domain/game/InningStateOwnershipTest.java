@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 
 class InningStateOwnershipTest {
     @Test
-    @DisplayName("イニングContextが塁Stateを所有し打席処理の更新先になる")
-    void ownsBaseStatesAndReceivesAtBatUpdates() throws Exception {
+    @DisplayName("イニングContextが現在の塁Stateだけを保持し打席処理の更新先になる")
+    void ownsOnlyCurrentBaseStateAndReceivesAtBatUpdates() throws Exception {
         // given
         var inningContext = Class.forName(getClass().getPackageName() + ".InningStateContext");
 
@@ -65,7 +65,7 @@ class InningStateOwnershipTest {
                 () -> assertFalse(contextHasGameReference),
                 () -> assertTrue(contextHasInning),
                 () -> assertTrue(contextHasScore),
-                () -> assertEquals(8, ownedConcreteStates),
+                () -> assertEquals(0, ownedConcreteStates),
                 () ->
                         assertFalse(
                                 baseFields.stream()
