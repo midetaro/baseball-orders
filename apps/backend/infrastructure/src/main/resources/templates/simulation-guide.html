@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -159,6 +159,15 @@
 <main>
     <div class="eyebrow">Baseball Orders / Simulator</div>
     <h1>シミュレーションの仕組み</h1>
+    <p>
+        <span th:if="${#authorization.expression('isAuthenticated()')}">ログイン中（<span th:text="${#authentication.name}">ユーザー</span>）</span>
+        <span th:unless="${#authorization.expression('isAuthenticated()')}">未ログイン</span>
+        <a href="/oauth2/authorization/google" th:if="${googleOauthEnabled and !#authorization.expression('isAuthenticated()')}">Googleでログイン</a>
+    </p>
+    <form action="/logout" method="post" th:if="${#authorization.expression('isAuthenticated()')}">
+        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+        <button type="submit">ログアウト</button>
+    </form>
     <section>
         <h2>1. 打順と成績を入力する</h2>
         <p>

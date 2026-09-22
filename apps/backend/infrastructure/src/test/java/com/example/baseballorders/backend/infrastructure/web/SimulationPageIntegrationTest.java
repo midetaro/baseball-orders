@@ -52,6 +52,10 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("打順入力")),
                 () -> assertTrue(response.body().contains("<title>打順監督</title>")),
                 () -> assertTrue(response.body().contains("<h1>打順監督</h1>")),
+                () -> assertTrue(response.body().contains("未ログイン")),
+                () ->
+                        assertFalse(
+                                response.body().contains("href=\"/oauth2/authorization/google\"")),
                 () -> assertTrue(response.body().contains("出塁率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () -> assertTrue(response.body().contains("盗塁成功率")),
@@ -213,6 +217,10 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("シミュレーションの仕組み")),
+                () -> assertTrue(response.body().contains("未ログイン")),
+                () ->
+                        assertFalse(
+                                response.body().contains("href=\"/oauth2/authorization/google\"")),
                 () -> assertContainsPattern(response.body(), "盗塁判定\\s*→\\s*バント判定\\s*→\\s*通常打撃"),
                 () -> assertTrue(response.body().contains("各選手の入力項目")),
                 () -> assertTrue(response.body().contains("出塁率")),

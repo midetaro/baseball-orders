@@ -1,14 +1,38 @@
 package com.example.baseballorders.backend;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
+import com.example.baseballorders.backend.application.UserAccountRepository;
+import com.example.baseballorders.backend.application.UserAccountService;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
+import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /** application層のユースケースをSpringへ登録する構成。 */
 @Configuration
 public class InfrastructureConfiguration {
+    /**
+     * UTCの現在時刻を提供する。
+     *
+     * @return UTCクロック
+     */
+    @Bean
+    public Clock clock() {
+        return Clock.systemUTC();
+    }
+
+    /**
+     * Google OIDCアカウントのユースケースを生成する。
+     *
+     * @param repository アカウント永続化ポート
+     * @return 構成済みアカウントサービス
+     */
+    @Bean
+    public UserAccountService userAccountService(UserAccountRepository repository) {
+        return new UserAccountService(repository);
+    }
+
     /**
      * 待機結果レジストリを生成する。
      *

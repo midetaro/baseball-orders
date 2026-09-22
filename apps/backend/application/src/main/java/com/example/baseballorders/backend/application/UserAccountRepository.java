@@ -10,7 +10,7 @@ public interface UserAccountRepository {
     /**
      * ユーザー名からアカウントを取得する。
      *
-     * @param username ログイン用ユーザー名
+     * @param username Google subjectから導出した一意のユーザー名
      * @return 存在する場合のアカウント
      */
     Optional<UserAccount> findByUsername(String username);
@@ -18,10 +18,9 @@ public interface UserAccountRepository {
     /**
      * 新しいアカウントを保存する。
      *
-     * @param username ログイン用ユーザー名
-     * @param passwordHash BCrypt等で生成したハッシュ
+     * @param username Google subjectから導出した一意のユーザー名
      * @param status 初期アカウント状態
      * @return 保存済みアカウント
      */
-    UserAccount save(String username, String passwordHash, UserStatus status);
+    UserAccount save(String username, UserStatus status);
 }

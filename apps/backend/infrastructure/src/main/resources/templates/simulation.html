@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
@@ -588,7 +588,16 @@
 <body>
 <main>
     <header><h1>打順監督</h1>
-        <p class="status">打順ごとの成績を入力する。 <a href="/simulation-guide">シミュレーションの仕組み</a></p>
+        <p class="status">
+            打順ごとの成績を入力する。 <a href="/simulation-guide">シミュレーションの仕組み</a>
+            <span th:if="${#authorization.expression('isAuthenticated()')}">ログイン中（<span th:text="${#authentication.name}">ユーザー</span>）</span>
+            <span th:unless="${#authorization.expression('isAuthenticated()')}">未ログイン</span>
+            <a href="/oauth2/authorization/google" th:if="${googleOauthEnabled and !#authorization.expression('isAuthenticated()')}">Googleでログイン</a>
+        </p>
+        <form action="/logout" method="post" th:if="${#authorization.expression('isAuthenticated()')}">
+            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+            <button type="submit">ログアウト</button>
+        </form>
     </header>
     <div class="simulation-workspace">
         <section aria-labelledby="order-heading">

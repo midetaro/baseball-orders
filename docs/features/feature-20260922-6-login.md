@@ -1,6 +1,6 @@
 # Feature name
 
-Status: todo
+Status: done
 
 ## Goal
 - ログイン・ログアウト機能を実装
