@@ -79,4 +79,18 @@ class LocalAccountSecurityIntegrationTest {
         // then
         result.andExpectAll(status().is3xxRedirection(), redirectedUrl("/login?error"));
     }
+
+    @Test
+    @DisplayName("Flywayの初期ローカルユーザーでログインできる")
+    void authenticatesFlywaySeededLocalAccount() throws Exception {
+        // given
+        var request =
+                post("/login").with(csrf()).param("userId", "test").param("password", "password");
+
+        // when
+        var result = mockMvc.perform(request);
+
+        // then
+        result.andExpectAll(status().is3xxRedirection(), redirectedUrl("/"));
+    }
 }
