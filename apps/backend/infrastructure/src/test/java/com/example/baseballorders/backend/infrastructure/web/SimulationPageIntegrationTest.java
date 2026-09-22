@@ -75,6 +75,13 @@ class SimulationPageIntegrationTest {
                         assertContainsPattern(
                                 response.body(),
                                 "key:'stealSuccessRate',label:'盗塁成功率',min:\\d+\\.\\d+,max:\\d+\\.\\d+"),
+                () -> assertTrue(response.body().contains("buntSuccessRate:[0,0.95]")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "key:'buntSuccessRate',label:'バント成功率',min:0,max:0.95")),
+                () -> assertTrue(response.body().contains("バント成功率 0.00〜0.95")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
                 () ->
                         assertTrue(
@@ -215,6 +222,7 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("出塁率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () -> assertTrue(response.body().contains("バント成功率")),
+                () -> assertTrue(response.body().contains("<strong>0.00〜0.95</strong>")),
                 () -> assertTrue(response.body().contains("盗塁成功率")),
                 () -> assertTrue(response.body().contains("バント・盗塁のオン／オフ")),
                 () -> assertTrue(response.body().contains("性格による違い")),
