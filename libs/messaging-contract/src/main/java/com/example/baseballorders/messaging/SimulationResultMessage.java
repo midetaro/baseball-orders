@@ -1,12 +1,11 @@
 package com.example.baseballorders.messaging;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.jilt.Builder;
-import org.jilt.BuilderStyle;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.jilt.Builder;
+import org.jilt.BuilderStyle;
 
 /**
  * simulatorからbackendへ返す共有結果メッセージ。

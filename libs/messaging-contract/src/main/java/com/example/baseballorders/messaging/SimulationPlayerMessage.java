@@ -1,6 +1,8 @@
 package com.example.baseballorders.messaging;
 
 import java.util.Objects;
+import org.jilt.Builder;
+import org.jilt.BuilderStyle;
 
 /**
  * シミュレーション要求で共有する選手データ。
@@ -14,6 +16,7 @@ import java.util.Objects;
  * @param stealEnabled 盗塁を試みるかどうか
  * @param personality 選手の行動傾向
  */
+@Builder(style = BuilderStyle.STAGED)
 public record SimulationPlayerMessage(
         String name,
         Float hitAverage,

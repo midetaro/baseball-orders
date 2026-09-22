@@ -1,7 +1,8 @@
 package com.example.baseballorders.backend.infrastructure.messaging;
 
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
-import com.example.baseballorders.backend.domain.SimulationResult;
+import com.example.baseballorders.backend.domain.SimulationResultBuilder;
+import com.example.baseballorders.backend.domain.StatisticsBuilder;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import java.util.Objects;
@@ -39,29 +40,45 @@ public final class SimulationResultListener {
         boolean completed =
                 registry.complete(
                         message.simulationId(),
-                        new SimulationResult(
-                                message.simulationId(),
-                                new SimulationResult.Statistics(
-                                        scoreStatistics.averageScore(),
-                                        scoreStatistics.medianScore(),
-                                        scoreStatistics.maximumScore(),
-                                        scoreStatistics.gameCount(),
-                                        scoreStatistics.scoreDistribution(),
-                                        contentStatistics.homeRunCount(),
-                                        contentStatistics.soloHomeRunCount(),
-                                        contentStatistics.twoRunHomeRunCount(),
-                                        contentStatistics.threeRunHomeRunCount(),
-                                        contentStatistics.grandSlamCount(),
-                                        contentStatistics.buntCount(),
-                                        contentStatistics.stealCount(),
-                                        contentStatistics.buntFailureCount(),
-                                        contentStatistics.stealFailureCount(),
-                                        contentStatistics.advancingBuntCount(),
-                                        contentStatistics.squeezeBuntCount(),
-                                        contentStatistics.advancingBuntFailureCount(),
-                                        contentStatistics.squeezeBuntFailureCount(),
-                                        contentStatistics.stealToSecondCount(),
-                                        contentStatistics.stealToThirdCount())));
+                        SimulationResultBuilder.simulationResult()
+                                .simulationId(message.simulationId())
+                                .statistics(
+                                        StatisticsBuilder.statistics()
+                                                .averageScore(scoreStatistics.averageScore())
+                                                .medianScore(scoreStatistics.medianScore())
+                                                .maximumScore(scoreStatistics.maximumScore())
+                                                .gameCount(scoreStatistics.gameCount())
+                                                .scoreDistribution(
+                                                        scoreStatistics.scoreDistribution())
+                                                .homeRunCount(contentStatistics.homeRunCount())
+                                                .soloHomeRunCount(
+                                                        contentStatistics.soloHomeRunCount())
+                                                .twoRunHomeRunCount(
+                                                        contentStatistics.twoRunHomeRunCount())
+                                                .threeRunHomeRunCount(
+                                                        contentStatistics.threeRunHomeRunCount())
+                                                .grandSlamCount(contentStatistics.grandSlamCount())
+                                                .buntCount(contentStatistics.buntCount())
+                                                .stealCount(contentStatistics.stealCount())
+                                                .buntFailureCount(
+                                                        contentStatistics.buntFailureCount())
+                                                .stealFailureCount(
+                                                        contentStatistics.stealFailureCount())
+                                                .advancingBuntCount(
+                                                        contentStatistics.advancingBuntCount())
+                                                .squeezeBuntCount(
+                                                        contentStatistics.squeezeBuntCount())
+                                                .advancingBuntFailureCount(
+                                                        contentStatistics
+                                                                .advancingBuntFailureCount())
+                                                .squeezeBuntFailureCount(
+                                                        contentStatistics.squeezeBuntFailureCount())
+                                                .stealToSecondCount(
+                                                        contentStatistics.stealToSecondCount())
+                                                .stealToThirdCount(
+                                                        contentStatistics.stealToThirdCount())
+                                                .build())
+                                .build());
         if (!completed) {
             LOGGER.warn("simulation result ignored simulationId={}", message.simulationId());
         }
