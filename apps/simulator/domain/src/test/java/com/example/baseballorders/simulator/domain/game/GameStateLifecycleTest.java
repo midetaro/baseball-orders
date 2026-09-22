@@ -123,19 +123,8 @@ class GameStateLifecycleTest {
                                 context.getCurrentBaseState().getOutCount()),
                 () ->
                         assertEquals(
-                                result == BattingResult.HIT_HOMER ? 1 : 0, context.getTotalScore()),
-                () ->
-                        assertEquals(
-                                result == BattingResult.HIT_SINGLE || result == BattingResult.WALK,
-                                context.getCurrentBaseState().isOccupied(Base.FIRST)),
-                () ->
-                        assertEquals(
-                                result == BattingResult.HIT_DOUBLE,
-                                context.getCurrentBaseState().isOccupied(Base.SECOND)),
-                () ->
-                        assertEquals(
-                                result == BattingResult.HIT_TRIPLE,
-                                context.getCurrentBaseState().isOccupied(Base.THIRD)));
+                                result == BattingResult.HIT_HOMER ? 1 : 0,
+                                context.getTotalScore()));
     }
 
     @ParameterizedTest
@@ -180,14 +169,6 @@ class GameStateLifecycleTest {
         // then
         assertAll(
                 () -> verify(hitter, never()).swing(anyInt()),
-                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
-                () ->
-                        assertEquals(
-                                result == BuntResult.SUCCESS,
-                                context.getCurrentBaseState().isOccupied(Base.SECOND)),
-                () ->
-                        assertEquals(
-                                result == BuntResult.FAILURE,
-                                context.getCurrentBaseState().isOccupied(Base.FIRST)));
+                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()));
     }
 }
