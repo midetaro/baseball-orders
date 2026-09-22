@@ -13,14 +13,43 @@
         .login-button { background:#fff; border-radius:8px; color:#1f1f1f; display:inline-block; font-weight:700; margin:12px 0; padding:12px 24px; text-decoration:none; }
         .notice { background:#202b49; border-radius:8px; padding:12px; }
         .back { color:#7edcff; display:inline-block; margin-top:16px; }
+        form { display:grid; gap:10px; margin:20px 0; text-align:left; }
+        label { color:#c7d4ee; font-weight:700; }
+        input { border:1px solid #526b9f; border-radius:8px; box-sizing:border-box; padding:11px; width:100%; }
+        button { background:#7edcff; border:0; border-radius:8px; color:#0b1020; cursor:pointer; font-weight:800; padding:12px; }
+        .success { background:#173c2c; border-radius:8px; color:#b9f6cc; padding:12px; }
+        .error { background:#482332; border-radius:8px; color:#ffd1dc; padding:12px; }
+        hr { border:0; border-top:1px solid #31446f; margin:28px 0; }
     </style>
 </head>
 <body>
 <main>
     <h1>打順監督にログイン</h1>
-    <p>Googleアカウントでログインすると、ログイン状態を維持したままサービスを利用できます。</p>
+    <p>登録済みのIDとパスワード、またはGoogleアカウントでログインできます。</p>
+    <p class="success" th:if="${param.registered}">アカウントを登録しました。IDとパスワードでログインしてください。</p>
+    <p class="error" th:if="${param.error}">IDまたはパスワードが正しくありません。</p>
+    <p class="error" th:if="${param.registrationError}">登録できませんでした。IDは3〜50文字の英数字・ドット・アンダースコア・ハイフン、パスワードは12文字以上かつUTF-8で72バイト以内で入力してください。</p>
+    <form method="post" th:action="@{/login}">
+        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+        <label for="login-user-id">ID</label>
+        <input autocomplete="username" id="login-user-id" name="userId" required type="text">
+        <label for="login-password">パスワード</label>
+        <input autocomplete="current-password" id="login-password" name="password" required type="password">
+        <button type="submit">IDとパスワードでログイン</button>
+    </form>
+    <hr>
     <a class="login-button" href="/oauth2/authorization/google" th:if="${googleOauthEnabled}">Googleでログイン</a>
     <p class="notice" th:unless="${googleOauthEnabled}">Googleログインは現在利用できません。</p>
+    <hr>
+    <h2>アカウントを作成</h2>
+    <form method="post" th:action="@{/register}">
+        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
+        <label for="register-user-id">ID</label>
+        <input autocomplete="username" id="register-user-id" maxlength="50" minlength="3" name="userId" pattern="[A-Za-z0-9._-]+" required type="text">
+        <label for="register-password">パスワード</label>
+        <input autocomplete="new-password" id="register-password" maxlength="72" minlength="12" name="password" required type="password">
+        <button type="submit">アカウントを作成</button>
+    </form>
     <a class="back" href="/">トップへ戻る</a>
 </main>
 </body>

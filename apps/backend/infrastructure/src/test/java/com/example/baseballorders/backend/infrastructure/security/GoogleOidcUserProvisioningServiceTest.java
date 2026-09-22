@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.example.baseballorders.backend.application.UserAccountRepository;
 import com.example.baseballorders.backend.application.UserAccountService;
+import com.example.baseballorders.backend.domain.LocalUserCredentials;
 import com.example.baseballorders.backend.domain.UserAccount;
 import com.example.baseballorders.backend.domain.UserAccountBuilder;
 import com.example.baseballorders.backend.domain.UserStatus;
@@ -65,6 +66,16 @@ class GoogleOidcUserProvisioningServiceTest {
                             .updatedAt(now)
                             .build();
             return account;
+        }
+
+        @Override
+        public Optional<LocalUserCredentials> findLocalCredentials(String username) {
+            return Optional.empty();
+        }
+
+        @Override
+        public UserAccount saveLocal(String username, String passwordHash, UserStatus status) {
+            throw new UnsupportedOperationException();
         }
 
         private UserAccount account() {

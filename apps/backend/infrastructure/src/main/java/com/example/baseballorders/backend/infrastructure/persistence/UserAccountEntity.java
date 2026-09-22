@@ -11,7 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
-/** usersテーブルに保存するGoogle OIDCアカウントの永続化エンティティ。 */
+/** usersテーブルに保存するGoogle OIDCおよびローカルアカウントの永続化エンティティ。 */
 @Entity
 @Table(name = "users")
 public class UserAccountEntity {
@@ -21,6 +21,9 @@ public class UserAccountEntity {
 
     @Column(nullable = false, unique = true, length = 50)
     private String username;
+
+    @Column(name = "password_hash", length = 100)
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -38,14 +41,20 @@ public class UserAccountEntity {
     /**
      * 永続化するアカウントを作成する。
      *
-     * @param username Google subjectから導出した一意のユーザー名
+     * @param username 認証方式から導出した一意のユーザー名
+     * @param passwordHash ローカルアカウント用のBCryptパスワードハッシュ。Googleアカウントではnull
      * @param status アカウント状態
      * @param createdAt 作成日時
      * @param updatedAt 更新日時
      */
     public UserAccountEntity(
-            String username, UserStatus status, Instant createdAt, Instant updatedAt) {
+            String username,
+            String passwordHash,
+            UserStatus status,
+            Instant createdAt,
+            Instant updatedAt) {
         this.username = username;
+        this.passwordHash = passwordHash;
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -67,6 +76,15 @@ public class UserAccountEntity {
      */
     public String username() {
         return username;
+    }
+
+    /**
+     * ローカルアカウントのパスワードハッシュを返す。
+     *
+     * @return BCryptパスワードハッシュ。Googleアカウントではnull
+     */
+    public String passwordHash() {
+        return passwordHash;
     }
 
     /**

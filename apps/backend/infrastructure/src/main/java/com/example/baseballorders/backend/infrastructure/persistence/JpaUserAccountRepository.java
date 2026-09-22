@@ -1,6 +1,8 @@
 package com.example.baseballorders.backend.infrastructure.persistence;
 
 import com.example.baseballorders.backend.application.UserAccountRepository;
+import com.example.baseballorders.backend.domain.LocalUserCredentials;
+import com.example.baseballorders.backend.domain.LocalUserCredentialsBuilder;
 import com.example.baseballorders.backend.domain.UserAccount;
 import com.example.baseballorders.backend.domain.UserAccountBuilder;
 import com.example.baseballorders.backend.domain.UserStatus;
@@ -36,7 +38,24 @@ public class JpaUserAccountRepository implements UserAccountRepository {
     @Override
     public UserAccount save(String username, UserStatus status) {
         var now = Instant.now(clock);
-        var entity = new UserAccountEntity(username, status, now, now);
+        var entity = new UserAccountEntity(username, null, status, now, now);
+        return toDomain(repository.save(entity));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Optional<LocalUserCredentials> findLocalCredentials(String username) {
+        return repository
+                .findByUsername(username)
+                .filter(entity -> entity.passwordHash() != null)
+                .map(this::toLocalCredentials);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public UserAccount saveLocal(String username, String passwordHash, UserStatus status) {
+        var now = Instant.now(clock);
+        var entity = new UserAccountEntity(username, passwordHash, status, now, now);
         return toDomain(repository.save(entity));
     }
 
@@ -47,6 +66,14 @@ public class JpaUserAccountRepository implements UserAccountRepository {
                 .status(entity.status())
                 .createdAt(entity.createdAt())
                 .updatedAt(entity.updatedAt())
+                .build();
+    }
+
+    private LocalUserCredentials toLocalCredentials(UserAccountEntity entity) {
+        return LocalUserCredentialsBuilder.localUserCredentials()
+                .username(entity.username())
+                .passwordHash(entity.passwordHash())
+                .status(entity.status())
                 .build();
     }
 }
