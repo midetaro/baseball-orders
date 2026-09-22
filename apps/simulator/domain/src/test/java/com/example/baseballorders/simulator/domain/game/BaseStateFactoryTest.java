@@ -14,7 +14,7 @@ class BaseStateFactoryTest {
         var first = GameStateTestFixture.context(null, null, null, OutCount.NO_OUT);
         var second = GameStateTestFixture.context(null, null, null, OutCount.NO_OUT);
         // when
-        first.inningStateContext().out();
+        first.inningStateContext().currentBaseState().out();
         // then
         assertAll(
                 () ->

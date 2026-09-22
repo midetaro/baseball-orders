@@ -48,16 +48,16 @@ class GameBattingContextTest {
 
         // when
         for (int inning = 0; inning < 8; inning++) {
-            context.inningStateContext().out();
-            context.inningStateContext().out();
-            context.inningStateContext().out();
+            context.inningStateContext().currentBaseState().out();
+            context.inningStateContext().currentBaseState().out();
+            context.inningStateContext().currentBaseState().out();
         }
-        context.inningStateContext().out();
-        context.inningStateContext().out();
-        context.inningStateContext().out();
-        context.inningStateContext().out();
-        context.inningStateContext().out();
-        context.inningStateContext().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
 
         // then
         assertAll(

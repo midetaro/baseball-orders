@@ -37,7 +37,7 @@ class GameStateLifecycleTest {
         when(second.swing(0)).thenReturn(BattingResult.STRIKEOUT);
         var context = new GameBattingContext(new LineUpEntity(List.of(first, second)));
         for (int i = 0; i < (inning - 1) * 3 + 2; i++) {
-            context.inningStateContext().out();
+            context.inningStateContext().currentBaseState().out();
         }
         context.nextAtBat();
 
@@ -70,25 +70,19 @@ class GameStateLifecycleTest {
         var batter = batter();
         var context =
                 new GameBattingContext(new LineUpEntity(Collections.nCopies(9, batter)), observer);
-        context.inningStateContext().hitHomer();
-        context.inningStateContext().hitSingle(batter);
+        context.inningStateContext().currentBaseState().hitHomer();
+        context.inningStateContext().currentBaseState().hitSingle(batter);
         // when
         for (int i = 0; i < 27; i++) {
-            context.inningStateContext().out();
+            context.inningStateContext().currentBaseState().out();
         }
         var finalState = context.inningStateContext().currentBaseState();
-        context.inningStateContext().out();
-        context.inningStateContext().hitSingle(batter);
-        context.inningStateContext().hitDouble(batter);
-        context.inningStateContext().hitTriple(batter);
-        context.inningStateContext().hitHomer();
-        context.inningStateContext().walk(batter);
-        context.inningStateContext().buntNotTry();
-        context.inningStateContext().buntFailure();
-        context.inningStateContext().buntSuccess();
-        context.inningStateContext().stealNotTry();
-        context.inningStateContext().stealFailure();
-        context.inningStateContext().stealSuccess();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().hitSingle(batter);
+        context.inningStateContext().currentBaseState().hitDouble(batter);
+        context.inningStateContext().currentBaseState().hitTriple(batter);
+        context.inningStateContext().currentBaseState().hitHomer();
+        context.inningStateContext().currentBaseState().walk(batter);
         context.nextAtBat();
         context.completeInning();
         // then
@@ -138,7 +132,7 @@ class GameStateLifecycleTest {
         when(hitter.bunt(any(), any())).thenReturn(BuntResult.NOT_TRY);
         when(hitter.swing(anyInt())).thenReturn(BattingResult.HIT_HOMER);
         var context = new GameBattingContext(new LineUpEntity(List.of(hitter)));
-        context.inningStateContext().hitDouble(runner);
+        context.inningStateContext().currentBaseState().hitDouble(runner);
         // when
         context.nextAtBat();
         // then
@@ -163,7 +157,7 @@ class GameStateLifecycleTest {
         when(runner.stealToDouble()).thenReturn(StealResult.NOT_TRY);
         when(hitter.bunt(any(), any())).thenReturn(result);
         var context = new GameBattingContext(new LineUpEntity(List.of(hitter)));
-        context.inningStateContext().hitSingle(runner);
+        context.inningStateContext().currentBaseState().hitSingle(runner);
         // when
         context.nextAtBat();
         // then

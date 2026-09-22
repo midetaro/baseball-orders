@@ -39,6 +39,9 @@ public abstract class AbstractBasesState {
     }
 
     public final void out() {
+        if (context.isGameOver()) {
+            return;
+        }
         context.addOut();
         boolean completed =
                 switch (getOutCount()) {
@@ -127,7 +130,7 @@ public abstract class AbstractBasesState {
         } else {
             transition(runnerAt(Base.FIRST), null, runnerAt(Base.THIRD), 0);
         }
-        context.out();
+        out();
     }
 
     public final void stealSuccess() {
@@ -140,6 +143,9 @@ public abstract class AbstractBasesState {
 
     protected final void transition(
             BatterEntity first, BatterEntity second, BatterEntity third, long runs) {
+        if (context.isGameOver()) {
+            return;
+        }
         context.place(first, second, third);
         context.addScore(runs);
         int configuration =
