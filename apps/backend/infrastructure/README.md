@@ -12,6 +12,21 @@ docker compose -f infrastructure/compose-backend.yaml up -d --build --wait --wai
 http://127.0.0.1:8080/ を開いてください。8080が使用中の場合は、`BACKEND_PORT=18080` を
 コマンドの前に付け、http://127.0.0.1:18080/ を開きます。
 
+## Googleログインを有効にする
+
+Google Cloud ConsoleでOAuth 2.0クライアントを作成し、認可済みのリダイレクトURIとして
+`http://127.0.0.1:8080/login/oauth2/code/google` を登録します。起動時に発行済みの値を渡すと、
+Backendコンテナへ自動的に引き継がれ、Googleログインを検証できます。
+
+```sh
+GOOGLE_CLIENT_ID='発行したClient ID' \
+GOOGLE_CLIENT_SECRET='発行したClient Secret' \
+docker compose -f infrastructure/compose-backend.yaml up -d --build --wait --wait-timeout 180
+```
+
+公開ポートを変更する場合は、Google Cloud ConsoleのリダイレクトURIも
+`http://127.0.0.1:変更後ポート/login/oauth2/code/google` に合わせて登録してください。
+
 この構成はBackendコンテナだけを起動し、`local` プロファイルによりSQSリスナーを停止します。
 打者一覧と打順設定を確認できますが、SimulatorとSQSを起動しないため、シミュレーション実行はできません。
 シミュレーションを含めて動かす場合は、[ローカルDocker環境](../../../infra/docker/README.md)を使用してください。
