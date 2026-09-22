@@ -1,6 +1,7 @@
 package com.example.baseballorders.simulator.application.contract;
 
 import com.example.baseballorders.simulator.domain.statistics.GameStatistics;
+import com.example.baseballorders.simulator.domain.statistics.GameStatisticsBuilder;
 import org.jilt.Builder;
 import org.jilt.BuilderStyle;
 
@@ -20,6 +21,25 @@ public record SimulationResponse(int score, int runs, GameStatistics gameStatist
      * @param runs allowed runs
      */
     public SimulationResponse(int score, int runs) {
-        this(score, runs, new GameStatistics(0, 0, 0, 0, 0, 0, 0, 0, 0));
+        this(
+                score,
+                runs,
+                GameStatisticsBuilder.gameStatistics()
+                        .homeRunCount(0)
+                        .soloHomeRunCount(0)
+                        .twoRunHomeRunCount(0)
+                        .threeRunHomeRunCount(0)
+                        .grandSlamCount(0)
+                        .buntCount(0)
+                        .stealCount(0)
+                        .buntFailureCount(0)
+                        .stealFailureCount(0)
+                        .advancingBuntCount(0)
+                        .squeezeBuntCount(0)
+                        .advancingBuntFailureCount(0)
+                        .squeezeBuntFailureCount(0)
+                        .stealToSecondCount(0)
+                        .stealToThirdCount(0)
+                        .build());
     }
 }
