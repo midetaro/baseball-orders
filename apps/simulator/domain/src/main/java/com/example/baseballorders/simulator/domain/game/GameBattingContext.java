@@ -15,7 +15,6 @@ public class GameBattingContext {
     private final GameStatisticsRecorder statisticsRecorder = new GameStatisticsRecorder();
     private final GameCompletionObserver gameCompletionObserver;
     private final List<BatterEntity> batterEntityOrders;
-    private final AtBatProcessor atBatProcessor = new AtBatProcessor();
     @Getter private long inning = 1;
     private long totalScore;
     private int numberOfNextBatter;
@@ -91,7 +90,7 @@ public class GameBattingContext {
         if (isGameOver) {
             return;
         }
-        if (atBatProcessor.process(
+        if (AtBatProcessor.process(
                 inningStateContext, batterEntityOrders.get(numberOfNextBatter))) {
             if (numberOfNextBatter == 8) {
                 numberOfNextBatter = 0;

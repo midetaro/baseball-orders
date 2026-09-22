@@ -8,7 +8,7 @@ import com.example.baseballorders.simulator.domain.player.BatterEntity;
 /** プレー結果を取得し、対応するStateイベントをContextへ送る。 */
 final class AtBatProcessor {
 
-    boolean process(InningStateContext context, BatterEntity batter) {
+    static boolean process(InningStateContext context, BatterEntity batter) {
 
         long inningBeforeSteal = context.inning();
         // 盗塁フェーズ
