@@ -15,6 +15,11 @@ public final class FirstDoubleBaseState extends AbstractBasesState
     }
 
     @Override
+    public void walk(BatterEntity batter) {
+        transition(batter, runnerAt(Base.FIRST), runnerAt(Base.SECOND), 0);
+    }
+
+    @Override
     public BuntResult bunt(BatterEntity batter) {
         return attemptBunt(batter, BuntType.ADVANCING);
     }

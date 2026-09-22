@@ -20,14 +20,6 @@ public interface BasesState {
     /** 現在の走者数を返す。 @return 塁上の走者数 */
     int runnerCount();
 
-    /**
-     * 指定した塁の走者の有無を返す。
-     *
-     * @param base 確認する塁
-     * @return 走者がいればtrue
-     */
-    boolean isOccupied(Base base);
-
     /** アウトを一つ加算し、三死ならイニング状態を初期化して試合を進める。 */
     void out();
 

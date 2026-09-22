@@ -12,7 +12,7 @@ final class AtBatProcessor {
 
         long inningBeforeSteal = context.getInning();
 
-        if (context.getCurrentState() instanceof Stealable stealable) {
+        if (context.getCurrentBaseState() instanceof Stealable stealable) {
             StealResult stealResult =
                     switch (stealable.targetBase()) {
                         case FIRST -> throw new IllegalStateException("一塁への盗塁はサポートされていません");
@@ -31,7 +31,7 @@ final class AtBatProcessor {
             return false;
         }
 
-        if (context.getCurrentState() instanceof Buntable buntable) {
+        if (context.getCurrentBaseState() instanceof Buntable buntable) {
             boolean bunted =
                     switch (buntable.bunt(batter)) {
                         case NOT_TRY -> {
@@ -52,7 +52,7 @@ final class AtBatProcessor {
             }
         }
 
-        switch (batter.swing(context.getCurrentState().runnerCount())) {
+        switch (batter.swing(context.getCurrentBaseState().runnerCount())) {
             case STRIKEOUT -> context.out();
             case BATTED_OUT -> context.battingOut();
             case WALK -> context.walk(batter);

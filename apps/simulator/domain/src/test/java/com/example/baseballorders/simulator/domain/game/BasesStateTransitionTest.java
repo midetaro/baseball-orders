@@ -183,7 +183,7 @@ class BasesStateTransitionTest {
     void appliesEvent(int mask, int outs, Event event) {
         // given
         var context = context(mask, outs);
-        var before = context.getCurrentState();
+        var before = context.getCurrentBaseState();
         var expected = expected(mask, event);
         boolean reset = expected.outs() > 0 && outs + expected.outs() >= 3;
         int expectedMask = reset ? 0 : expected.mask();
@@ -194,7 +194,7 @@ class BasesStateTransitionTest {
             // then
             assertAll(
                     () -> assertFalse(exception.getMessage().isBlank()),
-                    () -> assertSame(before, context.getCurrentState()),
+                    () -> assertSame(before, context.getCurrentBaseState()),
                     () -> assertEquals(OutCount.values()[outs], before.getOutCount()),
                     () -> assertEquals(0, context.getTotalScore()),
                     () -> assertSame((mask & 1) != 0 ? FIRST : null, before.runnerAt(Base.FIRST)),
@@ -205,7 +205,7 @@ class BasesStateTransitionTest {
         event.apply(context);
 
         // then
-        var after = context.getCurrentState();
+        var after = context.getCurrentBaseState();
         assertAll(
                 () -> assertInstanceOf(TYPES.get(expectedMask), after),
                 () ->
@@ -226,7 +226,7 @@ class BasesStateTransitionTest {
     void reusesStateWithinGame(int mask) {
         // given
         var context = context(mask, 1);
-        var original = context.getCurrentState();
+        var original = context.getCurrentBaseState();
         var other = context(mask, 0);
         // when
         context.hitHomer();
@@ -234,8 +234,8 @@ class BasesStateTransitionTest {
         other.out();
         // then
         assertAll(
-                () -> assertSame(original, context.getCurrentState()),
-                () -> assertNotSame(original, other.getCurrentState()),
+                () -> assertSame(original, context.getCurrentBaseState()),
+                () -> assertNotSame(original, other.getCurrentBaseState()),
                 () -> assertEquals(OutCount.ONE_OUT, original.getOutCount()),
                 () -> assertEquals(Integer.bitCount(mask), original.runnerCount()),
                 () -> assertEquals(Integer.bitCount(mask) + 1, context.getTotalScore()),
@@ -259,7 +259,7 @@ class BasesStateTransitionTest {
         context.walk(BATTER);
 
         // then
-        var state = context.getCurrentState();
+        var state = context.getCurrentBaseState();
         assertAll(
                 () -> assertSame(BATTER, state.runnerAt(Base.FIRST)),
                 () -> assertSame(expectedSecond, state.runnerAt(Base.SECOND)),
@@ -273,7 +273,7 @@ class BasesStateTransitionTest {
     @DisplayName("現在の走者配置から選べない進塁先には盗塁を試行しない")
     void doesNotAttemptStealToUnsupportedDestination(int mask, boolean toDouble) {
         // given
-        var state = (Stealable) context(mask, 0).getCurrentState();
+        var state = (Stealable) context(mask, 0).getCurrentBaseState();
 
         // when
         StealResult result = toDouble ? state.stealToDouble() : state.stealToTriple();
@@ -287,7 +287,7 @@ class BasesStateTransitionTest {
     @DisplayName("複数走者の配置で対象走者に盗塁を試行させる")
     void attemptsStealToSupportedDestination(int mask, boolean toDouble) {
         // given
-        var state = (Stealable) context(mask, 0).getCurrentState();
+        var state = (Stealable) context(mask, 0).getCurrentBaseState();
 
         // when
         StealResult result;
@@ -306,7 +306,7 @@ class BasesStateTransitionTest {
     void exposesOpportunities(int mask) {
         // given
         var context = context(mask, 0);
-        var state = context.getCurrentState();
+        var state = context.getCurrentBaseState();
         // when
         Optional<Stealable> steal =
                 state instanceof Stealable stealable ? Optional.of(stealable) : Optional.empty();
@@ -344,7 +344,7 @@ class BasesStateTransitionTest {
                         BehaviorStrategies.middleDistanceHittingStrategy(),
                         BehaviorStrategies.noSteal(),
                         BehaviorStrategies.standardBunt());
-        var state = (Buntable) context(mask, outCount.ordinal()).getCurrentState();
+        var state = (Buntable) context(mask, outCount.ordinal()).getCurrentBaseState();
 
         // when
         var result = state.bunt(batter);

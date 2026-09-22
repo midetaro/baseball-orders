@@ -35,7 +35,7 @@ public abstract class AbstractBasesState {
                 + (isOccupied(Base.THIRD) ? 1 : 0);
     }
 
-    public final boolean isOccupied(Base base) {
+    private boolean isOccupied(Base base) {
         return runnerAt(base) != null;
     }
 
@@ -69,34 +69,26 @@ public abstract class AbstractBasesState {
         out();
     }
 
-    /**
-     * 四球を適用し、一塁から連続して埋まっている走者だけを押し出す。
-     *
-     * @param batter 四球の打者
-     */
-    public final void walk(BatterEntity batter) {
-        BatterEntity first = runnerAt(Base.FIRST);
-        BatterEntity second = runnerAt(Base.SECOND);
-        BatterEntity third = runnerAt(Base.THIRD);
-        if (first == null) {
-            transition(batter, second, third, 0);
-        } else if (second == null) {
-            transition(batter, first, third, 0);
-        } else if (third == null) {
-            transition(batter, first, second, 0);
-        } else {
-            transition(batter, first, second, 1);
-        }
-    }
-
     protected final BuntResult attemptBunt(BatterEntity batter, BuntType buntType) {
         return batter.bunt(inningState.getOutCount(), buntType);
     }
 
+    /**
+     * 全てのconcreteクラスで同じ処理をするので一律で定義
+     *
+     * <p>templateパターン
+     *
+     * @param batter 打者
+     */
     protected final void applyHitTriple(BatterEntity batter) {
         transition(null, null, batter, runnerCount());
     }
 
+    /**
+     * 全てのconcreteクラスで同じ処理をするので一律で定義
+     *
+     * <p>templateパターン
+     */
     protected final void applyHitHomer() {
         transition(null, null, null, runnerCount() + 1L);
     }

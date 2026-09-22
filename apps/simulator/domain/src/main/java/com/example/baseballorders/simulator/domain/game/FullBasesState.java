@@ -13,6 +13,11 @@ public final class FullBasesState extends AbstractBasesState
     }
 
     @Override
+    public void walk(BatterEntity batter) {
+        transition(batter, runnerAt(Base.FIRST), runnerAt(Base.SECOND), 1);
+    }
+
+    @Override
     public BuntResult bunt(BatterEntity batter) {
         return attemptBunt(batter, BuntType.SQUEEZE);
     }
