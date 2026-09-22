@@ -48,16 +48,16 @@ class GameBattingContextTest {
 
         // when
         for (int inning = 0; inning < 8; inning++) {
-            context.inningStateContext().out();
-            context.inningStateContext().out();
-            context.inningStateContext().out();
+            context.inningStateContext().currentBaseState().out();
+            context.inningStateContext().currentBaseState().out();
+            context.inningStateContext().currentBaseState().out();
         }
-        context.inningStateContext().out();
-        context.inningStateContext().out();
-        context.inningStateContext().out();
-        context.inningStateContext().out();
-        context.inningStateContext().out();
-        context.inningStateContext().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
 
         // then
         assertAll(
@@ -93,5 +93,24 @@ class GameBattingContextTest {
         assertAll(
                 () -> assertEquals(1, context.getGameStatistics().homeRunCount()),
                 () -> assertEquals(1, context.getGameStatistics().soloHomeRunCount()));
+    }
+
+    @Test
+    @DisplayName("イニング終了時にイニングContextの得点と回数を試合へ反映する")
+    void reflectsCompletedInningIntoGame() {
+        // given
+        var sut =
+                new GameBattingContext(
+                        new LineUpEntity(Collections.nCopies(9, battingOutBatter())));
+        sut.inningStateContext().currentBaseState().hitHomer();
+
+        // when
+        sut.inningStateContext().currentBaseState().out();
+        sut.inningStateContext().currentBaseState().out();
+        sut.inningStateContext().currentBaseState().out();
+
+        // then
+        assertAll(
+                () -> assertEquals(2, sut.getInning()), () -> assertEquals(1, sut.getTotalScore()));
     }
 }

@@ -11,7 +11,7 @@ final class AtBatProcessor {
     boolean process(InningStateContext context, BatterEntity batter) {
 
         long inningBeforeSteal = context.inning();
-
+        // 盗塁フェーズ
         if (context.currentBaseState() instanceof Stealable stealable) {
             StealResult stealResult =
                     switch (stealable.targetBase()) {
@@ -21,9 +21,9 @@ final class AtBatProcessor {
                     };
 
             switch (stealResult) {
-                case NOT_TRY -> context.stealNotTry();
-                case FAILURE -> context.stealFailure();
-                case SUCCESS -> context.stealSuccess();
+                case NOT_TRY -> stealable.stealNotTry();
+                case FAILURE -> stealable.stealFailure();
+                case SUCCESS -> stealable.stealSuccess();
             }
         }
 
@@ -31,35 +31,30 @@ final class AtBatProcessor {
             return false;
         }
 
+        // バントフェーズ
         if (context.currentBaseState() instanceof Buntable buntable) {
-            boolean bunted =
-                    switch (buntable.bunt(batter)) {
-                        case NOT_TRY -> {
-                            context.buntNotTry();
-                            yield false;
-                        }
-                        case FAILURE -> {
-                            context.buntFailure();
-                            yield true;
-                        }
-                        case SUCCESS -> {
-                            context.buntSuccess();
-                            yield true;
-                        }
-                    };
-            if (bunted) {
-                return true;
+            switch (buntable.bunt(batter)) {
+                case NOT_TRY -> buntable.buntNotTry();
+                case FAILURE -> {
+                    buntable.buntFailure();
+                    return true;
+                }
+                case SUCCESS -> {
+                    buntable.buntSuccess();
+                    return true;
+                }
             }
         }
 
+        // 打撃フェーズ
         switch (batter.swing(context.currentBaseState().runnerCount())) {
-            case STRIKEOUT -> context.out();
-            case BATTED_OUT -> context.battingOut();
-            case WALK -> context.walk(batter);
-            case HIT_SINGLE -> context.hitSingle(batter);
-            case HIT_DOUBLE -> context.hitDouble(batter);
-            case HIT_TRIPLE -> context.hitTriple(batter);
-            case HIT_HOMER -> context.hitHomer();
+            case STRIKEOUT -> context.currentBaseState().out();
+            case BATTED_OUT -> context.currentBaseState().battingOut();
+            case WALK -> context.currentBaseState().walk(batter);
+            case HIT_SINGLE -> context.currentBaseState().hitSingle(batter);
+            case HIT_DOUBLE -> context.currentBaseState().hitDouble(batter);
+            case HIT_TRIPLE -> context.currentBaseState().hitTriple(batter);
+            case HIT_HOMER -> context.currentBaseState().hitHomer();
         }
         return true;
     }

@@ -25,25 +25,25 @@ public final class GameStateTestFixture {
         int mask = (first == null ? 0 : 1) | (second == null ? 0 : 2) | (third == null ? 0 : 4);
         switch (mask) {
             case 0 -> {}
-            case 1 -> context.inningStateContext().hitSingle(first);
-            case 2 -> context.inningStateContext().hitDouble(second);
+            case 1 -> context.inningStateContext().currentBaseState().hitSingle(first);
+            case 2 -> context.inningStateContext().currentBaseState().hitDouble(second);
             case 3 -> {
-                context.inningStateContext().hitSingle(second);
-                context.inningStateContext().hitSingle(first);
+                context.inningStateContext().currentBaseState().hitSingle(second);
+                context.inningStateContext().currentBaseState().hitSingle(first);
             }
-            case 4 -> context.inningStateContext().hitTriple(third);
+            case 4 -> context.inningStateContext().currentBaseState().hitTriple(third);
             case 5 -> {
-                context.inningStateContext().hitDouble(third);
-                context.inningStateContext().hitSingle(first);
+                context.inningStateContext().currentBaseState().hitDouble(third);
+                context.inningStateContext().currentBaseState().hitSingle(first);
             }
             case 6 -> {
-                context.inningStateContext().hitSingle(third);
-                context.inningStateContext().hitDouble(second);
+                context.inningStateContext().currentBaseState().hitSingle(third);
+                context.inningStateContext().currentBaseState().hitDouble(second);
             }
             case 7 -> {
-                context.inningStateContext().hitSingle(third);
-                context.inningStateContext().hitSingle(second);
-                context.inningStateContext().hitSingle(first);
+                context.inningStateContext().currentBaseState().hitSingle(third);
+                context.inningStateContext().currentBaseState().hitSingle(second);
+                context.inningStateContext().currentBaseState().hitSingle(first);
             }
             default -> throw new IllegalArgumentException();
         }
@@ -55,7 +55,7 @@ public final class GameStateTestFixture {
                     case THREE_OUT -> throw new IllegalArgumentException("三死はイニング終了時にリセットされます");
                 };
         for (int i = 0; i < count; i++) {
-            context.inningStateContext().out();
+            context.inningStateContext().currentBaseState().out();
         }
         return context;
     }
