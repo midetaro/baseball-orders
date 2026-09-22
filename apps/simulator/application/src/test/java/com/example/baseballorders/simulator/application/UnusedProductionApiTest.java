@@ -1,8 +1,6 @@
 package com.example.baseballorders.simulator.application;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import org.junit.jupiter.api.DisplayName;

@@ -17,46 +17,6 @@ import org.mockito.MockedStatic;
 
 class StealBehaviorTest {
 
-    @DisplayName("盗塁戦略は乱数の境界に応じて盗塁結果を決定する")
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("randomStealTestCases")
-    void determinesStealResultFromRandomValue(
-            String description,
-            StealStrategy strategy,
-            Destination destination,
-            float random,
-            StealResult expectedResult) {
-        // given
-        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
-
-            // when
-            StealResult result = destination.run(strategy, 0.9f);
-
-            // then
-            assertAll(() -> assertEquals(expectedResult, result, description));
-        }
-    }
-
-    @DisplayName("選手の盗塁成功率が高いほど同じ乱数でも盗塁に成功する")
-    @org.junit.jupiter.api.Test
-    void usesPlayerStealSuccessRate() {
-        // given
-        var strategy = new EagerStealStrategy();
-        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.9f);
-
-            // when
-            StealResult lowRateResult = strategy.runToDouble(0.5f);
-            StealResult highRateResult = strategy.runToDouble(0.8f);
-
-            // then
-            assertAll(
-                    () -> assertEquals(StealResult.FAILURE, lowRateResult),
-                    () -> assertEquals(StealResult.SUCCESS, highRateResult));
-        }
-    }
-
     static Stream<Arguments> randomStealTestCases() {
         return Stream.of(
                 arguments(
@@ -157,6 +117,52 @@ class StealBehaviorTest {
                         StealResult.FAILURE));
     }
 
+    static Stream<Arguments> nowayStealTestCases() {
+        return Stream.of(
+                arguments("二塁へは盗塁を試行しない", Destination.SECOND, StealResult.NOT_TRY),
+                arguments("三塁へは盗塁を試行しない", Destination.THIRD, StealResult.NOT_TRY));
+    }
+
+    @DisplayName("盗塁戦略は乱数の境界に応じて盗塁結果を決定する")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("randomStealTestCases")
+    void determinesStealResultFromRandomValue(
+            String description,
+            StealStrategy strategy,
+            Destination destination,
+            float random,
+            StealResult expectedResult) {
+        // given
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
+
+            // when
+            StealResult result = destination.run(strategy, 0.9f);
+
+            // then
+            assertAll(() -> assertEquals(expectedResult, result, description));
+        }
+    }
+
+    @DisplayName("選手の盗塁成功率が高いほど同じ乱数でも盗塁に成功する")
+    @org.junit.jupiter.api.Test
+    void usesPlayerStealSuccessRate() {
+        // given
+        var strategy = new EagerStealStrategy();
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.9f);
+
+            // when
+            StealResult lowRateResult = strategy.runToDouble(0.5f);
+            StealResult highRateResult = strategy.runToDouble(0.8f);
+
+            // then
+            assertAll(
+                    () -> assertEquals(StealResult.FAILURE, lowRateResult),
+                    () -> assertEquals(StealResult.SUCCESS, highRateResult));
+        }
+    }
+
     @DisplayName("盗塁しない戦略は進塁先にかかわらず試行しない")
     @ParameterizedTest(name = "{0}")
     @MethodSource("nowayStealTestCases")
@@ -170,12 +176,6 @@ class StealBehaviorTest {
 
         // then
         assertAll(() -> assertEquals(expectedResult, result, description));
-    }
-
-    static Stream<Arguments> nowayStealTestCases() {
-        return Stream.of(
-                arguments("二塁へは盗塁を試行しない", Destination.SECOND, StealResult.NOT_TRY),
-                arguments("三塁へは盗塁を試行しない", Destination.THIRD, StealResult.NOT_TRY));
     }
 
     enum Destination {

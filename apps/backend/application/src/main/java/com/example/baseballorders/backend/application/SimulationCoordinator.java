@@ -1,7 +1,7 @@
 package com.example.baseballorders.backend.application;
 
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
-import com.example.baseballorders.backend.application.dto.SimulationRequest;
+import com.example.baseballorders.backend.application.dto.SimulationRequestBuilder;
 import com.example.baseballorders.backend.application.exception.SimulationAcceptException;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
@@ -68,7 +68,12 @@ public final class SimulationCoordinator {
         var waiting = registry.register(simulationId);
         try {
             // SQSの送信
-            publisher.publish(new SimulationRequest(simulationId, MESSAGE_VERSION, players));
+            publisher.publish(
+                    SimulationRequestBuilder.simulationRequest()
+                            .simulationId(simulationId)
+                            .version(MESSAGE_VERSION)
+                            .players(players)
+                            .build());
         } catch (RuntimeException exception) {
             registry.remove(simulationId);
             throw new SimulationSendException(simulationId, exception);

@@ -33,6 +33,17 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
         this.requestQueueName = requestQueueName;
     }
 
+    private static com.example.baseballorders.messaging.PlayerPersonality toMessagePersonality(
+            com.example.baseballorders.backend.domain.PlayerPersonality personality) {
+        return switch (personality) {
+            case DEFAULT -> com.example.baseballorders.messaging.PlayerPersonality.DEFAULT;
+            case EAGER_SLUGGISH ->
+                    com.example.baseballorders.messaging.PlayerPersonality.EAGER_SLUGGISH;
+            case EAGER_STEAL -> com.example.baseballorders.messaging.PlayerPersonality.EAGER_STEAL;
+            case EAGER_BUNT -> com.example.baseballorders.messaging.PlayerPersonality.EAGER_BUNT;
+        };
+    }
+
     @Override
     public void publish(SimulationRequest request) {
         var message =
@@ -60,16 +71,5 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
     public void publish(SimulationRequestMessage request) {
         sqsTemplate.send(requestQueueName, request);
         LOGGER.info("simulation request sent simulationId={}", request.simulationId());
-    }
-
-    private static com.example.baseballorders.messaging.PlayerPersonality toMessagePersonality(
-            com.example.baseballorders.backend.domain.PlayerPersonality personality) {
-        return switch (personality) {
-            case DEFAULT -> com.example.baseballorders.messaging.PlayerPersonality.DEFAULT;
-            case EAGER_SLUGGISH ->
-                    com.example.baseballorders.messaging.PlayerPersonality.EAGER_SLUGGISH;
-            case EAGER_STEAL -> com.example.baseballorders.messaging.PlayerPersonality.EAGER_STEAL;
-            case EAGER_BUNT -> com.example.baseballorders.messaging.PlayerPersonality.EAGER_BUNT;
-        };
     }
 }

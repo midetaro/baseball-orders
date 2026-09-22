@@ -39,7 +39,7 @@ jacocoTestCoverageVerification {
     violationRules {
         rule {
             includes = [
-                'com.example.baseballorders.simulator.infrastructure.messaging.SqsSimulationScheduler'
+                    'com.example.baseballorders.simulator.infrastructure.messaging.SqsSimulationScheduler'
             ]
             limit {
                 counter = 'LINE'

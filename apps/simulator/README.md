@@ -255,7 +255,7 @@ Strategy パターンの `Context` は `BatterEntity`、Strategy は `HittingStr
 
 `BehaviorStrategies` は具象クラス名を利用側へ露出せず Strategy を生成する静的ファクトリです。これは生成を一箇所へまとめる補助クラスであり、GoF の Factory Method ではありません。
 
-`BatterEntity.observedBy(...)` は能力値と Strategy を共有し、通知先だけを差し替えた新しい打者を返します。これにより、入力された `LineUpEntity` 自体を変更せず、試合ごとの統計記録先を結び付けられます。
+`BatterEntity.observedBy(...)` は能力値と Strategy を共有し、通知先だけを差し替えた新しい打者を返します。これにより、入力された `LineUpEntity` 自体を変更せず、試合ごとの統計記録先を結び付けられます。盗塁は二塁・三塁の各試行メソッドから盗塁先を通知し、バントは走者配置を知る具象 State が進塁バントまたはスクイズの種別を渡します。
 
 ## `domain.statistics`: プレー通知と集計結果
 
@@ -266,8 +266,8 @@ classDiagram
     class PlayResultObserver {
         <<Observer interface>>
         +onBattingResult(BattingResult result, int runnerCount)
-        +onBuntResult(BuntResult result)
-        +onStealResult(StealResult result)
+        +onBuntResult(BuntResult result, BuntType type)
+        +onStealResult(StealResult result, StealTarget target)
     }
     class GameStatisticsRecorder {
         -int homeRunCount
@@ -282,6 +282,12 @@ classDiagram
         +int stealCount
         +int buntFailureCount
         +int stealFailureCount
+        +int advancingBuntCount
+        +int squeezeBuntCount
+        +int advancingBuntFailureCount
+        +int squeezeBuntFailureCount
+        +int stealToSecondCount
+        +int stealToThirdCount
     }
 
     class GameCompletionObserver {
@@ -302,6 +308,12 @@ classDiagram
         +int maximumScore
         +int gameCount
         +Map~Integer,Integer~ scoreDistribution
+        +int advancingBuntCount
+        +int squeezeBuntCount
+        +int advancingBuntFailureCount
+        +int squeezeBuntFailureCount
+        +int stealToSecondCount
+        +int stealToThirdCount
     }
 
     class BatterEntity {

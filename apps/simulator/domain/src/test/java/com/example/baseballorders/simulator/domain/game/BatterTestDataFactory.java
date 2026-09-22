@@ -9,12 +9,12 @@ import java.util.List;
 
 public final class BatterTestDataFactory {
 
-    private BatterTestDataFactory() {}
-
     static HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceHittingStrategy();
     static StealStrategy eagerStealStrategy = BehaviorStrategies.eagerSteal();
     static StealStrategy nowayStealBehavior = BehaviorStrategies.noSteal();
     static BuntStrategy standardBuntStrategy = BehaviorStrategies.standardBunt();
+
+    private BatterTestDataFactory() {}
 
     public static List<BatterEntity> mock() {
         return List.of(

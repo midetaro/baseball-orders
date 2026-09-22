@@ -100,7 +100,13 @@ public class SqsSimulationScheduler {
                                         simulationResult.statistics().buntCount(),
                                         simulationResult.statistics().stealCount(),
                                         simulationResult.statistics().buntFailureCount(),
-                                        simulationResult.statistics().stealFailureCount()));
+                                        simulationResult.statistics().stealFailureCount(),
+                                        simulationResult.statistics().advancingBuntCount(),
+                                        simulationResult.statistics().squeezeBuntCount(),
+                                        simulationResult.statistics().advancingBuntFailureCount(),
+                                        simulationResult.statistics().squeezeBuntFailureCount(),
+                                        simulationResult.statistics().stealToSecondCount(),
+                                        simulationResult.statistics().stealToThirdCount()));
                 sqsClient.sendMessage(
                         SendMessageRequest.builder()
                                 .queueUrl(resultQueueUrl)

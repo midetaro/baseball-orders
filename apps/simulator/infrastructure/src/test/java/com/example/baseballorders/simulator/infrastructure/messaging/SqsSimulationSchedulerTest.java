@@ -3,12 +3,7 @@ package com.example.baseballorders.simulator.infrastructure.messaging;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
@@ -32,16 +27,70 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.scheduling.annotation.Scheduled;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
-import software.amazon.awssdk.services.sqs.model.GetQueueUrlResponse;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-import software.amazon.awssdk.services.sqs.model.SqsException;
+import software.amazon.awssdk.services.sqs.model.*;
 
 class SqsSimulationSchedulerTest {
+
+    private static java.util.stream.Stream<String> missingRequestValues() throws Exception {
+        var objectMapper = new ObjectMapper();
+        var valid =
+                objectMapper.readTree(
+                        """
+                                {"simulation_id":"00000000-0000-0000-0000-000000000001","version":"1",
+                                 "players":[{"name":"1番","hitAverage":0.3,"sluggish":0.4,"buntSuccessRate":0.7,
+                                 "buntEnabled":false,"stealSuccessRate":0.8,"stealEnabled":false}]}
+                                """);
+        var bodies = new java.util.ArrayList<String>();
+        for (String field :
+                List.of(
+                        "simulation_id",
+                        "version",
+                        "players",
+                        "name",
+                        "hitAverage",
+                        "sluggish",
+                        "buntSuccessRate",
+                        "buntEnabled",
+                        "stealSuccessRate",
+                        "stealEnabled")) {
+            for (boolean omit : List.of(true, false)) {
+                com.fasterxml.jackson.databind.node.ObjectNode copy = valid.deepCopy();
+                var target =
+                        List.of("simulation_id", "version", "players").contains(field)
+                                ? copy
+                                : (com.fasterxml.jackson.databind.node.ObjectNode)
+                                        copy.path("players").get(0);
+                if (omit) target.remove(field);
+                else target.putNull(field);
+                bodies.add(copy.toString());
+            }
+        }
+        bodies.add("null");
+        var nullPlayer = valid.deepCopy();
+        ((com.fasterxml.jackson.databind.node.ArrayNode) nullPlayer.path("players"))
+                .set(0, objectMapper.nullNode());
+        bodies.add(nullPlayer.toString());
+        return bodies.stream();
+    }
+
+    private static SimulationResult simulationResult(List<SimulationResponse> responses) {
+        ScoreAccumulator accumulator = new ScoreAccumulator();
+        responses.forEach(
+                response ->
+                        accumulator.onGameCompleted(response.score(), response.gameStatistics()));
+        return new SimulationResult(accumulator.toScoreStatistics());
+    }
+
+    private static void stubQueueUrls(SqsClient sqsClient) {
+        when(sqsClient.getQueueUrl(any(GetQueueUrlRequest.class)))
+                .thenAnswer(
+                        invocation -> {
+                            GetQueueUrlRequest request = invocation.getArgument(0);
+                            return GetQueueUrlResponse.builder()
+                                    .queueUrl(request.queueName().replace("-queue", "-url"))
+                                    .build();
+                        });
+    }
 
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.MethodSource("missingRequestValues")
@@ -78,48 +127,6 @@ class SqsSimulationSchedulerTest {
                 () -> verifyNoInteractions(useCase, mapper),
                 () -> verify(sqsClient, never()).sendMessage(any(SendMessageRequest.class)),
                 () -> verify(sqsClient, never()).deleteMessage(any(DeleteMessageRequest.class)));
-    }
-
-    private static java.util.stream.Stream<String> missingRequestValues() throws Exception {
-        var objectMapper = new ObjectMapper();
-        var valid =
-                objectMapper.readTree(
-                        """
-                {"simulation_id":"00000000-0000-0000-0000-000000000001","version":"1",
-                 "players":[{"name":"1番","hitAverage":0.3,"sluggish":0.4,"buntSuccessRate":0.7,
-                 "buntEnabled":false,"stealSuccessRate":0.8,"stealEnabled":false}]}
-                """);
-        var bodies = new java.util.ArrayList<String>();
-        for (String field :
-                List.of(
-                        "simulation_id",
-                        "version",
-                        "players",
-                        "name",
-                        "hitAverage",
-                        "sluggish",
-                        "buntSuccessRate",
-                        "buntEnabled",
-                        "stealSuccessRate",
-                        "stealEnabled")) {
-            for (boolean omit : List.of(true, false)) {
-                com.fasterxml.jackson.databind.node.ObjectNode copy = valid.deepCopy();
-                var target =
-                        List.of("simulation_id", "version", "players").contains(field)
-                                ? copy
-                                : (com.fasterxml.jackson.databind.node.ObjectNode)
-                                        copy.path("players").get(0);
-                if (omit) target.remove(field);
-                else target.putNull(field);
-                bodies.add(copy.toString());
-            }
-        }
-        bodies.add("null");
-        var nullPlayer = valid.deepCopy();
-        ((com.fasterxml.jackson.databind.node.ArrayNode) nullPlayer.path("players"))
-                .set(0, objectMapper.nullNode());
-        bodies.add(nullPlayer.toString());
-        return bodies.stream();
     }
 
     @Test
@@ -176,7 +183,9 @@ class SqsSimulationSchedulerTest {
                                         new SimulationResponse(
                                                 index,
                                                 4,
-                                                new GameStatistics(1, 1, 0, 0, 0, 2, 3, 5, 7)))
+                                                new GameStatistics(
+                                                        1, 1, 0, 0, 0, 2, 3, 5, 7, 11, 13, 17, 19,
+                                                        23, 29)))
                         .toList();
         when(useCase.invoke(any(LineUpEntity.class)))
                 .thenReturn(simulationResult(simulationResponses));
@@ -209,6 +218,7 @@ class SqsSimulationSchedulerTest {
                                     }
                                 })
                         .toList();
+        var sentJson = objectMapper.readTree(sendMessageCaptor.getValue().messageBody());
         assertAll(
                 () -> assertEquals(9, lineUpCaptor.getValue().getBatterEntities().size()),
                 () -> assertEquals("result-url", sendMessageCaptor.getValue().queueUrl()),
@@ -231,7 +241,30 @@ class SqsSimulationSchedulerTest {
                 () -> assertEquals(20, sentResponses.getFirst().statistics().buntCount()),
                 () -> assertEquals(30, sentResponses.getFirst().statistics().stealCount()),
                 () -> assertEquals(50, sentResponses.getFirst().statistics().buntFailureCount()),
-                () -> assertEquals(70, sentResponses.getFirst().statistics().stealFailureCount()));
+                () -> assertEquals(70, sentResponses.getFirst().statistics().stealFailureCount()),
+                () -> assertEquals(110, sentResponses.getFirst().statistics().advancingBuntCount()),
+                () -> assertEquals(130, sentResponses.getFirst().statistics().squeezeBuntCount()),
+                () ->
+                        assertEquals(
+                                170,
+                                sentResponses.getFirst().statistics().advancingBuntFailureCount()),
+                () ->
+                        assertEquals(
+                                190,
+                                sentResponses.getFirst().statistics().squeezeBuntFailureCount()),
+                () -> assertEquals(230, sentResponses.getFirst().statistics().stealToSecondCount()),
+                () -> assertEquals(290, sentResponses.getFirst().statistics().stealToThirdCount()),
+                () -> assertEquals(110, sentJson.at("/statistics/advancingBuntCount").intValue()),
+                () -> assertEquals(130, sentJson.at("/statistics/squeezeBuntCount").intValue()),
+                () ->
+                        assertEquals(
+                                170,
+                                sentJson.at("/statistics/advancingBuntFailureCount").intValue()),
+                () ->
+                        assertEquals(
+                                190, sentJson.at("/statistics/squeezeBuntFailureCount").intValue()),
+                () -> assertEquals(230, sentJson.at("/statistics/stealToSecondCount").intValue()),
+                () -> assertEquals(290, sentJson.at("/statistics/stealToThirdCount").intValue()));
     }
 
     @Test
@@ -408,24 +441,5 @@ class SqsSimulationSchedulerTest {
                 () ->
                         ordered.verify(sqsClient, never())
                                 .deleteMessage(any(DeleteMessageRequest.class)));
-    }
-
-    private static SimulationResult simulationResult(List<SimulationResponse> responses) {
-        ScoreAccumulator accumulator = new ScoreAccumulator();
-        responses.forEach(
-                response ->
-                        accumulator.onGameCompleted(response.score(), response.gameStatistics()));
-        return new SimulationResult(accumulator.toScoreStatistics());
-    }
-
-    private static void stubQueueUrls(SqsClient sqsClient) {
-        when(sqsClient.getQueueUrl(any(GetQueueUrlRequest.class)))
-                .thenAnswer(
-                        invocation -> {
-                            GetQueueUrlRequest request = invocation.getArgument(0);
-                            return GetQueueUrlResponse.builder()
-                                    .queueUrl(request.queueName().replace("-queue", "-url"))
-                                    .build();
-                        });
     }
 }

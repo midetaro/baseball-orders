@@ -1,8 +1,6 @@
 package com.example.baseballorders.simulator.domain.statistics;
 
-import com.example.baseballorders.simulator.domain.play.BattingResult;
-import com.example.baseballorders.simulator.domain.play.BuntResult;
-import com.example.baseballorders.simulator.domain.play.StealResult;
+import com.example.baseballorders.simulator.domain.play.*;
 
 /** 1試合で発生したプレーを集計し、その時点の試合統計を生成する。 */
 public final class GameStatisticsRecorder implements PlayResultObserver {
@@ -16,6 +14,12 @@ public final class GameStatisticsRecorder implements PlayResultObserver {
     private int stealCount;
     private int buntFailureCount;
     private int stealFailureCount;
+    private int advancingBuntCount;
+    private int squeezeBuntCount;
+    private int advancingBuntFailureCount;
+    private int squeezeBuntFailureCount;
+    private int stealToSecondCount;
+    private int stealToThirdCount;
 
     @Override
     public void onBattingResult(BattingResult battingResult, int runnerCount) {
@@ -26,19 +30,37 @@ public final class GameStatisticsRecorder implements PlayResultObserver {
     }
 
     @Override
-    public void onBuntResult(BuntResult buntResult) {
+    public void onBuntResult(BuntResult buntResult, BuntType buntType) {
         switch (buntResult) {
             case NOT_TRY -> {}
-            case SUCCESS -> buntCount++;
-            case FAILURE -> buntFailureCount++;
+            case SUCCESS -> {
+                buntCount++;
+                switch (buntType) {
+                    case ADVANCING -> advancingBuntCount++;
+                    case SQUEEZE -> squeezeBuntCount++;
+                }
+            }
+            case FAILURE -> {
+                buntFailureCount++;
+                switch (buntType) {
+                    case ADVANCING -> advancingBuntFailureCount++;
+                    case SQUEEZE -> squeezeBuntFailureCount++;
+                }
+            }
         }
     }
 
     @Override
-    public void onStealResult(StealResult stealResult) {
+    public void onStealResult(StealResult stealResult, StealTarget stealTarget) {
         switch (stealResult) {
             case NOT_TRY -> {}
-            case SUCCESS -> stealCount++;
+            case SUCCESS -> {
+                stealCount++;
+                switch (stealTarget) {
+                    case SECOND -> stealToSecondCount++;
+                    case THIRD -> stealToThirdCount++;
+                }
+            }
             case FAILURE -> stealFailureCount++;
         }
     }
@@ -72,6 +94,12 @@ public final class GameStatisticsRecorder implements PlayResultObserver {
                 buntCount,
                 stealCount,
                 buntFailureCount,
-                stealFailureCount);
+                stealFailureCount,
+                advancingBuntCount,
+                squeezeBuntCount,
+                advancingBuntFailureCount,
+                squeezeBuntFailureCount,
+                stealToSecondCount,
+                stealToThirdCount);
     }
 }

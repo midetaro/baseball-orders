@@ -3,6 +3,7 @@ package com.example.baseballorders.simulator.domain.game;
 import com.example.baseballorders.simulator.domain.game.capability.AdvancingBuntable;
 import com.example.baseballorders.simulator.domain.game.capability.StealableToTripleBase;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 
@@ -15,7 +16,7 @@ public final class DoubleBaseState extends AbstractBasesState
 
     @Override
     public BuntResult bunt(BatterEntity batter) {
-        return attemptBunt(batter);
+        return attemptBunt(batter, BuntType.ADVANCING);
     }
 
     @Override

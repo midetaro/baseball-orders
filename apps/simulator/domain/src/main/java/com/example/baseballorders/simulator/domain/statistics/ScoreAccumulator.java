@@ -1,10 +1,6 @@
 package com.example.baseballorders.simulator.domain.statistics;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /** Accumulates completed-game scores and play statistics. */
 public final class ScoreAccumulator implements GameCompletionObserver {
@@ -20,6 +16,12 @@ public final class ScoreAccumulator implements GameCompletionObserver {
     private int stealCount;
     private int buntFailureCount;
     private int stealFailureCount;
+    private int advancingBuntCount;
+    private int squeezeBuntCount;
+    private int advancingBuntFailureCount;
+    private int squeezeBuntFailureCount;
+    private int stealToSecondCount;
+    private int stealToThirdCount;
 
     @Override
     public void onGameCompleted(long totalScore, GameStatistics gameStatistics) {
@@ -36,6 +38,12 @@ public final class ScoreAccumulator implements GameCompletionObserver {
         stealCount += gameStatistics.stealCount();
         buntFailureCount += gameStatistics.buntFailureCount();
         stealFailureCount += gameStatistics.stealFailureCount();
+        advancingBuntCount += gameStatistics.advancingBuntCount();
+        squeezeBuntCount += gameStatistics.squeezeBuntCount();
+        advancingBuntFailureCount += gameStatistics.advancingBuntFailureCount();
+        squeezeBuntFailureCount += gameStatistics.squeezeBuntFailureCount();
+        stealToSecondCount += gameStatistics.stealToSecondCount();
+        stealToThirdCount += gameStatistics.stealToThirdCount();
     }
 
     /**
@@ -68,6 +76,12 @@ public final class ScoreAccumulator implements GameCompletionObserver {
                 buntCount,
                 stealCount,
                 buntFailureCount,
-                stealFailureCount);
+                stealFailureCount,
+                advancingBuntCount,
+                squeezeBuntCount,
+                advancingBuntFailureCount,
+                squeezeBuntFailureCount,
+                stealToSecondCount,
+                stealToThirdCount);
     }
 }

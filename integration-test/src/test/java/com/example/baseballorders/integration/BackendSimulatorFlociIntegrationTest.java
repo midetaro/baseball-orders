@@ -8,8 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.example.baseballorders.backend.BackendApplication;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
+import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
+import com.example.baseballorders.simulator.domain.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.statistics.ScoreStatistics;
 import com.example.baseballorders.simulator.infrastructure.messaging.LineUpMapper;
 import com.example.baseballorders.simulator.infrastructure.messaging.SqsSimulationScheduler;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,6 +23,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
@@ -42,9 +46,44 @@ import software.amazon.awssdk.services.sqs.SqsClient;
  */
 class BackendSimulatorFlociIntegrationTest {
 
+    /**
+     * 実物: backend HTTPサーバー・Controller・Coordinator・H2・SQS Publisher/Listener、
+     * simulatorのLineUpMapper・SimulateGameUseCase・SqsSimulationScheduler、Floci SQS。
+     * モック: AWS SQSをFlociに置換。
+     * 担保する疎通: HTTP POST -> 要求SQS -> 実試合 -> 結果SQS -> backend Listener -> HTTP応答。
+     * 担保しないもの: AWS実環境、乱数戦略の統計的正当性、ブラウザ描画。
+     */
     @Test
     @DisplayName("HTTP要求をsimulatorがFloci経由で処理しbackendが結果SQSを受信して同じ相関IDで応答する")
     void completesBackendRequestAfterSimulatorProcessesIt() throws Exception {
+        runScenario(new SimulateGameUseCase(1), null);
+    }
+
+    /**
+     * 実物: backend HTTPサーバー・Coordinator・H2・SQS Publisher/Listener、simulatorの
+     * LineUpMapper・SqsSimulationSchedulerとJSONシリアライザ、Floci SQS。
+     * モック: AWS SQSをFlociに置換。乱数を使うSimulateGameUseCaseのみ固定統計を返すfakeに置換。
+     * 担保する疎通: HTTP POST -> 要求SQS -> simulator結果マッピング・JSON -> 結果SQS
+     * -> backend自動Listener -> HTTP応答に六つの詳細統計がそのまま届く。
+     * 担保しないもの: 実試合による六分類の発生条件、AWS実環境、ブラウザ描画。
+     */
+    @Test
+    @DisplayName("詳細バント・盗塁統計がsimulatorの結果SQSからbackend HTTPまで保持される")
+    void carriesDetailedTacticalStatisticsAcrossQueues() throws Exception {
+        var expected = new ScoreStatistics(
+                4, 4, 4, 1, Map.of(4, 1), 0, 0, 0, 0, 0,
+                24, 52, 36, 40, 11, 13, 17, 19, 23, 29);
+        var fixedUseCase = new SimulateGameUseCase(1) {
+            @Override
+            public SimulationResult invoke(LineUpEntity lineup) {
+                assertEquals(9, lineup.getBatterEntities().size());
+                return new SimulationResult(expected);
+            }
+        };
+        runScenario(fixedUseCase, expected);
+    }
+
+    private void runScenario(SimulateGameUseCase useCase, ScoreStatistics expected) throws Exception {
         // given
         var suffix = UUID.randomUUID().toString();
         var requestQueue = "simulation-request-" + suffix;
@@ -78,7 +117,7 @@ class BackendSimulatorFlociIntegrationTest {
                             BehaviorStrategies.noSteal(),
                             BehaviorStrategies.standardBunt());
                     var simulator = new SqsSimulationScheduler(
-                            sqs, mapper, new SimulateGameUseCase(1), lineupMapper, requestQueue, resultQueue);
+                            sqs, mapper, useCase, lineupMapper, requestQueue, resultQueue);
                     var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/simulations"))
                             .timeout(Duration.ofSeconds(30))
                             .header("Content-Type", "application/json")
@@ -121,6 +160,20 @@ class BackendSimulatorFlociIntegrationTest {
                             () -> assertEquals(1, body.path("statistics").path("gameCount").asInt(-1)),
                             () -> assertEquals(0, registry.pendingCount())
                     );
+                    if (expected != null) {
+                        var statistics = body.path("statistics");
+                        assertAll(
+                                () -> assertEquals(expected.buntCount(), statistics.path("buntCount").asInt(-1)),
+                                () -> assertEquals(expected.stealCount(), statistics.path("stealCount").asInt(-1)),
+                                () -> assertEquals(expected.buntFailureCount(), statistics.path("buntFailureCount").asInt(-1)),
+                                () -> assertEquals(expected.stealFailureCount(), statistics.path("stealFailureCount").asInt(-1)),
+                                () -> assertEquals(expected.advancingBuntCount(), statistics.path("advancingBuntCount").asInt(-1)),
+                                () -> assertEquals(expected.squeezeBuntCount(), statistics.path("squeezeBuntCount").asInt(-1)),
+                                () -> assertEquals(expected.advancingBuntFailureCount(), statistics.path("advancingBuntFailureCount").asInt(-1)),
+                                () -> assertEquals(expected.squeezeBuntFailureCount(), statistics.path("squeezeBuntFailureCount").asInt(-1)),
+                                () -> assertEquals(expected.stealToSecondCount(), statistics.path("stealToSecondCount").asInt(-1)),
+                                () -> assertEquals(expected.stealToThirdCount(), statistics.path("stealToThirdCount").asInt(-1)));
+                    }
                 }
             }
         }

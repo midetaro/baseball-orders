@@ -1,12 +1,8 @@
 package com.example.baseballorders.simulator.infrastructure.messaging;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
@@ -15,6 +11,7 @@ import com.example.baseballorders.simulator.application.contract.SimulationRespo
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
@@ -34,13 +31,66 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
-import software.amazon.awssdk.services.sqs.model.DeleteQueueRequest;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.*;
 
 class SqsSimulationSchedulerIntegrationTest {
+
+    private static void assertOptions(
+            BatterEntity batter, boolean stealEnabled, boolean buntEnabled) {
+        var expectedSteal = stealEnabled ? StealResult.SUCCESS : StealResult.NOT_TRY;
+        var expectedBunt = buntEnabled ? BuntResult.SUCCESS : BuntResult.NOT_TRY;
+        assertAll(
+                () ->
+                        assertEquals(
+                                expectedSteal,
+                                batter.observedBy(new GameStatisticsRecorder()).stealToDouble()),
+                () ->
+                        assertEquals(
+                                expectedSteal,
+                                batter.observedBy(new GameStatisticsRecorder()).stealToTriple()),
+                () ->
+                        assertEquals(
+                                expectedBunt,
+                                batter.observedBy(new GameStatisticsRecorder())
+                                        .bunt(OutCount.NO_OUT, BuntType.ADVANCING)));
+    }
+
+    private static SqsClient createClient() {
+        return SqsClient.builder()
+                .endpointOverride(URI.create(System.getenv("ELASTICMQ_ENDPOINT_URL")))
+                .region(Region.US_EAST_1)
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create("test", "test")))
+                .build();
+    }
+
+    private static String createQueue(SqsClient client, String queueName) {
+        return client.createQueue(CreateQueueRequest.builder().queueName(queueName).build())
+                .queueUrl();
+    }
+
+    private static List<Message> receive(SqsClient client, String queueUrl) {
+        return client.receiveMessage(
+                        ReceiveMessageRequest.builder()
+                                .queueUrl(queueUrl)
+                                .waitTimeSeconds(1)
+                                .maxNumberOfMessages(10)
+                                .build())
+                .messages();
+    }
+
+    private static void deleteQueue(SqsClient client, String queueUrl) {
+        client.deleteQueue(DeleteQueueRequest.builder().queueUrl(queueUrl).build());
+    }
+
+    private static SimulationResult simulationResult(List<SimulationResponse> responses) {
+        ScoreAccumulator accumulator = new ScoreAccumulator();
+        responses.forEach(
+                response ->
+                        accumulator.onGameCompleted(response.score(), response.gameStatistics()));
+        return new SimulationResult(accumulator.toScoreStatistics());
+    }
 
     /**
      * Integration Test
@@ -178,62 +228,5 @@ class SqsSimulationSchedulerIntegrationTest {
                 deleteQueue(sqsClient, resultQueueUrl);
             }
         }
-    }
-
-    private static void assertOptions(
-            BatterEntity batter, boolean stealEnabled, boolean buntEnabled) {
-        var expectedSteal = stealEnabled ? StealResult.SUCCESS : StealResult.NOT_TRY;
-        var expectedBunt = buntEnabled ? BuntResult.SUCCESS : BuntResult.NOT_TRY;
-        assertAll(
-                () ->
-                        assertEquals(
-                                expectedSteal,
-                                batter.observedBy(new GameStatisticsRecorder()).stealToDouble()),
-                () ->
-                        assertEquals(
-                                expectedSteal,
-                                batter.observedBy(new GameStatisticsRecorder()).stealToTriple()),
-                () ->
-                        assertEquals(
-                                expectedBunt,
-                                batter.observedBy(new GameStatisticsRecorder())
-                                        .bunt(OutCount.NO_OUT)));
-    }
-
-    private static SqsClient createClient() {
-        return SqsClient.builder()
-                .endpointOverride(URI.create(System.getenv("ELASTICMQ_ENDPOINT_URL")))
-                .region(Region.US_EAST_1)
-                .credentialsProvider(
-                        StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create("test", "test")))
-                .build();
-    }
-
-    private static String createQueue(SqsClient client, String queueName) {
-        return client.createQueue(CreateQueueRequest.builder().queueName(queueName).build())
-                .queueUrl();
-    }
-
-    private static List<Message> receive(SqsClient client, String queueUrl) {
-        return client.receiveMessage(
-                        ReceiveMessageRequest.builder()
-                                .queueUrl(queueUrl)
-                                .waitTimeSeconds(1)
-                                .maxNumberOfMessages(10)
-                                .build())
-                .messages();
-    }
-
-    private static void deleteQueue(SqsClient client, String queueUrl) {
-        client.deleteQueue(DeleteQueueRequest.builder().queueUrl(queueUrl).build());
-    }
-
-    private static SimulationResult simulationResult(List<SimulationResponse> responses) {
-        ScoreAccumulator accumulator = new ScoreAccumulator();
-        responses.forEach(
-                response ->
-                        accumulator.onGameCompleted(response.score(), response.gameStatistics()));
-        return new SimulationResult(accumulator.toScoreStatistics());
     }
 }

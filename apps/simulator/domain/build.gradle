@@ -37,10 +37,10 @@ jacocoTestCoverageVerification {
         rule {
             element = 'CLASS'
             includes = [
-                'com.example.baseballorders.simulator.domain.player.strategy.*',
-                'com.example.baseballorders.simulator.domain.game.*BasesState',
-                'com.example.baseballorders.simulator.domain.game.BaseStateFactory',
-                'com.example.baseballorders.simulator.domain.game.InningState'
+                    'com.example.baseballorders.simulator.domain.player.strategy.*',
+                    'com.example.baseballorders.simulator.domain.game.*BasesState',
+                    'com.example.baseballorders.simulator.domain.game.BaseStateFactory',
+                    'com.example.baseballorders.simulator.domain.game.InningState'
             ]
             limit {
                 counter = 'LINE'

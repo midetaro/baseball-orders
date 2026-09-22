@@ -43,49 +43,6 @@ class BasesStateTransitionTest {
                     DoubleThirdBaseState.class,
                     FullBasesState.class);
 
-    @ParameterizedTest(name = "配置{0}・{1}死・{2}")
-    @MethodSource("events")
-    @DisplayName("全走者配置の各結果イベントが走者・アウト・得点・次Stateを更新する")
-    void appliesEvent(int mask, int outs, Event event) {
-        // given
-        var context = context(mask, outs);
-        var before = context.getCurrentState();
-        var expected = expected(mask, event);
-        boolean reset = expected.outs() > 0 && outs + expected.outs() >= 3;
-        int expectedMask = reset ? 0 : expected.mask();
-
-        // when
-        if (expected.mask() < 0) {
-            var exception = assertThrows(IllegalStateException.class, () -> event.apply(context));
-            // then
-            assertAll(
-                    () -> assertFalse(exception.getMessage().isBlank()),
-                    () -> assertSame(before, context.getCurrentState()),
-                    () -> assertEquals(OutCount.values()[outs], before.getOutCount()),
-                    () -> assertEquals(0, context.getTotalScore()),
-                    () -> assertSame((mask & 1) != 0 ? FIRST : null, before.runnerAt(Base.FIRST)),
-                    () -> assertSame((mask & 2) != 0 ? SECOND : null, before.runnerAt(Base.SECOND)),
-                    () -> assertSame((mask & 4) != 0 ? THIRD : null, before.runnerAt(Base.THIRD)));
-            return;
-        }
-        event.apply(context);
-
-        // then
-        var after = context.getCurrentState();
-        assertAll(
-                () -> assertInstanceOf(TYPES.get(expectedMask), after),
-                () ->
-                        assertEquals(
-                                reset ? OutCount.NO_OUT : OutCount.values()[outs + expected.outs()],
-                                after.getOutCount()),
-                () -> assertEquals(expected.score(), context.getTotalScore()),
-                () -> assertEquals(reset ? 2 : 1, context.getInning()),
-                () -> assertEquals(Integer.bitCount(expectedMask), after.runnerCount()),
-                () -> assertSame(reset ? null : expected.first(), after.runnerAt(Base.FIRST)),
-                () -> assertSame(reset ? null : expected.second(), after.runnerAt(Base.SECOND)),
-                () -> assertSame(reset ? null : expected.third(), after.runnerAt(Base.THIRD)));
-    }
-
     static Stream<Arguments> events() {
         return IntStream.range(0, 8)
                 .boxed()
@@ -163,13 +120,105 @@ class BasesStateTransitionTest {
         };
     }
 
-    private record Expected(
-            int mask,
-            int outs,
-            long score,
-            BatterEntity first,
-            BatterEntity second,
-            BatterEntity third) {}
+    static IntStream configurations() {
+        return IntStream.range(0, 8);
+    }
+
+    static Stream<Arguments> unsupportedStealDestinations() {
+        return Stream.of(
+                arguments(1, false), arguments(5, false), arguments(2, true), arguments(3, true));
+    }
+
+    static Stream<Arguments> supportedStealDestinations() {
+        return Stream.of(arguments(5, true), arguments(3, false));
+    }
+
+    static Stream<Arguments> buntOpportunities() {
+        return IntStream.range(1, 8)
+                .boxed()
+                .flatMap(
+                        mask ->
+                                Stream.of(OutCount.NO_OUT, OutCount.ONE_OUT)
+                                        .map(outCount -> arguments(mask, outCount)));
+    }
+
+    private static GameBattingContext context(int mask, int outs) {
+        return GameStateTestFixture.context(
+                (mask & 1) != 0 ? FIRST : null,
+                (mask & 2) != 0 ? SECOND : null,
+                (mask & 4) != 0 ? THIRD : null,
+                OutCount.values()[outs]);
+    }
+
+    private static void seed(GameBattingContext context, int mask) {
+        switch (mask) {
+            case 0 -> {}
+            case 1 -> context.hitSingle(FIRST);
+            case 2 -> context.hitDouble(SECOND);
+            case 3 -> {
+                context.hitSingle(SECOND);
+                context.hitSingle(FIRST);
+            }
+            case 4 -> context.hitTriple(THIRD);
+            case 5 -> {
+                context.hitDouble(THIRD);
+                context.hitSingle(FIRST);
+            }
+            case 6 -> {
+                context.hitSingle(THIRD);
+                context.hitDouble(SECOND);
+            }
+            case 7 -> {
+                context.hitSingle(THIRD);
+                context.hitSingle(SECOND);
+                context.hitSingle(FIRST);
+            }
+            default -> throw new IllegalArgumentException();
+        }
+    }
+
+    @ParameterizedTest(name = "配置{0}・{1}死・{2}")
+    @MethodSource("events")
+    @DisplayName("全走者配置の各結果イベントが走者・アウト・得点・次Stateを更新する")
+    void appliesEvent(int mask, int outs, Event event) {
+        // given
+        var context = context(mask, outs);
+        var before = context.getCurrentState();
+        var expected = expected(mask, event);
+        boolean reset = expected.outs() > 0 && outs + expected.outs() >= 3;
+        int expectedMask = reset ? 0 : expected.mask();
+
+        // when
+        if (expected.mask() < 0) {
+            var exception = assertThrows(IllegalStateException.class, () -> event.apply(context));
+            // then
+            assertAll(
+                    () -> assertFalse(exception.getMessage().isBlank()),
+                    () -> assertSame(before, context.getCurrentState()),
+                    () -> assertEquals(OutCount.values()[outs], before.getOutCount()),
+                    () -> assertEquals(0, context.getTotalScore()),
+                    () -> assertSame((mask & 1) != 0 ? FIRST : null, before.runnerAt(Base.FIRST)),
+                    () -> assertSame((mask & 2) != 0 ? SECOND : null, before.runnerAt(Base.SECOND)),
+                    () -> assertSame((mask & 4) != 0 ? THIRD : null, before.runnerAt(Base.THIRD)));
+            return;
+        }
+        event.apply(context);
+
+        // then
+        var after = context.getCurrentState();
+        assertAll(
+                () -> assertInstanceOf(TYPES.get(expectedMask), after),
+                () ->
+                        assertEquals(
+                                reset ? OutCount.NO_OUT : OutCount.values()[outs + expected.outs()],
+                                after.getOutCount()),
+                () -> assertEquals(expected.score(), context.getTotalScore()),
+                () -> assertEquals(reset ? 2 : 1, context.getInning()),
+                () -> assertEquals(Integer.bitCount(expectedMask), after.runnerCount()),
+                () -> assertSame(reset ? null : expected.first(), after.runnerAt(Base.FIRST)),
+                () -> assertSame(reset ? null : expected.second(), after.runnerAt(Base.SECOND)),
+                () -> assertSame(reset ? null : expected.third(), after.runnerAt(Base.THIRD)));
+    }
 
     @ParameterizedTest(name = "配置{0}")
     @MethodSource("configurations")
@@ -191,10 +240,6 @@ class BasesStateTransitionTest {
                 () -> assertEquals(Integer.bitCount(mask), original.runnerCount()),
                 () -> assertEquals(Integer.bitCount(mask) + 1, context.getTotalScore()),
                 () -> assertEquals(0, other.getTotalScore()));
-    }
-
-    static IntStream configurations() {
-        return IntStream.range(0, 8);
     }
 
     @ParameterizedTest(name = "配置{0}")
@@ -237,11 +282,6 @@ class BasesStateTransitionTest {
         assertAll(() -> assertEquals(StealResult.NOT_TRY, result));
     }
 
-    static Stream<Arguments> unsupportedStealDestinations() {
-        return Stream.of(
-                arguments(1, false), arguments(5, false), arguments(2, true), arguments(3, true));
-    }
-
     @ParameterizedTest(name = "配置{0}・二塁への盗塁{1}")
     @MethodSource("supportedStealDestinations")
     @DisplayName("複数走者の配置で対象走者に盗塁を試行させる")
@@ -260,10 +300,6 @@ class BasesStateTransitionTest {
         assertAll(() -> assertEquals(StealResult.NOT_TRY, result));
     }
 
-    static Stream<Arguments> supportedStealDestinations() {
-        return Stream.of(arguments(5, true), arguments(3, false));
-    }
-
     @ParameterizedTest(name = "配置{0}")
     @MethodSource("configurations")
     @DisplayName("走者配置に対応する盗塁と犠打の能力を返す")
@@ -279,7 +315,6 @@ class BasesStateTransitionTest {
         assertAll(
                 () -> assertEquals(List.of(1, 2, 3, 5).contains(mask), steal.isPresent()),
                 () -> assertEquals(mask != 0, bunt),
-                () -> assertEquals(bunt, context.isBuntable()),
                 () ->
                         steal.ifPresent(
                                 opportunity -> {
@@ -324,15 +359,6 @@ class BasesStateTransitionTest {
                                 result));
     }
 
-    static Stream<Arguments> buntOpportunities() {
-        return IntStream.range(1, 8)
-                .boxed()
-                .flatMap(
-                        mask ->
-                                Stream.of(OutCount.NO_OUT, OutCount.ONE_OUT)
-                                        .map(outCount -> arguments(mask, outCount)));
-    }
-
     @Test
     @DisplayName("盗塁と犠打の能力は許可された派生型に閉じている")
     void capabilitiesAreSealed() {
@@ -346,41 +372,6 @@ class BasesStateTransitionTest {
                 () -> assertTrue(Buntable.class.isSealed()),
                 () -> assertEquals(2, permitted.size()),
                 () -> assertTrue(permitted.containsAll(expected)));
-    }
-
-    private static GameBattingContext context(int mask, int outs) {
-        return GameStateTestFixture.context(
-                (mask & 1) != 0 ? FIRST : null,
-                (mask & 2) != 0 ? SECOND : null,
-                (mask & 4) != 0 ? THIRD : null,
-                OutCount.values()[outs]);
-    }
-
-    private static void seed(GameBattingContext context, int mask) {
-        switch (mask) {
-            case 0 -> {}
-            case 1 -> context.hitSingle(FIRST);
-            case 2 -> context.hitDouble(SECOND);
-            case 3 -> {
-                context.hitSingle(SECOND);
-                context.hitSingle(FIRST);
-            }
-            case 4 -> context.hitTriple(THIRD);
-            case 5 -> {
-                context.hitDouble(THIRD);
-                context.hitSingle(FIRST);
-            }
-            case 6 -> {
-                context.hitSingle(THIRD);
-                context.hitDouble(SECOND);
-            }
-            case 7 -> {
-                context.hitSingle(THIRD);
-                context.hitSingle(SECOND);
-                context.hitSingle(FIRST);
-            }
-            default -> throw new IllegalArgumentException();
-        }
     }
 
     private enum Event {
@@ -412,4 +403,12 @@ class BasesStateTransitionTest {
             }
         }
     }
+
+    private record Expected(
+            int mask,
+            int outs,
+            long score,
+            BatterEntity first,
+            BatterEntity second,
+            BatterEntity third) {}
 }

@@ -1,10 +1,6 @@
 package com.example.baseballorders.backend.infrastructure.web;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
@@ -66,16 +62,16 @@ class SimulationResultHttpIntegrationTest {
                         .POST(
                                 HttpRequest.BodyPublishers.ofString(
                                         """
-                        [{"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                         {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false}]
-                        """))
+                                                [{"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false}]
+                                                """))
                         .build();
 
         // when
@@ -112,7 +108,26 @@ class SimulationResultHttpIntegrationTest {
                             firstSent.simulationId(),
                             "1",
                             new SimulationResultMessage.Statistics(
-                                    6.5, 6.5, 8, 2, Map.of(5, 1, 8, 1), 0, 0, 0, 0, 0, 0, 0)));
+                                    6.5,
+                                    6.5,
+                                    8,
+                                    2,
+                                    Map.of(5, 1, 8, 1),
+                                    4,
+                                    1,
+                                    1,
+                                    1,
+                                    1,
+                                    24,
+                                    25,
+                                    26,
+                                    27,
+                                    11,
+                                    13,
+                                    17,
+                                    19,
+                                    23,
+                                    29)));
             var firstResponse = first.get(10, TimeUnit.SECONDS);
             var firstBody = objectMapper.readTree(firstResponse.body());
             var secondBody = objectMapper.readTree(secondResponse.body());
@@ -141,6 +156,46 @@ class SimulationResultHttpIntegrationTest {
                                     6.5, firstBody.get("statistics").get("medianScore").asDouble()),
                     () -> assertEquals(8, firstBody.get("statistics").get("maximumScore").asInt()),
                     () -> assertEquals(2, firstBody.get("statistics").get("gameCount").asInt()),
+                    () -> assertEquals(24, firstBody.get("statistics").get("buntCount").asInt()),
+                    () -> assertEquals(25, firstBody.get("statistics").get("stealCount").asInt()),
+                    () ->
+                            assertEquals(
+                                    26,
+                                    firstBody.get("statistics").get("buntFailureCount").asInt()),
+                    () ->
+                            assertEquals(
+                                    27,
+                                    firstBody.get("statistics").get("stealFailureCount").asInt()),
+                    () ->
+                            assertEquals(
+                                    11,
+                                    firstBody.get("statistics").get("advancingBuntCount").asInt()),
+                    () ->
+                            assertEquals(
+                                    13,
+                                    firstBody.get("statistics").get("squeezeBuntCount").asInt()),
+                    () ->
+                            assertEquals(
+                                    17,
+                                    firstBody
+                                            .get("statistics")
+                                            .get("advancingBuntFailureCount")
+                                            .asInt()),
+                    () ->
+                            assertEquals(
+                                    19,
+                                    firstBody
+                                            .get("statistics")
+                                            .get("squeezeBuntFailureCount")
+                                            .asInt()),
+                    () ->
+                            assertEquals(
+                                    23,
+                                    firstBody.get("statistics").get("stealToSecondCount").asInt()),
+                    () ->
+                            assertEquals(
+                                    29,
+                                    firstBody.get("statistics").get("stealToThirdCount").asInt()),
                     () ->
                             assertEquals(
                                     1,

@@ -3,8 +3,12 @@ package com.example.baseballorders.simulator.domain.game;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.example.baseballorders.simulator.domain.play.*;
-import com.example.baseballorders.simulator.domain.player.*;
+import com.example.baseballorders.simulator.domain.play.BattingResult;
+import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.OutCount;
+import com.example.baseballorders.simulator.domain.play.StealResult;
+import com.example.baseballorders.simulator.domain.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.statistics.GameCompletionObserver;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +19,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class GameStateLifecycleTest {
+    private static BatterEntity batter() {
+        var batter = mock(BatterEntity.class);
+        when(batter.observedBy(any())).thenReturn(batter);
+        return batter;
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {1, 9})
     @DisplayName("二死から盗塁死になったら打撃せず三死を処理し未打撃の打者を引き継ぐ")
@@ -45,7 +55,7 @@ class GameStateLifecycleTest {
                 () -> assertEquals(0, runnersAfterSteal),
                 () -> verify(first, times(1)).swing(0),
                 () -> verify(second, times(inning == 9 ? 0 : 1)).swing(0),
-                () -> verify(second, never()).bunt(any()),
+                () -> verify(second, never()).bunt(any(), any()),
                 () ->
                         assertEquals(
                                 inning == 9 ? OutCount.NO_OUT : OutCount.ONE_OUT,
@@ -136,7 +146,7 @@ class GameStateLifecycleTest {
         var runner = batter();
         var hitter = batter();
         when(runner.stealToTriple()).thenReturn(result);
-        when(hitter.bunt(any())).thenReturn(BuntResult.NOT_TRY);
+        when(hitter.bunt(any(), any())).thenReturn(BuntResult.NOT_TRY);
         when(hitter.swing(anyInt())).thenReturn(BattingResult.HIT_HOMER);
         var context = new GameBattingContext(new LineUpEntity(List.of(hitter)));
         context.hitDouble(runner);
@@ -162,7 +172,7 @@ class GameStateLifecycleTest {
         var runner = batter();
         var hitter = batter();
         when(runner.stealToDouble()).thenReturn(StealResult.NOT_TRY);
-        when(hitter.bunt(any())).thenReturn(result);
+        when(hitter.bunt(any(), any())).thenReturn(result);
         var context = new GameBattingContext(new LineUpEntity(List.of(hitter)));
         context.hitSingle(runner);
         // when
@@ -179,11 +189,5 @@ class GameStateLifecycleTest {
                         assertEquals(
                                 result == BuntResult.FAILURE,
                                 context.getCurrentState().isOccupied(Base.FIRST)));
-    }
-
-    private static BatterEntity batter() {
-        var batter = mock(BatterEntity.class);
-        when(batter.observedBy(any())).thenReturn(batter);
-        return batter;
     }
 }

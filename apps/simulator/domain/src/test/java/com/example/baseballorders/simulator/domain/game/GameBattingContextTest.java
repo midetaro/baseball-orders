@@ -19,6 +19,17 @@ import org.mockito.MockedStatic;
 
 class GameBattingContextTest {
 
+    private static BatterEntity battingOutBatter() {
+        return new BatterEntity(
+                0.3f,
+                0.4f,
+                0.7f,
+                0.8f,
+                BehaviorStrategies.middleDistanceHittingStrategy(),
+                BehaviorStrategies.noSteal(),
+                BehaviorStrategies.noBunt());
+    }
+
     @Test
     @DisplayName("試合終了時に最終得点と統計を一度だけObserverへ通知する")
     void notifiesGameCompletionObserverOnlyOnce() {
@@ -82,16 +93,5 @@ class GameBattingContextTest {
         assertAll(
                 () -> assertEquals(1, context.getGameStatistics().homeRunCount()),
                 () -> assertEquals(1, context.getGameStatistics().soloHomeRunCount()));
-    }
-
-    private static BatterEntity battingOutBatter() {
-        return new BatterEntity(
-                0.3f,
-                0.4f,
-                0.7f,
-                0.8f,
-                BehaviorStrategies.middleDistanceHittingStrategy(),
-                BehaviorStrategies.noSteal(),
-                BehaviorStrategies.noBunt());
     }
 }

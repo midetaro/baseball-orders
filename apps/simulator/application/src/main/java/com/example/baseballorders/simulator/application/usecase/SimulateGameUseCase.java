@@ -1,6 +1,7 @@
 package com.example.baseballorders.simulator.application.usecase;
 
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
+import com.example.baseballorders.simulator.application.contract.SimulationResultBuilder;
 import com.example.baseballorders.simulator.domain.game.BaseStateFactory;
 import com.example.baseballorders.simulator.domain.game.GameBattingContext;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
@@ -54,7 +55,9 @@ public class SimulateGameUseCase {
         IO.println("試合数：" + gameCount);
         ScoreAccumulator scoreAccumulator = new ScoreAccumulator();
         IntStream.range(0, gameCount).forEach(ignored -> simulate(lineUpEntity, scoreAccumulator));
-        return new SimulationResult(scoreAccumulator.toScoreStatistics());
+        return SimulationResultBuilder.simulationResult()
+                .statistics(scoreAccumulator.toScoreStatistics())
+                .build();
     }
 
     private void simulate(LineUpEntity lineUpEntity, ScoreAccumulator scoreAccumulator) {

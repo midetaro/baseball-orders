@@ -1,8 +1,6 @@
 package com.example.baseballorders.simulator.domain.statistics;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Map;
@@ -18,8 +16,10 @@ class ScoreAccumulatorTest {
         ScoreAccumulator accumulator = new ScoreAccumulator();
 
         // when
-        accumulator.onGameCompleted(8, new GameStatistics(4, 1, 1, 1, 1, 2, 3, 5, 7));
-        accumulator.onGameCompleted(2, new GameStatistics(6, 2, 0, 1, 3, 4, 6, 11, 13));
+        accumulator.onGameCompleted(
+                8, new GameStatistics(4, 1, 1, 1, 1, 2, 3, 5, 7, 1, 1, 2, 3, 1, 2));
+        accumulator.onGameCompleted(
+                2, new GameStatistics(6, 2, 0, 1, 3, 4, 6, 11, 13, 3, 1, 5, 6, 4, 2));
 
         // then
         ScoreStatistics statistics = accumulator.toScoreStatistics();
@@ -41,7 +41,13 @@ class ScoreAccumulatorTest {
                 () -> assertEquals(6, statistics.buntCount()),
                 () -> assertEquals(9, statistics.stealCount()),
                 () -> assertEquals(16, statistics.buntFailureCount()),
-                () -> assertEquals(20, statistics.stealFailureCount()));
+                () -> assertEquals(20, statistics.stealFailureCount()),
+                () -> assertEquals(4, statistics.advancingBuntCount()),
+                () -> assertEquals(2, statistics.squeezeBuntCount()),
+                () -> assertEquals(7, statistics.advancingBuntFailureCount()),
+                () -> assertEquals(9, statistics.squeezeBuntFailureCount()),
+                () -> assertEquals(5, statistics.stealToSecondCount()),
+                () -> assertEquals(4, statistics.stealToThirdCount()));
     }
 
     @Test
@@ -62,16 +68,24 @@ class ScoreAccumulatorTest {
                         .grandSlamCount(1)
                         .buntCount(2)
                         .stealCount(3)
-                        .buntFailureCount(5);
+                        .buntFailureCount(5)
+                        .stealFailureCount(7)
+                        .advancingBuntCount(1)
+                        .squeezeBuntCount(1)
+                        .advancingBuntFailureCount(2)
+                        .squeezeBuntFailureCount(3)
+                        .stealToSecondCount(1);
 
         // when
-        var statistics = builder.stealFailureCount(7).build();
+        var statistics = builder.stealToThirdCount(2).build();
 
         // then
         assertAll(
                 () -> assertEquals(3, statistics.stealCount()),
                 () -> assertEquals(5, statistics.buntFailureCount()),
-                () -> assertEquals(7, statistics.stealFailureCount()));
+                () -> assertEquals(7, statistics.stealFailureCount()),
+                () -> assertEquals(1, statistics.stealToSecondCount()),
+                () -> assertEquals(2, statistics.stealToThirdCount()));
     }
 
     @Test

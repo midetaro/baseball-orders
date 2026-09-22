@@ -1,9 +1,6 @@
 package com.example.baseballorders.backend.infrastructure.messaging;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.messaging.SimulationResultMessage;
@@ -32,7 +29,26 @@ class SimulationResultListenerTest {
                         "1",
                         List.of(new SimulationResultMessage.Result(5, 4)),
                         new SimulationResultMessage.Statistics(
-                                5, 5, 5, 10, Map.of(5, 10), 4, 1, 1, 1, 1, 2, 3, 5, 7)));
+                                5,
+                                5,
+                                5,
+                                10,
+                                Map.of(5, 10),
+                                4,
+                                1,
+                                1,
+                                1,
+                                1,
+                                2,
+                                3,
+                                5,
+                                7,
+                                11,
+                                13,
+                                17,
+                                19,
+                                23,
+                                29)));
 
         // then
         assertAll(
@@ -50,7 +66,13 @@ class SimulationResultListenerTest {
                 () -> assertEquals(2, waiting.join().statistics().buntCount()),
                 () -> assertEquals(3, waiting.join().statistics().stealCount()),
                 () -> assertEquals(5, waiting.join().statistics().buntFailureCount()),
-                () -> assertEquals(7, waiting.join().statistics().stealFailureCount()));
+                () -> assertEquals(7, waiting.join().statistics().stealFailureCount()),
+                () -> assertEquals(11, waiting.join().statistics().advancingBuntCount()),
+                () -> assertEquals(13, waiting.join().statistics().squeezeBuntCount()),
+                () -> assertEquals(17, waiting.join().statistics().advancingBuntFailureCount()),
+                () -> assertEquals(19, waiting.join().statistics().squeezeBuntFailureCount()),
+                () -> assertEquals(23, waiting.join().statistics().stealToSecondCount()),
+                () -> assertEquals(29, waiting.join().statistics().stealToThirdCount()));
     }
 
     @Test

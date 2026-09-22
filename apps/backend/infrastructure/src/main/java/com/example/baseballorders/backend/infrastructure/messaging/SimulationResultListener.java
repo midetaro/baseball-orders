@@ -50,7 +50,13 @@ public final class SimulationResultListener {
                                         statistics.buntCount(),
                                         statistics.stealCount(),
                                         statistics.buntFailureCount(),
-                                        statistics.stealFailureCount())));
+                                        statistics.stealFailureCount(),
+                                        statistics.advancingBuntCount(),
+                                        statistics.squeezeBuntCount(),
+                                        statistics.advancingBuntFailureCount(),
+                                        statistics.squeezeBuntFailureCount(),
+                                        statistics.stealToSecondCount(),
+                                        statistics.stealToThirdCount())));
         if (!completed) {
             LOGGER.warn("simulation result ignored simulationId={}", message.simulationId());
         }
