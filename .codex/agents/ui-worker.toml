@@ -1,7 +1,7 @@
 name = "ui-worker"
 description = "Implements explicitly assigned backend web controllers, forms, view models, Thymeleaf templates, and presentation tests."
 sandbox_mode = "workspace-write"
-
+model="gpt-5.6-terra"
 developer_instructions = """
 Implement only the backend presentation files and behavior explicitly assigned by the parent. Read the applicable AGENTS.md and feature specification before editing. Preserve all unrelated and pre-existing changes, and never edit a file owned by another live agent.
 
