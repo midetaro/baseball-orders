@@ -17,7 +17,7 @@ public class GameBattingContext {
     private final List<BatterEntity> batterEntityOrders;
     private final AtBatProcessor atBatProcessor = new AtBatProcessor();
     @Getter private long inning = 1;
-    @Getter private long totalScore;
+    private long totalScore;
     private int numberOfNextBatter;
     @Getter private boolean isGameOver;
 
@@ -57,33 +57,33 @@ public class GameBattingContext {
                         .map(batter -> batter.observedBy(statisticsRecorder))
                         .toList();
         this.gameCompletionObserver = gameCompletionObserver;
-        inningStateContext = new InningStateContext(this, baseStateFactory);
-    }
-
-    /**
-     * Stateが算出した得点を試合に加算する。
-     *
-     * @param runs 加算得点
-     */
-    public void addScore(long runs) {
-        totalScore += runs;
+        inningStateContext = new InningStateContext(baseStateFactory, this::reflectCompletedInning);
     }
 
     InningStateContext inningStateContext() {
         return inningStateContext;
     }
 
-    /** Stateによる三死の初期化後に次の回へ進め、九回終了なら一度だけ結果を通知する。 */
-    public void completeInning() {
+    /** イニング終了を試合全体の得点・回数・完了通知へ反映する。 */
+    private void reflectCompletedInning(long completedInning, long inningScore) {
+        totalScore += inningScore;
+        inning = completedInning == 9 ? completedInning : completedInning + 1;
+        if (completedInning == 9) {
+            isGameOver = true;
+            gameCompletionObserver.onGameCompleted(totalScore, statisticsRecorder.snapshot());
+        }
+    }
+
+    /**
+     * 現在のイニングを終了し、得点と回数を試合へ反映する。
+     *
+     * <p>塁Stateからの終了処理をテストできるよう、集約内に公開する。
+     */
+    void completeInning() {
         if (isGameOver) {
             return;
         }
-        if (inning == 9) {
-            isGameOver = true;
-            gameCompletionObserver.onGameCompleted(totalScore, statisticsRecorder.snapshot());
-        } else {
-            inning++;
-        }
+        inningStateContext.completeInning();
     }
 
     /** 盗塁・バント・打撃を処理し、打席が完了した場合だけ打順を進める。 */
@@ -103,5 +103,14 @@ public class GameBattingContext {
     /** 試合中に累積した打撃統計を返す。 @return 現時点の打撃統計 */
     public GameStatistics getGameStatistics() {
         return statisticsRecorder.snapshot();
+    }
+
+    /**
+     * 終了済みイニングの合計と現在のイニングで発生した得点を返す。
+     *
+     * @return 現時点の試合総得点
+     */
+    public long getTotalScore() {
+        return totalScore + inningStateContext.score();
     }
 }
