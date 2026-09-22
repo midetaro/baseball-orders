@@ -21,6 +21,7 @@ Status: todo
 
 ## In scope
 - backend
+- simulator
 
 ## Out of scope
 

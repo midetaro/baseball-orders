@@ -1,8 +1,13 @@
 package com.example.baseballorders.backend.application;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.example.baseballorders.backend.domain.LocalUserCredentials;
+import com.example.baseballorders.backend.domain.LocalUserCredentialsBuilder;
 import com.example.baseballorders.backend.domain.UserAccount;
+import com.example.baseballorders.backend.domain.UserAccountBuilder;
 import com.example.baseballorders.backend.domain.UserStatus;
 import java.time.Instant;
 import java.util.HashMap;
@@ -13,72 +18,98 @@ import org.junit.jupiter.api.Test;
 class UserAccountServiceTest {
 
     @Test
-    @DisplayName("有効なユーザー名とパスワードでアカウントを登録するとパスワードをハッシュ化する")
-    void registersAccountWithHashedPassword() {
+    @DisplayName("Google subjectで初回ログインするとアクティブなアカウントを作成する")
+    void provisionsActiveAccountForGoogleSubject() {
         // given
         var repository = new InMemoryUserAccountRepository();
-        var service = new UserAccountService(repository, new TestPasswordHasher());
+        var service = new UserAccountService(repository);
 
         // when
-        var account = service.register("baseball_user", "password-123");
+        var account = service.provisionGoogleAccount("google-subject-123");
 
         // then
         assertAll(
-                () -> assertEquals("baseball_user", account.username()),
-                () -> assertEquals(UserStatus.ACTIVE, account.status()),
-                () ->
-                        assertEquals(
-                                true,
-                                service.passwordMatches("password-123", account.passwordHash())));
+                () -> assertEquals("google:google-subject-123", account.username()),
+                () -> assertEquals(UserStatus.ACTIVE, account.status()));
     }
 
     @Test
-    @DisplayName("重複したユーザー名は登録できない")
-    void rejectsDuplicateUsername() {
+    @DisplayName("同じGoogle subjectで再ログインすると既存アカウントを返す")
+    void returnsExistingAccountForSameGoogleSubject() {
         // given
         var repository = new InMemoryUserAccountRepository();
-        var service = new UserAccountService(repository, new TestPasswordHasher());
-        service.register("baseball_user", "password-123");
+        var service = new UserAccountService(repository);
+        var firstAccount = service.provisionGoogleAccount("google-subject-123");
+
+        // when
+        var account = service.provisionGoogleAccount("google-subject-123");
+
+        // then
+        assertAll(
+                () -> assertEquals(firstAccount.id(), account.id()),
+                () -> assertEquals(1, repository.accountCount()));
+    }
+
+    @Test
+    @DisplayName("空白のGoogle subjectではアカウントを作成できない")
+    void rejectsBlankGoogleSubject() {
+        // given
+        var repository = new InMemoryUserAccountRepository();
+        var service = new UserAccountService(repository);
 
         // when
         var exception =
                 assertThrows(
-                        DuplicateUsernameException.class,
-                        () -> service.register("baseball_user", "password-456"));
+                        IllegalArgumentException.class, () -> service.provisionGoogleAccount(" "));
 
         // then
-        assertAll(() -> assertEquals("username is already registered", exception.getMessage()));
+        assertAll(() -> assertEquals("googleSubject must not be blank", exception.getMessage()));
     }
 
     @Test
-    @DisplayName("LOCKED状態のユーザーは正しいパスワードでも認証できない")
-    void rejectsLockedAccount() {
+    @DisplayName("ユーザー定義IDとパスワードハッシュでローカルアカウントを作成する")
+    void registersLocalAccount() {
         // given
         var repository = new InMemoryUserAccountRepository();
-        repository.add("locked_user", "hash:password-123", UserStatus.LOCKED);
-        var service = new UserAccountService(repository, new TestPasswordHasher());
+        var service = new UserAccountService(repository);
 
         // when
-        var result = service.authenticate("locked_user", "password-123");
+        var account = service.registerLocalAccount("taro_123", "$2a$10$hashed-password");
 
         // then
-        assertAll(() -> assertEquals(false, result.isPresent()));
+        assertAll(
+                () -> assertEquals("local:taro_123", account.username()),
+                () ->
+                        assertEquals(
+                                "$2a$10$hashed-password",
+                                repository
+                                        .findLocalCredentials(account.username())
+                                        .orElseThrow()
+                                        .passwordHash()),
+                () -> assertEquals(UserStatus.ACTIVE, account.status()));
     }
 
-    private static final class TestPasswordHasher implements PasswordHasher {
-        @Override
-        public String hash(String password) {
-            return "hash:" + password;
-        }
+    @Test
+    @DisplayName("同じユーザー定義IDは重複登録できない")
+    void rejectsDuplicateLocalAccountId() {
+        // given
+        var repository = new InMemoryUserAccountRepository();
+        var service = new UserAccountService(repository);
+        service.registerLocalAccount("taro_123", "$2a$10$first-hash");
 
-        @Override
-        public boolean matches(String password, String passwordHash) {
-            return passwordHash.equals(hash(password));
-        }
+        // when
+        var exception =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> service.registerLocalAccount("taro_123", "$2a$10$second-hash"));
+
+        // then
+        assertAll(() -> assertEquals("local account already exists", exception.getMessage()));
     }
 
     private static final class InMemoryUserAccountRepository implements UserAccountRepository {
         private final HashMap<String, UserAccount> accounts = new HashMap<>();
+        private final HashMap<String, String> passwordHashes = new HashMap<>();
         private long nextId = 1;
 
         @Override
@@ -87,15 +118,44 @@ class UserAccountServiceTest {
         }
 
         @Override
-        public UserAccount save(String username, String passwordHash, UserStatus status) {
-            return add(username, passwordHash, status);
+        public UserAccount save(String username, UserStatus status) {
+            return add(username, status);
         }
 
-        private UserAccount add(String username, String passwordHash, UserStatus status) {
+        @Override
+        public Optional<LocalUserCredentials> findLocalCredentials(String username) {
+            return passwordHashes.containsKey(username)
+                    ? Optional.of(
+                            LocalUserCredentialsBuilder.localUserCredentials()
+                                    .username(username)
+                                    .passwordHash(passwordHashes.get(username))
+                                    .status(accounts.get(username).status())
+                                    .build())
+                    : Optional.empty();
+        }
+
+        @Override
+        public UserAccount saveLocal(String username, String passwordHash, UserStatus status) {
+            passwordHashes.put(username, passwordHash);
+            return add(username, status);
+        }
+
+        private UserAccount add(String username, UserStatus status) {
             var now = Instant.now();
-            var account = new UserAccount(nextId++, username, passwordHash, status, now, now);
+            var account =
+                    UserAccountBuilder.userAccount()
+                            .id(nextId++)
+                            .username(username)
+                            .status(status)
+                            .createdAt(now)
+                            .updatedAt(now)
+                            .build();
             accounts.put(username, account);
             return account;
+        }
+
+        private int accountCount() {
+            return accounts.size();
         }
     }
 }

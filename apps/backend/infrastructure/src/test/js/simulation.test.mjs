@@ -2,6 +2,21 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../../main/resources/templates/simulation.html', import.meta.url), 'utf8');
+const guideHtml = readFileSync(new URL('../../main/resources/templates/simulation-guide.html', import.meta.url), 'utf8');
+
+for (const [page, template] of [
+  ['シミュレーション画面', html],
+  ['シミュレーションガイド画面', guideHtml]
+]) {
+  assert.ok(template.includes('xmlns:th="http://www.thymeleaf.org"'), `${page}でThymeleafの認証表示を有効にする`);
+  assert.ok(template.includes('ログイン中'), `${page}でログイン状態を表示する`);
+  assert.ok(template.includes('未ログイン'), `${page}で未ログイン状態を表示する`);
+  assert.ok(template.includes('href="/login"'), `${page}にログイン画面への導線を用意する`);
+  assert.ok(template.includes('googleOauthEnabled'), `${page}ではGoogle OAuth未設定時にログイン導線を隠す`);
+  assert.ok(template.includes('<form action="/logout" method="post"'), `${page}にPOSTログアウトを用意する`);
+  assert.ok(template.includes('th:name="${_csrf.parameterName}"'), `${page}のログアウトにCSRFパラメータを含める`);
+  assert.ok(template.includes('th:value="${_csrf.token}"'), `${page}のログアウトにCSRFトークンを含める`);
+}
 
 assert.ok(html.includes('const lineup = ['), '9人分の固定打順を作成する');
 assert.ok(!html.includes('th:each="player'), 'DBの選手一覧を画面に表示しない');

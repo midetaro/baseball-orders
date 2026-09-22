@@ -1,74 +1,78 @@
 package com.example.baseballorders.backend.application;
 
+import com.example.baseballorders.backend.domain.LocalUserCredentials;
 import com.example.baseballorders.backend.domain.UserAccount;
 import com.example.baseballorders.backend.domain.UserStatus;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Pattern;
 
-/** ユーザーアカウントの登録と認証を調整するユースケース。 */
+/** Google OIDCのユーザーアカウントを調整するユースケース。 */
 public final class UserAccountService {
+    private static final String LOCAL_USERNAME_PREFIX = "local:";
+    private static final Pattern LOCAL_ID_PATTERN = Pattern.compile("[A-Za-z0-9._-]{3,50}");
     private final UserAccountRepository repository;
-    private final PasswordHasher passwordHasher;
 
     /**
      * アカウント管理ユースケースを作成する。
      *
      * @param repository アカウント永続化ポート
-     * @param passwordHasher パスワードハッシュ化ポート
      */
-    public UserAccountService(UserAccountRepository repository, PasswordHasher passwordHasher) {
+    public UserAccountService(UserAccountRepository repository) {
         this.repository = Objects.requireNonNull(repository);
-        this.passwordHasher = Objects.requireNonNull(passwordHasher);
-    }
-
-    private static void validate(String username, String password) {
-        if (username == null || !username.matches("[A-Za-z0-9_-]{3,50}")) {
-            throw new IllegalArgumentException(
-                    "username must be 3-50 alphanumeric, underscore, or hyphen characters");
-        }
-        if (password == null || password.length() < 8 || password.length() > 72) {
-            throw new IllegalArgumentException("password must be 8-72 characters");
-        }
     }
 
     /**
-     * 入力値を検証してアクティブなアカウントを登録する。
+     * Google OIDC subjectに対応するアカウントを取得し、初回だけ作成する。
      *
-     * @param username ログイン用ユーザー名
-     * @param password 平文パスワード
-     * @return 保存済みアカウント
-     * @throws IllegalArgumentException 入力値がポリシーに適合しない場合
-     * @throws DuplicateUsernameException ユーザー名が既に登録されている場合
+     * @param googleSubject Googleが発行する不変のOIDC subject
+     * @return 既存または新規のアクティブアカウント
+     * @throws IllegalArgumentException subjectが空白の場合
      */
-    public UserAccount register(String username, String password) {
-        validate(username, password);
-        if (repository.findByUsername(username).isPresent()) {
-            throw new DuplicateUsernameException();
+    public UserAccount provisionGoogleAccount(String googleSubject) {
+        if (googleSubject == null || googleSubject.isBlank()) {
+            throw new IllegalArgumentException("googleSubject must not be blank");
         }
-        return repository.save(username, passwordHasher.hash(password), UserStatus.ACTIVE);
-    }
-
-    /**
-     * 認証情報が有効なアクティブアカウントに一致するかを判定する。
-     *
-     * @param username ログイン用ユーザー名
-     * @param password 平文パスワード
-     * @return 認証済みアカウント。失敗時は空
-     */
-    public java.util.Optional<UserAccount> authenticate(String username, String password) {
+        var username = "google:" + googleSubject;
         return repository
                 .findByUsername(username)
-                .filter(account -> account.status() == UserStatus.ACTIVE)
-                .filter(account -> passwordHasher.matches(password, account.passwordHash()));
+                .orElseGet(() -> repository.save(username, UserStatus.ACTIVE));
     }
 
     /**
-     * テスト用途を含め、保存済みハッシュと平文を照合する。
+     * ユーザー定義IDとパスワードハッシュでローカルアカウントを登録する。
      *
-     * @param password 平文パスワード
-     * @param passwordHash 保存済みハッシュ
-     * @return 一致する場合true
+     * @param userId 3〜50文字の英数字、ドット、アンダースコア、ハイフンから成るID
+     * @param passwordHash BCryptでハッシュ化した空でないパスワード
+     * @return 新規アクティブアカウント
+     * @throws IllegalArgumentException IDまたはパスワードハッシュが不正、またはIDが重複する場合
      */
-    public boolean passwordMatches(String password, String passwordHash) {
-        return passwordHasher.matches(password, passwordHash);
+    public UserAccount registerLocalAccount(String userId, String passwordHash) {
+        var username = localUsername(userId);
+        if (passwordHash == null || passwordHash.isBlank()) {
+            throw new IllegalArgumentException("passwordHash must not be blank");
+        }
+        if (repository.findByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("local account already exists");
+        }
+        return repository.saveLocal(username, passwordHash, UserStatus.ACTIVE);
+    }
+
+    /**
+     * ユーザー定義IDのローカル認証情報を取得する。
+     *
+     * @param userId ログイン画面で入力されたID
+     * @return 存在する場合の認証情報
+     * @throws IllegalArgumentException IDの形式が不正な場合
+     */
+    public Optional<LocalUserCredentials> findLocalCredentials(String userId) {
+        return repository.findLocalCredentials(localUsername(userId));
+    }
+
+    private String localUsername(String userId) {
+        if (userId == null || !LOCAL_ID_PATTERN.matcher(userId).matches()) {
+            throw new IllegalArgumentException("userId must be 3 to 50 URL-safe characters");
+        }
+        return LOCAL_USERNAME_PREFIX + userId;
     }
 }

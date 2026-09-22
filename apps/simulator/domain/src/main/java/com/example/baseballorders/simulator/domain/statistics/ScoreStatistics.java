@@ -26,36 +26,4 @@ public record ScoreStatistics(
         int advancingBuntFailureCount,
         int squeezeBuntFailureCount,
         int stealToSecondCount,
-        int stealToThirdCount) {
-
-    /**
-     * Creates score-only statistics with no recorded batting events.
-     *
-     * @param averageScore average score
-     * @param medianScore median score
-     * @param maximumScore maximum score
-     */
-    public ScoreStatistics(double averageScore, double medianScore, int maximumScore) {
-        this(
-                averageScore,
-                medianScore,
-                maximumScore,
-                0,
-                Map.of(),
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0);
-    }
-}
+        int stealToThirdCount) {}

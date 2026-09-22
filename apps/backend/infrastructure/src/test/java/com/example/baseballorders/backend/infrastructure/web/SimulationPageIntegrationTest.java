@@ -15,9 +15,10 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
- * 実物: HTTPサーバー、SimulationPageController、SimulationGuidePageController、Thymeleaf。 モック: SqsTemplate。
- * 担保する疎通: HTTP GET -> 各PageController -> Thymeleaf HTML応答。 担保しないもの: SQSへのシミュレーション要求送信と結果受信、
- * 入力値のブラウザ操作。
+ * 実物:
+ * HTTPサーバー、SimulationPageController、SimulationGuidePageController、LoginPageController、Thymeleaf。
+ * モック: SqsTemplate。 担保する疎通: HTTP GET -> 各PageController -> Thymeleaf HTML応答。 担保しないもの:
+ * SQSへのシミュレーション要求送信と結果受信、 入力値のブラウザ操作。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -52,6 +53,10 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("打順入力")),
                 () -> assertTrue(response.body().contains("<title>打順監督</title>")),
                 () -> assertTrue(response.body().contains("<h1>打順監督</h1>")),
+                () -> assertTrue(response.body().contains("未ログイン")),
+                () ->
+                        assertFalse(
+                                response.body().contains("href=\"/oauth2/authorization/google\"")),
                 () -> assertTrue(response.body().contains("出塁率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () -> assertTrue(response.body().contains("盗塁成功率")),
@@ -213,6 +218,10 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("シミュレーションの仕組み")),
+                () -> assertTrue(response.body().contains("未ログイン")),
+                () ->
+                        assertFalse(
+                                response.body().contains("href=\"/oauth2/authorization/google\"")),
                 () -> assertContainsPattern(response.body(), "盗塁判定\\s*→\\s*バント判定\\s*→\\s*通常打撃"),
                 () -> assertTrue(response.body().contains("各選手の入力項目")),
                 () -> assertTrue(response.body().contains("出塁率")),
@@ -239,5 +248,28 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("--cyan: #25d9ff")),
                 () -> assertTrue(response.body().contains("--pink: #ff4da6")),
                 () -> assertTrue(response.body().contains("radial-gradient(circle at 15% 10%,")));
+    }
+
+    @Test
+    @DisplayName("ログイン画面へアクセスするとGoogleログインの画面がHTMLで表示される")
+    void rendersLoginPage() throws Exception {
+        // given
+        var request =
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
+                        .GET()
+                        .build();
+
+        // when
+        HttpResponse<String> response;
+        try (var client = HttpClient.newHttpClient()) {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+
+        // then
+        assertAll(
+                () -> assertEquals(200, response.statusCode()),
+                () -> assertTrue(response.body().contains("ログイン")),
+                () -> assertTrue(response.body().contains("Googleログインは現在利用できません")),
+                () -> assertTrue(response.body().contains("トップへ戻る")));
     }
 }
