@@ -1,6 +1,9 @@
 package com.example.baseballorders.messaging;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jilt.Builder;
+import org.jilt.BuilderStyle;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -13,6 +16,7 @@ import java.util.UUID;
  * @param gameScoreStatistics 全試合の得点統計
  * @param gameContentStatistics 全試合のプレー内容統計
  */
+@Builder(style = BuilderStyle.STAGED)
 public record SimulationResultMessage(
         @JsonProperty("simulation_id") UUID simulationId,
         String version,
