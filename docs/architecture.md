@@ -138,9 +138,11 @@ implementations after the listed entry points identify them.
 ## Domain hotspots
 
 - `GameBattingContext` is the aggregate/facade for inning, score, batting order,
-  current base state, and game completion.
-- `AtBatProcessor` orders a plate appearance as steal, then bunt, then batting and
-  advances the batting order only when the plate appearance is consumed.
+  and game completion. Its `InningStateContext` owns the current base state and
+  all eight concrete base states.
+- `AtBatProcessor` orders a plate appearance as steal, then bunt, then batting,
+  sends updates to `InningStateContext`, and advances the batting order only when
+  the plate appearance is consumed.
 - `AbstractBasesState` contains common transition mechanics; the eight concrete
   states contain configuration-specific movement. `BaseStateFactory` constructs
   the per-game state set.

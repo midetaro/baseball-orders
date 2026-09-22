@@ -1,6 +1,6 @@
 # Feature name
 
-Status: todo
+Status: done
 
 ## Goal
 - テストとレビューを通過すること

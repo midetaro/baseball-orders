@@ -8,8 +8,8 @@ import com.example.baseballorders.simulator.domain.player.BatterEntity;
 /** 走者配置7のイベントを処理する試合固有のState。 */
 public final class FullBasesState extends AbstractBasesState
         implements BasesState, SqueezeBuntable {
-    FullBasesState(GameBattingContext context, InningState inningState) {
-        super(context, inningState);
+    FullBasesState(InningStateContext context) {
+        super(context);
     }
 
     @Override

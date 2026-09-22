@@ -153,25 +153,25 @@ class BasesStateTransitionTest {
     private static void seed(GameBattingContext context, int mask) {
         switch (mask) {
             case 0 -> {}
-            case 1 -> context.hitSingle(FIRST);
-            case 2 -> context.hitDouble(SECOND);
+            case 1 -> context.inningStateContext().hitSingle(FIRST);
+            case 2 -> context.inningStateContext().hitDouble(SECOND);
             case 3 -> {
-                context.hitSingle(SECOND);
-                context.hitSingle(FIRST);
+                context.inningStateContext().hitSingle(SECOND);
+                context.inningStateContext().hitSingle(FIRST);
             }
-            case 4 -> context.hitTriple(THIRD);
+            case 4 -> context.inningStateContext().hitTriple(THIRD);
             case 5 -> {
-                context.hitDouble(THIRD);
-                context.hitSingle(FIRST);
+                context.inningStateContext().hitDouble(THIRD);
+                context.inningStateContext().hitSingle(FIRST);
             }
             case 6 -> {
-                context.hitSingle(THIRD);
-                context.hitDouble(SECOND);
+                context.inningStateContext().hitSingle(THIRD);
+                context.inningStateContext().hitDouble(SECOND);
             }
             case 7 -> {
-                context.hitSingle(THIRD);
-                context.hitSingle(SECOND);
-                context.hitSingle(FIRST);
+                context.inningStateContext().hitSingle(THIRD);
+                context.inningStateContext().hitSingle(SECOND);
+                context.inningStateContext().hitSingle(FIRST);
             }
             default -> throw new IllegalArgumentException();
         }
@@ -183,7 +183,7 @@ class BasesStateTransitionTest {
     void appliesEvent(int mask, int outs, Event event) {
         // given
         var context = context(mask, outs);
-        var before = context.getCurrentBaseState();
+        var before = context.inningStateContext().currentBaseState();
         var expected = expected(mask, event);
         boolean reset = expected.outs() > 0 && outs + expected.outs() >= 3;
         int expectedMask = reset ? 0 : expected.mask();
@@ -194,7 +194,7 @@ class BasesStateTransitionTest {
             // then
             assertAll(
                     () -> assertFalse(exception.getMessage().isBlank()),
-                    () -> assertSame(before, context.getCurrentBaseState()),
+                    () -> assertSame(before, context.inningStateContext().currentBaseState()),
                     () -> assertEquals(OutCount.values()[outs], before.getOutCount()),
                     () -> assertEquals(0, context.getTotalScore()),
                     () -> assertSame((mask & 1) != 0 ? FIRST : null, before.runnerAt(Base.FIRST)),
@@ -205,7 +205,7 @@ class BasesStateTransitionTest {
         event.apply(context);
 
         // then
-        var after = context.getCurrentBaseState();
+        var after = context.inningStateContext().currentBaseState();
         assertAll(
                 () -> assertInstanceOf(TYPES.get(expectedMask), after),
                 () ->
@@ -226,16 +226,16 @@ class BasesStateTransitionTest {
     void reusesStateWithinGame(int mask) {
         // given
         var context = context(mask, 1);
-        var original = context.getCurrentBaseState();
+        var original = context.inningStateContext().currentBaseState();
         var other = context(mask, 0);
         // when
-        context.hitHomer();
+        context.inningStateContext().hitHomer();
         seed(context, mask);
-        other.out();
+        other.inningStateContext().out();
         // then
         assertAll(
-                () -> assertSame(original, context.getCurrentBaseState()),
-                () -> assertNotSame(original, other.getCurrentBaseState()),
+                () -> assertSame(original, context.inningStateContext().currentBaseState()),
+                () -> assertNotSame(original, other.inningStateContext().currentBaseState()),
                 () -> assertEquals(OutCount.ONE_OUT, original.getOutCount()),
                 () -> assertEquals(Integer.bitCount(mask), original.runnerCount()),
                 () -> assertEquals(Integer.bitCount(mask) + 1, context.getTotalScore()),
@@ -256,10 +256,10 @@ class BasesStateTransitionTest {
         long expectedScore = mask == 7 ? 1 : 0;
 
         // when
-        context.walk(BATTER);
+        context.inningStateContext().walk(BATTER);
 
         // then
-        var state = context.getCurrentBaseState();
+        var state = context.inningStateContext().currentBaseState();
         assertAll(
                 () -> assertSame(BATTER, state.runnerAt(Base.FIRST)),
                 () -> assertSame(expectedSecond, state.runnerAt(Base.SECOND)),
@@ -273,7 +273,7 @@ class BasesStateTransitionTest {
     @DisplayName("現在の走者配置から選べない進塁先には盗塁を試行しない")
     void doesNotAttemptStealToUnsupportedDestination(int mask, boolean toDouble) {
         // given
-        var state = (Stealable) context(mask, 0).getCurrentBaseState();
+        var state = (Stealable) context(mask, 0).inningStateContext().currentBaseState();
 
         // when
         StealResult result = toDouble ? state.stealToDouble() : state.stealToTriple();
@@ -287,7 +287,7 @@ class BasesStateTransitionTest {
     @DisplayName("複数走者の配置で対象走者に盗塁を試行させる")
     void attemptsStealToSupportedDestination(int mask, boolean toDouble) {
         // given
-        var state = (Stealable) context(mask, 0).getCurrentBaseState();
+        var state = (Stealable) context(mask, 0).inningStateContext().currentBaseState();
 
         // when
         StealResult result;
@@ -306,7 +306,7 @@ class BasesStateTransitionTest {
     void exposesOpportunities(int mask) {
         // given
         var context = context(mask, 0);
-        var state = context.getCurrentBaseState();
+        var state = context.inningStateContext().currentBaseState();
         // when
         Optional<Stealable> steal =
                 state instanceof Stealable stealable ? Optional.of(stealable) : Optional.empty();
@@ -344,7 +344,9 @@ class BasesStateTransitionTest {
                         BehaviorStrategies.middleDistanceHittingStrategy(),
                         BehaviorStrategies.noSteal(),
                         BehaviorStrategies.standardBunt());
-        var state = (Buntable) context(mask, outCount.ordinal()).getCurrentBaseState();
+        var state =
+                (Buntable)
+                        context(mask, outCount.ordinal()).inningStateContext().currentBaseState();
 
         // when
         var result = state.bunt(batter);
@@ -389,17 +391,17 @@ class BasesStateTransitionTest {
 
         void apply(GameBattingContext context) {
             switch (this) {
-                case OUT -> context.out();
-                case SINGLE -> context.hitSingle(BATTER);
-                case DOUBLE -> context.hitDouble(BATTER);
-                case TRIPLE -> context.hitTriple(BATTER);
-                case HOMER -> context.hitHomer();
-                case BUNT_NOT_TRY -> context.buntNotTry();
-                case BUNT_FAILURE -> context.buntFailure();
-                case BUNT_SUCCESS -> context.buntSuccess();
-                case STEAL_NOT_TRY -> context.stealNotTry();
-                case STEAL_FAILURE -> context.stealFailure();
-                case STEAL_SUCCESS -> context.stealSuccess();
+                case OUT -> context.inningStateContext().out();
+                case SINGLE -> context.inningStateContext().hitSingle(BATTER);
+                case DOUBLE -> context.inningStateContext().hitDouble(BATTER);
+                case TRIPLE -> context.inningStateContext().hitTriple(BATTER);
+                case HOMER -> context.inningStateContext().hitHomer();
+                case BUNT_NOT_TRY -> context.inningStateContext().buntNotTry();
+                case BUNT_FAILURE -> context.inningStateContext().buntFailure();
+                case BUNT_SUCCESS -> context.inningStateContext().buntSuccess();
+                case STEAL_NOT_TRY -> context.inningStateContext().stealNotTry();
+                case STEAL_FAILURE -> context.inningStateContext().stealFailure();
+                case STEAL_SUCCESS -> context.inningStateContext().stealSuccess();
             }
         }
     }

@@ -10,8 +10,8 @@ import com.example.baseballorders.simulator.domain.player.BatterEntity;
 /** 走者配置2のイベントを処理する試合固有のState。 */
 public final class DoubleBaseState extends AbstractBasesState
         implements BasesState, StealableToTripleBase, AdvancingBuntable {
-    DoubleBaseState(GameBattingContext context, InningState inningState) {
-        super(context, inningState);
+    DoubleBaseState(InningStateContext context) {
+        super(context);
     }
 
     @Override
