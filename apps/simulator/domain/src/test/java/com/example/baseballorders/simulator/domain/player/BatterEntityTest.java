@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
@@ -40,13 +41,14 @@ class BatterEntityTest {
         BuntResult result;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.1f);
-            result = observedBatter.bunt(OutCount.NO_OUT);
+            result = observedBatter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
         }
 
         // then
         assertAll(
                 () -> assertEquals(BuntResult.SUCCESS, result),
-                () -> assertEquals(1, statisticsRecorder.snapshot().buntCount()));
+                () -> assertEquals(1, statisticsRecorder.snapshot().buntCount()),
+                () -> assertEquals(1, statisticsRecorder.snapshot().advancingBuntCount()));
     }
 
     @Test
@@ -75,7 +77,8 @@ class BatterEntityTest {
         // then
         assertAll(
                 () -> assertEquals(StealResult.SUCCESS, result),
-                () -> assertEquals(1, statisticsRecorder.snapshot().stealCount()));
+                () -> assertEquals(1, statisticsRecorder.snapshot().stealCount()),
+                () -> assertEquals(1, statisticsRecorder.snapshot().stealToSecondCount()));
     }
 
     @Test
@@ -119,7 +122,7 @@ class BatterEntityTest {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.99f, 0.99f);
             var observedBatter = batter.observedBy(statisticsRecorder);
             observedBatter.swing(0);
-            observedBatter.bunt(OutCount.NO_OUT);
+            observedBatter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
             observedBatter.stealToDouble();
             observedBatter.stealToTriple();
         }

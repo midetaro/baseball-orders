@@ -8,6 +8,7 @@ import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
@@ -52,7 +53,7 @@ class LineUpMapperTest {
                             .getFirst();
             battingResult = batter.swing(0);
             stealResult = batter.stealToDouble();
-            buntResult = batter.bunt(OutCount.ONE_OUT);
+            buntResult = batter.bunt(OutCount.ONE_OUT, BuntType.ADVANCING);
         }
 
         // then
@@ -115,7 +116,7 @@ class LineUpMapperTest {
             var observedBatter = batter.observedBy(statisticsRecorder);
             doubleResult = observedBatter.stealToDouble();
             tripleResult = observedBatter.stealToTriple();
-            buntResult = observedBatter.bunt(OutCount.NO_OUT);
+            buntResult = observedBatter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
         }
 
         // then

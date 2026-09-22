@@ -1,5 +1,6 @@
 package com.example.baseballorders.simulator.domain.game;
 
+import com.example.baseballorders.simulator.domain.game.capability.Buntable;
 import com.example.baseballorders.simulator.domain.game.capability.Stealable;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
@@ -30,9 +31,9 @@ final class AtBatProcessor {
             return false;
         }
 
-        if (context.isBuntable()) {
+        if (context.getCurrentState() instanceof Buntable buntable) {
             boolean bunted =
-                    switch (batter.bunt(context.getCurrentState().getOutCount())) {
+                    switch (buntable.bunt(batter)) {
                         case NOT_TRY -> {
                             context.buntNotTry();
                             yield false;

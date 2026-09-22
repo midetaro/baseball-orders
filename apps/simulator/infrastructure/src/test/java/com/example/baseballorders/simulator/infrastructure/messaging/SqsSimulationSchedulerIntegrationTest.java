@@ -15,6 +15,7 @@ import com.example.baseballorders.simulator.application.contract.SimulationRespo
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
@@ -197,7 +198,7 @@ class SqsSimulationSchedulerIntegrationTest {
                         assertEquals(
                                 expectedBunt,
                                 batter.observedBy(new GameStatisticsRecorder())
-                                        .bunt(OutCount.NO_OUT)));
+                                        .bunt(OutCount.NO_OUT, BuntType.ADVANCING)));
     }
 
     private static SqsClient createClient() {

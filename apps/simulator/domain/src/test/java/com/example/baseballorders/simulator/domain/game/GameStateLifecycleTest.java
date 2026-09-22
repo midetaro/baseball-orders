@@ -45,7 +45,7 @@ class GameStateLifecycleTest {
                 () -> assertEquals(0, runnersAfterSteal),
                 () -> verify(first, times(1)).swing(0),
                 () -> verify(second, times(inning == 9 ? 0 : 1)).swing(0),
-                () -> verify(second, never()).bunt(any()),
+                () -> verify(second, never()).bunt(any(), any()),
                 () ->
                         assertEquals(
                                 inning == 9 ? OutCount.NO_OUT : OutCount.ONE_OUT,
@@ -136,7 +136,7 @@ class GameStateLifecycleTest {
         var runner = batter();
         var hitter = batter();
         when(runner.stealToTriple()).thenReturn(result);
-        when(hitter.bunt(any())).thenReturn(BuntResult.NOT_TRY);
+        when(hitter.bunt(any(), any())).thenReturn(BuntResult.NOT_TRY);
         when(hitter.swing(anyInt())).thenReturn(BattingResult.HIT_HOMER);
         var context = new GameBattingContext(new LineUpEntity(List.of(hitter)));
         context.hitDouble(runner);
@@ -162,7 +162,7 @@ class GameStateLifecycleTest {
         var runner = batter();
         var hitter = batter();
         when(runner.stealToDouble()).thenReturn(StealResult.NOT_TRY);
-        when(hitter.bunt(any())).thenReturn(result);
+        when(hitter.bunt(any(), any())).thenReturn(result);
         var context = new GameBattingContext(new LineUpEntity(List.of(hitter)));
         context.hitSingle(runner);
         // when

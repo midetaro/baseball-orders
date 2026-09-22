@@ -7,7 +7,9 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.StealResult;
+import com.example.baseballorders.simulator.domain.play.StealTarget;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -77,14 +79,20 @@ class GameStatisticsRecorderTest {
         GameStatisticsRecorder recorder = new GameStatisticsRecorder();
 
         // when
-        recorder.onBuntResult(BuntResult.SUCCESS);
-        recorder.onStealResult(StealResult.SUCCESS);
+        recorder.onBuntResult(BuntResult.SUCCESS, BuntType.ADVANCING);
+        recorder.onBuntResult(BuntResult.SUCCESS, BuntType.SQUEEZE);
+        recorder.onStealResult(StealResult.SUCCESS, StealTarget.SECOND);
+        recorder.onStealResult(StealResult.SUCCESS, StealTarget.THIRD);
 
         // then
         GameStatistics statistics = recorder.snapshot();
         assertAll(
-                () -> assertEquals(1, statistics.buntCount()),
-                () -> assertEquals(1, statistics.stealCount()));
+                () -> assertEquals(2, statistics.buntCount()),
+                () -> assertEquals(2, statistics.stealCount()),
+                () -> assertEquals(1, statistics.advancingBuntCount()),
+                () -> assertEquals(1, statistics.squeezeBuntCount()),
+                () -> assertEquals(1, statistics.stealToSecondCount()),
+                () -> assertEquals(1, statistics.stealToThirdCount()));
     }
 
     @Test
@@ -94,14 +102,17 @@ class GameStatisticsRecorderTest {
         GameStatisticsRecorder recorder = new GameStatisticsRecorder();
 
         // when
-        recorder.onBuntResult(BuntResult.FAILURE);
-        recorder.onStealResult(StealResult.FAILURE);
+        recorder.onBuntResult(BuntResult.FAILURE, BuntType.ADVANCING);
+        recorder.onBuntResult(BuntResult.FAILURE, BuntType.SQUEEZE);
+        recorder.onStealResult(StealResult.FAILURE, StealTarget.SECOND);
 
         // then
         GameStatistics statistics = recorder.snapshot();
         assertAll(
-                () -> assertEquals(1, statistics.buntFailureCount()),
+                () -> assertEquals(2, statistics.buntFailureCount()),
                 () -> assertEquals(1, statistics.stealFailureCount()),
+                () -> assertEquals(1, statistics.advancingBuntFailureCount()),
+                () -> assertEquals(1, statistics.squeezeBuntFailureCount()),
                 () -> assertEquals(0, statistics.buntCount()),
                 () -> assertEquals(0, statistics.stealCount()));
     }
@@ -113,8 +124,8 @@ class GameStatisticsRecorderTest {
         GameStatisticsRecorder recorder = new GameStatisticsRecorder();
 
         // when
-        recorder.onBuntResult(BuntResult.NOT_TRY);
-        recorder.onStealResult(StealResult.NOT_TRY);
+        recorder.onBuntResult(BuntResult.NOT_TRY, BuntType.ADVANCING);
+        recorder.onStealResult(StealResult.NOT_TRY, StealTarget.SECOND);
 
         // then
         GameStatistics statistics = recorder.snapshot();
@@ -122,6 +133,9 @@ class GameStatisticsRecorderTest {
                 () -> assertEquals(0, statistics.buntCount()),
                 () -> assertEquals(0, statistics.stealCount()),
                 () -> assertEquals(0, statistics.buntFailureCount()),
-                () -> assertEquals(0, statistics.stealFailureCount()));
+                () -> assertEquals(0, statistics.stealFailureCount()),
+                () -> assertEquals(0, statistics.advancingBuntCount()),
+                () -> assertEquals(0, statistics.advancingBuntFailureCount()),
+                () -> assertEquals(0, statistics.stealToSecondCount()));
     }
 }

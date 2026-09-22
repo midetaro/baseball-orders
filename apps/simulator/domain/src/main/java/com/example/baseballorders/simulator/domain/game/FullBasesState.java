@@ -2,6 +2,7 @@ package com.example.baseballorders.simulator.domain.game;
 
 import com.example.baseballorders.simulator.domain.game.capability.SqueezeBuntable;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 
 /** 走者配置7のイベントを処理する試合固有のState。 */
@@ -13,7 +14,7 @@ public final class FullBasesState extends AbstractBasesState
 
     @Override
     public BuntResult bunt(BatterEntity batter) {
-        return attemptBunt(batter);
+        return attemptBunt(batter, BuntType.SQUEEZE);
     }
 
     @Override

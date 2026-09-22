@@ -20,7 +20,13 @@ public record ScoreStatistics(
         int buntCount,
         int stealCount,
         int buntFailureCount,
-        int stealFailureCount) {
+        int stealFailureCount,
+        int advancingBuntCount,
+        int squeezeBuntCount,
+        int advancingBuntFailureCount,
+        int squeezeBuntFailureCount,
+        int stealToSecondCount,
+        int stealToThirdCount) {
 
     /**
      * Creates score-only statistics with no recorded batting events.
@@ -30,6 +36,26 @@ public record ScoreStatistics(
      * @param maximumScore maximum score
      */
     public ScoreStatistics(double averageScore, double medianScore, int maximumScore) {
-        this(averageScore, medianScore, maximumScore, 0, Map.of(), 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        this(
+                averageScore,
+                medianScore,
+                maximumScore,
+                0,
+                Map.of(),
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0);
     }
 }

@@ -3,6 +3,7 @@ package com.example.baseballorders.simulator.domain.game;
 import com.example.baseballorders.simulator.domain.game.capability.StealableToDoubleBase;
 import com.example.baseballorders.simulator.domain.game.capability.StealableToTripleBase;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
@@ -88,8 +89,8 @@ public abstract class AbstractBasesState {
         }
     }
 
-    protected final BuntResult attemptBunt(BatterEntity batter) {
-        return batter.bunt(inningState.getOutCount());
+    protected final BuntResult attemptBunt(BatterEntity batter, BuntType buntType) {
+        return batter.bunt(inningState.getOutCount(), buntType);
     }
 
     protected final void applyHitTriple(BatterEntity batter) {

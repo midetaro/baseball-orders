@@ -2,8 +2,10 @@ package com.example.baseballorders.simulator.domain.player;
 
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
+import com.example.baseballorders.simulator.domain.play.StealTarget;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
@@ -22,10 +24,10 @@ public class BatterEntity extends Player {
                 public void onBattingResult(BattingResult battingResult, int runnerCount) {}
 
                 @Override
-                public void onBuntResult(BuntResult buntResult) {}
+                public void onBuntResult(BuntResult buntResult, BuntType buntType) {}
 
                 @Override
-                public void onStealResult(StealResult stealResult) {}
+                public void onStealResult(StealResult stealResult, StealTarget stealTarget) {}
             };
 
     /** 出塁率 */
@@ -101,7 +103,7 @@ public class BatterEntity extends Player {
      */
     public StealResult stealToDouble() {
         StealResult stealResult = stealStrategy.runToDouble(stealSuccessRate);
-        playResultObserver.onStealResult(stealResult);
+        playResultObserver.onStealResult(stealResult, StealTarget.SECOND);
         return stealResult;
     }
 
@@ -112,19 +114,20 @@ public class BatterEntity extends Player {
      */
     public StealResult stealToTriple() {
         StealResult stealResult = stealStrategy.runToTriple(stealSuccessRate);
-        playResultObserver.onStealResult(stealResult);
+        playResultObserver.onStealResult(stealResult, StealTarget.THIRD);
         return stealResult;
     }
 
     /**
      * アウト数と塁状態を考慮し、バント戦略に従ってバントする。
      *
-     * @param outCount 現在の塁状態
+     * @param outCount 現在のアウト数
+     * @param buntType 現在の走者配置に対応するバント種別
      * @return バント結果。結果を購読者へ通知する
      */
-    public BuntResult bunt(OutCount outCount) {
+    public BuntResult bunt(OutCount outCount, BuntType buntType) {
         BuntResult buntResult = buntStrategy.bunt(buntSuccessRate, outCount);
-        playResultObserver.onBuntResult(buntResult);
+        playResultObserver.onBuntResult(buntResult, buntType);
         return buntResult;
     }
 

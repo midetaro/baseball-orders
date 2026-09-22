@@ -11,8 +11,10 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
+import com.example.baseballorders.simulator.domain.game.capability.Buntable;
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
@@ -36,7 +38,7 @@ class AtBatProcessorTest {
         // given
         var runner = runner();
         var batter = mock(BatterEntity.class);
-        when(batter.bunt(OutCount.NO_OUT)).thenReturn(BuntResult.NOT_TRY);
+        when(batter.bunt(OutCount.NO_OUT, BuntType.ADVANCING)).thenReturn(BuntResult.NOT_TRY);
         when(batter.swing(1)).thenReturn(BattingResult.STRIKEOUT);
         var context = GameStateTestFixture.context(runner, null, null, OutCount.NO_OUT);
 
@@ -65,7 +67,7 @@ class AtBatProcessorTest {
         assertAll(
                 () -> assertTrue(completed),
                 () -> assertEquals(OutCount.ONE_OUT, context.getCurrentState().getOutCount()),
-                () -> assertFalse(context.isBuntable()));
+                () -> assertFalse(context.getCurrentState() instanceof Buntable));
     }
 
     @Test
@@ -86,6 +88,44 @@ class AtBatProcessorTest {
                 () -> assertEquals(OutCount.ONE_OUT, context.getCurrentState().getOutCount()),
                 () -> assertSame(runner, context.getCurrentState().runnerAt(Base.SECOND)),
                 () -> assertEquals(1, context.getCurrentState().runnerCount()));
+    }
+
+    @Test
+    @DisplayName("一塁走者への成功バントを進塁バントとして記録する")
+    void recordsSuccessfulAdvancingBunt() {
+        // given
+        var runner = batter(0.0f, BehaviorStrategies.noBunt());
+        var batter = batter(1.0f, BehaviorStrategies.standardBunt());
+        var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
+        context.hitSingle(runner);
+
+        // when
+        context.nextAtBat();
+
+        // then
+        assertAll(
+                () -> assertEquals(1, context.getGameStatistics().buntCount()),
+                () -> assertEquals(1, context.getGameStatistics().advancingBuntCount()),
+                () -> assertEquals(0, context.getGameStatistics().squeezeBuntCount()));
+    }
+
+    @Test
+    @DisplayName("三塁走者への成功バントをスクイズとして記録する")
+    void recordsSuccessfulSqueezeBunt() {
+        // given
+        var runner = batter(0.0f, BehaviorStrategies.noBunt());
+        var batter = batter(1.0f, BehaviorStrategies.standardBunt());
+        var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
+        context.hitTriple(runner);
+
+        // when
+        context.nextAtBat();
+
+        // then
+        assertAll(
+                () -> assertEquals(1, context.getGameStatistics().buntCount()),
+                () -> assertEquals(0, context.getGameStatistics().advancingBuntCount()),
+                () -> assertEquals(1, context.getGameStatistics().squeezeBuntCount()));
     }
 
     @Test

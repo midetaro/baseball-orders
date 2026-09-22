@@ -279,7 +279,6 @@ class BasesStateTransitionTest {
         assertAll(
                 () -> assertEquals(List.of(1, 2, 3, 5).contains(mask), steal.isPresent()),
                 () -> assertEquals(mask != 0, bunt),
-                () -> assertEquals(bunt, context.isBuntable()),
                 () ->
                         steal.ifPresent(
                                 opportunity -> {
