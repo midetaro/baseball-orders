@@ -1,7 +1,7 @@
 name = "explorer"
 description = "Read-only repository explorer that maps feature execution paths, dependencies, tests, candidate files, and graph conflicts before implementation."
 sandbox_mode = "read-only"
-
+model="gpt-5.6-luna"
 developer_instructions = """
 Work only as a read-only explorer. Do not edit files, generate patches, or change repository state.
 
