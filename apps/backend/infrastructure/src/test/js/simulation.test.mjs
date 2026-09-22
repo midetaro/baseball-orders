@@ -11,7 +11,7 @@ for (const [page, template] of [
   assert.ok(template.includes('xmlns:th="http://www.thymeleaf.org"'), `${page}でThymeleafの認証表示を有効にする`);
   assert.ok(template.includes('ログイン中'), `${page}でログイン状態を表示する`);
   assert.ok(template.includes('未ログイン'), `${page}で未ログイン状態を表示する`);
-  assert.ok(template.includes('href="/oauth2/authorization/google"'), `${page}にGoogleログインへの導線を用意する`);
+  assert.ok(template.includes('href="/login"'), `${page}にログイン画面への導線を用意する`);
   assert.ok(template.includes('googleOauthEnabled'), `${page}ではGoogle OAuth未設定時にログイン導線を隠す`);
   assert.ok(template.includes('<form action="/logout" method="post"'), `${page}にPOSTログアウトを用意する`);
   assert.ok(template.includes('th:name="${_csrf.parameterName}"'), `${page}のログアウトにCSRFパラメータを含める`);

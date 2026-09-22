@@ -70,8 +70,10 @@ public class SecurityConfiguration {
         if (properties.enabled()) {
             http.oauth2Login(
                     oauth2 ->
-                            oauth2.userInfoEndpoint(
-                                    userInfo -> userInfo.oidcUserService(provisioningService)));
+                            oauth2.loginPage("/login")
+                                    .userInfoEndpoint(
+                                            userInfo ->
+                                                    userInfo.oidcUserService(provisioningService)));
         }
         http.logout(Customizer.withDefaults());
         return http.build();
