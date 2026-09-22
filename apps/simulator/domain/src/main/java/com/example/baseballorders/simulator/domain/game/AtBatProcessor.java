@@ -21,9 +21,9 @@ final class AtBatProcessor {
                     };
 
             switch (stealResult) {
-                case NOT_TRY -> context.stealNotTry();
-                case FAILURE -> context.stealFailure();
-                case SUCCESS -> context.stealSuccess();
+                case NOT_TRY -> stealable.stealNotTry();
+                case FAILURE -> stealable.stealFailure();
+                case SUCCESS -> stealable.stealSuccess();
             }
         }
 
@@ -35,15 +35,14 @@ final class AtBatProcessor {
             boolean bunted =
                     switch (buntable.bunt(batter)) {
                         case NOT_TRY -> {
-                            context.buntNotTry();
                             yield false;
                         }
                         case FAILURE -> {
-                            context.buntFailure();
-                            yield true;
+                            buntable.buntFailure();
+                            yield false;
                         }
                         case SUCCESS -> {
-                            context.buntSuccess();
+                            buntable.bunt(batter);
                             yield true;
                         }
                     };
@@ -53,13 +52,13 @@ final class AtBatProcessor {
         }
 
         switch (batter.swing(context.currentBaseState().runnerCount())) {
-            case STRIKEOUT -> context.out();
-            case BATTED_OUT -> context.battingOut();
-            case WALK -> context.walk(batter);
-            case HIT_SINGLE -> context.hitSingle(batter);
-            case HIT_DOUBLE -> context.hitDouble(batter);
-            case HIT_TRIPLE -> context.hitTriple(batter);
-            case HIT_HOMER -> context.hitHomer();
+            case STRIKEOUT -> context.currentBaseState().out();
+            case BATTED_OUT -> context.currentBaseState().battingOut();
+            case WALK -> context.currentBaseState().walk(batter);
+            case HIT_SINGLE -> context.currentBaseState().hitSingle(batter);
+            case HIT_DOUBLE -> context.currentBaseState().hitDouble(batter);
+            case HIT_TRIPLE -> context.currentBaseState().hitTriple(batter);
+            case HIT_HOMER -> context.currentBaseState().hitHomer();
         }
         return true;
     }

@@ -1,7 +1,5 @@
 package com.example.baseballorders.simulator.domain.game;
 
-import com.example.baseballorders.simulator.domain.game.capability.Buntable;
-import com.example.baseballorders.simulator.domain.game.capability.Stealable;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 
@@ -87,95 +85,4 @@ public final class InningStateContext {
                 };
     }
 
-    void out() {
-        if (!isGameOver()) {
-            currentBaseState.out();
-        }
-    }
-
-    void battingOut() {
-        if (!isGameOver()) {
-            currentBaseState.battingOut();
-        }
-    }
-
-    void walk(BatterEntity batter) {
-        if (!isGameOver()) {
-            currentBaseState.walk(batter);
-        }
-    }
-
-    void hitSingle(BatterEntity batter) {
-        if (!isGameOver()) {
-            currentBaseState.hitSingle(batter);
-        }
-    }
-
-    void hitDouble(BatterEntity batter) {
-        if (!isGameOver()) {
-            currentBaseState.hitDouble(batter);
-        }
-    }
-
-    void hitTriple(BatterEntity batter) {
-        if (!isGameOver()) {
-            currentBaseState.hitTriple(batter);
-        }
-    }
-
-    void hitHomer() {
-        if (!isGameOver()) {
-            currentBaseState.hitHomer();
-        }
-    }
-
-    void buntNotTry() {
-        if (!isGameOver() && currentBaseState instanceof Buntable buntable) {
-            buntable.buntNotTry();
-        }
-    }
-
-    void buntFailure() {
-        if (!isGameOver()) {
-            requireBuntable().buntFailure();
-        }
-    }
-
-    void buntSuccess() {
-        if (!isGameOver()) {
-            requireBuntable().buntSuccess();
-        }
-    }
-
-    void stealNotTry() {
-        if (!isGameOver() && currentBaseState instanceof Stealable stealable) {
-            stealable.stealNotTry();
-        }
-    }
-
-    void stealFailure() {
-        if (!isGameOver()) {
-            requireStealable().stealFailure();
-        }
-    }
-
-    void stealSuccess() {
-        if (!isGameOver()) {
-            requireStealable().stealSuccess();
-        }
-    }
-
-    private Buntable requireBuntable() {
-        if (currentBaseState instanceof Buntable buntable) {
-            return buntable;
-        }
-        throw new IllegalStateException("犠打機会がありません");
-    }
-
-    private Stealable requireStealable() {
-        if (currentBaseState instanceof Stealable stealable) {
-            return stealable;
-        }
-        throw new IllegalStateException("盗塁機会がありません");
-    }
 }

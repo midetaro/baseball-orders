@@ -127,7 +127,7 @@ public abstract class AbstractBasesState {
         } else {
             transition(runnerAt(Base.FIRST), null, runnerAt(Base.THIRD), 0);
         }
-        context.out();
+        context.addOut();
     }
 
     public final void stealSuccess() {
