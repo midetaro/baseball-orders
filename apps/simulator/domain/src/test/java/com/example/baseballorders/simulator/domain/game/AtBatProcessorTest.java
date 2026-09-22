@@ -75,9 +75,9 @@ class AtBatProcessorTest {
         // then
         assertAll(
                 () -> assertTrue(completed),
-                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentState().getOutCount()),
-                () -> assertSame(runner, context.getCurrentState().runnerAt(Base.FIRST)),
-                () -> assertEquals(1, context.getCurrentState().runnerCount()));
+                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
+                () -> assertSame(runner, context.getCurrentBaseState().runnerAt(Base.FIRST)),
+                () -> assertEquals(1, context.getCurrentBaseState().runnerCount()));
     }
 
     @Test
@@ -93,8 +93,8 @@ class AtBatProcessorTest {
         // then
         assertAll(
                 () -> assertTrue(completed),
-                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentState().getOutCount()),
-                () -> assertFalse(context.getCurrentState() instanceof Buntable));
+                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
+                () -> assertFalse(context.getCurrentBaseState() instanceof Buntable));
     }
 
     @Test
@@ -112,9 +112,9 @@ class AtBatProcessorTest {
         // then
         assertAll(
                 () -> assertTrue(completed),
-                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentState().getOutCount()),
-                () -> assertSame(runner, context.getCurrentState().runnerAt(Base.SECOND)),
-                () -> assertEquals(1, context.getCurrentState().runnerCount()));
+                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
+                () -> assertSame(runner, context.getCurrentBaseState().runnerAt(Base.SECOND)),
+                () -> assertEquals(1, context.getCurrentBaseState().runnerCount()));
     }
 
     @Test
@@ -171,9 +171,9 @@ class AtBatProcessorTest {
         // then
         assertAll(
                 () -> assertTrue(completed),
-                () -> assertEquals(OutCount.TWO_OUT, context.getCurrentState().getOutCount()),
-                () -> assertSame(runner, context.getCurrentState().runnerAt(Base.SECOND)),
-                () -> assertEquals(1, context.getCurrentState().runnerCount()));
+                () -> assertEquals(OutCount.TWO_OUT, context.getCurrentBaseState().getOutCount()),
+                () -> assertSame(runner, context.getCurrentBaseState().runnerAt(Base.SECOND)),
+                () -> assertEquals(1, context.getCurrentBaseState().runnerCount()));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -200,13 +200,21 @@ class AtBatProcessorTest {
 
             // then
             assertAll(
-                    () -> assertEquals(OutCount.ONE_OUT, context.getCurrentState().getOutCount()),
-                    () -> assertSame(expectedFirst, context.getCurrentState().runnerAt(Base.FIRST)),
+                    () ->
+                            assertEquals(
+                                    OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
+                    () ->
+                            assertSame(
+                                    expectedFirst,
+                                    context.getCurrentBaseState().runnerAt(Base.FIRST)),
                     () ->
                             assertSame(
                                     expectedSecond,
-                                    context.getCurrentState().runnerAt(Base.SECOND)),
-                    () -> assertSame(expectedThird, context.getCurrentState().runnerAt(Base.THIRD)),
+                                    context.getCurrentBaseState().runnerAt(Base.SECOND)),
+                    () ->
+                            assertSame(
+                                    expectedThird,
+                                    context.getCurrentBaseState().runnerAt(Base.THIRD)),
                     () -> assertEquals(expectedScore, context.getTotalScore()),
                     () -> randomGenerator.verify(RandomGenerator::nextFloat, times(2)));
         }
@@ -226,8 +234,10 @@ class AtBatProcessorTest {
 
             // then
             assertAll(
-                    () -> assertEquals(OutCount.ONE_OUT, context.getCurrentState().getOutCount()),
-                    () -> assertEquals(0, context.getCurrentState().runnerCount()),
+                    () ->
+                            assertEquals(
+                                    OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
+                    () -> assertEquals(0, context.getCurrentBaseState().runnerCount()),
                     () -> randomGenerator.verify(RandomGenerator::nextFloat, times(1)));
         }
     }
@@ -247,8 +257,10 @@ class AtBatProcessorTest {
             // then
             assertAll(
                     () -> assertEquals(2, context.getInning()),
-                    () -> assertEquals(OutCount.NO_OUT, context.getCurrentState().getOutCount()),
-                    () -> assertEquals(0, context.getCurrentState().runnerCount()),
+                    () ->
+                            assertEquals(
+                                    OutCount.NO_OUT, context.getCurrentBaseState().getOutCount()),
+                    () -> assertEquals(0, context.getCurrentBaseState().runnerCount()),
                     () -> assertEquals(0, context.getTotalScore()),
                     () -> randomGenerator.verify(RandomGenerator::nextFloat, times(1)));
         }

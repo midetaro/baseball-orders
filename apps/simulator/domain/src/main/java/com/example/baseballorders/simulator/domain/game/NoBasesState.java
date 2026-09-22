@@ -9,6 +9,11 @@ public final class NoBasesState extends AbstractBasesState implements BasesState
     }
 
     @Override
+    public void walk(BatterEntity batter) {
+        transition(batter, null, null, 0);
+    }
+
+    @Override
     public void hitSingle(BatterEntity batter) {
         transition(batter, null, null, 0);
     }

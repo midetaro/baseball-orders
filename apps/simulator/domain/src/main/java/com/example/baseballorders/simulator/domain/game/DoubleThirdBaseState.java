@@ -13,6 +13,11 @@ public final class DoubleThirdBaseState extends AbstractBasesState
     }
 
     @Override
+    public void walk(BatterEntity batter) {
+        transition(batter, runnerAt(Base.SECOND), runnerAt(Base.THIRD), 0);
+    }
+
+    @Override
     public BuntResult bunt(BatterEntity batter) {
         return attemptBunt(batter, BuntType.SQUEEZE);
     }

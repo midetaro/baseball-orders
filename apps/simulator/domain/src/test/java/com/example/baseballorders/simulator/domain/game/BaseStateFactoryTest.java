@@ -17,8 +17,8 @@ class BaseStateFactoryTest {
         first.out();
         // then
         assertAll(
-                () -> assertNotSame(first.getCurrentState(), second.getCurrentState()),
-                () -> assertEquals(OutCount.ONE_OUT, first.getCurrentState().getOutCount()),
-                () -> assertEquals(OutCount.NO_OUT, second.getCurrentState().getOutCount()));
+                () -> assertNotSame(first.getCurrentBaseState(), second.getCurrentBaseState()),
+                () -> assertEquals(OutCount.ONE_OUT, first.getCurrentBaseState().getOutCount()),
+                () -> assertEquals(OutCount.NO_OUT, second.getCurrentBaseState().getOutCount()));
     }
 }

@@ -44,8 +44,8 @@ class GameStateLifecycleTest {
         // when
         context.nextAtBat();
         boolean gameOverAfterSteal = context.isGameOver();
-        OutCount outsAfterSteal = context.getCurrentState().getOutCount();
-        int runnersAfterSteal = context.getCurrentState().runnerCount();
+        OutCount outsAfterSteal = context.getCurrentBaseState().getOutCount();
+        int runnersAfterSteal = context.getCurrentBaseState().runnerCount();
         context.nextAtBat();
 
         // then
@@ -59,7 +59,7 @@ class GameStateLifecycleTest {
                 () ->
                         assertEquals(
                                 inning == 9 ? OutCount.NO_OUT : OutCount.ONE_OUT,
-                                context.getCurrentState().getOutCount()));
+                                context.getCurrentBaseState().getOutCount()));
     }
 
     @Test
@@ -76,7 +76,7 @@ class GameStateLifecycleTest {
         for (int i = 0; i < 27; i++) {
             context.out();
         }
-        var finalState = context.getCurrentState();
+        var finalState = context.getCurrentBaseState();
         context.out();
         context.hitSingle(batter);
         context.hitDouble(batter);
@@ -94,7 +94,7 @@ class GameStateLifecycleTest {
         // then
         assertAll(
                 () -> assertTrue(context.isGameOver()),
-                () -> assertSame(finalState, context.getCurrentState()),
+                () -> assertSame(finalState, context.getCurrentBaseState()),
                 () -> assertEquals(OutCount.NO_OUT, finalState.getOutCount()),
                 () -> assertEquals(0, finalState.runnerCount()),
                 () -> assertEquals(1, context.getTotalScore()),
@@ -120,22 +120,22 @@ class GameStateLifecycleTest {
                                                 || result == BattingResult.BATTED_OUT
                                         ? OutCount.ONE_OUT
                                         : OutCount.NO_OUT,
-                                context.getCurrentState().getOutCount()),
+                                context.getCurrentBaseState().getOutCount()),
                 () ->
                         assertEquals(
                                 result == BattingResult.HIT_HOMER ? 1 : 0, context.getTotalScore()),
                 () ->
                         assertEquals(
                                 result == BattingResult.HIT_SINGLE || result == BattingResult.WALK,
-                                context.getCurrentState().isOccupied(Base.FIRST)),
+                                context.getCurrentBaseState().isOccupied(Base.FIRST)),
                 () ->
                         assertEquals(
                                 result == BattingResult.HIT_DOUBLE,
-                                context.getCurrentState().isOccupied(Base.SECOND)),
+                                context.getCurrentBaseState().isOccupied(Base.SECOND)),
                 () ->
                         assertEquals(
                                 result == BattingResult.HIT_TRIPLE,
-                                context.getCurrentState().isOccupied(Base.THIRD)));
+                                context.getCurrentBaseState().isOccupied(Base.THIRD)));
     }
 
     @ParameterizedTest
@@ -159,7 +159,7 @@ class GameStateLifecycleTest {
                 () ->
                         assertEquals(
                                 result == StealResult.FAILURE ? OutCount.ONE_OUT : OutCount.NO_OUT,
-                                context.getCurrentState().getOutCount()));
+                                context.getCurrentBaseState().getOutCount()));
     }
 
     @ParameterizedTest
@@ -180,14 +180,14 @@ class GameStateLifecycleTest {
         // then
         assertAll(
                 () -> verify(hitter, never()).swing(anyInt()),
-                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentState().getOutCount()),
+                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentBaseState().getOutCount()),
                 () ->
                         assertEquals(
                                 result == BuntResult.SUCCESS,
-                                context.getCurrentState().isOccupied(Base.SECOND)),
+                                context.getCurrentBaseState().isOccupied(Base.SECOND)),
                 () ->
                         assertEquals(
                                 result == BuntResult.FAILURE,
-                                context.getCurrentState().isOccupied(Base.FIRST)));
+                                context.getCurrentBaseState().isOccupied(Base.FIRST)));
     }
 }

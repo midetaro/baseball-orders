@@ -27,7 +27,7 @@ public class GameBattingContext {
     private final AtBatProcessor atBatProcessor = new AtBatProcessor();
     @Getter private long inning = 1;
     @Getter private long totalScore;
-    @Getter private BasesState currentState;
+    @Getter private BasesState currentBaseState;
     private int numberOfNextBatter;
     @Getter private boolean isGameOver;
 
@@ -76,7 +76,7 @@ public class GameBattingContext {
         firstThirdBaseState = baseStateFactory.createFirstThirdBaseState(this, inningState);
         doubleThirdBaseState = baseStateFactory.createDoubleThirdBaseState(this, inningState);
         fullBasesState = baseStateFactory.createFullBasesState(this, inningState);
-        currentState = noBasesState;
+        currentBaseState = noBasesState;
     }
 
     /**
@@ -95,7 +95,7 @@ public class GameBattingContext {
      * @throws IllegalArgumentException 0から7以外の配置を指定した場合
      */
     public void changeState(int configuration) {
-        currentState =
+        currentBaseState =
                 switch (configuration) {
                     case 0 -> noBasesState;
                     case 1 -> singleBasesState;
@@ -143,14 +143,14 @@ public class GameBattingContext {
     /** アウトを適用する。試合終了後は何もしない。 */
     public void out() {
         if (!isGameOver) {
-            currentState.out();
+            currentBaseState.out();
         }
     }
 
     /** 打撃による凡退を適用し、三死目でなければ一定確率で先頭走者だけを進める。 */
     public void battingOut() {
         if (!isGameOver) {
-            currentState.battingOut();
+            currentBaseState.battingOut();
         }
     }
 
@@ -161,7 +161,7 @@ public class GameBattingContext {
      */
     public void walk(BatterEntity batter) {
         if (!isGameOver) {
-            currentState.walk(batter);
+            currentBaseState.walk(batter);
         }
     }
 
@@ -172,7 +172,7 @@ public class GameBattingContext {
      */
     public void hitSingle(BatterEntity batter) {
         if (!isGameOver) {
-            currentState.hitSingle(batter);
+            currentBaseState.hitSingle(batter);
         }
     }
 
@@ -183,7 +183,7 @@ public class GameBattingContext {
      */
     public void hitDouble(BatterEntity batter) {
         if (!isGameOver) {
-            currentState.hitDouble(batter);
+            currentBaseState.hitDouble(batter);
         }
     }
 
@@ -194,20 +194,20 @@ public class GameBattingContext {
      */
     public void hitTriple(BatterEntity batter) {
         if (!isGameOver) {
-            currentState.hitTriple(batter);
+            currentBaseState.hitTriple(batter);
         }
     }
 
     /** 本塁打を適用する。試合終了後は何もしない。 */
     public void hitHomer() {
         if (!isGameOver) {
-            currentState.hitHomer();
+            currentBaseState.hitHomer();
         }
     }
 
     /** バント見送りを適用する。試合終了後は何もしない。 */
     public void buntNotTry() {
-        if (!isGameOver && currentState instanceof Buntable buntable) {
+        if (!isGameOver && currentBaseState instanceof Buntable buntable) {
             buntable.buntNotTry();
         }
     }
@@ -236,7 +236,7 @@ public class GameBattingContext {
 
     /** 盗塁見送りを適用する。試合終了後は何もしない。 */
     public void stealNotTry() {
-        if (!isGameOver && currentState instanceof Stealable stealable) {
+        if (!isGameOver && currentBaseState instanceof Stealable stealable) {
             stealable.stealNotTry();
         }
     }
@@ -264,14 +264,14 @@ public class GameBattingContext {
     }
 
     private Buntable requireBuntable() {
-        if (currentState instanceof Buntable buntable) {
+        if (currentBaseState instanceof Buntable buntable) {
             return buntable;
         }
         throw new IllegalStateException("犠打機会がありません");
     }
 
     private Stealable requireStealable() {
-        if (currentState instanceof Stealable stealable) {
+        if (currentBaseState instanceof Stealable stealable) {
             return stealable;
         }
         throw new IllegalStateException("盗塁機会がありません");
