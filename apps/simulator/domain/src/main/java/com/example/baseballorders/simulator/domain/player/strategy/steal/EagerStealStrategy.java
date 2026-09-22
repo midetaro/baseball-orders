@@ -7,6 +7,8 @@ public final class EagerStealStrategy implements StealStrategy {
 
     private final float TO_DOUBLE_TRY_AVERAGE = 0.3f;
     private final float TO_DOUBLE_NOT_TRY = 1 - TO_DOUBLE_TRY_AVERAGE;
+    private final float TO_TRIPLE_TRY_AVERAGE = 0.15f;
+    private final float TO_TRIPLE_NOT_TRY = 1 - TO_TRIPLE_TRY_AVERAGE;
 
     @Override
     public StealResult runToDouble(float successRate) {
@@ -20,9 +22,6 @@ public final class EagerStealStrategy implements StealStrategy {
             return StealResult.FAILURE;
         }
     }
-
-    private final float TO_TRIPLE_TRY_AVERAGE = 0.15f;
-    private final float TO_TRIPLE_NOT_TRY = 1 - TO_TRIPLE_TRY_AVERAGE;
 
     @Override
     public StealResult runToTriple(float successRate) {

@@ -1,9 +1,6 @@
 package com.example.baseballorders.simulator.domain.game;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.simulator.domain.game.capability.AdvancingBuntable;
 import com.example.baseballorders.simulator.domain.game.capability.Buntable;
@@ -29,6 +26,18 @@ class StatePatternStructureTest {
                     FirstThirdBaseState.class,
                     DoubleThirdBaseState.class,
                     FullBasesState.class);
+
+    private static Executable methodCheck(
+            Class<?> receiver, String methodName, Class<?>... parameterTypes) {
+        return () ->
+                assertEquals(
+                        void.class, receiver.getMethod(methodName, parameterTypes).getReturnType());
+    }
+
+    private static ExpectedMethod expectedMethod(
+            String name, Class<?> returnType, Class<?>... parameterTypes) {
+        return new ExpectedMethod(name, returnType, parameterTypes);
+    }
 
     @Test
     @DisplayName("BasesStateはinterfaceで全Stateが共通の打撃プレーをoverrideする")
@@ -160,18 +169,6 @@ class StatePatternStructureTest {
                 () -> assertEquals(8, stateFieldCount),
                 () -> assertEquals(BasesState.class, currentState.getType()),
                 () -> assertFalse(Modifier.isStatic(currentState.getModifiers())));
-    }
-
-    private static Executable methodCheck(
-            Class<?> receiver, String methodName, Class<?>... parameterTypes) {
-        return () ->
-                assertEquals(
-                        void.class, receiver.getMethod(methodName, parameterTypes).getReturnType());
-    }
-
-    private static ExpectedMethod expectedMethod(
-            String name, Class<?> returnType, Class<?>... parameterTypes) {
-        return new ExpectedMethod(name, returnType, parameterTypes);
     }
 
     private record ExpectedMethod(String name, Class<?> returnType, Class<?>[] parameterTypes) {}

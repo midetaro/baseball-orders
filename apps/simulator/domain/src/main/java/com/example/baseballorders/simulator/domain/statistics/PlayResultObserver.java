@@ -1,10 +1,6 @@
 package com.example.baseballorders.simulator.domain.statistics;
 
-import com.example.baseballorders.simulator.domain.play.BattingResult;
-import com.example.baseballorders.simulator.domain.play.BuntResult;
-import com.example.baseballorders.simulator.domain.play.BuntType;
-import com.example.baseballorders.simulator.domain.play.StealResult;
-import com.example.baseballorders.simulator.domain.play.StealTarget;
+import com.example.baseballorders.simulator.domain.play.*;
 
 /** Observes results produced by a batter during one game. */
 public interface PlayResultObserver {

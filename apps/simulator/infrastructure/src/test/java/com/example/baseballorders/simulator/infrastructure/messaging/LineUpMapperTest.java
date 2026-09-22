@@ -6,11 +6,7 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
-import com.example.baseballorders.simulator.domain.play.BattingResult;
-import com.example.baseballorders.simulator.domain.play.BuntResult;
-import com.example.baseballorders.simulator.domain.play.BuntType;
-import com.example.baseballorders.simulator.domain.play.OutCount;
-import com.example.baseballorders.simulator.domain.play.StealResult;
+import com.example.baseballorders.simulator.domain.play.*;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
@@ -87,9 +83,9 @@ class LineUpMapperTest {
                 new com.fasterxml.jackson.databind.ObjectMapper()
                         .readValue(
                                 """
-                {"name":"1番","hitAverage":0.3,"sluggish":0.4,"buntSuccessRate":0.7,
-                 "buntEnabled":%s,"stealSuccessRate":0.8,"stealEnabled":%s}
-                """
+                                        {"name":"1番","hitAverage":0.3,"sluggish":0.4,"buntSuccessRate":0.7,
+                                         "buntEnabled":%s,"stealSuccessRate":0.8,"stealEnabled":%s}
+                                        """
                                         .formatted(buntEnabled, stealEnabled),
                                 SimulationPlayerMessage.class);
         var mapper =

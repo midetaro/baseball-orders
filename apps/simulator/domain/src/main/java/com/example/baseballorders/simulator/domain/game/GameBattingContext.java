@@ -13,9 +13,6 @@ import lombok.Getter;
 /** 試合全体の情報を保持し、プレーを現在の塁Stateへ委譲するContext。 */
 public class GameBattingContext {
     private static final GameCompletionObserver NO_OPERATION_OBSERVER = (score, statistics) -> {};
-    @Getter private long inning = 1;
-    @Getter private long totalScore;
-    @Getter private BasesState currentState;
     private final NoBasesState noBasesState;
     private final SingleBasesState singleBasesState;
     private final DoubleBaseState doubleBaseState;
@@ -28,6 +25,9 @@ public class GameBattingContext {
     private final GameCompletionObserver gameCompletionObserver;
     private final List<BatterEntity> batterEntityOrders;
     private final AtBatProcessor atBatProcessor = new AtBatProcessor();
+    @Getter private long inning = 1;
+    @Getter private long totalScore;
+    @Getter private BasesState currentState;
     private int numberOfNextBatter;
     @Getter private boolean isGameOver;
 

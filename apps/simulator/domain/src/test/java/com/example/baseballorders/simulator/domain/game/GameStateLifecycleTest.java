@@ -3,8 +3,12 @@ package com.example.baseballorders.simulator.domain.game;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.example.baseballorders.simulator.domain.play.*;
-import com.example.baseballorders.simulator.domain.player.*;
+import com.example.baseballorders.simulator.domain.play.BattingResult;
+import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.OutCount;
+import com.example.baseballorders.simulator.domain.play.StealResult;
+import com.example.baseballorders.simulator.domain.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.statistics.GameCompletionObserver;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +19,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class GameStateLifecycleTest {
+    private static BatterEntity batter() {
+        var batter = mock(BatterEntity.class);
+        when(batter.observedBy(any())).thenReturn(batter);
+        return batter;
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {1, 9})
     @DisplayName("二死から盗塁死になったら打撃せず三死を処理し未打撃の打者を引き継ぐ")
@@ -179,11 +189,5 @@ class GameStateLifecycleTest {
                         assertEquals(
                                 result == BuntResult.FAILURE,
                                 context.getCurrentState().isOccupied(Base.FIRST)));
-    }
-
-    private static BatterEntity batter() {
-        var batter = mock(BatterEntity.class);
-        when(batter.observedBy(any())).thenReturn(batter);
-        return batter;
     }
 }

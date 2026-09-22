@@ -1,15 +1,9 @@
 package com.example.baseballorders.simulator.domain.statistics;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import com.example.baseballorders.simulator.domain.play.BattingResult;
-import com.example.baseballorders.simulator.domain.play.BuntResult;
-import com.example.baseballorders.simulator.domain.play.BuntType;
-import com.example.baseballorders.simulator.domain.play.StealResult;
-import com.example.baseballorders.simulator.domain.play.StealTarget;
+import com.example.baseballorders.simulator.domain.play.*;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +12,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class GameStatisticsRecorderTest {
+
+    static Stream<Arguments> homeRunTestCases() {
+        return Stream.of(
+                arguments("走者なしならソロ本塁打", 0, 1, 0, 0, 0),
+                arguments("走者一人なら2点本塁打", 1, 0, 1, 0, 0),
+                arguments("走者二人なら3点本塁打", 2, 0, 0, 1, 0),
+                arguments("満塁なら満塁本塁打", 3, 0, 0, 0, 1));
+    }
 
     @DisplayName("本塁打時の走者数に応じた種類を記録する")
     @ParameterizedTest(name = "{0}")
@@ -44,14 +46,6 @@ class GameStatisticsRecorderTest {
                 () -> assertEquals(expectedTwoRun, statistics.twoRunHomeRunCount()),
                 () -> assertEquals(expectedThreeRun, statistics.threeRunHomeRunCount()),
                 () -> assertEquals(expectedGrandSlam, statistics.grandSlamCount()));
-    }
-
-    static Stream<Arguments> homeRunTestCases() {
-        return Stream.of(
-                arguments("走者なしならソロ本塁打", 0, 1, 0, 0, 0),
-                arguments("走者一人なら2点本塁打", 1, 0, 1, 0, 0),
-                arguments("走者二人なら3点本塁打", 2, 0, 0, 1, 0),
-                arguments("満塁なら満塁本塁打", 3, 0, 0, 0, 1));
     }
 
     @Test

@@ -1,10 +1,6 @@
 package com.example.baseballorders.simulator.domain.statistics;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /** Accumulates completed-game scores and play statistics. */
 public final class ScoreAccumulator implements GameCompletionObserver {

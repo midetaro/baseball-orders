@@ -1,15 +1,8 @@
 package com.example.baseballorders.simulator.domain.game;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.example.baseballorders.simulator.domain.game.capability.Buntable;
 import com.example.baseballorders.simulator.domain.play.BattingResult;
@@ -31,6 +24,40 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 
 class AtBatProcessorTest {
+
+    static Stream<Arguments> advancementOnOutCases() {
+        var first = runner();
+        var second = runner();
+        var third = runner();
+        return Stream.of(
+                arguments("一塁走者は乱数が20%未満なら二塁へ進む", first, null, null, 0.19f, null, first, null, 0),
+                arguments("一塁走者は乱数が20%以上なら進まない", first, null, null, 0.20f, first, null, null, 0),
+                arguments("二塁走者は乱数が20%未満なら三塁へ進む", null, second, null, 0.19f, null, null, second, 0),
+                arguments("二塁走者は乱数が20%以上なら進まない", null, second, null, 0.20f, null, second, null, 0),
+                arguments("三塁走者は乱数が10%未満なら生還する", null, null, third, 0.09f, null, null, null, 1),
+                arguments("三塁走者は乱数が10%以上なら進まない", null, null, third, 0.10f, null, null, third, 0),
+                arguments(
+                        "一二塁では先頭の二塁走者だけが三塁へ進む", first, second, null, 0.19f, first, null, second, 0),
+                arguments("一三塁では先頭の三塁走者だけが生還する", first, null, third, 0.09f, first, null, null, 1),
+                arguments("二三塁では先頭の三塁走者だけが生還する", null, second, third, 0.09f, null, second, null, 1),
+                arguments(
+                        "満塁では先頭の三塁走者だけが生還する", first, second, third, 0.09f, first, second, null, 1));
+    }
+
+    private static BatterEntity batter(float buntSuccessRate, BuntStrategy buntStrategy) {
+        return new BatterEntity(
+                0.0f,
+                0.0f,
+                buntSuccessRate,
+                0.0f,
+                BehaviorStrategies.middleDistanceHittingStrategy(),
+                BehaviorStrategies.noSteal(),
+                buntStrategy);
+    }
+
+    private static BatterEntity runner() {
+        return batter(0.0f, BehaviorStrategies.noBunt());
+    }
 
     @Test
     @DisplayName("三振では走者を進めずアウトだけを加算する")
@@ -185,25 +212,6 @@ class AtBatProcessorTest {
         }
     }
 
-    static Stream<Arguments> advancementOnOutCases() {
-        var first = runner();
-        var second = runner();
-        var third = runner();
-        return Stream.of(
-                arguments("一塁走者は乱数が20%未満なら二塁へ進む", first, null, null, 0.19f, null, first, null, 0),
-                arguments("一塁走者は乱数が20%以上なら進まない", first, null, null, 0.20f, first, null, null, 0),
-                arguments("二塁走者は乱数が20%未満なら三塁へ進む", null, second, null, 0.19f, null, null, second, 0),
-                arguments("二塁走者は乱数が20%以上なら進まない", null, second, null, 0.20f, null, second, null, 0),
-                arguments("三塁走者は乱数が10%未満なら生還する", null, null, third, 0.09f, null, null, null, 1),
-                arguments("三塁走者は乱数が10%以上なら進まない", null, null, third, 0.10f, null, null, third, 0),
-                arguments(
-                        "一二塁では先頭の二塁走者だけが三塁へ進む", first, second, null, 0.19f, first, null, second, 0),
-                arguments("一三塁では先頭の三塁走者だけが生還する", first, null, third, 0.09f, first, null, null, 1),
-                arguments("二三塁では先頭の三塁走者だけが生還する", null, second, third, 0.09f, null, second, null, 1),
-                arguments(
-                        "満塁では先頭の三塁走者だけが生還する", first, second, third, 0.09f, first, second, null, 1));
-    }
-
     @Test
     @DisplayName("走者なしの凡退では進塁判定をしない")
     void doesNotRollForAdvancementWithoutRunner() {
@@ -244,20 +252,5 @@ class AtBatProcessorTest {
                     () -> assertEquals(0, context.getTotalScore()),
                     () -> randomGenerator.verify(RandomGenerator::nextFloat, times(1)));
         }
-    }
-
-    private static BatterEntity batter(float buntSuccessRate, BuntStrategy buntStrategy) {
-        return new BatterEntity(
-                0.0f,
-                0.0f,
-                buntSuccessRate,
-                0.0f,
-                BehaviorStrategies.middleDistanceHittingStrategy(),
-                BehaviorStrategies.noSteal(),
-                buntStrategy);
-    }
-
-    private static BatterEntity runner() {
-        return batter(0.0f, BehaviorStrategies.noBunt());
     }
 }

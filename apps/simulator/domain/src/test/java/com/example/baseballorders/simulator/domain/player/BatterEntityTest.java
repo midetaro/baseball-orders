@@ -4,11 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mockStatic;
 
-import com.example.baseballorders.simulator.domain.play.BattingResult;
-import com.example.baseballorders.simulator.domain.play.BuntResult;
-import com.example.baseballorders.simulator.domain.play.BuntType;
-import com.example.baseballorders.simulator.domain.play.OutCount;
-import com.example.baseballorders.simulator.domain.play.StealResult;
+import com.example.baseballorders.simulator.domain.play.*;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsRecorder;
@@ -17,6 +13,17 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 class BatterEntityTest {
+
+    private static BatterEntity homeRunBatter() {
+        return new BatterEntity(
+                0.3f,
+                0.4f,
+                0.75f,
+                0.85f,
+                BehaviorStrategies.longDistanceAtBat(),
+                BehaviorStrategies.noSteal(),
+                BehaviorStrategies.noBunt());
+    }
 
     @Test
     @DisplayName("バントすると打者のバント成功率を戦略に渡して結果を返す")
@@ -153,16 +160,5 @@ class BatterEntityTest {
                 () -> assertEquals(BattingResult.HIT_HOMER, result),
                 () -> assertEquals(1, statisticsRecorder.snapshot().homeRunCount()),
                 () -> assertEquals(1, statisticsRecorder.snapshot().twoRunHomeRunCount()));
-    }
-
-    private static BatterEntity homeRunBatter() {
-        return new BatterEntity(
-                0.3f,
-                0.4f,
-                0.75f,
-                0.85f,
-                BehaviorStrategies.longDistanceAtBat(),
-                BehaviorStrategies.noSteal(),
-                BehaviorStrategies.noBunt());
     }
 }
