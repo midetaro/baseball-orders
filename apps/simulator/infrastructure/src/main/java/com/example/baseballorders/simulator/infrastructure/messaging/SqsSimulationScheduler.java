@@ -22,15 +22,14 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 @Slf4j
 public class SqsSimulationScheduler {
 
-    private static final int MAX_MESSAGES_PER_POLL = 10;
-    private static final int LONG_POLL_SECONDS = 10;
-
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
     private final SimulateGameUseCase simulateGameUseCase;
     private final LineUpMapper lineUpMapper;
     private final String requestQueueName;
     private final String resultQueueName;
+    private final int maxMessagesPerPoll;
+    private final int longPollSeconds;
 
     /**
      * Creates an SQS simulation scheduler.
@@ -41,6 +40,8 @@ public class SqsSimulationScheduler {
      * @param lineUpMapper application mapper from request data to the domain lineup
      * @param requestQueueName name of the simulation request queue
      * @param resultQueueName name of the simulation result queue
+     * @param maxMessagesPerPoll maximum requests received in one poll
+     * @param longPollSeconds maximum seconds spent waiting for a request
      */
     public SqsSimulationScheduler(
             SqsClient sqsClient,
@@ -48,13 +49,17 @@ public class SqsSimulationScheduler {
             SimulateGameUseCase simulateGameUseCase,
             LineUpMapper lineUpMapper,
             @Value("${simulation.sqs.request-queue-name}") String requestQueueName,
-            @Value("${simulation.sqs.result-queue-name}") String resultQueueName) {
+            @Value("${simulation.sqs.result-queue-name}") String resultQueueName,
+            @Value("${simulation.sqs.max-messages-per-poll}") int maxMessagesPerPoll,
+            @Value("${simulation.sqs.long-poll-seconds}") int longPollSeconds) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
         this.simulateGameUseCase = simulateGameUseCase;
         this.lineUpMapper = lineUpMapper;
         this.requestQueueName = requestQueueName;
         this.resultQueueName = resultQueueName;
+        this.maxMessagesPerPoll = maxMessagesPerPoll;
+        this.longPollSeconds = longPollSeconds;
     }
 
     /**
@@ -73,8 +78,8 @@ public class SqsSimulationScheduler {
                 sqsClient.receiveMessage(
                         ReceiveMessageRequest.builder()
                                 .queueUrl(requestQueueUrl)
-                                .waitTimeSeconds(LONG_POLL_SECONDS)
-                                .maxNumberOfMessages(MAX_MESSAGES_PER_POLL)
+                                .waitTimeSeconds(longPollSeconds)
+                                .maxNumberOfMessages(maxMessagesPerPoll)
                                 .build());
         for (var message : response.messages()) {
             try {

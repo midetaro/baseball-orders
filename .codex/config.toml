@@ -2,7 +2,7 @@ approval_policy = "never"
 default_permissions = "project-config-edit"
 
 [permissions.project-config-edit]
-description = "Allow project, .codex, .git, and Gradle cache edits."
+description = "Allow project, .codex, .git, .agents, and Gradle cache edits."
 extends = ":workspace"
 
 [permissions.project-config-edit.filesystem]
@@ -13,6 +13,8 @@ extends = ":workspace"
 "." = "write"
 ".codex" = "write"
 ".git" = "write"
+".agents" = "write"
+".agents/skills" = "write"
 
 [permissions.project-config-edit.network]
 enabled = true

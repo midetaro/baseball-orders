@@ -1,6 +1,6 @@
 # Feature name
 
-Status: todo
+Status: done
 
 # 変更の概要
 - AGENTS.mdおよびskillの修正
@@ -8,6 +8,7 @@ Status: todo
 ## Goal
 - testは、interfaceやabstractクラスを継承した全てのconcreteクラスに専用のテストが存在することをルール化
 - 数字の定数はなるべくプロパティ化する。プロパティは、local, dev,prodで分ける
+- 上記の二点のチェックするためのshellスクリプトを作成し、skillが呼び出す
 
 ## In scope
 - simulatorのテスト
