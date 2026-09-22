@@ -5,8 +5,8 @@ import com.example.baseballorders.simulator.domain.player.BatterEntity;
 
 /** 一試合のイニング状態と塁配置ごとのStateを所有し、プレーを現在のStateへ送る。 */
 public final class InningStateContext {
-    private final GameBattingContext game;
     private final InningState inningState = new InningState();
+    private final InningCompletionListener inningCompletionListener;
     private final NoBasesState noBasesState;
     private final SingleBasesState singleBasesState;
     private final DoubleBaseState doubleBaseState;
@@ -16,9 +16,13 @@ public final class InningStateContext {
     private final DoubleThirdBaseState doubleThirdBaseState;
     private final FullBasesState fullBasesState;
     private BasesState currentBaseState;
+    private long inning = 1;
+    private long score;
+    private boolean gameOver;
 
-    InningStateContext(GameBattingContext game, BaseStateFactory factory) {
-        this.game = game;
+    InningStateContext(
+            BaseStateFactory factory, InningCompletionListener inningCompletionListener) {
+        this.inningCompletionListener = inningCompletionListener;
         noBasesState = factory.createNoBasesState(this);
         singleBasesState = factory.createSingleBasesState(this);
         doubleBaseState = factory.createDoubleBaseState(this);
@@ -55,19 +59,32 @@ public final class InningStateContext {
     }
 
     long inning() {
-        return game.getInning();
+        return inning;
     }
 
     boolean isGameOver() {
-        return game.isGameOver();
+        return gameOver;
     }
 
     void addScore(long runs) {
-        game.addScore(runs);
+        score += runs;
     }
 
     void completeInning() {
-        game.completeInning();
+        if (gameOver) {
+            return;
+        }
+        inningCompletionListener.onInningCompleted(inning, score);
+        score = 0;
+        if (inning == 9) {
+            gameOver = true;
+        } else {
+            inning++;
+        }
+    }
+
+    long score() {
+        return score;
     }
 
     void changeState(int configuration) {
@@ -84,4 +101,9 @@ public final class InningStateContext {
                     default -> throw new IllegalArgumentException("不正な走者配置: " + configuration);
                 };
     }
+}
+
+@FunctionalInterface
+interface InningCompletionListener {
+    void onInningCompleted(long completedInning, long inningScore);
 }

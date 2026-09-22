@@ -29,9 +29,15 @@ class InningStateOwnershipTest {
         var hasInningContext = ownsInningContext;
         var hasDirectBaseState = ownsBaseState;
         boolean ownsInningState = false;
+        boolean hasGameReference = false;
+        boolean hasInning = false;
+        boolean hasScore = false;
         long concreteStateCount = 0;
         for (var field : inningFields) {
             ownsInningState |= field.getType() == InningState.class;
+            hasGameReference |= field.getType() == GameBattingContext.class;
+            hasInning |= field.getName().equals("inning") && field.getType() == long.class;
+            hasScore |= field.getName().equals("score") && field.getType() == long.class;
             if (BasesState.class.isAssignableFrom(field.getType())
                     && field.getType() != BasesState.class) {
                 concreteStateCount++;
@@ -39,6 +45,9 @@ class InningStateOwnershipTest {
         }
         var hasInningState = ownsInningState;
         var ownedConcreteStates = concreteStateCount;
+        var contextHasGameReference = hasGameReference;
+        var contextHasInning = hasInning;
+        var contextHasScore = hasScore;
         var processorParameters =
                 AtBatProcessor.class
                         .getDeclaredMethod(
@@ -53,6 +62,9 @@ class InningStateOwnershipTest {
                 () -> assertTrue(hasInningContext),
                 () -> assertFalse(hasDirectBaseState),
                 () -> assertTrue(hasInningState),
+                () -> assertFalse(contextHasGameReference),
+                () -> assertTrue(contextHasInning),
+                () -> assertTrue(contextHasScore),
                 () -> assertEquals(8, ownedConcreteStates),
                 () ->
                         assertFalse(

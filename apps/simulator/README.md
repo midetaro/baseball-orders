@@ -6,7 +6,7 @@
 
 ## `domain.game`: 試合進行と塁状態
 
-`GameBattingContext` は試合全体の Context です。イニング、得点、打順と `InningStateContext` を保持し、`AtBatProcessor` に一打席の進行を委譲します。`InningStateContext` は共有する走者・アウト数、現在の `BasesState`、8種類の ConcreteState を保持します。`AtBatProcessor` は「盗塁、バント、打撃」の順に結果を判定し、能力インターフェースまたは現在の State に結果を適用します。バント成功・失敗時は打席を完了して打撃処理へ進まず、State が走者、アウト、得点と次の塁状態を更新します。
+`GameBattingContext` は試合全体の Context です。打順と `InningStateContext` を保持し、`AtBatProcessor` に一打席の進行を委譲します。`InningStateContext` は現在のイニング、その回の得点、共有する走者・アウト数、現在の `BasesState`、8種類の ConcreteState を保持します。イニング終了時には完了通知を通じて `GameBattingContext` が回数、総得点、試合終了を反映します。`AtBatProcessor` は「盗塁、バント、打撃」の順に結果を判定し、能力インターフェースまたは現在の State に結果を適用します。バント成功・失敗時は打席を完了して打撃処理へ進まず、State が走者、アウト、得点と次の塁状態を更新します。
 
 ```mermaid
 classDiagram
@@ -28,6 +28,10 @@ classDiagram
 
     class InningStateContext {
         -InningState inningState
+        -long inning
+        -long score
+        -boolean gameOver
+        -InningCompletionListener inningCompletionListener
         -BasesState currentBaseState
         -NoBasesState noBasesState
         -SingleBasesState singleBasesState
@@ -181,7 +185,7 @@ classDiagram
 
 State パターンの `Context` が `InningStateContext`、`State` が `BasesState`、`ConcreteState` が走者配置ごとの8クラスです。たとえば `SingleBasesState.hitDouble()` は打者を二塁、一塁走者を三塁へ置き、配置 `110` に対応する State へ `InningStateContext` を切り替えます。`walk()` は打者を一塁へ置き、一塁から連続する走者だけを押し出します。呼び出し側は現在の走者配置を条件分岐せず、同じイベントを呼べます。
 
-全 ConcreteState は同じ `InningStateContext` を参照し、その内部の `InningState` を共有します。`AbstractBasesState.transition(...)` が走者の配置、得点加算、State 切り替えを一つの操作として行うため、State オブジェクトを切り替えても走者とアウト数は失われません。`out()` で三死になった場合は `InningState` を初期化し、`GameBattingContext.completeInning()` へ進みます。
+全 ConcreteState は同じ `InningStateContext` を参照し、その内部の `InningState` を共有します。`AbstractBasesState.transition(...)` が走者の配置、得点加算、State 切り替えを一つの操作として行うため、State オブジェクトを切り替えても走者とアウト数は失われません。`out()` で三死になった場合は `InningState` を初期化し、`InningStateContext` が完了イニングを `GameBattingContext` へ通知します。
 
 ### GoF Template Method の考え方と能力インターフェース
 
