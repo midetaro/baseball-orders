@@ -1,6 +1,6 @@
 # Feature name
 
-Status: todo
+Status: done
 
 ## Goal
 - 画面の「戦術の成否」が「盗塁の内訳」と「バントの内訳」と重複しているので「戦術の成否」を削除する。

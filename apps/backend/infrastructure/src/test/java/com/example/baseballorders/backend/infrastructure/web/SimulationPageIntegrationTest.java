@@ -110,7 +110,7 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("盗塁")),
                 () -> assertTrue(response.body().contains("得点サマリー")),
                 () -> assertTrue(response.body().contains("本塁打の内訳")),
-                () -> assertTrue(response.body().contains("戦術の成否")),
+                () -> assertTrue(!response.body().contains("戦術の成否")),
                 () -> assertTrue(response.body().contains("id=\"share-results\"")),
                 () -> assertTrue(response.body().contains("navigator.share")),
                 () -> assertTrue(response.body().contains("clipboard.writeText")),
@@ -170,7 +170,7 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("id=\"steal-failure-count\"")),
                 () -> assertTrue(response.body().contains("const detailTotal=details.reduce")),
                 () -> assertTrue(response.body().contains("Number(count)/detailTotal*100")),
-                () -> assertTrue(response.body().contains("tactics-comparison")));
+                () -> assertTrue(!response.body().contains("tactics-comparison")));
     }
 
     @Test
