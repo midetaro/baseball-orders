@@ -26,5 +26,4 @@ public record ScoreStatistics(
         int advancingBuntFailureCount,
         int squeezeBuntFailureCount,
         int stealToSecondCount,
-        int stealToThirdCount) {
-}
+        int stealToThirdCount) {}
