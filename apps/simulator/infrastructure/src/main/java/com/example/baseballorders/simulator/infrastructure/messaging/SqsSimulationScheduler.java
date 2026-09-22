@@ -90,13 +90,14 @@ public class SqsSimulationScheduler {
                 var resultMessage =
                         new SimulationResultMessage(
                                 request.simulationId(),
-                                request.version(),
-                                new SimulationResultMessage.Statistics(
+                                SimulationResultMessage.CURRENT_VERSION,
+                                new SimulationResultMessage.GameScoreStatistics(
                                         simulationResult.statistics().averageScore(),
                                         simulationResult.statistics().medianScore(),
                                         simulationResult.statistics().maximumScore(),
                                         simulationResult.statistics().gameCount(),
-                                        simulationResult.statistics().scoreDistribution(),
+                                        simulationResult.statistics().scoreDistribution()),
+                                new SimulationResultMessage.GameContentStatistics(
                                         simulationResult.statistics().homeRunCount(),
                                         simulationResult.statistics().soloHomeRunCount(),
                                         simulationResult.statistics().twoRunHomeRunCount(),

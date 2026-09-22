@@ -27,36 +27,41 @@ public final class SimulationResultListener {
     @SqsListener("${simulation.sqs.result-queue-name}")
     public void receive(SimulationResultMessage message) {
         LOGGER.info("simulation result received simulationId={}", message.simulationId());
-        var statistics =
+        var scoreStatistics =
                 Objects.requireNonNull(
-                        message.statistics(), "simulation result statistics must not be null");
-        LOGGER.info("試合数={}", statistics.gameCount());
+                        message.gameScoreStatistics(),
+                        "simulation result statistics must not be null");
+        var contentStatistics =
+                Objects.requireNonNull(
+                        message.gameContentStatistics(),
+                        "simulation result statistics must not be null");
+        LOGGER.info("試合数={}", scoreStatistics.gameCount());
         boolean completed =
                 registry.complete(
                         message.simulationId(),
                         new SimulationResult(
                                 message.simulationId(),
                                 new SimulationResult.Statistics(
-                                        statistics.averageScore(),
-                                        statistics.medianScore(),
-                                        statistics.maximumScore(),
-                                        statistics.gameCount(),
-                                        statistics.scoreDistribution(),
-                                        statistics.homeRunCount(),
-                                        statistics.soloHomeRunCount(),
-                                        statistics.twoRunHomeRunCount(),
-                                        statistics.threeRunHomeRunCount(),
-                                        statistics.grandSlamCount(),
-                                        statistics.buntCount(),
-                                        statistics.stealCount(),
-                                        statistics.buntFailureCount(),
-                                        statistics.stealFailureCount(),
-                                        statistics.advancingBuntCount(),
-                                        statistics.squeezeBuntCount(),
-                                        statistics.advancingBuntFailureCount(),
-                                        statistics.squeezeBuntFailureCount(),
-                                        statistics.stealToSecondCount(),
-                                        statistics.stealToThirdCount())));
+                                        scoreStatistics.averageScore(),
+                                        scoreStatistics.medianScore(),
+                                        scoreStatistics.maximumScore(),
+                                        scoreStatistics.gameCount(),
+                                        scoreStatistics.scoreDistribution(),
+                                        contentStatistics.homeRunCount(),
+                                        contentStatistics.soloHomeRunCount(),
+                                        contentStatistics.twoRunHomeRunCount(),
+                                        contentStatistics.threeRunHomeRunCount(),
+                                        contentStatistics.grandSlamCount(),
+                                        contentStatistics.buntCount(),
+                                        contentStatistics.stealCount(),
+                                        contentStatistics.buntFailureCount(),
+                                        contentStatistics.stealFailureCount(),
+                                        contentStatistics.advancingBuntCount(),
+                                        contentStatistics.squeezeBuntCount(),
+                                        contentStatistics.advancingBuntFailureCount(),
+                                        contentStatistics.squeezeBuntFailureCount(),
+                                        contentStatistics.stealToSecondCount(),
+                                        contentStatistics.stealToThirdCount())));
         if (!completed) {
             LOGGER.warn("simulation result ignored simulationId={}", message.simulationId());
         }

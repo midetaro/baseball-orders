@@ -117,8 +117,8 @@ class SqsSimulationSchedulerIntegrationTest {
                 List.of(
                         new SimulationResultMessage(
                                 UUID.fromString("00000000-0000-0000-0000-000000000001"),
-                                "1",
-                                new SimulationResultMessage.Statistics(
+                                SimulationResultMessage.CURRENT_VERSION,
+                                new SimulationResultMessage.GameScoreStatistics(
                                         4.5,
                                         4.5,
                                         9,
@@ -129,14 +129,9 @@ class SqsSimulationSchedulerIntegrationTest {
                                                         java.util.stream.Collectors.toMap(
                                                                 java.util.function.Function
                                                                         .identity(),
-                                                                ignored -> 1)),
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        0)));
+                                                                _ -> 1))),
+                                new SimulationResultMessage.GameContentStatistics(
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
         when(useCase.invoke(any(LineUpEntity.class)))
                 .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =
@@ -173,7 +168,7 @@ class SqsSimulationSchedulerIntegrationTest {
                                 .queueUrl(requestQueueUrl)
                                 .messageBody(objectMapper.writeValueAsString(request))
                                 .build());
-                var scheduler =
+                var sut =
                         new SqsSimulationScheduler(
                                 sqsClient,
                                 objectMapper,
@@ -185,7 +180,7 @@ class SqsSimulationSchedulerIntegrationTest {
                                 10);
 
                 // when
-                scheduler.poll();
+                sut.poll();
 
                 // then
                 var captor = org.mockito.ArgumentCaptor.forClass(LineUpEntity.class);
