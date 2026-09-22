@@ -7,7 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
-import com.example.baseballorders.backend.domain.PlayerData;
+import com.example.baseballorders.backend.domain.PlayerDataBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
@@ -46,15 +46,16 @@ class SqsSimulatorMessagePublisherTest {
                         UUID.randomUUID(),
                         "1",
                         List.of(
-                                new PlayerData(
-                                        "選手1",
-                                        0.321f,
-                                        0.456f,
-                                        0.789f,
-                                        true,
-                                        0.678f,
-                                        true,
-                                        PlayerPersonality.EAGER_BUNT)));
+                                PlayerDataBuilder.playerData()
+                                        .name("選手1")
+                                        .hitAverage(0.321f)
+                                        .sluggish(0.456f)
+                                        .buntSuccessRate(0.789f)
+                                        .buntEnabled(true)
+                                        .stealSuccessRate(0.678f)
+                                        .stealEnabled(true)
+                                        .personality(PlayerPersonality.EAGER_BUNT)
+                                        .build()));
         var messageCaptor = ArgumentCaptor.forClass(SimulationRequestMessage.class);
 
         // when

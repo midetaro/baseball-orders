@@ -20,35 +20,16 @@ class SimulationResultListenerTest {
         var registry = new WaitingResultRegistry();
         UUID simulationId = UUID.randomUUID();
         var waiting = registry.register(simulationId);
-        var listener = new SimulationResultListener(registry);
+        var sut = new SimulationResultListener(registry);
 
         // when
-        listener.receive(
+        sut.receive(
                 new SimulationResultMessage(
                         simulationId,
                         "1",
-                        List.of(new SimulationResultMessage.Result(5, 4)),
-                        new SimulationResultMessage.Statistics(
-                                5,
-                                5,
-                                5,
-                                10,
-                                Map.of(5, 10),
-                                4,
-                                1,
-                                1,
-                                1,
-                                1,
-                                2,
-                                3,
-                                5,
-                                7,
-                                11,
-                                13,
-                                17,
-                                19,
-                                23,
-                                29)));
+                        new SimulationResultMessage.GameScoreStatistics(5, 5, 5, 10, Map.of(5, 10)),
+                        new SimulationResultMessage.GameContentStatistics(
+                                4, 1, 1, 1, 1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29)));
 
         // then
         assertAll(
@@ -98,15 +79,16 @@ class SimulationResultListenerTest {
     void ignoresLateResult() {
         // given
         var registry = new WaitingResultRegistry();
-        var listener = new SimulationResultListener(registry);
+        var sut = new SimulationResultListener(registry);
 
         // when
-        listener.receive(
+        sut.receive(
                 new SimulationResultMessage(
                         UUID.randomUUID(),
                         "1",
-                        List.of(new SimulationResultMessage.Result(5, 4)),
-                        new SimulationResultMessage.Statistics(5, 5, 5)));
+                        new SimulationResultMessage.GameScoreStatistics(5, 5, 5, 1, Map.of(5, 1)),
+                        new SimulationResultMessage.GameContentStatistics(
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
 
         // then
         assertAll(() -> assertFalse(registry.pendingCount() > 0));
@@ -119,20 +101,52 @@ class SimulationResultListenerTest {
         var registry = new WaitingResultRegistry();
         UUID simulationId = UUID.randomUUID();
         var waiting = registry.register(simulationId);
-        var listener = new SimulationResultListener(registry);
+        var sut = new SimulationResultListener(registry);
 
         // when
         var exception =
                 assertThrows(
                         NullPointerException.class,
                         () ->
-                                listener.receive(
+                                sut.receive(
                                         new SimulationResultMessage(
                                                 simulationId,
                                                 "1",
-                                                List.of(
-                                                        new SimulationResultMessage.Result(
-                                                                5, 4)))));
+                                                null,
+                                                new SimulationResultMessage.GameContentStatistics(
+                                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                        0))));
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                "simulation result statistics must not be null",
+                                exception.getMessage()),
+                () -> assertFalse(waiting.isDone()));
+    }
+
+    @Test
+    @DisplayName("プレー内容統計がないsimulation-resultは待機結果として受理しない")
+    void rejectsResultWithoutGameContentStatistics() {
+        // given
+        var registry = new WaitingResultRegistry();
+        UUID simulationId = UUID.randomUUID();
+        var waiting = registry.register(simulationId);
+        var sut = new SimulationResultListener(registry);
+
+        // when
+        var exception =
+                assertThrows(
+                        NullPointerException.class,
+                        () ->
+                                sut.receive(
+                                        new SimulationResultMessage(
+                                                simulationId,
+                                                "1",
+                                                new SimulationResultMessage.GameScoreStatistics(
+                                                        5, 5, 5, 1, Map.of(5, 1)),
+                                                null)));
 
         // then
         assertAll(

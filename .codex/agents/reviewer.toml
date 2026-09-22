@@ -1,7 +1,7 @@
 name = "reviewer"
 description = "Read-only fresh-context reviewer that verifies the feature specification, final diff, architecture, regressions, and test evidence."
 sandbox_mode = "read-only"
-model="gpt-5.6-luna"
+model="gpt-6-luna"
 developer_instructions = """
 Review only; do not edit files, generate patches, or change repository state. Work from the feature specification, applicable AGENTS.md files, final diff, and exact test evidence supplied by the parent. Do not rely on worker conversation history or undocumented intent.
 

@@ -2,8 +2,9 @@ package com.example.baseballorders.backend.infrastructure.messaging;
 
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
-import com.example.baseballorders.messaging.SimulationPlayerMessage;
+import com.example.baseballorders.messaging.SimulationPlayerMessageBuilder;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
+import com.example.baseballorders.messaging.SimulationRequestMessageBuilder;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,22 +48,31 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
     @Override
     public void publish(SimulationRequest request) {
         var message =
-                new SimulationRequestMessage(
-                        request.simulationId(),
-                        request.version(),
-                        request.players().stream()
-                                .map(
-                                        player ->
-                                                new SimulationPlayerMessage(
-                                                        player.name(),
-                                                        player.hitAverage(),
-                                                        player.sluggish(),
-                                                        player.buntSuccessRate(),
-                                                        player.buntEnabled(),
-                                                        player.stealSuccessRate(),
-                                                        player.stealEnabled(),
-                                                        toMessagePersonality(player.personality())))
-                                .toList());
+                SimulationRequestMessageBuilder.simulationRequestMessage()
+                        .simulationId(request.simulationId())
+                        .version(request.version())
+                        .players(
+                                request.players().stream()
+                                        .map(
+                                                player ->
+                                                        SimulationPlayerMessageBuilder
+                                                                .simulationPlayerMessage()
+                                                                .name(player.name())
+                                                                .hitAverage(player.hitAverage())
+                                                                .sluggish(player.sluggish())
+                                                                .buntSuccessRate(
+                                                                        player.buntSuccessRate())
+                                                                .buntEnabled(player.buntEnabled())
+                                                                .stealSuccessRate(
+                                                                        player.stealSuccessRate())
+                                                                .stealEnabled(player.stealEnabled())
+                                                                .personality(
+                                                                        toMessagePersonality(
+                                                                                player
+                                                                                        .personality()))
+                                                                .build())
+                                        .toList())
+                        .build();
         sqsTemplate.send(requestQueueName, message);
         LOGGER.info("simulation request sent simulationId={}", request.simulationId());
     }

@@ -1,7 +1,7 @@
 package com.example.baseballorders.backend.infrastructure.api;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
-import com.example.baseballorders.backend.domain.PlayerData;
+import com.example.baseballorders.backend.domain.PlayerDataBuilder;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.util.List;
 import lombok.NonNull;
@@ -32,15 +32,16 @@ public final class SimulatorRequestController {
                         .mapToObj(
                                 index -> {
                                     var player = players.get(index);
-                                    return new PlayerData(
-                                            (index + 1) + "番",
-                                            player.hitAverage(),
-                                            player.sluggish(),
-                                            player.buntSuccessRate(),
-                                            player.buntEnabled(),
-                                            player.stealSuccessRate(),
-                                            player.stealEnabled(),
-                                            player.personality());
+                                    return PlayerDataBuilder.playerData()
+                                            .name((index + 1) + "番")
+                                            .hitAverage(player.hitAverage())
+                                            .sluggish(player.sluggish())
+                                            .buntSuccessRate(player.buntSuccessRate())
+                                            .buntEnabled(player.buntEnabled())
+                                            .stealSuccessRate(player.stealSuccessRate())
+                                            .stealEnabled(player.stealEnabled())
+                                            .personality(player.personality())
+                                            .build();
                                 })
                         .toList());
     }

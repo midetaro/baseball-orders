@@ -64,14 +64,14 @@ class BackendSimulatorFlociIntegrationTest {
      * LineUpMapper・SqsSimulationSchedulerとJSONシリアライザ、Floci SQS。
      * モック: AWS SQSをFlociに置換。乱数を使うSimulateGameUseCaseのみ固定統計を返すfakeに置換。
      * 担保する疎通: HTTP POST -> 要求SQS -> simulator結果マッピング・JSON -> 結果SQS
-     * -> backend自動Listener -> HTTP応答に六つの詳細統計がそのまま届く。
+     * -> backend自動Listener -> HTTP応答に得点統計とプレー内容統計がそのまま届く。
      * 担保しないもの: 実試合による六分類の発生条件、AWS実環境、ブラウザ描画。
      */
     @Test
-    @DisplayName("詳細バント・盗塁統計がsimulatorの結果SQSからbackend HTTPまで保持される")
+    @DisplayName("得点・プレー内容統計がsimulatorの結果SQSからbackend HTTPまで保持される")
     void carriesDetailedTacticalStatisticsAcrossQueues() throws Exception {
         var expected = new ScoreStatistics(
-                4, 4, 4, 1, Map.of(4, 1), 0, 0, 0, 0, 0,
+                4, 4, 4, 1, Map.of(4, 1), 10, 1, 2, 3, 4,
                 24, 52, 36, 40, 11, 13, 17, 19, 23, 29);
         var fixedUseCase = new SimulateGameUseCase(1) {
             @Override
@@ -163,6 +163,17 @@ class BackendSimulatorFlociIntegrationTest {
                     if (expected != null) {
                         var statistics = body.path("statistics");
                         assertAll(
+                                () -> assertEquals(expected.averageScore(), statistics.path("averageScore").asDouble(-1)),
+                                () -> assertEquals(expected.medianScore(), statistics.path("medianScore").asDouble(-1)),
+                                () -> assertEquals(expected.maximumScore(), statistics.path("maximumScore").asInt(-1)),
+                                () -> assertEquals(expected.gameCount(), statistics.path("gameCount").asInt(-1)),
+                                () -> assertEquals(expected.scoreDistribution().get(4).intValue(),
+                                        statistics.path("scoreDistribution").path("4").asInt(-1)),
+                                () -> assertEquals(expected.homeRunCount(), statistics.path("homeRunCount").asInt(-1)),
+                                () -> assertEquals(expected.soloHomeRunCount(), statistics.path("soloHomeRunCount").asInt(-1)),
+                                () -> assertEquals(expected.twoRunHomeRunCount(), statistics.path("twoRunHomeRunCount").asInt(-1)),
+                                () -> assertEquals(expected.threeRunHomeRunCount(), statistics.path("threeRunHomeRunCount").asInt(-1)),
+                                () -> assertEquals(expected.grandSlamCount(), statistics.path("grandSlamCount").asInt(-1)),
                                 () -> assertEquals(expected.buntCount(), statistics.path("buntCount").asInt(-1)),
                                 () -> assertEquals(expected.stealCount(), statistics.path("stealCount").asInt(-1)),
                                 () -> assertEquals(expected.buntFailureCount(), statistics.path("buntFailureCount").asInt(-1)),

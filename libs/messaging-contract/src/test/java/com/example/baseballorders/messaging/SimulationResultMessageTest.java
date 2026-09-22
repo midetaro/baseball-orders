@@ -6,43 +6,53 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class SimulationResultMessageTest {
 
     @Test
-    @DisplayName("戦術の詳細集計をJSON既定プロパティ名として公開する")
-    void exposesDetailedTacticalCountsAsWireProperties() {
-        var statistics =
-                new SimulationResultMessage.Statistics(
-                        4.2,
-                        4.0,
-                        12,
-                        100,
-                        Map.of(4, 18),
-                        25,
-                        10,
-                        8,
-                        5,
-                        2,
-                        14,
-                        11,
-                        6,
-                        3,
-                        9,
-                        5,
-                        4,
-                        2,
-                        7,
-                        4);
+    @DisplayName("得点統計と試合内容統計を別々のJSONプロパティとして公開する")
+    void separatesScoreAndContentStatisticsOnWire() {
+        // given
+        var score =
+                new SimulationResultMessage.GameScoreStatistics(4.2, 4.0, 12, 100, Map.of(4, 18));
+        var content =
+                new SimulationResultMessage.GameContentStatistics(
+                        25, 10, 8, 5, 2, 14, 11, 6, 3, 9, 5, 4, 2, 7, 4);
+        var sut =
+                new SimulationResultMessage(
+                        UUID.randomUUID(), SimulationResultMessage.CURRENT_VERSION, score, content);
 
-        var wirePropertyNames =
-                Arrays.stream(SimulationResultMessage.Statistics.class.getRecordComponents())
+        // when
+        var messageProperties =
+                Arrays.stream(SimulationResultMessage.class.getRecordComponents())
+                        .map(component -> component.getName())
+                        .toList();
+        var scoreProperties =
+                Arrays.stream(
+                                SimulationResultMessage.GameScoreStatistics.class
+                                        .getRecordComponents())
+                        .map(component -> component.getName())
+                        .toList();
+        var contentProperties =
+                Arrays.stream(
+                                SimulationResultMessage.GameContentStatistics.class
+                                        .getRecordComponents())
                         .map(component -> component.getName())
                         .toList();
 
+        // then
         assertAll(
+                () ->
+                        assertEquals(
+                                List.of(
+                                        "simulationId",
+                                        "version",
+                                        "gameScoreStatistics",
+                                        "gameContentStatistics"),
+                                messageProperties),
                 () ->
                         assertEquals(
                                 List.of(
@@ -50,7 +60,11 @@ class SimulationResultMessageTest {
                                         "medianScore",
                                         "maximumScore",
                                         "gameCount",
-                                        "scoreDistribution",
+                                        "scoreDistribution"),
+                                scoreProperties),
+                () ->
+                        assertEquals(
+                                List.of(
                                         "homeRunCount",
                                         "soloHomeRunCount",
                                         "twoRunHomeRunCount",
@@ -66,32 +80,9 @@ class SimulationResultMessageTest {
                                         "squeezeBuntFailureCount",
                                         "stealToSecondCount",
                                         "stealToThirdCount"),
-                                wirePropertyNames),
-                () -> assertEquals(9, statistics.advancingBuntCount()),
-                () -> assertEquals(5, statistics.squeezeBuntCount()),
-                () -> assertEquals(4, statistics.advancingBuntFailureCount()),
-                () -> assertEquals(2, statistics.squeezeBuntFailureCount()),
-                () -> assertEquals(7, statistics.stealToSecondCount()),
-                () -> assertEquals(4, statistics.stealToThirdCount()));
-    }
-
-    @Test
-    @DisplayName("旧形式の統計から復元した場合は戦術の詳細集計をゼロにする")
-    void defaultsDetailedTacticalCountsForLegacyStatistics() {
-        var statistics =
-                new SimulationResultMessage.Statistics(
-                        4.2, 4.0, 12, 100, Map.of(4, 18), 25, 10, 8, 5, 2, 14, 11, 6, 3);
-
-        assertAll(
-                () -> assertEquals(14, statistics.buntCount()),
-                () -> assertEquals(11, statistics.stealCount()),
-                () -> assertEquals(6, statistics.buntFailureCount()),
-                () -> assertEquals(3, statistics.stealFailureCount()),
-                () -> assertEquals(0, statistics.advancingBuntCount()),
-                () -> assertEquals(0, statistics.squeezeBuntCount()),
-                () -> assertEquals(0, statistics.advancingBuntFailureCount()),
-                () -> assertEquals(0, statistics.squeezeBuntFailureCount()),
-                () -> assertEquals(0, statistics.stealToSecondCount()),
-                () -> assertEquals(0, statistics.stealToThirdCount()));
+                                contentProperties),
+                () -> assertEquals(100, sut.gameScoreStatistics().gameCount()),
+                () -> assertEquals("2", sut.version()),
+                () -> assertEquals(9, sut.gameContentStatistics().advancingBuntCount()));
     }
 }

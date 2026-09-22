@@ -158,6 +158,10 @@ code. Run the checks provided by `baseball-orders-test` for these rules.
   exception. A `default` branch must never return a fallback value, silently do
   nothing, or handle ordinary control flow.
 - use `_` instead of `ignored` as a local variable name. 
+- use Staged Builders over `new`: Always use the Staged Builder pattern 
+  instead of direct instantiation (`new`) for value object creation 
+  to enforce compile-time safety and prevent missing required fields.
+
 
 ## コレクション集計におけるStream利用方針
 

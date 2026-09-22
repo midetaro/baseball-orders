@@ -9,6 +9,8 @@ import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
 import com.example.baseballorders.backend.domain.PlayerData;
+import com.example.baseballorders.backend.domain.PlayerDataBuilder;
+import com.example.baseballorders.backend.domain.PlayerPersonality;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -22,7 +24,17 @@ class SimulationCoordinatorTest {
     private static List<PlayerData> players(int size) {
         return java.util.stream.IntStream.rangeClosed(1, size)
                 .mapToObj(
-                        number -> new PlayerData("山田", 0.301f, 0.501f, 0.701f, true, 0.801f, true))
+                        number ->
+                                PlayerDataBuilder.playerData()
+                                        .name("山田")
+                                        .hitAverage(0.301f)
+                                        .sluggish(0.501f)
+                                        .buntSuccessRate(0.701f)
+                                        .buntEnabled(true)
+                                        .stealSuccessRate(0.801f)
+                                        .stealEnabled(true)
+                                        .personality(PlayerPersonality.DEFAULT)
+                                        .build())
                 .toList();
     }
 

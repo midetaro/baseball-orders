@@ -86,48 +86,37 @@ class SimulationResultHttpIntegrationTest {
                     new SimulationResultMessage(
                             UUID.randomUUID(),
                             "1",
-                            new SimulationResultMessage.Statistics(
-                                    99, 99, 99, 1, Map.of(99, 1), 0, 0, 0, 0, 0, 0, 0)));
+                            new SimulationResultMessage.GameScoreStatistics(
+                                    99, 99, 99, 1, Map.of(99, 1)),
+                            new SimulationResultMessage.GameContentStatistics(
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
             assertAll(() -> assertFalse(first.isDone()), () -> assertFalse(second.isDone()));
             listener.receive(
                     new SimulationResultMessage(
                             secondSent.simulationId(),
                             "1",
-                            new SimulationResultMessage.Statistics(
-                                    0, 0, 0, 1, Map.of(0, 1), 0, 0, 0, 0, 0, 0, 0)));
+                            new SimulationResultMessage.GameScoreStatistics(
+                                    0, 0, 0, 1, Map.of(0, 1)),
+                            new SimulationResultMessage.GameContentStatistics(
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
             var secondResponse = second.get(10, TimeUnit.SECONDS);
             assertAll(() -> assertFalse(first.isDone()));
             listener.receive(
                     new SimulationResultMessage(
                             secondSent.simulationId(),
                             "1",
-                            new SimulationResultMessage.Statistics(
-                                    99, 99, 99, 1, Map.of(99, 1), 0, 0, 0, 0, 0, 0, 0)));
+                            new SimulationResultMessage.GameScoreStatistics(
+                                    99, 99, 99, 1, Map.of(99, 1)),
+                            new SimulationResultMessage.GameContentStatistics(
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
             listener.receive(
                     new SimulationResultMessage(
                             firstSent.simulationId(),
                             "1",
-                            new SimulationResultMessage.Statistics(
-                                    6.5,
-                                    6.5,
-                                    8,
-                                    2,
-                                    Map.of(5, 1, 8, 1),
-                                    4,
-                                    1,
-                                    1,
-                                    1,
-                                    1,
-                                    24,
-                                    25,
-                                    26,
-                                    27,
-                                    11,
-                                    13,
-                                    17,
-                                    19,
-                                    23,
-                                    29)));
+                            new SimulationResultMessage.GameScoreStatistics(
+                                    6.5, 6.5, 8, 2, Map.of(5, 1, 8, 1)),
+                            new SimulationResultMessage.GameContentStatistics(
+                                    4, 1, 1, 1, 1, 24, 25, 26, 27, 11, 13, 17, 19, 23, 29)));
             var firstResponse = first.get(10, TimeUnit.SECONDS);
             var firstBody = objectMapper.readTree(firstResponse.body());
             var secondBody = objectMapper.readTree(secondResponse.body());

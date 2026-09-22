@@ -253,7 +253,7 @@ class SqsSimulationSchedulerTest {
                         .toList();
         when(useCase.invoke(any(LineUpEntity.class)))
                 .thenReturn(simulationResult(simulationResponses));
-        SqsSimulationScheduler scheduler =
+        SqsSimulationScheduler sut =
                 new SqsSimulationScheduler(
                         sqsClient,
                         objectMapper,
@@ -269,7 +269,7 @@ class SqsSimulationSchedulerTest {
         var ordered = inOrder(useCase, sqsClient);
 
         // when
-        scheduler.poll();
+        sut.poll();
 
         // then
         ordered.verify(useCase).invoke(lineUpCaptor.capture());
@@ -294,48 +294,116 @@ class SqsSimulationSchedulerTest {
                 () -> assertEquals(9, lineUpCaptor.getValue().getBatterEntities().size()),
                 () -> assertEquals("result-url", sendMessageCaptor.getValue().queueUrl()),
                 () -> assertEquals(1, sentResponses.size()),
-                () -> assertEquals("1", sentResponses.getFirst().version()),
+                () -> assertEquals("2", sentResponses.getFirst().version()),
                 () -> assertEquals(simulationId, sentResponses.getFirst().simulationId()),
-                () -> assertEquals(10, sentResponses.getFirst().statistics().gameCount()),
+                () -> assertEquals(10, sentResponses.getFirst().gameScoreStatistics().gameCount()),
                 () ->
                         assertEquals(
                                 10,
                                 sentResponses
                                         .getFirst()
-                                        .statistics()
+                                        .gameScoreStatistics()
                                         .scoreDistribution()
                                         .values()
                                         .stream()
                                         .mapToInt(Integer::intValue)
                                         .sum()),
-                () -> assertEquals(10, sentResponses.getFirst().statistics().homeRunCount()),
-                () -> assertEquals(20, sentResponses.getFirst().statistics().buntCount()),
-                () -> assertEquals(30, sentResponses.getFirst().statistics().stealCount()),
-                () -> assertEquals(50, sentResponses.getFirst().statistics().buntFailureCount()),
-                () -> assertEquals(70, sentResponses.getFirst().statistics().stealFailureCount()),
-                () -> assertEquals(110, sentResponses.getFirst().statistics().advancingBuntCount()),
-                () -> assertEquals(130, sentResponses.getFirst().statistics().squeezeBuntCount()),
+                () ->
+                        assertEquals(
+                                10,
+                                sentResponses.getFirst().gameContentStatistics().homeRunCount()),
+                () ->
+                        assertEquals(
+                                20, sentResponses.getFirst().gameContentStatistics().buntCount()),
+                () ->
+                        assertEquals(
+                                30, sentResponses.getFirst().gameContentStatistics().stealCount()),
+                () ->
+                        assertEquals(
+                                50,
+                                sentResponses
+                                        .getFirst()
+                                        .gameContentStatistics()
+                                        .buntFailureCount()),
+                () ->
+                        assertEquals(
+                                70,
+                                sentResponses
+                                        .getFirst()
+                                        .gameContentStatistics()
+                                        .stealFailureCount()),
+                () ->
+                        assertEquals(
+                                110,
+                                sentResponses
+                                        .getFirst()
+                                        .gameContentStatistics()
+                                        .advancingBuntCount()),
+                () ->
+                        assertEquals(
+                                130,
+                                sentResponses
+                                        .getFirst()
+                                        .gameContentStatistics()
+                                        .squeezeBuntCount()),
                 () ->
                         assertEquals(
                                 170,
-                                sentResponses.getFirst().statistics().advancingBuntFailureCount()),
+                                sentResponses
+                                        .getFirst()
+                                        .gameContentStatistics()
+                                        .advancingBuntFailureCount()),
                 () ->
                         assertEquals(
                                 190,
-                                sentResponses.getFirst().statistics().squeezeBuntFailureCount()),
-                () -> assertEquals(230, sentResponses.getFirst().statistics().stealToSecondCount()),
-                () -> assertEquals(290, sentResponses.getFirst().statistics().stealToThirdCount()),
-                () -> assertEquals(110, sentJson.at("/statistics/advancingBuntCount").intValue()),
-                () -> assertEquals(130, sentJson.at("/statistics/squeezeBuntCount").intValue()),
+                                sentResponses
+                                        .getFirst()
+                                        .gameContentStatistics()
+                                        .squeezeBuntFailureCount()),
+                () ->
+                        assertEquals(
+                                230,
+                                sentResponses
+                                        .getFirst()
+                                        .gameContentStatistics()
+                                        .stealToSecondCount()),
+                () ->
+                        assertEquals(
+                                290,
+                                sentResponses
+                                        .getFirst()
+                                        .gameContentStatistics()
+                                        .stealToThirdCount()),
+                () -> assertEquals(10, sentJson.at("/gameScoreStatistics/gameCount").intValue()),
+                () ->
+                        assertEquals(
+                                110,
+                                sentJson.at("/gameContentStatistics/advancingBuntCount")
+                                        .intValue()),
+                () ->
+                        assertEquals(
+                                130,
+                                sentJson.at("/gameContentStatistics/squeezeBuntCount").intValue()),
                 () ->
                         assertEquals(
                                 170,
-                                sentJson.at("/statistics/advancingBuntFailureCount").intValue()),
+                                sentJson.at("/gameContentStatistics/advancingBuntFailureCount")
+                                        .intValue()),
                 () ->
                         assertEquals(
-                                190, sentJson.at("/statistics/squeezeBuntFailureCount").intValue()),
-                () -> assertEquals(230, sentJson.at("/statistics/stealToSecondCount").intValue()),
-                () -> assertEquals(290, sentJson.at("/statistics/stealToThirdCount").intValue()));
+                                190,
+                                sentJson.at("/gameContentStatistics/squeezeBuntFailureCount")
+                                        .intValue()),
+                () ->
+                        assertEquals(
+                                230,
+                                sentJson.at("/gameContentStatistics/stealToSecondCount")
+                                        .intValue()),
+                () ->
+                        assertEquals(
+                                290,
+                                sentJson.at("/gameContentStatistics/stealToThirdCount").intValue()),
+                () -> assertEquals(true, sentJson.path("statistics").isMissingNode()));
     }
 
     @Test

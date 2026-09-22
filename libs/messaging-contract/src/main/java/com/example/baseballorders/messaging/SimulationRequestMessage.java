@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.jilt.Builder;
+import org.jilt.BuilderStyle;
 
 /**
  * backendからsimulatorへ送信する共有要求メッセージ。
@@ -12,6 +14,7 @@ import java.util.UUID;
  * @param version メッセージスキーマのバージョン
  * @param players 打順どおりの9人の選手
  */
+@Builder(style = BuilderStyle.STAGED)
 public record SimulationRequestMessage(
         @JsonProperty("simulation_id") UUID simulationId,
         String version,
