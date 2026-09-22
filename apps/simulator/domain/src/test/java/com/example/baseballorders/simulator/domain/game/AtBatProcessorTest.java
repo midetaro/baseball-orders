@@ -120,7 +120,7 @@ class AtBatProcessorTest {
         var runner = batter(0.0f, BehaviorStrategies.noBunt());
         var batter = batter(1.0f, BehaviorStrategies.standardBunt());
         var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
-        context.inningStateContext().hitSingle(runner);
+        context.inningStateContext().currentBaseState().hitSingle(runner);
 
         // when
         var completed = new AtBatProcessor().process(context.inningStateContext(), batter);
@@ -150,7 +150,7 @@ class AtBatProcessorTest {
         var runner = batter(0.0f, BehaviorStrategies.noBunt());
         var batter = batter(1.0f, BehaviorStrategies.standardBunt());
         var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
-        context.inningStateContext().hitSingle(runner);
+        context.inningStateContext().currentBaseState().hitSingle(runner);
 
         // when
         context.nextAtBat();
@@ -169,7 +169,7 @@ class AtBatProcessorTest {
         var runner = batter(0.0f, BehaviorStrategies.noBunt());
         var batter = batter(1.0f, BehaviorStrategies.standardBunt());
         var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
-        context.inningStateContext().hitTriple(runner);
+        context.inningStateContext().currentBaseState().hitTriple(runner);
 
         // when
         context.nextAtBat();
@@ -188,8 +188,8 @@ class AtBatProcessorTest {
         var runner = batter(0.0f, BehaviorStrategies.noBunt());
         var batter = batter(1.0f, BehaviorStrategies.eagerBunt());
         var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
-        context.inningStateContext().out();
-        context.inningStateContext().hitSingle(runner);
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().hitSingle(runner);
 
         // when
         var completed = new AtBatProcessor().process(context.inningStateContext(), batter);
