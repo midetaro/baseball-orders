@@ -10,6 +10,7 @@ import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
+import com.example.baseballorders.simulator.application.contract.SimulationResponseBuilder;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.play.BattingResult;
@@ -18,7 +19,7 @@ import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrat
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
-import com.example.baseballorders.simulator.domain.statistics.GameStatistics;
+import com.example.baseballorders.simulator.domain.statistics.GameStatisticsBuilder;
 import com.example.baseballorders.simulator.domain.statistics.ScoreAccumulator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -249,12 +250,32 @@ class SqsSimulationSchedulerTest {
                 IntStream.range(0, 10)
                         .mapToObj(
                                 index ->
-                                        new SimulationResponse(
-                                                index,
-                                                4,
-                                                new GameStatistics(
-                                                        1, 1, 0, 0, 0, 2, 3, 5, 7, 11, 13, 17, 19,
-                                                        23, 29)))
+                                        SimulationResponseBuilder.simulationResponse()
+                                                .score(index)
+                                                .runs(4)
+                                                .gameStatistics(
+                                                        GameStatisticsBuilder.gameStatistics()
+                                                                .hitCount(10)
+                                                                .singleHitCount(1)
+                                                                .doubleHitCount(2)
+                                                                .tripleHitCount(3)
+                                                                .homeRunCount(4)
+                                                                .soloHomeRunCount(2)
+                                                                .twoRunHomeRunCount(3)
+                                                                .threeRunHomeRunCount(5)
+                                                                .grandSlamCount(7)
+                                                                .buntCount(11)
+                                                                .stealCount(13)
+                                                                .buntFailureCount(17)
+                                                                .stealFailureCount(19)
+                                                                .advancingBuntCount(23)
+                                                                .squeezeBuntCount(29)
+                                                                .advancingBuntFailureCount(31)
+                                                                .squeezeBuntFailureCount(37)
+                                                                .stealToSecondCount(41)
+                                                                .stealToThirdCount(43)
+                                                                .build())
+                                                .build())
                         .toList();
         when(useCase.invoke(any(LineUpEntity.class)))
                 .thenReturn(simulationResult(simulationResponses));
@@ -306,7 +327,10 @@ class SqsSimulationSchedulerTest {
                 () -> assertEquals(BattingResult.HIT_SINGLE, pitcherAdjustedBattingResult),
                 () -> assertEquals("result-url", sendMessageCaptor.getValue().queueUrl()),
                 () -> assertEquals(1, sentResponses.size()),
-                () -> assertEquals("2", sentResponses.getFirst().version()),
+                () ->
+                        assertEquals(
+                                SimulationResultMessage.CURRENT_VERSION,
+                                sentResponses.getFirst().version()),
                 () -> assertEquals(simulationId, sentResponses.getFirst().simulationId()),
                 () -> assertEquals(10, sentResponses.getFirst().gameScoreStatistics().gameCount()),
                 () ->
@@ -322,98 +346,126 @@ class SqsSimulationSchedulerTest {
                                         .sum()),
                 () ->
                         assertEquals(
+                                100, sentResponses.getFirst().gameContentStatistics().hitCount()),
+                () ->
+                        assertEquals(
                                 10,
+                                sentResponses.getFirst().gameContentStatistics().singleHitCount()),
+                () ->
+                        assertEquals(
+                                20,
+                                sentResponses.getFirst().gameContentStatistics().doubleHitCount()),
+                () ->
+                        assertEquals(
+                                30,
+                                sentResponses.getFirst().gameContentStatistics().tripleHitCount()),
+                () ->
+                        assertEquals(
+                                40,
                                 sentResponses.getFirst().gameContentStatistics().homeRunCount()),
                 () ->
                         assertEquals(
-                                20, sentResponses.getFirst().gameContentStatistics().buntCount()),
+                                110, sentResponses.getFirst().gameContentStatistics().buntCount()),
                 () ->
                         assertEquals(
-                                30, sentResponses.getFirst().gameContentStatistics().stealCount()),
+                                130, sentResponses.getFirst().gameContentStatistics().stealCount()),
                 () ->
                         assertEquals(
-                                50,
+                                170,
                                 sentResponses
                                         .getFirst()
                                         .gameContentStatistics()
                                         .buntFailureCount()),
                 () ->
                         assertEquals(
-                                70,
+                                190,
                                 sentResponses
                                         .getFirst()
                                         .gameContentStatistics()
                                         .stealFailureCount()),
                 () ->
                         assertEquals(
-                                110,
+                                230,
                                 sentResponses
                                         .getFirst()
                                         .gameContentStatistics()
                                         .advancingBuntCount()),
                 () ->
                         assertEquals(
-                                130,
+                                290,
                                 sentResponses
                                         .getFirst()
                                         .gameContentStatistics()
                                         .squeezeBuntCount()),
                 () ->
                         assertEquals(
-                                170,
+                                310,
                                 sentResponses
                                         .getFirst()
                                         .gameContentStatistics()
                                         .advancingBuntFailureCount()),
                 () ->
                         assertEquals(
-                                190,
+                                370,
                                 sentResponses
                                         .getFirst()
                                         .gameContentStatistics()
                                         .squeezeBuntFailureCount()),
                 () ->
                         assertEquals(
-                                230,
+                                410,
                                 sentResponses
                                         .getFirst()
                                         .gameContentStatistics()
                                         .stealToSecondCount()),
                 () ->
                         assertEquals(
-                                290,
+                                430,
                                 sentResponses
                                         .getFirst()
                                         .gameContentStatistics()
                                         .stealToThirdCount()),
                 () -> assertEquals(10, sentJson.at("/gameScoreStatistics/gameCount").intValue()),
+                () -> assertEquals(100, sentJson.at("/gameContentStatistics/hitCount").intValue()),
                 () ->
                         assertEquals(
-                                110,
+                                10,
+                                sentJson.at("/gameContentStatistics/singleHitCount").intValue()),
+                () ->
+                        assertEquals(
+                                20,
+                                sentJson.at("/gameContentStatistics/doubleHitCount").intValue()),
+                () ->
+                        assertEquals(
+                                30,
+                                sentJson.at("/gameContentStatistics/tripleHitCount").intValue()),
+                () ->
+                        assertEquals(
+                                230,
                                 sentJson.at("/gameContentStatistics/advancingBuntCount")
                                         .intValue()),
                 () ->
                         assertEquals(
-                                130,
+                                290,
                                 sentJson.at("/gameContentStatistics/squeezeBuntCount").intValue()),
                 () ->
                         assertEquals(
-                                170,
+                                310,
                                 sentJson.at("/gameContentStatistics/advancingBuntFailureCount")
                                         .intValue()),
                 () ->
                         assertEquals(
-                                190,
+                                370,
                                 sentJson.at("/gameContentStatistics/squeezeBuntFailureCount")
                                         .intValue()),
                 () ->
                         assertEquals(
-                                230,
+                                410,
                                 sentJson.at("/gameContentStatistics/stealToSecondCount")
                                         .intValue()),
                 () ->
                         assertEquals(
-                                290,
+                                430,
                                 sentJson.at("/gameContentStatistics/stealToThirdCount").intValue()),
                 () -> assertEquals(true, sentJson.path("statistics").isMissingNode()));
     }

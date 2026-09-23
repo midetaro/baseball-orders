@@ -28,7 +28,7 @@ class LineUpMapperTest {
 
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.CsvSource({
-        "BOLD,0.39,0.28,0.5,0.6",
+        "BOLD,0.39,0.46,0.5,0.6",
         "CAUTIOUS,0.21,0.4,0.65,0.78",
         "TECHNICAL,0.3,0.52,0.35,0.42",
         "DEFAULT,0.3,0.4,0.5,0.6"
@@ -68,6 +68,34 @@ class LineUpMapperTest {
                 () -> assertEquals(slugging, sluggingCaptor.getValue(), 0.00001f),
                 () -> assertEquals(bunt, buntCaptor.getValue(), 0.00001f),
                 () -> assertEquals(steal, stealCaptor.getValue(), 0.00001f));
+    }
+
+    @Test
+    @DisplayName("大胆な投手でも通常時の7割の本塁打配分で本塁打になる")
+    void allowsHomeRunAgainstBoldPitcherAtReducedProbability() {
+        // given
+        var mapper =
+                new LineUpMapper(
+                        BehaviorStrategies.middleDistanceHittingStrategy(),
+                        BehaviorStrategies.eagerSteal(),
+                        BehaviorStrategies.standardBunt());
+        var player =
+                new SimulationPlayerMessage(
+                        "1番", 0.3f, 0.4f, 0.0f, false, 0.0f, false, PlayerPersonality.DEFAULT);
+
+        // when
+        BattingResult battingResult;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.385f);
+            battingResult =
+                    mapper.map(java.util.Collections.nCopies(9, player), PitcherPersonality.BOLD)
+                            .getBatterEntities()
+                            .getFirst()
+                            .swing(0);
+        }
+
+        // then
+        assertAll(() -> assertEquals(BattingResult.HIT_HOMER, battingResult));
     }
 
     @org.junit.jupiter.params.ParameterizedTest

@@ -7,6 +7,10 @@ public final class ScoreAccumulator implements GameCompletionObserver {
     private final List<Integer> scores = new ArrayList<>();
     private final Map<Integer, Integer> scoreDistribution = new TreeMap<>();
     private long totalScore;
+    private int hitCount;
+    private int singleHitCount;
+    private int doubleHitCount;
+    private int tripleHitCount;
     private int homeRunCount;
     private int soloHomeRunCount;
     private int twoRunHomeRunCount;
@@ -29,6 +33,10 @@ public final class ScoreAccumulator implements GameCompletionObserver {
         scores.add(score);
         this.totalScore += score;
         scoreDistribution.merge(score, 1, Integer::sum);
+        hitCount += gameStatistics.hitCount();
+        singleHitCount += gameStatistics.singleHitCount();
+        doubleHitCount += gameStatistics.doubleHitCount();
+        tripleHitCount += gameStatistics.tripleHitCount();
         homeRunCount += gameStatistics.homeRunCount();
         soloHomeRunCount += gameStatistics.soloHomeRunCount();
         twoRunHomeRunCount += gameStatistics.twoRunHomeRunCount();
@@ -62,26 +70,31 @@ public final class ScoreAccumulator implements GameCompletionObserver {
                 scores.size() % 2 == 0
                         ? (scores.get(middleIndex - 1) + scores.get(middleIndex)) / 2.0
                         : scores.get(middleIndex);
-        return new ScoreStatistics(
-                totalScore / (double) scores.size(),
-                median,
-                scores.getLast(),
-                scores.size(),
-                new LinkedHashMap<>(scoreDistribution),
-                homeRunCount,
-                soloHomeRunCount,
-                twoRunHomeRunCount,
-                threeRunHomeRunCount,
-                grandSlamCount,
-                buntCount,
-                stealCount,
-                buntFailureCount,
-                stealFailureCount,
-                advancingBuntCount,
-                squeezeBuntCount,
-                advancingBuntFailureCount,
-                squeezeBuntFailureCount,
-                stealToSecondCount,
-                stealToThirdCount);
+        return ScoreStatisticsBuilder.scoreStatistics()
+                .averageScore(totalScore / (double) scores.size())
+                .medianScore(median)
+                .maximumScore(scores.getLast())
+                .gameCount(scores.size())
+                .scoreDistribution(new LinkedHashMap<>(scoreDistribution))
+                .hitCount(hitCount)
+                .singleHitCount(singleHitCount)
+                .doubleHitCount(doubleHitCount)
+                .tripleHitCount(tripleHitCount)
+                .homeRunCount(homeRunCount)
+                .soloHomeRunCount(soloHomeRunCount)
+                .twoRunHomeRunCount(twoRunHomeRunCount)
+                .threeRunHomeRunCount(threeRunHomeRunCount)
+                .grandSlamCount(grandSlamCount)
+                .buntCount(buntCount)
+                .stealCount(stealCount)
+                .buntFailureCount(buntFailureCount)
+                .stealFailureCount(stealFailureCount)
+                .advancingBuntCount(advancingBuntCount)
+                .squeezeBuntCount(squeezeBuntCount)
+                .advancingBuntFailureCount(advancingBuntFailureCount)
+                .squeezeBuntFailureCount(squeezeBuntFailureCount)
+                .stealToSecondCount(stealToSecondCount)
+                .stealToThirdCount(stealToThirdCount)
+                .build();
     }
 }
