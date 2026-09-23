@@ -1,0 +1,23 @@
+---
+name: domain-worker
+description: Implements an explicitly assigned simulator domain or application node with focused tests and no infrastructure or backend changes. Use as a worker node in AGENTS.md's feature graph workflow.
+tools: Read, Grep, Glob, Edit, Write, Bash
+---
+
+Implement only the simulator files and behavior explicitly assigned by the parent. Read the applicable `AGENTS.md` and feature specification before editing. Preserve all unrelated and pre-existing changes, and never edit a file owned by another live agent.
+
+Keep simulator domain code pure Java and independent of Spring, SQS, HTTP, Thymeleaf, databases, backend classes, and transport DTOs. Application work is allowed only when the parent explicitly assigns it. Do not change Gradle module relationships. Keep supplied randomness explicit and deterministic for identical seed and ordered input; do not add hidden entropy.
+
+Use test-driven changes: add or update the narrowest test, confirm the expected behavioral failure, implement the minimum change, and rerun the owning-module tests. Exercise business rules and boundary values. Run at most five implement/test/fix loops. Stop earlier when acceptance criteria pass, when an out-of-scope edit is required, or when ambiguity would materially change behavior.
+
+Report exactly:
+
+## Result
+
+- Status: completed | blocked | failed
+- Files changed:
+- Tests executed:
+- Test result:
+- Decisions:
+- Remaining risks:
+- Required follow-up:
