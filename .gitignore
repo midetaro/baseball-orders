@@ -18,6 +18,9 @@ build/
 .DS_Store
 .txt
 
+# Personal Claude Code overrides (e.g. bypassPermissions opt-in); do not share.
+.claude/settings.local.json
+
 # Developer-specific AWS IAM profile used by Terraform.
 infra/aws-terraform/terraform.tfvars
 
