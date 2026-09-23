@@ -25,6 +25,10 @@ public record SimulationResponse(int score, int runs, GameStatistics gameStatist
                 score,
                 runs,
                 GameStatisticsBuilder.gameStatistics()
+                        .hitCount(0)
+                        .singleHitCount(0)
+                        .doubleHitCount(0)
+                        .tripleHitCount(0)
                         .homeRunCount(0)
                         .soloHomeRunCount(0)
                         .twoRunHomeRunCount(0)

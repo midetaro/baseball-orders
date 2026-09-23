@@ -102,6 +102,10 @@ public class SqsSimulationScheduler {
                                                 simulationResult.statistics().scoreDistribution()))
                                 .gameContentStatistics(
                                         new SimulationResultMessage.GameContentStatistics(
+                                                simulationResult.statistics().hitCount(),
+                                                simulationResult.statistics().singleHitCount(),
+                                                simulationResult.statistics().doubleHitCount(),
+                                                simulationResult.statistics().tripleHitCount(),
                                                 simulationResult.statistics().homeRunCount(),
                                                 simulationResult.statistics().soloHomeRunCount(),
                                                 simulationResult.statistics().twoRunHomeRunCount(),

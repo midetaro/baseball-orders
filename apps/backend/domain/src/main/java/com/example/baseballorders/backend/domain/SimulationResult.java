@@ -63,6 +63,10 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
             int maximumScore,
             int gameCount,
             Map<Integer, Integer> scoreDistribution,
+            int hitCount,
+            int singleHitCount,
+            int doubleHitCount,
+            int tripleHitCount,
             int homeRunCount,
             int soloHomeRunCount,
             int twoRunHomeRunCount,
@@ -87,6 +91,10 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
          * @param maximumScore 最大得点
          * @param gameCount シミュレーションした試合数
          * @param scoreDistribution 得点ごとの試合数
+         * @param hitCount 総安打数
+         * @param singleHitCount 一塁打数
+         * @param doubleHitCount 二塁打数
+         * @param tripleHitCount 三塁打数
          * @param homeRunCount 本塁打数
          * @param soloHomeRunCount ソロ本塁打数
          * @param twoRunHomeRunCount ツーラン本塁打数
@@ -114,6 +122,10 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
                     maximumScore,
                     gameCount,
                     scoreDistribution,
+                    0,
+                    0,
+                    0,
+                    0,
                     homeRunCount,
                     soloHomeRunCount,
                     twoRunHomeRunCount,
@@ -145,6 +157,10 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
                     maximumScore,
                     0,
                     Map.of(),
+                    0,
+                    0,
+                    0,
+                    0,
                     0,
                     0,
                     0,

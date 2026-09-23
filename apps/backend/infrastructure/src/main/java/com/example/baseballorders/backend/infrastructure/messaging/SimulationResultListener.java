@@ -50,6 +50,10 @@ public final class SimulationResultListener {
                                                 .gameCount(scoreStatistics.gameCount())
                                                 .scoreDistribution(
                                                         scoreStatistics.scoreDistribution())
+                                                .hitCount(contentStatistics.hitCount())
+                                                .singleHitCount(contentStatistics.singleHitCount())
+                                                .doubleHitCount(contentStatistics.doubleHitCount())
+                                                .tripleHitCount(contentStatistics.tripleHitCount())
                                                 .homeRunCount(contentStatistics.homeRunCount())
                                                 .soloHomeRunCount(
                                                         contentStatistics.soloHomeRunCount())

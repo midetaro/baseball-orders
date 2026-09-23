@@ -13,6 +13,31 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class GameStatisticsRecorderTest {
 
+    @Test
+    @DisplayName("単打・二塁打・三塁打・本塁打を総安打数と内訳に記録する")
+    void recordsAllHitTypes() {
+        // given
+        GameStatisticsRecorder recorder = new GameStatisticsRecorder();
+
+        // when
+        recorder.onBattingResult(BattingResult.HIT_SINGLE, 0);
+        recorder.onBattingResult(BattingResult.HIT_DOUBLE, 0);
+        recorder.onBattingResult(BattingResult.HIT_TRIPLE, 0);
+        recorder.onBattingResult(BattingResult.HIT_HOMER, 0);
+        recorder.onBattingResult(BattingResult.WALK, 0);
+        recorder.onBattingResult(BattingResult.STRIKEOUT, 0);
+        recorder.onBattingResult(BattingResult.BATTED_OUT, 0);
+        GameStatistics statistics = recorder.snapshot();
+
+        // then
+        assertAll(
+                () -> assertEquals(4, statistics.hitCount()),
+                () -> assertEquals(1, statistics.singleHitCount()),
+                () -> assertEquals(1, statistics.doubleHitCount()),
+                () -> assertEquals(1, statistics.tripleHitCount()),
+                () -> assertEquals(1, statistics.homeRunCount()));
+    }
+
     static Stream<Arguments> homeRunTestCases() {
         return Stream.of(
                 arguments("走者なしならソロ本塁打", 0, 1, 0, 0, 0),
@@ -41,6 +66,7 @@ class GameStatisticsRecorderTest {
         GameStatistics statistics = recorder.snapshot();
         assertAll(
                 description,
+                () -> assertEquals(1, statistics.hitCount()),
                 () -> assertEquals(1, statistics.homeRunCount()),
                 () -> assertEquals(expectedSolo, statistics.soloHomeRunCount()),
                 () -> assertEquals(expectedTwoRun, statistics.twoRunHomeRunCount()),
@@ -63,6 +89,7 @@ class GameStatisticsRecorderTest {
         // then
         assertAll(
                 () -> assertEquals("runner count must be between 0 and 3", exception.getMessage()),
+                () -> assertEquals(0, recorder.snapshot().hitCount()),
                 () -> assertEquals(0, recorder.snapshot().homeRunCount()));
     }
 

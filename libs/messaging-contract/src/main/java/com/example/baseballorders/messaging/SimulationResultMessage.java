@@ -22,8 +22,8 @@ public record SimulationResultMessage(
         GameScoreStatistics gameScoreStatistics,
         GameContentStatistics gameContentStatistics) {
 
-    /** 得点・プレー内容を分けた結果メッセージのスキーマバージョン。 */
-    public static final String CURRENT_VERSION = "2";
+    /** 安打内訳を含む得点・プレー内容結果メッセージのスキーマバージョン。 */
+    public static final String CURRENT_VERSION = "3";
 
     /**
      * 全試合の得点統計。
@@ -44,6 +44,10 @@ public record SimulationResultMessage(
     /**
      * 全試合のプレー内容統計。
      *
+     * @param hitCount 総安打数
+     * @param singleHitCount 一塁打数
+     * @param doubleHitCount 二塁打数
+     * @param tripleHitCount 三塁打数
      * @param homeRunCount 本塁打数
      * @param soloHomeRunCount ソロ本塁打数
      * @param twoRunHomeRunCount ツーラン本塁打数
@@ -61,6 +65,10 @@ public record SimulationResultMessage(
      * @param stealToThirdCount 三盗成功数
      */
     public record GameContentStatistics(
+            int hitCount,
+            int singleHitCount,
+            int doubleHitCount,
+            int tripleHitCount,
             int homeRunCount,
             int soloHomeRunCount,
             int twoRunHomeRunCount,

@@ -6,6 +6,10 @@ import org.jilt.BuilderStyle;
 /** Statistics recorded during one simulated game. */
 @Builder(style = BuilderStyle.STAGED)
 public record GameStatistics(
+        int hitCount,
+        int singleHitCount,
+        int doubleHitCount,
+        int tripleHitCount,
         int homeRunCount,
         int soloHomeRunCount,
         int twoRunHomeRunCount,

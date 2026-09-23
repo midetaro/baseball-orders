@@ -131,7 +131,7 @@ class SqsSimulationSchedulerIntegrationTest {
                                                                         .identity(),
                                                                 _ -> 1))),
                                 new SimulationResultMessage.GameContentStatistics(
-                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
         when(useCase.invoke(any(LineUpEntity.class)))
                 .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =

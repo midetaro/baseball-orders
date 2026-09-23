@@ -67,8 +67,7 @@ public class LineUpMapper {
                                         new BatterEntity(
                                                 player.hitAverage()
                                                         * onBaseMultiplier(pitcherPersonality),
-                                                player.sluggish()
-                                                        * sluggingMultiplier(pitcherPersonality),
+                                                sluggingFor(player, pitcherPersonality),
                                                 player.buntSuccessRate()
                                                         * runningMultiplier(pitcherPersonality),
                                                 player.stealSuccessRate()
@@ -97,6 +96,19 @@ public class LineUpMapper {
             case BOLD -> 0.7f;
             case TECHNICAL -> 1.3f;
             case CAUTIOUS, DEFAULT -> 1.0f;
+        };
+    }
+
+    private float sluggingFor(
+            SimulationPlayerMessage player, PitcherPersonality pitcherPersonality) {
+        return switch (pitcherPersonality) {
+            case BOLD -> {
+                float extraBaseProbability = player.sluggish() - player.hitAverage();
+                yield player.hitAverage() * onBaseMultiplier(pitcherPersonality)
+                        + extraBaseProbability * sluggingMultiplier(pitcherPersonality);
+            }
+            case CAUTIOUS, TECHNICAL, DEFAULT ->
+                    player.sluggish() * sluggingMultiplier(pitcherPersonality);
         };
     }
 

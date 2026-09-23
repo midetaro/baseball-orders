@@ -53,6 +53,17 @@ assert.ok(!html.includes("hitAverage:'.32'"), '小数点前のゼロを省略し
 assert.ok(html.includes("input.value.startsWith('.') ? `0${input.value}` : input.value"), '入力時も小数点前のゼロを表示する');
 assert.ok(html.includes('hasAtMostTwoDecimalPlaces'), '小数第3位以降の入力では実行できないようにする');
 assert.ok(html.includes('本塁打の内訳'), '本塁打統計を構造化して表示する');
+assert.ok(html.includes('id="hit-count"'), '総安打数を表示する');
+assert.ok(html.indexOf('id="hit-count"') < html.indexOf('id="home-run-count"'), '総安打数を本塁打の上に表示する');
+assert.ok(html.includes("'hitCount'"), 'APIの総安打数を結果へ描画する');
+assert.ok(html.includes('安打の内訳'), '安打統計を構造化して表示する');
+assert.ok(html.includes('id="hit-breakdown"'), '安打内訳のグラフを表示する');
+assert.ok(html.includes('id="hit-legend"'), '安打内訳の凡例を表示する');
+assert.ok(html.includes("Array.of('一塁打',statistics.singleHitCount,'single-hit')"), '一塁打数を内訳へ表示する');
+assert.ok(html.includes("Array.of('二塁打',statistics.doubleHitCount,'double-hit')"), '二塁打数を内訳へ表示する');
+assert.ok(html.includes("Array.of('三塁打',statistics.tripleHitCount,'triple-hit')"), '三塁打数を内訳へ表示する');
+assert.ok(html.includes("Array.of('本塁打',statistics.homeRunCount,'home-run')"), '本塁打数を安打内訳へ表示する');
+assert.ok(html.includes('`${label} ${count} (${rate.toFixed(1)}%)`'), '安打内訳の凡例で件数と割合を表示する');
 assert.ok(!html.includes('戦術の成否'), '重複する戦術統計を表示しない');
 assert.ok(!html.includes("Array.of('成功バント',statistics.buntCount)"), '戦術統計の成功バントを表示しない');
 assert.ok(!html.includes("Array.of('失敗バント',statistics.buntFailureCount)"), '戦術統計の失敗バントを表示しない');
@@ -74,6 +85,10 @@ assert.ok(html.includes('id="bunt-failure-count"'), '既存の失敗バント総
 assert.ok(html.includes('id="steal-count"'), '既存の成功盗塁総数を表示する');
 assert.ok(html.includes('id="steal-failure-count"'), '既存の失敗盗塁総数を表示する');
 for (const [kind, color] of [
+  ['single-hit', 'var(--lime)'],
+  ['double-hit', 'var(--cyan)'],
+  ['triple-hit', 'var(--orange)'],
+  ['home-run', 'var(--pink)'],
   ['advancing-bunt', 'var(--cyan)'],
   ['squeeze-bunt', 'var(--lime)'],
   ['advancing-bunt-failure', 'var(--orange)'],

@@ -15,6 +15,7 @@ import com.example.baseballorders.simulator.application.usecase.SimulateGameUseC
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.statistics.ScoreStatistics;
+import com.example.baseballorders.simulator.domain.statistics.ScoreStatisticsBuilder;
 import com.example.baseballorders.simulator.infrastructure.messaging.LineUpMapper;
 import com.example.baseballorders.simulator.infrastructure.messaging.SqsSimulationScheduler;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -114,15 +115,38 @@ class BackendSimulatorFlociIntegrationTest {
      * LineUpMapper・SqsSimulationSchedulerとJSONシリアライザ、Floci SQS。
      * モック: AWS SQSをFlociに置換。乱数を使うSimulateGameUseCaseのみ固定統計を返すfakeに置換。
      * 担保する疎通: HTTP POST -> 要求SQS -> simulator結果マッピング・JSON -> 結果SQS
-     * -> backend自動Listener -> HTTP応答に得点統計とプレー内容統計がそのまま届く。
-     * 担保しないもの: 実試合による六分類の発生条件、AWS実環境、ブラウザ描画。
+     * -> backend自動Listener -> HTTP応答に得点統計、安打内訳、プレー内容統計がそのまま届く。
+     * 担保しないもの: 実試合による安打・プレー内容統計の発生条件、AWS実環境、ブラウザ描画。
      */
     @Test
-    @DisplayName("得点・プレー内容統計がsimulatorの結果SQSからbackend HTTPまで保持される")
+    @DisplayName("得点・安打内訳・プレー内容統計がsimulatorの結果SQSからbackend HTTPまで保持される")
     void carriesDetailedTacticalStatisticsAcrossQueues() throws Exception {
-        var expected = new ScoreStatistics(
-                4, 4, 4, 1, Map.of(4, 1), 10, 1, 2, 3, 4,
-                24, 52, 36, 40, 11, 13, 17, 19, 23, 29);
+        var expected = ScoreStatisticsBuilder.scoreStatistics()
+                .averageScore(4)
+                .medianScore(4)
+                .maximumScore(4)
+                .gameCount(1)
+                .scoreDistribution(Map.of(4, 1))
+                .hitCount(100)
+                .singleHitCount(50)
+                .doubleHitCount(25)
+                .tripleHitCount(15)
+                .homeRunCount(10)
+                .soloHomeRunCount(1)
+                .twoRunHomeRunCount(2)
+                .threeRunHomeRunCount(3)
+                .grandSlamCount(4)
+                .buntCount(24)
+                .stealCount(52)
+                .buntFailureCount(36)
+                .stealFailureCount(40)
+                .advancingBuntCount(11)
+                .squeezeBuntCount(13)
+                .advancingBuntFailureCount(17)
+                .squeezeBuntFailureCount(19)
+                .stealToSecondCount(23)
+                .stealToThirdCount(29)
+                .build();
         var fixedUseCase = new SimulateGameUseCase(1) {
             @Override
             public SimulationResult invoke(LineUpEntity lineup) {
@@ -227,6 +251,10 @@ class BackendSimulatorFlociIntegrationTest {
                                 () -> assertEquals(expected.gameCount(), statistics.path("gameCount").asInt(-1)),
                                 () -> assertEquals(expected.scoreDistribution().get(4).intValue(),
                                         statistics.path("scoreDistribution").path("4").asInt(-1)),
+                                () -> assertEquals(expected.hitCount(), statistics.path("hitCount").asInt(-1)),
+                                () -> assertEquals(expected.singleHitCount(), statistics.path("singleHitCount").asInt(-1)),
+                                () -> assertEquals(expected.doubleHitCount(), statistics.path("doubleHitCount").asInt(-1)),
+                                () -> assertEquals(expected.tripleHitCount(), statistics.path("tripleHitCount").asInt(-1)),
                                 () -> assertEquals(expected.homeRunCount(), statistics.path("homeRunCount").asInt(-1)),
                                 () -> assertEquals(expected.soloHomeRunCount(), statistics.path("soloHomeRunCount").asInt(-1)),
                                 () -> assertEquals(expected.twoRunHomeRunCount(), statistics.path("twoRunHomeRunCount").asInt(-1)),

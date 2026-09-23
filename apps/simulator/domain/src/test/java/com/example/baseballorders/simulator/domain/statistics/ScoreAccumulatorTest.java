@@ -17,9 +17,51 @@ class ScoreAccumulatorTest {
 
         // when
         accumulator.onGameCompleted(
-                8, new GameStatistics(4, 1, 1, 1, 1, 2, 3, 5, 7, 1, 1, 2, 3, 1, 2));
+                8,
+                GameStatisticsBuilder.gameStatistics()
+                        .hitCount(10)
+                        .singleHitCount(3)
+                        .doubleHitCount(2)
+                        .tripleHitCount(1)
+                        .homeRunCount(4)
+                        .soloHomeRunCount(1)
+                        .twoRunHomeRunCount(1)
+                        .threeRunHomeRunCount(1)
+                        .grandSlamCount(1)
+                        .buntCount(2)
+                        .stealCount(3)
+                        .buntFailureCount(5)
+                        .stealFailureCount(7)
+                        .advancingBuntCount(1)
+                        .squeezeBuntCount(1)
+                        .advancingBuntFailureCount(2)
+                        .squeezeBuntFailureCount(3)
+                        .stealToSecondCount(1)
+                        .stealToThirdCount(2)
+                        .build());
         accumulator.onGameCompleted(
-                2, new GameStatistics(6, 2, 0, 1, 3, 4, 6, 11, 13, 3, 1, 5, 6, 4, 2));
+                2,
+                GameStatisticsBuilder.gameStatistics()
+                        .hitCount(14)
+                        .singleHitCount(4)
+                        .doubleHitCount(3)
+                        .tripleHitCount(1)
+                        .homeRunCount(6)
+                        .soloHomeRunCount(2)
+                        .twoRunHomeRunCount(0)
+                        .threeRunHomeRunCount(1)
+                        .grandSlamCount(3)
+                        .buntCount(4)
+                        .stealCount(6)
+                        .buntFailureCount(11)
+                        .stealFailureCount(13)
+                        .advancingBuntCount(3)
+                        .squeezeBuntCount(1)
+                        .advancingBuntFailureCount(5)
+                        .squeezeBuntFailureCount(6)
+                        .stealToSecondCount(4)
+                        .stealToThirdCount(2)
+                        .build());
 
         // then
         ScoreStatistics statistics = accumulator.toScoreStatistics();
@@ -33,6 +75,10 @@ class ScoreAccumulatorTest {
                         assertEquals(
                                 List.of(2, 8),
                                 List.copyOf(statistics.scoreDistribution().keySet())),
+                () -> assertEquals(24, statistics.hitCount()),
+                () -> assertEquals(7, statistics.singleHitCount()),
+                () -> assertEquals(5, statistics.doubleHitCount()),
+                () -> assertEquals(2, statistics.tripleHitCount()),
                 () -> assertEquals(10, statistics.homeRunCount()),
                 () -> assertEquals(3, statistics.soloHomeRunCount()),
                 () -> assertEquals(1, statistics.twoRunHomeRunCount()),
@@ -61,6 +107,10 @@ class ScoreAccumulatorTest {
                         .maximumScore(9)
                         .gameCount(10)
                         .scoreDistribution(Map.of(3, 4, 5, 6))
+                        .hitCount(10)
+                        .singleHitCount(3)
+                        .doubleHitCount(2)
+                        .tripleHitCount(1)
                         .homeRunCount(4)
                         .soloHomeRunCount(1)
                         .twoRunHomeRunCount(1)

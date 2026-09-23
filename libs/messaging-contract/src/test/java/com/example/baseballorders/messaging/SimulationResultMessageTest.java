@@ -20,7 +20,7 @@ class SimulationResultMessageTest {
                 new SimulationResultMessage.GameScoreStatistics(4.2, 4.0, 12, 100, Map.of(4, 18));
         var content =
                 new SimulationResultMessage.GameContentStatistics(
-                        25, 10, 8, 5, 2, 14, 11, 6, 3, 9, 5, 4, 2, 7, 4);
+                        40, 15, 10, 8, 25, 10, 8, 5, 2, 14, 11, 6, 3, 9, 5, 4, 2, 7, 4);
         var sut =
                 new SimulationResultMessage(
                         UUID.randomUUID(), SimulationResultMessage.CURRENT_VERSION, score, content);
@@ -65,6 +65,10 @@ class SimulationResultMessageTest {
                 () ->
                         assertEquals(
                                 List.of(
+                                        "hitCount",
+                                        "singleHitCount",
+                                        "doubleHitCount",
+                                        "tripleHitCount",
                                         "homeRunCount",
                                         "soloHomeRunCount",
                                         "twoRunHomeRunCount",
@@ -82,7 +86,8 @@ class SimulationResultMessageTest {
                                         "stealToThirdCount"),
                                 contentProperties),
                 () -> assertEquals(100, sut.gameScoreStatistics().gameCount()),
-                () -> assertEquals("2", sut.version()),
+                () -> assertEquals("3", sut.version()),
+                () -> assertEquals(40, sut.gameContentStatistics().hitCount()),
                 () -> assertEquals(9, sut.gameContentStatistics().advancingBuntCount()));
     }
 }

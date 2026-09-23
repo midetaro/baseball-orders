@@ -124,7 +124,7 @@ class SimulationResultHttpIntegrationTest {
                             new SimulationResultMessage.GameScoreStatistics(
                                     99, 99, 99, 1, Map.of(99, 1)),
                             new SimulationResultMessage.GameContentStatistics(
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
             assertAll(() -> assertFalse(first.isDone()), () -> assertFalse(second.isDone()));
             listener.receive(
                     new SimulationResultMessage(
@@ -133,7 +133,7 @@ class SimulationResultHttpIntegrationTest {
                             new SimulationResultMessage.GameScoreStatistics(
                                     0, 0, 0, 1, Map.of(0, 1)),
                             new SimulationResultMessage.GameContentStatistics(
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
             var secondResponse = second.get(10, TimeUnit.SECONDS);
             assertAll(() -> assertFalse(first.isDone()));
             listener.receive(
@@ -143,7 +143,7 @@ class SimulationResultHttpIntegrationTest {
                             new SimulationResultMessage.GameScoreStatistics(
                                     99, 99, 99, 1, Map.of(99, 1)),
                             new SimulationResultMessage.GameContentStatistics(
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
             listener.receive(
                     new SimulationResultMessage(
                             firstSent.simulationId(),
@@ -151,7 +151,8 @@ class SimulationResultHttpIntegrationTest {
                             new SimulationResultMessage.GameScoreStatistics(
                                     6.5, 6.5, 8, 2, Map.of(5, 1, 8, 1)),
                             new SimulationResultMessage.GameContentStatistics(
-                                    4, 1, 1, 1, 1, 24, 25, 26, 27, 11, 13, 17, 19, 23, 29)));
+                                    20, 8, 5, 3, 4, 1, 1, 1, 1, 24, 25, 26, 27, 11, 13, 17, 19, 23,
+                                    29)));
             var firstResponse = first.get(10, TimeUnit.SECONDS);
             var firstBody = objectMapper.readTree(firstResponse.body());
             var secondBody = objectMapper.readTree(secondResponse.body());
@@ -180,6 +181,16 @@ class SimulationResultHttpIntegrationTest {
                                     6.5, firstBody.get("statistics").get("medianScore").asDouble()),
                     () -> assertEquals(8, firstBody.get("statistics").get("maximumScore").asInt()),
                     () -> assertEquals(2, firstBody.get("statistics").get("gameCount").asInt()),
+                    () -> assertEquals(20, firstBody.get("statistics").get("hitCount").asInt()),
+                    () ->
+                            assertEquals(
+                                    8, firstBody.get("statistics").get("singleHitCount").asInt()),
+                    () ->
+                            assertEquals(
+                                    5, firstBody.get("statistics").get("doubleHitCount").asInt()),
+                    () ->
+                            assertEquals(
+                                    3, firstBody.get("statistics").get("tripleHitCount").asInt()),
                     () -> assertEquals(24, firstBody.get("statistics").get("buntCount").asInt()),
                     () -> assertEquals(25, firstBody.get("statistics").get("stealCount").asInt()),
                     () ->

@@ -5,6 +5,10 @@ import com.example.baseballorders.simulator.domain.play.*;
 /** 1試合で発生したプレーを集計し、その時点の試合統計を生成する。 */
 public final class GameStatisticsRecorder implements PlayResultObserver {
 
+    private int hitCount;
+    private int singleHitCount;
+    private int doubleHitCount;
+    private int tripleHitCount;
     private int homeRunCount;
     private int soloHomeRunCount;
     private int twoRunHomeRunCount;
@@ -24,8 +28,23 @@ public final class GameStatisticsRecorder implements PlayResultObserver {
     @Override
     public void onBattingResult(BattingResult battingResult, int runnerCount) {
         switch (battingResult) {
-            case STRIKEOUT, BATTED_OUT, WALK, HIT_SINGLE, HIT_DOUBLE, HIT_TRIPLE -> {}
-            case HIT_HOMER -> recordHomeRun(runnerCount);
+            case STRIKEOUT, BATTED_OUT, WALK -> {}
+            case HIT_SINGLE -> {
+                hitCount++;
+                singleHitCount++;
+            }
+            case HIT_DOUBLE -> {
+                hitCount++;
+                doubleHitCount++;
+            }
+            case HIT_TRIPLE -> {
+                hitCount++;
+                tripleHitCount++;
+            }
+            case HIT_HOMER -> {
+                recordHomeRun(runnerCount);
+                hitCount++;
+            }
         }
     }
 
@@ -85,21 +104,26 @@ public final class GameStatisticsRecorder implements PlayResultObserver {
      * @return この記録器の現在値を写した試合統計
      */
     public GameStatistics snapshot() {
-        return new GameStatistics(
-                homeRunCount,
-                soloHomeRunCount,
-                twoRunHomeRunCount,
-                threeRunHomeRunCount,
-                grandSlamCount,
-                buntCount,
-                stealCount,
-                buntFailureCount,
-                stealFailureCount,
-                advancingBuntCount,
-                squeezeBuntCount,
-                advancingBuntFailureCount,
-                squeezeBuntFailureCount,
-                stealToSecondCount,
-                stealToThirdCount);
+        return GameStatisticsBuilder.gameStatistics()
+                .hitCount(hitCount)
+                .singleHitCount(singleHitCount)
+                .doubleHitCount(doubleHitCount)
+                .tripleHitCount(tripleHitCount)
+                .homeRunCount(homeRunCount)
+                .soloHomeRunCount(soloHomeRunCount)
+                .twoRunHomeRunCount(twoRunHomeRunCount)
+                .threeRunHomeRunCount(threeRunHomeRunCount)
+                .grandSlamCount(grandSlamCount)
+                .buntCount(buntCount)
+                .stealCount(stealCount)
+                .buntFailureCount(buntFailureCount)
+                .stealFailureCount(stealFailureCount)
+                .advancingBuntCount(advancingBuntCount)
+                .squeezeBuntCount(squeezeBuntCount)
+                .advancingBuntFailureCount(advancingBuntFailureCount)
+                .squeezeBuntFailureCount(squeezeBuntFailureCount)
+                .stealToSecondCount(stealToSecondCount)
+                .stealToThirdCount(stealToThirdCount)
+                .build();
     }
 }
