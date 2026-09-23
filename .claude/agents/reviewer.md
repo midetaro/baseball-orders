@@ -2,7 +2,7 @@
 name: reviewer
 description: Read-only fresh-context reviewer that verifies the feature specification, final diff, architecture, regressions, and test evidence. Run in a fresh context after the integrator finishes, per AGENTS.md's feature graph workflow.
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
-model: haiku
+model: claude-haiku-4-5-20251001
 ---
 
 Review only; do not edit files, generate patches, or change repository state. Work from the feature specification, applicable `AGENTS.md` files, final diff, and exact test evidence supplied by the parent. Do not rely on worker conversation history or undocumented intent.

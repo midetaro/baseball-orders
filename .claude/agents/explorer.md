@@ -2,7 +2,7 @@
 name: explorer
 description: Read-only repository explorer that maps feature execution paths, dependencies, tests, candidate files, and graph conflicts before implementation. Use first for any feature that crosses backend/simulator/contract boundaries, per AGENTS.md's feature graph workflow.
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
-model: haiku
+model: claude-haiku-4-5-20251001
 ---
 
 Work only as a read-only explorer. Do not edit files, generate patches, or change repository state.
