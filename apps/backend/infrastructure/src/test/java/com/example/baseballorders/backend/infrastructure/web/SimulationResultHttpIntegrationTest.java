@@ -10,14 +10,19 @@ import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.infrastructure.messaging.SimulationResultListener;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,10 +32,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * 実物: HTTPサーバー、Controller、Coordinator、WaitingResultRegistry、結果Listener、JSON変換。 モック:
- * 要求送信ポートSimulatorMessagePublisher、SQS無効化時に未使用のSqsTemplate。 担保する疎通: HTTP JSON要求 -> Controller ->
- * Coordinator -> 結果Listener -> WaitingResultRegistry -> Coordinator -> Controller -> HTTP JSON応答。
- * 担保しないもの: SQS通信・メッセージ変換・削除、simulatorの計算、ブラウザ描画。
+ * 実物: HTTPサーバー、Spring Security、ローカルフォームログイン、Controller、Coordinator、WaitingResultRegistry、
+ * 結果Listener、JSON変換。 モック: 要求送信ポートSimulatorMessagePublisher、SQS無効化時に未使用のSqsTemplate。 担保する疎通: HTTP
+ * GET /login -> HTTP POST /login -> 認証済みHTTP JSON要求 -> Controller -> Coordinator -> 結果Listener ->
+ * WaitingResultRegistry -> Coordinator -> Controller -> HTTP JSON応答。担保しないもの:
+ * SQS通信・メッセージ変換・削除、simulatorの計算、ブラウザ描画。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -43,6 +49,35 @@ class SimulationResultHttpIntegrationTest {
     @Autowired private WaitingResultRegistry registry;
     @Autowired private ObjectMapper objectMapper;
     @LocalServerPort private int port;
+
+    private HttpClient authenticatedClient() throws Exception {
+        var client =
+                HttpClient.newBuilder()
+                        .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
+                        .followRedirects(HttpClient.Redirect.NEVER)
+                        .build();
+        var loginPage =
+                client.send(
+                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
+                                .GET()
+                                .build(),
+                        HttpResponse.BodyHandlers.ofString());
+        var csrfMatcher =
+                Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"").matcher(loginPage.body());
+        assertTrue(csrfMatcher.find());
+        var form =
+                "userId=test&password=password&_csrf="
+                        + URLEncoder.encode(csrfMatcher.group(1), StandardCharsets.UTF_8);
+        var login =
+                client.send(
+                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
+                                .header("Content-Type", "application/x-www-form-urlencoded")
+                                .POST(HttpRequest.BodyPublishers.ofString(form))
+                                .build(),
+                        HttpResponse.BodyHandlers.discarding());
+        assertEquals(302, login.statusCode());
+        return client;
+    }
 
     @Test
     @DisplayName("結果が逆順に届いても同じ相関IDのHTTP要求へ得点と失点を返す")
@@ -62,20 +97,20 @@ class SimulationResultHttpIntegrationTest {
                         .POST(
                                 HttpRequest.BodyPublishers.ofString(
                                         """
-                                                [{"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false}]
+                                                [{"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false}]
                                                 """))
                         .build();
 
         // when
-        try (var client = HttpClient.newHttpClient()) {
+        try (var client = authenticatedClient()) {
             var first = client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
             var firstSent = sent.poll(10, TimeUnit.SECONDS);
             assertAll(() -> assertNotNull(firstSent));

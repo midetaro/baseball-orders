@@ -5,14 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.example.baseballorders.messaging.PitcherPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
+import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.statistics.GameStatistics;
@@ -25,6 +28,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 import org.springframework.scheduling.annotation.Scheduled;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.*;
@@ -236,7 +240,8 @@ class SqsSimulationSchedulerTest {
         UUID simulationId = UUID.randomUUID();
         String body =
                 objectMapper.writeValueAsString(
-                        new SimulationRequestMessage(simulationId, "1", players));
+                        new SimulationRequestMessage(
+                                simulationId, "1", players, PitcherPersonality.BOLD));
         Message message = Message.builder().body(body).receiptHandle("receipt-1").build();
         when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
@@ -273,6 +278,12 @@ class SqsSimulationSchedulerTest {
 
         // then
         ordered.verify(useCase).invoke(lineUpCaptor.capture());
+        BattingResult pitcherAdjustedBattingResult;
+        try (MockedStatic<RandomGenerator> random = mockStatic(RandomGenerator.class)) {
+            random.when(RandomGenerator::nextFloat).thenReturn(0.35f);
+            pitcherAdjustedBattingResult =
+                    lineUpCaptor.getValue().getBatterEntities().getFirst().swing(0);
+        }
         ordered.verify(sqsClient, org.mockito.Mockito.times(1))
                 .sendMessage(sendMessageCaptor.capture());
         ordered.verify(sqsClient).deleteMessage(any(DeleteMessageRequest.class));
@@ -292,6 +303,7 @@ class SqsSimulationSchedulerTest {
         var sentJson = objectMapper.readTree(sendMessageCaptor.getValue().messageBody());
         assertAll(
                 () -> assertEquals(9, lineUpCaptor.getValue().getBatterEntities().size()),
+                () -> assertEquals(BattingResult.HIT_SINGLE, pitcherAdjustedBattingResult),
                 () -> assertEquals("result-url", sendMessageCaptor.getValue().queueUrl()),
                 () -> assertEquals(1, sentResponses.size()),
                 () -> assertEquals("2", sentResponses.getFirst().version()),

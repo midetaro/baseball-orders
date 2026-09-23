@@ -2,22 +2,73 @@ package com.example.baseballorders.simulator.infrastructure.messaging;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 
+import com.example.baseballorders.messaging.PitcherPersonality;
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.play.*;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.batting.MiddleDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.bunt.StandardBuntStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.steal.StandardStealStrategy;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsRecorder;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 class LineUpMapperTest {
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+        "BOLD,0.39,0.28,0.5,0.6",
+        "CAUTIOUS,0.21,0.4,0.65,0.78",
+        "TECHNICAL,0.3,0.52,0.35,0.42",
+        "DEFAULT,0.3,0.4,0.5,0.6"
+    })
+    @DisplayName("投手の性格に応じて各確率を補正し選手の行動戦略へ渡す")
+    void adjustsAllProbabilitiesForPitcher(
+            PitcherPersonality pitcher, float onBase, float slugging, float bunt, float steal) {
+        // given
+        var hitting = mock(MiddleDistanceHittingStrategy.class);
+        var stealing = mock(StandardStealStrategy.class);
+        var bunting = mock(StandardBuntStrategy.class);
+        var mapper = new LineUpMapper(hitting, stealing, bunting);
+        var player =
+                new SimulationPlayerMessage(
+                        "1番", 0.3f, 0.4f, 0.5f, true, 0.6f, true, PlayerPersonality.DEFAULT);
+        var onBaseCaptor = ArgumentCaptor.forClass(Float.class);
+        var sluggingCaptor = ArgumentCaptor.forClass(Float.class);
+        var buntCaptor = ArgumentCaptor.forClass(Float.class);
+        var stealCaptor = ArgumentCaptor.forClass(Float.class);
+
+        // when
+        var batter =
+                mapper.map(java.util.Collections.nCopies(9, player), pitcher)
+                        .getBatterEntities()
+                        .getFirst();
+        batter.swing(0);
+        batter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
+        batter.stealToDouble();
+        verify(hitting).batting(onBaseCaptor.capture(), sluggingCaptor.capture());
+        verify(bunting)
+                .bunt(buntCaptor.capture(), org.mockito.ArgumentMatchers.eq(OutCount.NO_OUT));
+        verify(stealing).runToDouble(stealCaptor.capture());
+
+        // then
+        assertAll(
+                () -> assertEquals(onBase, onBaseCaptor.getValue(), 0.00001f),
+                () -> assertEquals(slugging, sluggingCaptor.getValue(), 0.00001f),
+                () -> assertEquals(bunt, buntCaptor.getValue(), 0.00001f),
+                () -> assertEquals(steal, stealCaptor.getValue(), 0.00001f));
+    }
 
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.EnumSource(PlayerPersonality.class)

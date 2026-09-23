@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.baseballorders.backend.BackendApplication;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
+import com.example.baseballorders.messaging.PitcherPersonality;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
@@ -18,14 +20,19 @@ import com.example.baseballorders.simulator.infrastructure.messaging.SqsSimulati
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.floci.testcontainers.FlociContainer;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -46,6 +53,35 @@ import software.amazon.awssdk.services.sqs.SqsClient;
  */
 class BackendSimulatorFlociIntegrationTest {
 
+    private static HttpClient authenticatedClient(int port) throws Exception {
+        var client =
+                HttpClient.newBuilder()
+                        .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
+                        .followRedirects(HttpClient.Redirect.NEVER)
+                        .build();
+        var loginPage =
+                client.send(
+                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
+                                .GET()
+                                .build(),
+                        HttpResponse.BodyHandlers.ofString());
+        var csrfMatcher =
+                Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"").matcher(loginPage.body());
+        assertTrue(csrfMatcher.find(), "ログインページはCSRFトークンを返す");
+        var form =
+                "userId=test&password=password&_csrf="
+                        + URLEncoder.encode(csrfMatcher.group(1), StandardCharsets.UTF_8);
+        var login =
+                client.send(
+                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
+                                .header("Content-Type", "application/x-www-form-urlencoded")
+                                .POST(HttpRequest.BodyPublishers.ofString(form))
+                                .build(),
+                        HttpResponse.BodyHandlers.discarding());
+        assertEquals(302, login.statusCode(), "テスト用ローカルアカウントでログインする");
+        return client;
+    }
+
     /**
      * 実物: backend HTTPサーバー・Controller・Coordinator・H2・SQS Publisher/Listener、
      * simulatorのLineUpMapper・SimulateGameUseCase・SqsSimulationScheduler、Floci SQS。
@@ -56,7 +92,21 @@ class BackendSimulatorFlociIntegrationTest {
     @Test
     @DisplayName("HTTP要求をsimulatorがFloci経由で処理しbackendが結果SQSを受信して同じ相関IDで応答する")
     void completesBackendRequestAfterSimulatorProcessesIt() throws Exception {
-        runScenario(new SimulateGameUseCase(1), null);
+        runScenario(new SimulateGameUseCase(1), null, PitcherPersonality.DEFAULT);
+    }
+
+    /**
+     * 実物: backend HTTPサーバー・Controller・Coordinator・SQS Publisher、simulatorの
+     * SqsSimulationScheduler・LineUpMapper、Floci SQS。
+     * モック: AWS SQSをFlociに置換。
+     * 担保する疎通: HTTPのpitcher_personality query -> backend内部要求 -> 要求SQS JSON
+     * -> simulatorのSimulationRequestMessage復元 -> LineUpMapperへの投手性格引き渡し -> 結果SQS -> HTTP応答。
+     * 担保しないもの: 各投手性格における確率補正の詳細、AWS実環境、ブラウザ描画。
+     */
+    @Test
+    @DisplayName("投手性格がHTTP要求からSQS契約を経由してsimulatorのLineUpMapperへ渡る")
+    void carriesPitcherPersonalityFromHttpRequestToSimulatorMapper() throws Exception {
+        runScenario(new SimulateGameUseCase(1), null, PitcherPersonality.BOLD);
     }
 
     /**
@@ -80,10 +130,14 @@ class BackendSimulatorFlociIntegrationTest {
                 return new SimulationResult(expected);
             }
         };
-        runScenario(fixedUseCase, expected);
+        runScenario(fixedUseCase, expected, PitcherPersonality.DEFAULT);
     }
 
-    private void runScenario(SimulateGameUseCase useCase, ScoreStatistics expected) throws Exception {
+    private void runScenario(
+            SimulateGameUseCase useCase,
+            ScoreStatistics expected,
+            PitcherPersonality expectedPitcherPersonality)
+            throws Exception {
         // given
         var suffix = UUID.randomUUID().toString();
         var requestQueue = "simulation-request-" + suffix;
@@ -108,29 +162,31 @@ class BackendSimulatorFlociIntegrationTest {
                                 "--spring.datasource.url=jdbc:h2:mem:" + suffix,
                                 "--simulation.sqs.request-queue-name=" + requestQueue,
                                 "--simulation.sqs.result-queue-name=" + resultQueue);
-                        var http = HttpClient.newHttpClient()) {
+                        var http = authenticatedClient(
+                                ((WebServerApplicationContext) backend).getWebServer().getPort())) {
                     var port = ((WebServerApplicationContext) backend).getWebServer().getPort();
                     var registry = backend.getBean(WaitingResultRegistry.class);
                     var mapper = new ObjectMapper();
-                    var lineupMapper = new LineUpMapper(
+                    var lineupMapper = new RecordingLineUpMapper(
                             BehaviorStrategies.middleDistanceHittingStrategy(),
                             BehaviorStrategies.noSteal(),
                             BehaviorStrategies.standardBunt());
                     var simulator = new SqsSimulationScheduler(
                             sqs, mapper, useCase, lineupMapper, requestQueue, resultQueue, 10, 10);
-                    var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/simulations"))
+                    var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port
+                                    + "/simulations?pitcher_personality=" + expectedPitcherPersonality))
                             .timeout(Duration.ofSeconds(30))
                             .header("Content-Type", "application/json")
                             .POST(HttpRequest.BodyPublishers.ofString("""
-                                    [{"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.450,"bunt_success_rate":0.700,"steal_success_rate":0.800,"bunt_enabled":false,"steal_enabled":false}]
+                                    [{"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false}]
                                     """))
                             .build();
 
@@ -157,6 +213,8 @@ class BackendSimulatorFlociIntegrationTest {
                             () -> assertNotNull(wireRequest.simulationId()),
                             () -> assertEquals(wireRequest.simulationId().toString(), body.path("simulationId").asText()),
                             () -> assertEquals(9, wireRequest.players().size()),
+                            () -> assertEquals(expectedPitcherPersonality, wireRequest.pitcherPersonality()),
+                            () -> assertEquals(expectedPitcherPersonality, lineupMapper.pitcherPersonality()),
                             () -> assertEquals(1, body.path("statistics").path("gameCount").asInt(-1)),
                             () -> assertEquals(0, registry.pendingCount())
                     );
@@ -187,6 +245,31 @@ class BackendSimulatorFlociIntegrationTest {
                     }
                 }
             }
+        }
+    }
+
+    private static final class RecordingLineUpMapper extends LineUpMapper {
+
+        private PitcherPersonality pitcherPersonality;
+
+        private RecordingLineUpMapper(
+                com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy
+                                hittingStrategy,
+                com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy stealStrategy,
+                com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy buntStrategy) {
+            super(hittingStrategy, stealStrategy, buntStrategy);
+        }
+
+        @Override
+        public LineUpEntity map(
+                java.util.List<com.example.baseballorders.messaging.SimulationPlayerMessage> players,
+                PitcherPersonality pitcherPersonality) {
+            this.pitcherPersonality = pitcherPersonality;
+            return super.map(players, pitcherPersonality);
+        }
+
+        private PitcherPersonality pitcherPersonality() {
+            return pitcherPersonality;
         }
     }
 }

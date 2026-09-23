@@ -13,12 +13,27 @@ import org.jilt.BuilderStyle;
  * @param simulationId 相関に使用する一意なID
  * @param version メッセージスキーマのバージョン
  * @param players 打順どおりの9人の選手
+ * @param pitcherPersonality 対戦する投手の性格
  */
 @Builder(style = BuilderStyle.STAGED)
 public record SimulationRequestMessage(
         @JsonProperty("simulation_id") UUID simulationId,
         String version,
-        List<SimulationPlayerMessage> players) {
+        List<SimulationPlayerMessage> players,
+        PitcherPersonality pitcherPersonality) {
+
+    /**
+     * Creates a request with the default pitcher personality for compatibility with existing
+     * callers.
+     *
+     * @param simulationId 相関に使用する一意なID
+     * @param version メッセージスキーマのバージョン
+     * @param players 打順どおりの9人の選手
+     */
+    public SimulationRequestMessage(
+            UUID simulationId, String version, List<SimulationPlayerMessage> players) {
+        this(simulationId, version, players, PitcherPersonality.DEFAULT);
+    }
 
     /**
      * Requires correlation metadata and a non-null player list, preserving its order in an
@@ -30,5 +45,7 @@ public record SimulationRequestMessage(
         Objects.requireNonNull(simulationId, "simulationId must not be null");
         Objects.requireNonNull(version, "version must not be null");
         players = List.copyOf(Objects.requireNonNull(players, "players must not be null"));
+        pitcherPersonality =
+                pitcherPersonality == null ? PitcherPersonality.DEFAULT : pitcherPersonality;
     }
 }

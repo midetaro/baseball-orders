@@ -8,6 +8,7 @@ import com.example.baseballorders.backend.application.adapter.SimulatorMessagePu
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
+import com.example.baseballorders.backend.domain.PitcherPersonality;
 import com.example.baseballorders.backend.domain.PlayerData;
 import com.example.baseballorders.backend.domain.PlayerDataBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
@@ -28,10 +29,10 @@ class SimulationCoordinatorTest {
                                 PlayerDataBuilder.playerData()
                                         .name("山田")
                                         .hitAverage(0.301f)
-                                        .sluggish(0.501f)
-                                        .buntSuccessRate(0.701f)
+                                        .sluggish(0.351f)
+                                        .buntSuccessRate(0.700f)
                                         .buntEnabled(true)
-                                        .stealSuccessRate(0.801f)
+                                        .stealSuccessRate(0.700f)
                                         .stealEnabled(true)
                                         .personality(PlayerPersonality.DEFAULT)
                                         .build())
@@ -65,11 +66,11 @@ class SimulationCoordinatorTest {
                 () -> assertEquals("1", published.getFirst().version()),
                 () -> assertEquals("山田", published.getFirst().players().getFirst().name()),
                 () -> assertEquals(0.301f, published.getFirst().players().getFirst().hitAverage()),
-                () -> assertEquals(0.501f, published.getFirst().players().getFirst().sluggish()),
+                () -> assertEquals(0.351f, published.getFirst().players().getFirst().sluggish()),
                 () -> assertEquals(true, published.getFirst().players().getFirst().buntEnabled()),
                 () ->
                         assertEquals(
-                                0.801f,
+                                0.700f,
                                 published.getFirst().players().getFirst().stealSuccessRate()),
                 () -> assertEquals(5, result.statistics().maximumScore()),
                 () -> assertEquals(0, registry.pendingCount()));
@@ -194,5 +195,114 @@ class SimulationCoordinatorTest {
                 () ->
                         assertEquals(
                                 "players must contain exactly 9 entries", exception.getMessage()));
+    }
+
+    @Test
+    @DisplayName("9人の出塁率平均が上限を超える場合はSQS送信をせず拒否する")
+    void rejectsLineupWithExcessiveHitAverage() {
+        // given
+        var coordinator =
+                new SimulationCoordinator(
+                        request -> {}, new WaitingResultRegistry(), Duration.ofMillis(1));
+        var excessivePlayers =
+                java.util.stream.IntStream.range(0, 9)
+                        .mapToObj(
+                                _ ->
+                                        PlayerDataBuilder.playerData()
+                                                .name("山田")
+                                                .hitAverage(0.351f)
+                                                .sluggish(0.400f)
+                                                .buntSuccessRate(0.700f)
+                                                .buntEnabled(true)
+                                                .stealSuccessRate(0.700f)
+                                                .stealEnabled(true)
+                                                .personality(PlayerPersonality.DEFAULT)
+                                                .build())
+                        .toList();
+
+        // when
+        var exception =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> coordinator.simulate(excessivePlayers));
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                "the average hitAverage must not exceed 0.35",
+                                exception.getMessage()));
+    }
+
+    @Test
+    @DisplayName("9人の長打率平均が上限を超える場合はSQS送信をせず拒否する")
+    void rejectsLineupWithExcessiveSluggish() {
+        // given
+        var coordinator =
+                new SimulationCoordinator(
+                        request -> {}, new WaitingResultRegistry(), Duration.ofMillis(1));
+        var excessivePlayers =
+                java.util.stream.IntStream.range(0, 9)
+                        .mapToObj(
+                                _ ->
+                                        PlayerDataBuilder.playerData()
+                                                .name("山田")
+                                                .hitAverage(0.350f)
+                                                .sluggish(0.401f)
+                                                .buntSuccessRate(0.700f)
+                                                .buntEnabled(true)
+                                                .stealSuccessRate(0.700f)
+                                                .stealEnabled(true)
+                                                .personality(PlayerPersonality.DEFAULT)
+                                                .build())
+                        .toList();
+
+        // when
+        var exception =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> coordinator.simulate(excessivePlayers));
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                "the average sluggish must not exceed 0.4",
+                                exception.getMessage()));
+    }
+
+    @Test
+    @DisplayName("大胆な投手で出塁率が1を超える打順はSQS送信をせず拒否する")
+    void rejectsBoldPitcherLineupWithAdjustedHitAverageAboveOne() {
+        // given
+        var sut =
+                new SimulationCoordinator(
+                        request -> {}, new WaitingResultRegistry(), Duration.ofMillis(1));
+        var lineup = new ArrayList<>(players(9));
+        lineup.set(
+                0,
+                PlayerDataBuilder.playerData()
+                        .name("山田")
+                        .hitAverage(0.8f)
+                        .sluggish(0.351f)
+                        .buntSuccessRate(0.700f)
+                        .buntEnabled(true)
+                        .stealSuccessRate(0.700f)
+                        .stealEnabled(true)
+                        .personality(PlayerPersonality.DEFAULT)
+                        .build());
+
+        // when
+        var exception =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> sut.simulate(lineup, PitcherPersonality.BOLD));
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                "pitcher-adjusted hitAverage must not exceed 1.0",
+                                exception.getMessage()));
     }
 }

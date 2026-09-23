@@ -1,5 +1,6 @@
 package com.example.baseballorders.simulator.infrastructure.messaging;
 
+import com.example.baseballorders.messaging.PitcherPersonality;
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
@@ -46,15 +47,32 @@ public class LineUpMapper {
      * @return lineup containing mapped batter entities in request order
      */
     public LineUpEntity map(List<SimulationPlayerMessage> players) {
+        return map(players, PitcherPersonality.DEFAULT);
+    }
+
+    /**
+     * Converts SQS players to a lineup after applying the opposing pitcher's probability changes.
+     * Player personalities continue to select behavior strategies independently.
+     *
+     * @param players players contained in a simulation request
+     * @param pitcherPersonality opposing pitcher's personality
+     * @return lineup containing adjusted batter entities in request order
+     */
+    public LineUpEntity map(
+            List<SimulationPlayerMessage> players, PitcherPersonality pitcherPersonality) {
         List<BatterEntity> batters =
                 players.stream()
                         .map(
                                 player ->
                                         new BatterEntity(
-                                                player.hitAverage(),
-                                                player.sluggish(),
-                                                player.buntSuccessRate(),
-                                                player.stealSuccessRate(),
+                                                player.hitAverage()
+                                                        * onBaseMultiplier(pitcherPersonality),
+                                                player.sluggish()
+                                                        * sluggingMultiplier(pitcherPersonality),
+                                                player.buntSuccessRate()
+                                                        * runningMultiplier(pitcherPersonality),
+                                                player.stealSuccessRate()
+                                                        * runningMultiplier(pitcherPersonality),
                                                 battingBehaviorFor(player.personality()),
                                                 player.stealEnabled()
                                                         ? stealStrategyFor(player.personality())
@@ -64,6 +82,30 @@ public class LineUpMapper {
                                                         : noBuntStrategy))
                         .toList();
         return new LineUpEntity(batters);
+    }
+
+    private float onBaseMultiplier(PitcherPersonality personality) {
+        return switch (personality) {
+            case BOLD -> 1.3f;
+            case CAUTIOUS -> 0.7f;
+            case TECHNICAL, DEFAULT -> 1.0f;
+        };
+    }
+
+    private float sluggingMultiplier(PitcherPersonality personality) {
+        return switch (personality) {
+            case BOLD -> 0.7f;
+            case TECHNICAL -> 1.3f;
+            case CAUTIOUS, DEFAULT -> 1.0f;
+        };
+    }
+
+    private float runningMultiplier(PitcherPersonality personality) {
+        return switch (personality) {
+            case CAUTIOUS -> 1.3f;
+            case TECHNICAL -> 0.7f;
+            case BOLD, DEFAULT -> 1.0f;
+        };
     }
 
     private HittingStrategy battingBehaviorFor(PlayerPersonality personality) {

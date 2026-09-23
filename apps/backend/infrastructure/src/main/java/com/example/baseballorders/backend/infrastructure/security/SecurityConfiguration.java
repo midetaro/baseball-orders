@@ -93,7 +93,7 @@ public class SecurityConfiguration {
     }
 
     /**
-     * 全ページを匿名利用可能にし、ローカルフォームログインと設定済みのGoogle OAuthログインを追加する。
+     * 公開ページ以外を認証必須にし、ローカルフォームログインと設定済みのGoogle OAuthログインを追加する。
      *
      * @param http Spring Security HTTP設定
      * @param properties Google OAuth設定
@@ -107,7 +107,18 @@ public class SecurityConfiguration {
             GoogleOAuthProperties properties,
             GoogleOidcUserProvisioningService provisioningService)
             throws Exception {
-        http.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
+        http.authorizeHttpRequests(
+                authorize ->
+                        authorize
+                                .requestMatchers(
+                                        "/login",
+                                        "/register",
+                                        "/simulation-guide",
+                                        "/css/**",
+                                        "/js/**")
+                                .permitAll()
+                                .anyRequest()
+                                .authenticated());
         http.csrf(csrf -> csrf.ignoringRequestMatchers("/simulations"));
         http.formLogin(form -> form.loginPage("/login").usernameParameter("userId").permitAll());
         if (properties.enabled()) {

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.domain.PitcherPersonality;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.util.List;
@@ -52,7 +53,7 @@ class SimulatorRequestControllerTest {
                                 0.3f,
                                 0.4f,
                                 0.7f,
-                                0.8f,
+                                0.7f,
                                 buntEnabled,
                                 stealEnabled,
                                 PlayerPersonality.EAGER_STEAL)));
@@ -102,7 +103,7 @@ class SimulatorRequestControllerTest {
                                 .mapToObj(
                                         number ->
                                                 new PlayerInputRequest(
-                                                        0.300f, 0.450f, 0.700f, 0.800f, true, true))
+                                                        0.300f, 0.400f, 0.700f, 0.700f, true, true))
                                 .toList());
 
         // then
@@ -127,7 +128,7 @@ class SimulatorRequestControllerTest {
                                 controller.send(
                                         playersWith(
                                                 new PlayerInputRequest(
-                                                        0.004f, 0.450f, 0.700f, 0.800f, false,
+                                                        -0.001f, 0.400f, 0.700f, 0.700f, false,
                                                         false))));
         var missingValueException =
                 assertThrows(
@@ -136,26 +137,54 @@ class SimulatorRequestControllerTest {
                                 controller.send(
                                         playersWith(
                                                 new PlayerInputRequest(
-                                                        0.300f, 0.450f, null, 0.800f, false,
+                                                        0.300f, 0.400f, null, 0.700f, false,
+                                                        false))));
+        var buntSuccessRateException =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () ->
+                                controller.send(
+                                        playersWith(
+                                                new PlayerInputRequest(
+                                                        0.300f, 0.400f, 0.701f, 0.700f, false,
+                                                        false))));
+        var stealSuccessRateException =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () ->
+                                controller.send(
+                                        playersWith(
+                                                new PlayerInputRequest(
+                                                        0.300f, 0.400f, 0.700f, 0.701f, false,
                                                         false))));
 
         // then
         assertAll(
                 () ->
                         assertEquals(
-                                "hitAverage must be between 0.005 and 0.4",
+                                "hitAverage must be between 0.0 and 1.0",
                                 hitAverageException.getMessage()),
                 () ->
                         assertEquals(
                                 "bunt_success_rate must not be null",
-                                missingValueException.getMessage()));
+                                missingValueException.getMessage()),
+                () ->
+                        assertEquals(
+                                "buntSuccessRate must be between 0.0 and 0.7",
+                                buntSuccessRateException.getMessage()),
+                () ->
+                        assertEquals(
+                                "stealSuccessRate must be between 0.0 and 0.7",
+                                stealSuccessRateException.getMessage()));
     }
 
     @Test
     @DisplayName("POST APIは202ではなく結果を返す通常の同期エンドポイントである")
     void exposesSynchronousPostEndpoint() throws NoSuchMethodException {
         // given
-        var method = SimulatorRequestController.class.getMethod("send", List.class);
+        var method =
+                SimulatorRequestController.class.getMethod(
+                        "send", List.class, PitcherPersonality.class);
 
         // when
         var postMapping = method.getAnnotation(PostMapping.class);
@@ -164,6 +193,47 @@ class SimulatorRequestControllerTest {
         assertAll(
                 () -> assertEquals(PostMapping.class, postMapping.annotationType()),
                 () -> assertEquals(SimulationResult.class, method.getReturnType()));
+    }
+
+    @Test
+    @DisplayName("HTTP入力の投手性格を共有メッセージまで保持する")
+    void propagatesPitcherPersonality() {
+        // given
+        var template = org.mockito.Mockito.mock(io.awspring.cloud.sqs.operations.SqsTemplate.class);
+        var publisher =
+                new com.example.baseballorders.backend.infrastructure.messaging
+                        .SqsSimulatorMessagePublisher(template, "request");
+        var registry = new WaitingResultRegistry();
+        var controller =
+                new SimulatorRequestController(
+                        new SimulationCoordinator(
+                                request -> {
+                                    publisher.publish(request);
+                                    registry.complete(
+                                            request.simulationId(),
+                                            new SimulationResult(
+                                                    request.simulationId(),
+                                                    List.of(new SimulationResult.Result(0, 0)),
+                                                    new SimulationResult.Statistics(0, 0, 0)));
+                                },
+                                registry));
+        var captor =
+                org.mockito.ArgumentCaptor.forClass(
+                        com.example.baseballorders.messaging.SimulationRequestMessage.class);
+
+        // when
+        controller.send(
+                playersWith(new PlayerInputRequest(0.3f, 0.4f, 0.7f, 0.7f, true, true)),
+                PitcherPersonality.CAUTIOUS);
+
+        // then
+        org.mockito.Mockito.verify(template)
+                .send(org.mockito.ArgumentMatchers.eq("request"), captor.capture());
+        assertAll(
+                () ->
+                        assertEquals(
+                                com.example.baseballorders.messaging.PitcherPersonality.CAUTIOUS,
+                                captor.getValue().pitcherPersonality()));
     }
 
     private List<PlayerInputRequest> playersWith(PlayerInputRequest player) {
