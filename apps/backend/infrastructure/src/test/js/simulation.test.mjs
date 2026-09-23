@@ -92,7 +92,7 @@ for (const [kind, color] of [
   ['advancing-bunt', 'var(--cyan)'],
   ['squeeze-bunt', 'var(--lime)'],
   ['advancing-bunt-failure', 'var(--orange)'],
-  ['squeeze-bunt-failure', 'var(--pink)'],
+  ['squeeze-bunt-failure', 'var(--amber)'],
   ['steal-second', 'var(--cyan)'],
   ['steal-third', 'var(--violet)'],
   ['steal-failure', 'var(--orange)']
@@ -141,5 +141,37 @@ assert.match(html, /--cyan:\s*#25d9ff/, 'ビビットなシアンを画面全体
 assert.match(html, /--pink:\s*#ff4da6/, 'ビビットなピンクを画面全体の強調色に使う');
 assert.ok(html.includes('radial-gradient(circle at 15% 10%'), '複数の差し色でページ背景に奥行きを作る');
 assert.match(html, /linear-gradient\(135deg,\s*var\(--cyan\),\s*var\(--lime\)\)/, '主要アクションを鮮やかなグラデーションで強調する');
+
+// --- 結果画面の可読性改善（Phase1: 空状態・単一指標の見出し統合・横幅・横スクロール） ---
+for (const [id, label] of [
+  ['game-count', '試合数'],
+  ['average-score', '平均得点'],
+  ['median-score', '中央値得点'],
+  ['maximum-score', '最大得点'],
+  ['hit-count', '総安打'],
+  ['home-run-count', '本塁打']
+]) {
+  assert.ok(html.includes(`id="${id}">—<`), `${label}(${id})の初期表示を空文字にせずプレースホルダーを出す`);
+}
+assert.ok(html.includes('<span class="group-total"><span class="group-total-label">最大得点</span><span class="group-total-value" id="maximum-score">—</span></span>'), '最大得点を単独行にせず見出し行のバッジへ統合する');
+assert.ok(html.includes('<span class="group-total"><span class="group-total-label">総安打</span><span class="group-total-value" id="hit-count">—</span></span>'), '総安打を単独行にせず見出し行のバッジへ統合する');
+assert.ok(html.includes('<span class="group-total"><span class="group-total-label">本塁打</span><span class="group-total-value" id="home-run-count">—</span></span>'), '本塁打を単独行にせず見出し行のバッジへ統合する');
+assert.ok(html.includes('id="score-empty-state">試合結果なし</p>'), '未実行・0試合時に得点サマリーへも内訳グループと同じ空状態表示を出す');
+assert.ok(!html.includes('id="score-empty-state" hidden'), '初期表示から得点結果なしの表示ラベルを隠さない');
+assert.ok(html.includes("querySelector('#score-empty-state').hidden=gameCount!==0"), '得点サマリーの空状態を試合数に応じて切り替える');
+assert.ok(!html.includes('results.hidden'), '結果パネル全体を毎回消して再描画するとレイアウトが跳ねるため使わない');
+assert.ok(html.includes('class="histogram-scroll"'), '得点分布のバー本数が多くても横スクロールで読める幅を確保する');
+assert.match(html, /\.histogram-scroll\s*\{\s*overflow-x:\s*auto;/, '得点分布ヒストグラムを横スクロール可能にする');
+assert.match(html, /\.histogram-bar\s*\{[^}]*flex:\s*0 0 40px;/, '得点分布の棒を固定幅にして詰まりすぎを防ぐ');
+assert.match(html, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(420px,\s*1\.05fr\)/, '結果パネルに入力パネル以上の幅を割り当てる');
+
+// --- 結果画面の可読性改善（Phase2: 内訳グループの折りたたみ・失敗色の統一） ---
+assert.match(html, /--amber:\s*#ffb12b/, 'バント失敗系統の識別用にアンバーの変数を追加する');
+for (const heading of ['安打の内訳', '本塁打の内訳', 'バントの内訳', '盗塁の内訳']) {
+  assert.ok(html.includes(`<summary class="group-heading">${heading}`), `${heading}グループを折りたたみ可能にする`);
+}
+assert.ok((html.match(/<details class="statistics-group" open>/g) ?? []).length === 4, '内訳4グループを初期状態では展開したまま折りたたみ可能にする');
+assert.ok(html.includes('<h3 class="group-heading">得点サマリー'), '得点サマリーは折りたたまず常に見出しをh3で表示する');
+assert.ok(!html.includes('<summary class="group-heading">得点サマリー'), '得点サマリーはdetails/summaryに変更しない');
 
 console.log('PASS: 直接入力、必須値・率の範囲制御、バント選択の送信');
