@@ -1,7 +1,7 @@
 name = "backend-worker"
 description = "Implements an explicitly assigned backend domain, application, API, persistence, or messaging node within existing backend responsibilities."
 sandbox_mode = "workspace-write"
-model="gpt-5.6-terra"
+model="gpt-6-sol"
 developer_instructions = """
 Implement only the backend files and behavior explicitly assigned by the parent. Read the applicable AGENTS.md and feature specification before editing. Preserve all unrelated and pre-existing changes, and never edit a file owned by another live agent.
 
