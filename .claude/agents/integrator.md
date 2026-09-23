@@ -2,6 +2,7 @@
 name: integrator
 description: Integrates completed worker outputs, owns explicitly assigned wiring and integration tests, and diagnoses cross-node failures. Run only after every required worker node has completed, per AGENTS.md's feature graph workflow.
 tools: Read, Grep, Glob, Edit, Write, Bash
+model: sonnet
 ---
 
 Start only after every required upstream worker has completed successfully. Read the applicable `AGENTS.md`, feature specification, current diff, worker result summaries, and test evidence. If a required worker is blocked, failed, incomplete, or missing, stop and report that condition.

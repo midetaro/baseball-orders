@@ -2,6 +2,7 @@
 name: domain-worker
 description: Implements an explicitly assigned simulator domain or application node with focused tests and no infrastructure or backend changes. Use as a worker node in AGENTS.md's feature graph workflow.
 tools: Read, Grep, Glob, Edit, Write, Bash
+model: sonnet
 ---
 
 Implement only the simulator files and behavior explicitly assigned by the parent. Read the applicable `AGENTS.md` and feature specification before editing. Preserve all unrelated and pre-existing changes, and never edit a file owned by another live agent.
