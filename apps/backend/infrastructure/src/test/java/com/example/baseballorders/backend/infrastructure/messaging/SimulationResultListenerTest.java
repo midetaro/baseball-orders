@@ -29,7 +29,7 @@ class SimulationResultListenerTest {
                         "1",
                         new SimulationResultMessage.GameScoreStatistics(5, 5, 5, 10, Map.of(5, 10)),
                         new SimulationResultMessage.GameContentStatistics(
-                                4, 1, 1, 1, 1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29)));
+                                20, 8, 5, 3, 4, 1, 1, 1, 1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29)));
 
         // then
         assertAll(
@@ -39,6 +39,10 @@ class SimulationResultListenerTest {
                 () -> assertEquals(5, waiting.join().statistics().averageScore()),
                 () -> assertEquals(5, waiting.join().statistics().medianScore()),
                 () -> assertEquals(5, waiting.join().statistics().maximumScore()),
+                () -> assertEquals(20, waiting.join().statistics().hitCount()),
+                () -> assertEquals(8, waiting.join().statistics().singleHitCount()),
+                () -> assertEquals(5, waiting.join().statistics().doubleHitCount()),
+                () -> assertEquals(3, waiting.join().statistics().tripleHitCount()),
                 () -> assertEquals(4, waiting.join().statistics().homeRunCount()),
                 () -> assertEquals(1, waiting.join().statistics().soloHomeRunCount()),
                 () -> assertEquals(1, waiting.join().statistics().twoRunHomeRunCount()),
@@ -88,7 +92,7 @@ class SimulationResultListenerTest {
                         "1",
                         new SimulationResultMessage.GameScoreStatistics(5, 5, 5, 1, Map.of(5, 1)),
                         new SimulationResultMessage.GameContentStatistics(
-                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
 
         // then
         assertAll(() -> assertFalse(registry.pendingCount() > 0));
@@ -114,8 +118,8 @@ class SimulationResultListenerTest {
                                                 "1",
                                                 null,
                                                 new SimulationResultMessage.GameContentStatistics(
-                                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                        0))));
+                                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                        0, 0, 0, 0))));
 
         // then
         assertAll(
