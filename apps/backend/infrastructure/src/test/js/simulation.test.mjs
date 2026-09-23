@@ -24,18 +24,26 @@ assert.ok(!html.includes('一番〜九番として送信します。'), '不要�
 assert.ok(html.includes("const lineup = ["), '打順ごとの役割に応じた初期値を用意する');
 assert.ok(html.includes('position.textContent=`${index+1}番`'), '打順は「{数字}番」の固定表示にする');
 assert.ok(!html.includes('番打者'), '打順表示に「打者」を付けない');
-assert.ok(html.includes("hitAverage:'0.32',sluggish:'0.35'"), '一、二番に標準出塁率・低長打率を設定する');
-assert.ok(html.includes("hitAverage:'0.37',sluggish:'0.50'"), '三〜五番に高出塁率・高長打率を設定する');
+assert.ok(html.includes("hitAverage:'0.35',sluggish:'0.35'"), '一、二番に制約内の出塁率・長打率を設定する');
+assert.ok(html.includes("hitAverage:'0.35',sluggish:'0.50'"), '中軸に制約内の出塁率・高長打率を設定する');
 assert.ok(html.includes("hitAverage:'0.28',sluggish:'0.40'"), '六〜九番に低出塁率・標準長打率を設定する');
 assert.ok(html.includes('得点サマリー'), '得点統計を独立したグループとして表示する');
 assert.ok(html.includes('出塁率'), '打率ではなく出塁率を入力項目として表示する');
 assert.ok(!html.includes("label:'打率'"), '入力項目に打率を表示しない');
-assert.ok(html.includes("hitAverage:'0.32',sluggish:'0.35'"), '一、二番の出塁率は従来の打率より5分高くする');
-assert.ok(html.includes("hitAverage:'0.37',sluggish:'0.50'"), '三〜五番の出塁率は従来の打率より5分高くする');
-assert.ok(html.includes("hitAverage:'0.28',sluggish:'0.40'"), '六〜九番の出塁率は従来の打率より5分高くする');
-assert.ok(!html.includes("buntSuccessRate:'.700'"), 'バント成功率の初期値を7割にしない');
+assert.ok(html.includes("hitAverage:'0.28',sluggish:'0.40'"), '下位打線に制約内の出塁率・長打率を設定する');
+assert.ok(html.includes("buntSuccessRate:'0.70',stealSuccessRate:'0.70'"), 'バントと盗塁の成功率の初期値を7割にする');
 assert.ok(!html.includes("stealSuccessRate:'.500'"), '盗塁成功率の初期値を役割ごとに変えない');
-assert.ok(html.includes("buntSuccessRate:'0.80',stealSuccessRate:'0.80'"), 'バントと盗塁の成功率の初期値を8割にする');
+assert.ok(!html.includes("buntSuccessRate:'0.80',stealSuccessRate:'0.80'"), 'バントと盗塁の成功率の初期値を8割にしない');
+assert.ok(html.includes("buntSuccessRate:[0,0.7], stealSuccessRate:[0.1,0.7]"), 'バントと盗塁の成功率を7割以下に制限する');
+assert.ok(html.includes("function validLineup()"), '打順全体の入力制約を検証する');
+assert.ok(html.includes("lineup.reduce((sum,player)=>sum+Number(player.hitAverage),0)/lineup.length<=0.35"), '出塁率の平均を3割5分以下に制限する');
+assert.ok(html.includes("lineup.reduce((sum,player)=>sum+Number(player.sluggish),0)/lineup.length<=0.4"), '長打率の平均を4割以下に制限する');
+assert.ok(html.includes('id="pitcher-personality"'), '投手性格を選択できる');
+assert.ok(html.includes('value="BOLD">大胆'), '大胆な投手を選択できる');
+assert.ok(html.includes('value="TECHNICAL">技巧派'), '技巧派の投手を選択できる');
+assert.ok(html.includes('value="CAUTIOUS">慎重'), '慎重な投手を選択できる');
+assert.ok(html.includes('value="DEFAULT">無印'), '無印の投手を選択できる');
+assert.ok(html.includes("?pitcher_personality=${encodeURIComponent(pitcherPersonality.value)}"), '投手性格をリクエストクエリとして送る');
 assert.ok(html.includes("input.step='0.01'"), '数値入力は小数第2位刻みにする');
 assert.ok(html.includes("key:'hitAverage',label:'出塁率',min:0.01,max:0.6"), '出塁率の上限を60%にする');
 assert.ok(html.includes('function formatPercentage(value)'), '入力値を小数第2位に整形する');
@@ -74,16 +82,16 @@ for (const [kind, color] of [
   ['steal-third', 'var(--violet)'],
   ['steal-failure', 'var(--orange)']
 ]) {
-  assert.ok(html.includes(`.${kind} { background:${color}; }`), `${kind}を固有の色で表示する`);
+  assert.match(html, new RegExp(`\\.${kind}\\s*\\{\\s*background:\\s*${color.replace(/[()]/g, '\\$&')};\\s*\\}`), `${kind}を固有の色で表示する`);
 }
 assert.ok(html.includes('id="share-results"'), '結果をSNS共有できる操作を表示する');
 assert.ok(html.includes('navigator.share'), '対応ブラウザではネイティブ共有を使う');
 assert.ok(html.includes('clipboard.writeText'), 'ネイティブ共有非対応時は共有文をコピーする');
-assert.ok(html.includes('.order { width:max-content; min-width:570px;'), '入力欄を親幅いっぱいに広げずコンパクトにする');
-assert.ok(html.includes('grid-template-columns:38px repeat(4,76px) 118px 78px 78px'), '性格列を含む入力列を読みやすい固定幅にする');
+assert.match(html, /\.order\s*\{\s*width:\s*max-content;\s*min-width:\s*570px;/, '入力欄を親幅いっぱいに広げずコンパクトにする');
+assert.match(html, /grid-template-columns:\s*38px\s+repeat\(4,\s*76px\)\s+118px\s+78px\s+78px/, '性格列を含む入力列を読みやすい固定幅にする');
 assert.ok(html.includes('class="lineup-workspace"'), '打順入力とシミュレーション操作を横並びに配置する');
-assert.ok(html.includes('.section-head { display:flex;'), '打順入力の見出しと実行操作を横並びにする');
-assert.ok(html.includes('<h2 id="order-heading">打順入力</h2><button class="submit"'), '実行操作を打順入力ラベルの直後に置く');
+assert.match(html, /\.section-head\s*\{\s*display:\s*flex;/, '打順入力の見出しと実行操作を横並びにする');
+assert.match(html, /<h2 id="order-heading">打順入力<\/h2>\s*<button class="submit"/, '実行操作を打順入力ラベルの直後に置く');
 assert.ok(html.includes('id="toggle-all-bunt"'), '全員バントを切り替える操作を表示する');
 assert.ok(html.includes('id="toggle-all-steal"'), '全員盗塁を切り替える操作を表示する');
 assert.ok(html.includes('lineup.every(player=>player.buntEnabled)'), '全員バントが有効なら次の操作で全員無効にする');
@@ -95,13 +103,13 @@ assert.ok(!html.includes('Baseball Orders / Simulator'), '旧サービス名を�
 assert.ok(!html.includes('LINEUP<br>BUILDER'), '旧見出しを画面から除去する');
 assert.ok(!html.includes('id="results" aria-labelledby="results-heading" hidden'), '初期表示から結果の表示ラベルを隠さない');
 assert.ok(!html.includes('id="home-run-empty-state" hidden'), '初期表示から本塁打なしの表示ラベルを隠さない');
-assert.ok(html.includes('.simulation-workspace { display:grid;'), '広い画面では打順入力と結果を横並びにする');
+assert.match(html, /\.simulation-workspace\s*\{\s*display:\s*grid;/, '広い画面では打順入力と結果を横並びにする');
 assert.ok(!html.includes("const labelElement=document.createElement('label');"), '各入力セルに列名を重複表示しない');
 assert.ok(html.includes("input.setAttribute('aria-label',field.label);"), '列見出しを視覚的に重複させず入力の名称を提供する');
 for (const [field, minimum, maximum] of [
   ["key:'hitAverage'", 'min:0.01', 'max:0.6'],
   ["key:'sluggish'", 'min:0.1', 'max:0.6'],
-  ["key:'stealSuccessRate'", 'min:0.1', 'max:0.9']
+  ["key:'stealSuccessRate'", 'min:0.1', 'max:0.7']
 ]) {
   assert.ok(html.includes(field) && html.includes(minimum) && html.includes(maximum), `${field}の入力範囲を画面で制御する`);
 }
@@ -112,11 +120,11 @@ assert.ok(html.includes("steal_success_rate:Number(player.stealSuccessRate)"), '
 assert.ok(html.includes("enabledKey:'buntEnabled'"), 'バント成功率はバント選択に連動させる');
 assert.ok(html.includes("enabledKey:'stealEnabled'"), '盗塁成功率は盗塁選択に連動させる');
 assert.ok(html.includes("input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]);"), 'バント・盗塁をしない場合は対応する成功率を入力不可にする');
-assert.ok(html.includes("fetch('/simulations'"), '直接入力をシミュレーションAPIへ送る');
+assert.ok(html.includes('fetch(`/simulations?pitcher_personality='), '直接入力と投手性格をシミュレーションAPIへ送る');
 assert.ok(!html.includes('name:'), '固定表示の打者名をAPIへ送らない');
-assert.ok(html.includes('--cyan:#25d9ff'), 'ビビットなシアンを画面全体の強調色に使う');
-assert.ok(html.includes('--pink:#ff4da6'), 'ビビットなピンクを画面全体の強調色に使う');
+assert.match(html, /--cyan:\s*#25d9ff/, 'ビビットなシアンを画面全体の強調色に使う');
+assert.match(html, /--pink:\s*#ff4da6/, 'ビビットなピンクを画面全体の強調色に使う');
 assert.ok(html.includes('radial-gradient(circle at 15% 10%'), '複数の差し色でページ背景に奥行きを作る');
-assert.ok(html.includes('linear-gradient(135deg,var(--cyan),var(--lime))'), '主要アクションを鮮やかなグラデーションで強調する');
+assert.match(html, /linear-gradient\(135deg,\s*var\(--cyan\),\s*var\(--lime\)\)/, '主要アクションを鮮やかなグラデーションで強調する');
 
 console.log('PASS: 直接入力、必須値・率の範囲制御、バント選択の送信');

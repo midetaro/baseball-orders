@@ -1,6 +1,6 @@
 # Feature name
 
-Status: todo
+Status: done
 
 ## Goal
 - 投手投手との対戦機能を追加する

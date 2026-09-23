@@ -45,6 +45,16 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
         };
     }
 
+    private static com.example.baseballorders.messaging.PitcherPersonality toMessagePersonality(
+            com.example.baseballorders.backend.domain.PitcherPersonality personality) {
+        return switch (personality) {
+            case BOLD -> com.example.baseballorders.messaging.PitcherPersonality.BOLD;
+            case TECHNICAL -> com.example.baseballorders.messaging.PitcherPersonality.TECHNICAL;
+            case CAUTIOUS -> com.example.baseballorders.messaging.PitcherPersonality.CAUTIOUS;
+            case DEFAULT -> com.example.baseballorders.messaging.PitcherPersonality.DEFAULT;
+        };
+    }
+
     @Override
     public void publish(SimulationRequest request) {
         var message =
@@ -72,6 +82,7 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
                                                                                         .personality()))
                                                                 .build())
                                         .toList())
+                        .pitcherPersonality(toMessagePersonality(request.pitcherPersonality()))
                         .build();
         sqsTemplate.send(requestQueueName, message);
         LOGGER.info("simulation request sent simulationId={}", request.simulationId());

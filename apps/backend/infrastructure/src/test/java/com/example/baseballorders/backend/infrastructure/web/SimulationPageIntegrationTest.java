@@ -3,10 +3,14 @@ package com.example.baseballorders.backend.infrastructure.web;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.awspring.cloud.sqs.operations.SqsTemplate;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,10 +19,10 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
- * 実物:
- * HTTPサーバー、SimulationPageController、SimulationGuidePageController、LoginPageController、Thymeleaf。
- * モック: SqsTemplate。 担保する疎通: HTTP GET -> 各PageController -> Thymeleaf HTML応答。 担保しないもの:
- * SQSへのシミュレーション要求送信と結果受信、 入力値のブラウザ操作。
+ * 実物: HTTPサーバー、Spring Security、ローカルフォームログイン、SimulationPageController、SimulationGuidePageController、
+ * LoginPageController、Thymeleaf。 モック: SqsTemplate。 担保する疎通: HTTP GET /login -> HTTP POST /login ->
+ * 認証済みHTTP GET / -> Spring Security -> SimulationPageController -> Thymeleaf HTML応答。担保しないもの:
+ * SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -34,6 +38,60 @@ class SimulationPageIntegrationTest {
         assertTrue(Pattern.compile(pattern).matcher(actual).find());
     }
 
+    private HttpClient authenticatedClient() throws Exception {
+        var client =
+                HttpClient.newBuilder()
+                        .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
+                        .followRedirects(HttpClient.Redirect.NEVER)
+                        .build();
+        var loginPage =
+                client.send(
+                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
+                                .GET()
+                                .build(),
+                        HttpResponse.BodyHandlers.ofString());
+        var csrfMatcher =
+                Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"").matcher(loginPage.body());
+        assertTrue(csrfMatcher.find());
+        var form =
+                "userId=test&password=password&_csrf="
+                        + URLEncoder.encode(csrfMatcher.group(1), StandardCharsets.UTF_8);
+        var login =
+                client.send(
+                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
+                                .header("Content-Type", "application/x-www-form-urlencoded")
+                                .POST(HttpRequest.BodyPublishers.ofString(form))
+                                .build(),
+                        HttpResponse.BodyHandlers.discarding());
+        assertEquals(302, login.statusCode());
+        return client;
+    }
+
+    @Test
+    @DisplayName("未認証のトップ画面アクセスはログイン画面へリダイレクトされる")
+    void redirectsUnauthenticatedSimulationPageAccess() throws Exception {
+        // given
+        var request =
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+
+        // when
+        HttpResponse<Void> response;
+        try (var client =
+                HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build()) {
+            response = client.send(request, HttpResponse.BodyHandlers.discarding());
+        }
+
+        // then
+        assertAll(
+                () -> assertEquals(302, response.statusCode()),
+                () ->
+                        assertTrue(
+                                response.headers()
+                                        .firstValue("location")
+                                        .orElseThrow()
+                                        .contains("/login")));
+    }
+
     @Test
     @DisplayName("トップ画面へアクセスすると打者一覧と打順設定画面がHTMLで表示される")
     void rendersSimulationPage() throws Exception {
@@ -43,7 +101,7 @@ class SimulationPageIntegrationTest {
 
         // when
         HttpResponse<String> response;
-        try (var client = HttpClient.newHttpClient()) {
+        try (var client = authenticatedClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
         }
 
@@ -53,10 +111,7 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("打順入力")),
                 () -> assertTrue(response.body().contains("<title>打順監督</title>")),
                 () -> assertTrue(response.body().contains("<h1>打順監督</h1>")),
-                () -> assertTrue(response.body().contains("未ログイン")),
-                () ->
-                        assertFalse(
-                                response.body().contains("href=\"/oauth2/authorization/google\"")),
+                () -> assertTrue(response.body().contains("ログイン中（")),
                 () -> assertTrue(response.body().contains("出塁率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () -> assertTrue(response.body().contains("盗塁成功率")),
@@ -81,12 +136,12 @@ class SimulationPageIntegrationTest {
                         assertContainsPattern(
                                 response.body(),
                                 "key:'stealSuccessRate',label:'盗塁成功率',min:\\d+\\.\\d+,max:\\d+\\.\\d+"),
-                () -> assertTrue(response.body().contains("buntSuccessRate:[0,0.95]")),
+                () -> assertTrue(response.body().contains("buntSuccessRate:[0,0.7]")),
                 () ->
                         assertTrue(
                                 response.body()
                                         .contains(
-                                                "key:'buntSuccessRate',label:'バント成功率',min:0,max:0.95")),
+                                                "key:'buntSuccessRate',label:'バント成功率',min:0,max:0.7")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
                 () -> assertTrue(response.body().contains("<h2 id=\"order-heading\">打順入力</h2>")),
                 () -> assertTrue(response.body().contains("id=\"toggle-all-bunt\"")),
@@ -100,7 +155,27 @@ class SimulationPageIntegrationTest {
                                 response.body()
                                         .contains("lineup.every(player=>player.stealEnabled)")),
                 () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
-                () -> assertTrue(response.body().contains("fetch('/simulations'")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "?pitcher_personality=${encodeURIComponent(pitcherPersonality.value)}")),
+                () -> assertTrue(response.body().contains("id=\"pitcher-personality\"")),
+                () -> assertTrue(response.body().contains("BOLD\">大胆")),
+                () -> assertTrue(response.body().contains("TECHNICAL\">技巧派")),
+                () -> assertTrue(response.body().contains("CAUTIOUS\">慎重")),
+                () -> assertTrue(response.body().contains("DEFAULT\">無印")),
+                () -> assertTrue(response.body().contains("function validLineup()")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "lineup.reduce((sum,player)=>sum+Number(player.hitAverage),0)/lineup.length<=0.35")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "lineup.reduce((sum,player)=>sum+Number(player.sluggish),0)/lineup.length<=0.4")),
                 () -> assertTrue(response.body().contains("本塁打")),
                 () -> assertTrue(response.body().contains("ソロ")),
                 () -> assertTrue(response.body().contains("ツーラン")),
@@ -182,7 +257,7 @@ class SimulationPageIntegrationTest {
 
         // when
         HttpResponse<String> response;
-        try (var client = HttpClient.newHttpClient()) {
+        try (var client = authenticatedClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
         }
 
