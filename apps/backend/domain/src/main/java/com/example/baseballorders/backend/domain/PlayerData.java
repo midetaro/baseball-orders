@@ -16,14 +16,21 @@ public record PlayerData(
         boolean stealEnabled,
         PlayerPersonality personality) {
 
+    // 以下の境界値は「確率は0.0以上1.0以下」というdomainの固定ルールを表すため、
+    // 設定ファイルへは移動しない。運用で調整する成功率の受付上限は
+    // application層のSimulationLimits(application.yml)が持つ。
     private static final float MIN_HIT_AVERAGE = 0.000f;
     private static final float MAX_HIT_AVERAGE = 1.000f;
     private static final float MIN_SLUGGISH = 0.000f;
     private static final float MAX_SLUGGISH = 1.000f;
     private static final float MIN_SUCCESS_RATE = 0.000f;
-    private static final float MAX_SUCCESS_RATE = 0.700f;
+    private static final float MAX_SUCCESS_RATE = 1.000f;
 
-    /** 入力された打撃データがシミュレーション可能な範囲であることを検証する。 */
+    /**
+     * 入力された打撃データが確率として成立する範囲であることを検証する。
+     *
+     * <p>調整可能な成功率の受付上限はここでは検証せず、SimulationLimitsを持つCoordinatorが検証する。
+     */
     public PlayerData {
         Objects.requireNonNull(name, "name must not be null");
         Objects.requireNonNull(personality, "personality must not be null");

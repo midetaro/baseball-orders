@@ -6,6 +6,9 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
+import com.example.baseballorders.simulator.domain.rule.HittingDistribution;
+import com.example.baseballorders.simulator.domain.rule.HittingDistributionBuilder;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -58,7 +61,10 @@ class MiddleDistanceHittingStrategyTest {
     void determinesBattingResultAtBoundary(
             String description, float random, BattingResult expectedResult) {
         // given
-        var sut = new MiddleDistanceHittingStrategy();
+        var sut =
+                new MiddleDistanceHittingStrategy(
+                        SimulationRulesTestData.standard().batting(),
+                        SimulationRulesTestData.standard().middleDistanceHitting());
 
         // when
         BattingResult result;
@@ -71,6 +77,46 @@ class MiddleDistanceHittingStrategyTest {
                     () -> assertEquals(expectedResult, result),
                     () -> assertEquals(1, scriptedRandom.consumedCount()),
                     () -> scriptedRandom.assertFullyConsumed());
+        }
+    }
+
+    static Stream<Arguments> configuredDistributions() {
+        return Stream.of(
+                arguments(
+                        "既定の配分では0.3700000は三塁打",
+                        SimulationRulesTestData.standard().middleDistanceHitting(),
+                        BattingResult.HIT_TRIPLE),
+                arguments(
+                        "本塁打除数を2にすると0.3700000は本塁打",
+                        HittingDistributionBuilder.hittingDistribution()
+                                .doubleDivisor(6)
+                                .tripleDivisor(6)
+                                .homeRunDivisor(2)
+                                .singleReductionDivisor(2)
+                                .build(),
+                        BattingResult.HIT_HOMER));
+    }
+
+    @DisplayName("中距離打者の長打配分は設定された除数で決まる")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("configuredDistributions")
+    void usesConfiguredHittingDistribution(
+            String description, HittingDistribution distribution, BattingResult expectedResult) {
+        // given
+        var sut =
+                new MiddleDistanceHittingStrategy(
+                        SimulationRulesTestData.standard().batting(), distribution);
+
+        // when
+        BattingResult result;
+        try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.37f)) {
+            result = sut.batting(ON_BASE_PERCENTAGE, SLUGGING);
+
+            // then
+            assertAll(
+                    description,
+                    () -> assertEquals(expectedResult, result),
+                    scriptedRandom::assertFullyConsumed);
         }
     }
 }

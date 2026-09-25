@@ -6,6 +6,9 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
+import com.example.baseballorders.simulator.domain.rule.HittingDistribution;
+import com.example.baseballorders.simulator.domain.rule.HittingDistributionBuilder;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -58,7 +61,10 @@ class LongDistanceHittingStrategyTest {
     void determinesBattingResultAtBoundary(
             String description, float random, BattingResult expectedResult) {
         // given
-        var sut = new LongDistanceHittingStrategy();
+        var sut =
+                new LongDistanceHittingStrategy(
+                        SimulationRulesTestData.standard().batting(),
+                        SimulationRulesTestData.standard().longDistanceHitting());
 
         // when
         BattingResult result;
@@ -102,8 +108,14 @@ class LongDistanceHittingStrategyTest {
             BattingResult expectedLongResult,
             BattingResult expectedMiddleResult) {
         // given
-        var sut = new LongDistanceHittingStrategy();
-        var middleDistance = new MiddleDistanceHittingStrategy();
+        var sut =
+                new LongDistanceHittingStrategy(
+                        SimulationRulesTestData.standard().batting(),
+                        SimulationRulesTestData.standard().longDistanceHitting());
+        var middleDistance =
+                new MiddleDistanceHittingStrategy(
+                        SimulationRulesTestData.standard().batting(),
+                        SimulationRulesTestData.standard().middleDistanceHitting());
 
         // when
         BattingResult longResult;
@@ -122,5 +134,45 @@ class LongDistanceHittingStrategyTest {
                 description,
                 () -> assertEquals(expectedLongResult, longResult),
                 () -> assertEquals(expectedMiddleResult, middleResult));
+    }
+
+    static Stream<Arguments> configuredDistributions() {
+        return Stream.of(
+                arguments(
+                        "既定の配分では0.3500000は本塁打",
+                        SimulationRulesTestData.standard().longDistanceHitting(),
+                        BattingResult.HIT_HOMER),
+                arguments(
+                        "本塁打除数を8にすると0.3500000は二塁打",
+                        HittingDistributionBuilder.hittingDistribution()
+                                .doubleDivisor(8)
+                                .tripleDivisor(8)
+                                .homeRunDivisor(8)
+                                .singleReductionDivisor(1)
+                                .build(),
+                        BattingResult.HIT_DOUBLE));
+    }
+
+    @DisplayName("長距離打者の長打配分は設定された除数で決まる")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("configuredDistributions")
+    void usesConfiguredHittingDistribution(
+            String description, HittingDistribution distribution, BattingResult expectedResult) {
+        // given
+        var sut =
+                new LongDistanceHittingStrategy(
+                        SimulationRulesTestData.standard().batting(), distribution);
+
+        // when
+        BattingResult result;
+        try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.35f)) {
+            result = sut.batting(ON_BASE_PERCENTAGE, SLUGGING);
+
+            // then
+            assertAll(
+                    description,
+                    () -> assertEquals(expectedResult, result),
+                    scriptedRandom::assertFullyConsumed);
+        }
     }
 }

@@ -1,9 +1,9 @@
 package com.example.baseballorders.simulator.domain.player;
 
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import java.util.Collections;
 import java.util.List;
 
@@ -46,9 +46,9 @@ public final class BatterTestData {
      */
     public static BatterEntity referenceBatter() {
         return batter(
-                BehaviorStrategies.middleDistanceHittingStrategy(),
-                BehaviorStrategies.standardSteal(),
-                BehaviorStrategies.standardBunt());
+                SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                SimulationRulesTestData.strategies().standardSteal(),
+                SimulationRulesTestData.strategies().standardBunt());
     }
 
     /**
@@ -101,9 +101,9 @@ public final class BatterTestData {
      */
     public static BatterEntity swingOnlyBatter() {
         return batter(
-                BehaviorStrategies.middleDistanceHittingStrategy(),
-                BehaviorStrategies.noSteal(),
-                BehaviorStrategies.noBunt());
+                SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                SimulationRulesTestData.strategies().noSteal(),
+                SimulationRulesTestData.strategies().noBunt());
     }
 
     /**
@@ -159,16 +159,16 @@ public final class BatterTestData {
     public static LineUpEntity distinctLineUp() {
         BatterEntity leadOff =
                 batter(
-                        BehaviorStrategies.longDistanceAtBat(),
-                        BehaviorStrategies.noSteal(),
-                        BehaviorStrategies.noBunt());
+                        SimulationRulesTestData.strategies().longDistanceAtBat(),
+                        SimulationRulesTestData.strategies().noSteal(),
+                        SimulationRulesTestData.strategies().noBunt());
         BatterEntity strikeOut =
                 batter(
                         0.300f,
                         0.300f,
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.noSteal(),
-                        BehaviorStrategies.noBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().noSteal(),
+                        SimulationRulesTestData.strategies().noBunt());
         return lineUpOf(
                 leadOff, strikeOut, strikeOut, strikeOut, strikeOut, strikeOut, strikeOut,
                 strikeOut, strikeOut);

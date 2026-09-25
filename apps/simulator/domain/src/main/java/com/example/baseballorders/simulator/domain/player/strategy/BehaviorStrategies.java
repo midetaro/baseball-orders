@@ -11,19 +11,26 @@ import com.example.baseballorders.simulator.domain.player.strategy.steal.EagerSt
 import com.example.baseballorders.simulator.domain.player.strategy.steal.NowayStealStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StandardStealStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
+import com.example.baseballorders.simulator.domain.rule.SimulationRules;
+import lombok.RequiredArgsConstructor;
 
-/** Provides behavior strategy instances without exposing their concrete implementations. */
+/**
+ * 設定された確率を保持し、具体実装を公開せずに行動戦略を生成する。
+ *
+ * <p>確率設定はコンストラクタで受け取る。生成メソッドは引数を取らない。
+ */
+@RequiredArgsConstructor
 public final class BehaviorStrategies {
 
-    private BehaviorStrategies() {}
+    private final SimulationRules rules;
 
     /**
      * Creates the middle-distance batting behavior.
      *
      * @return a middle-distance batting behavior
      */
-    public static HittingStrategy middleDistanceHittingStrategy() {
-        return new MiddleDistanceHittingStrategy();
+    public HittingStrategy middleDistanceHittingStrategy() {
+        return new MiddleDistanceHittingStrategy(rules.batting(), rules.middleDistanceHitting());
     }
 
     /**
@@ -31,8 +38,8 @@ public final class BehaviorStrategies {
      *
      * @return a long-distance batting behavior
      */
-    public static HittingStrategy longDistanceAtBat() {
-        return new LongDistanceHittingStrategy();
+    public HittingStrategy longDistanceAtBat() {
+        return new LongDistanceHittingStrategy(rules.batting(), rules.longDistanceHitting());
     }
 
     /**
@@ -40,8 +47,8 @@ public final class BehaviorStrategies {
      *
      * @return an eager stealing behavior
      */
-    public static StealStrategy eagerSteal() {
-        return new EagerStealStrategy();
+    public StealStrategy eagerSteal() {
+        return new EagerStealStrategy(rules.eagerSteal());
     }
 
     /**
@@ -49,8 +56,8 @@ public final class BehaviorStrategies {
      *
      * @return a standard stealing behavior
      */
-    public static StealStrategy standardSteal() {
-        return new StandardStealStrategy();
+    public StealStrategy standardSteal() {
+        return new StandardStealStrategy(rules.standardSteal());
     }
 
     /**
@@ -58,7 +65,7 @@ public final class BehaviorStrategies {
      *
      * @return a no-steal behavior
      */
-    public static StealStrategy noSteal() {
+    public StealStrategy noSteal() {
         return new NowayStealStrategy();
     }
 
@@ -67,7 +74,7 @@ public final class BehaviorStrategies {
      *
      * @return a standard bunt strategy
      */
-    public static BuntStrategy standardBunt() {
+    public BuntStrategy standardBunt() {
         return new StandardBuntStrategy();
     }
 
@@ -76,7 +83,7 @@ public final class BehaviorStrategies {
      *
      * @return an eager bunt strategy
      */
-    public static BuntStrategy eagerBunt() {
+    public BuntStrategy eagerBunt() {
         return new EagerBuntStrategy();
     }
 
@@ -85,7 +92,7 @@ public final class BehaviorStrategies {
      *
      * @return a no-bunt strategy
      */
-    public static BuntStrategy noBunt() {
+    public BuntStrategy noBunt() {
         return new NowayBuntStrategy();
     }
 }

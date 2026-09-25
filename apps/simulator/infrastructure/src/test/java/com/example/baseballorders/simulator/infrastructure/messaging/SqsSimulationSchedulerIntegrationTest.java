@@ -16,9 +16,10 @@ import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsRecorder;
 import com.example.baseballorders.simulator.domain.statistics.ScoreAccumulator;
+import com.example.baseballorders.simulator.infrastructure.config.SimulationPropertiesTestData;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
@@ -136,9 +137,11 @@ class SqsSimulationSchedulerIntegrationTest {
                 .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =
                 new LineUpMapper(
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.eagerSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().eagerSteal(),
+                        SimulationRulesTestData.strategies().standardBunt(),
+                        SimulationRulesTestData.strategies(),
+                        SimulationPropertiesTestData.standardPitcherProperties());
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
                         .mapToObj(

@@ -3,7 +3,7 @@ package com.example.baseballorders.simulator.domain.game.inning;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.example.baseballorders.simulator.domain.game.GameBattingContext;
+import com.example.baseballorders.simulator.domain.game.GameStateTestFixture;
 import com.example.baseballorders.simulator.domain.player.BatterTestData;
 import com.example.baseballorders.simulator.domain.player.strategy.Draws;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
@@ -58,7 +58,7 @@ class StealFailureInningScenarioTest {
     @DisplayName("単打から二盗失敗で走者を失い、同じ打席で打撃して3死でイニングが完了する")
     void losesRunnerByStealFailureAndCompletesInning() {
         // given
-        var sut = new GameBattingContext(BatterTestData.uniformLineUp());
+        var sut = GameStateTestFixture.game(BatterTestData.uniformLineUp());
 
         // when
         try (ScriptedRandom random =

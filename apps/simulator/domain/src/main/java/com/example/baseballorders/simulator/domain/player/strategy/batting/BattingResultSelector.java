@@ -1,21 +1,23 @@
 package com.example.baseballorders.simulator.domain.player.strategy.batting;
 
 import com.example.baseballorders.simulator.domain.play.BattingResult;
+import com.example.baseballorders.simulator.domain.rule.BattingProbabilities;
+import lombok.RequiredArgsConstructor;
 
+/** 設定された打席確率に従って、乱数と安打配分から打席結果を決める。 */
+@RequiredArgsConstructor
 final class BattingResultSelector {
-    private static final float WALK_PROBABILITY = 0.05f;
-    private static final float STRIKEOUT_PROBABILITY_WHEN_NOT_ON_BASE = 0.25f;
 
-    private BattingResultSelector() {}
+    private final BattingProbabilities probabilities;
 
-    static BattingResult select(
+    BattingResult select(
             float random,
             float onBasePercentage,
             float singleWeight,
             float doubleWeight,
             float tripleWeight,
             float homeRunWeight) {
-        float walkProbability = Math.min(WALK_PROBABILITY, onBasePercentage);
+        float walkProbability = Math.min(probabilities.walkProbability(), onBasePercentage);
         if (random < walkProbability) {
             return BattingResult.WALK;
         }
@@ -46,7 +48,9 @@ final class BattingResultSelector {
         }
 
         float strikeoutThreshold =
-                onBasePercentage + (1 - onBasePercentage) * STRIKEOUT_PROBABILITY_WHEN_NOT_ON_BASE;
+                onBasePercentage
+                        + (1 - onBasePercentage)
+                                * probabilities.strikeoutProbabilityWhenNotOnBase();
         return random < strikeoutThreshold ? BattingResult.STRIKEOUT : BattingResult.BATTED_OUT;
     }
 

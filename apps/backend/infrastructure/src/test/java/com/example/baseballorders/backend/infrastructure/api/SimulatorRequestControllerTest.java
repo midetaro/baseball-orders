@@ -3,10 +3,13 @@ package com.example.baseballorders.backend.infrastructure.api;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
+import com.example.baseballorders.backend.application.SimulationLimits;
+import com.example.baseballorders.backend.application.SimulationLimitsBuilder;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.domain.PitcherPersonality;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
 import com.example.baseballorders.backend.domain.SimulationResult;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +44,8 @@ class SimulatorRequestControllerTest {
                                                     List.of(new SimulationResult.Result(0, 0)),
                                                     new SimulationResult.Statistics(0, 0, 0)));
                                 },
-                                registry));
+                                registry,
+                                limits()));
         var captor =
                 org.mockito.ArgumentCaptor.forClass(
                         com.example.baseballorders.messaging.SimulationRequestMessage.class);
@@ -93,7 +97,8 @@ class SimulatorRequestControllerTest {
                                                 request.simulationId(),
                                                 List.of(new SimulationResult.Result(5, 4)),
                                                 new SimulationResult.Statistics(5, 5, 5))),
-                        registry);
+                        registry,
+                        limits());
         var controller = new SimulatorRequestController(coordinator);
 
         // when
@@ -118,7 +123,8 @@ class SimulatorRequestControllerTest {
         // given
         var registry = new WaitingResultRegistry();
         var controller =
-                new SimulatorRequestController(new SimulationCoordinator(request -> {}, registry));
+                new SimulatorRequestController(
+                        new SimulationCoordinator(request -> {}, registry, limits()));
 
         // when
         var hitAverageException =
@@ -216,7 +222,8 @@ class SimulatorRequestControllerTest {
                                                     List.of(new SimulationResult.Result(0, 0)),
                                                     new SimulationResult.Statistics(0, 0, 0)));
                                 },
-                                registry));
+                                registry,
+                                limits()));
         var captor =
                 org.mockito.ArgumentCaptor.forClass(
                         com.example.baseballorders.messaging.SimulationRequestMessage.class);
@@ -234,6 +241,17 @@ class SimulatorRequestControllerTest {
                         assertEquals(
                                 com.example.baseballorders.messaging.PitcherPersonality.CAUTIOUS,
                                 captor.getValue().pitcherPersonality()));
+    }
+
+    /** application.ymlの既定値と同じ上限を組み立てる。 */
+    private static SimulationLimits limits() {
+        return SimulationLimitsBuilder.simulationLimits()
+                .resultTimeout(Duration.ofSeconds(30))
+                .maximumAverageHitAverage(0.350f)
+                .maximumAverageSluggish(0.400f)
+                .pitcherIncreaseMultiplier(1.300f)
+                .maximumSuccessRate(0.700f)
+                .build();
     }
 
     private List<PlayerInputRequest> playersWith(PlayerInputRequest player) {

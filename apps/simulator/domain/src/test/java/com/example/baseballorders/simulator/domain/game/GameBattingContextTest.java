@@ -6,8 +6,8 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatistics;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,9 +25,9 @@ class GameBattingContextTest {
                 0.4f,
                 0.7f,
                 0.8f,
-                BehaviorStrategies.middleDistanceHittingStrategy(),
-                BehaviorStrategies.noSteal(),
-                BehaviorStrategies.noBunt());
+                SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                SimulationRulesTestData.strategies().noSteal(),
+                SimulationRulesTestData.strategies().noBunt());
     }
 
     @Test
@@ -44,7 +44,8 @@ class GameBattingContextTest {
                             notificationCount.incrementAndGet();
                             observedScore.set(totalScore);
                             observedStatistics.set(gameStatistics);
-                        });
+                        },
+                        SimulationRulesTestData.baseStateFactory());
 
         // when
         for (int inning = 0; inning < 8; inning++) {
@@ -78,10 +79,10 @@ class GameBattingContextTest {
                         0.4f,
                         0.7f,
                         0.8f,
-                        BehaviorStrategies.longDistanceAtBat(),
-                        BehaviorStrategies.noSteal(),
-                        BehaviorStrategies.noBunt());
-        var context = new GameBattingContext(new LineUpEntity(Collections.nCopies(9, batter)));
+                        SimulationRulesTestData.strategies().longDistanceAtBat(),
+                        SimulationRulesTestData.strategies().noSteal(),
+                        SimulationRulesTestData.strategies().noBunt());
+        var context = GameStateTestFixture.game(new LineUpEntity(Collections.nCopies(9, batter)));
 
         // when
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
@@ -100,7 +101,7 @@ class GameBattingContextTest {
     void reflectsCompletedInningIntoGame() {
         // given
         var sut =
-                new GameBattingContext(
+                GameStateTestFixture.game(
                         new LineUpEntity(Collections.nCopies(9, battingOutBatter())));
         sut.inningStateContext().currentBaseState().hitHomer();
 

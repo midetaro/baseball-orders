@@ -3,11 +3,11 @@ package com.example.baseballorders.simulator.domain.game.inning;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.example.baseballorders.simulator.domain.game.GameBattingContext;
+import com.example.baseballorders.simulator.domain.game.GameStateTestFixture;
 import com.example.baseballorders.simulator.domain.player.BatterTestData;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.Draws;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatistics;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsBuilder;
 import com.example.baseballorders.simulator.domain.statistics.StatisticsAssertions;
@@ -62,11 +62,11 @@ class SqueezeFailureInningScenarioTest {
         var swingOnly = BatterTestData.swingOnlyBatter();
         var squeezeBatter =
                 BatterTestData.batter(
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.noSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().noSteal(),
+                        SimulationRulesTestData.strategies().standardBunt());
         var sut =
-                new GameBattingContext(
+                GameStateTestFixture.game(
                         BatterTestData.lineUpOf(
                                 swingOnly,
                                 swingOnly,

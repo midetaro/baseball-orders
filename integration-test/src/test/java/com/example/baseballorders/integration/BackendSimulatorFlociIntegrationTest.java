@@ -13,7 +13,16 @@ import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.game.BaseStateFactory;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.rule.BattingProbabilitiesBuilder;
+import com.example.baseballorders.simulator.domain.rule.HittingDistributionBuilder;
+import com.example.baseballorders.simulator.domain.rule.RunnerAdvanceProbabilitiesBuilder;
+import com.example.baseballorders.simulator.domain.rule.SimulationRules;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesBuilder;
+import com.example.baseballorders.simulator.domain.rule.StealAttemptRatesBuilder;
+import com.example.baseballorders.simulator.infrastructure.config.SimulationPitcherProperties;
+import com.example.baseballorders.simulator.infrastructure.config.SimulationPitcherProperties.Multipliers;
 import com.example.baseballorders.simulator.domain.statistics.ScoreStatistics;
 import com.example.baseballorders.simulator.domain.statistics.ScoreStatisticsBuilder;
 import com.example.baseballorders.simulator.infrastructure.messaging.LineUpMapper;
@@ -54,6 +63,48 @@ import software.amazon.awssdk.services.sqs.SqsClient;
  */
 class BackendSimulatorFlociIntegrationTest {
 
+    // Springが application.yml から束縛する確率設定を、テストでは明示値で組み立てて渡す。
+    private static final SimulationRules SIMULATION_RULES = SimulationRulesBuilder.simulationRules()
+            .batting(BattingProbabilitiesBuilder.battingProbabilities()
+                    .walkProbability(0.05f)
+                    .strikeoutProbabilityWhenNotOnBase(0.25f)
+                    .build())
+            .middleDistanceHitting(HittingDistributionBuilder.hittingDistribution()
+                    .doubleDivisor(6)
+                    .tripleDivisor(6)
+                    .homeRunDivisor(6)
+                    .singleReductionDivisor(2)
+                    .build())
+            .longDistanceHitting(HittingDistributionBuilder.hittingDistribution()
+                    .doubleDivisor(8)
+                    .tripleDivisor(8)
+                    .homeRunDivisor(2)
+                    .singleReductionDivisor(1)
+                    .build())
+            .standardSteal(StealAttemptRatesBuilder.stealAttemptRates()
+                    .toDoubleAttemptRate(0.2f)
+                    .toTripleAttemptRate(0.05f)
+                    .build())
+            .eagerSteal(StealAttemptRatesBuilder.stealAttemptRates()
+                    .toDoubleAttemptRate(0.3f)
+                    .toTripleAttemptRate(0.15f)
+                    .build())
+            .runnerAdvance(RunnerAdvanceProbabilitiesBuilder.runnerAdvanceProbabilities()
+                    .fromFirstProbability(0.2f)
+                    .fromSecondProbability(0.2f)
+                    .fromThirdProbability(0.1f)
+                    .build())
+            .build();
+
+    private static final BehaviorStrategies STRATEGIES = new BehaviorStrategies(SIMULATION_RULES);
+
+    private static final SimulationPitcherProperties PITCHER_PROPERTIES = new SimulationPitcherProperties(
+            new Multipliers(1.3f, 0.7f, 1.0f),
+            new Multipliers(0.7f, 1.0f, 1.3f),
+            new Multipliers(1.0f, 1.3f, 0.7f),
+            new Multipliers(1.0f, 1.0f, 1.0f));
+
+
     private static HttpClient authenticatedClient(int port) throws Exception {
         var client =
                 HttpClient.newBuilder()
@@ -93,7 +144,7 @@ class BackendSimulatorFlociIntegrationTest {
     @Test
     @DisplayName("HTTP要求をsimulatorがFloci経由で処理しbackendが結果SQSを受信して同じ相関IDで応答する")
     void completesBackendRequestAfterSimulatorProcessesIt() throws Exception {
-        runScenario(new SimulateGameUseCase(1), null, PitcherPersonality.DEFAULT);
+        runScenario(new SimulateGameUseCase(1, new BaseStateFactory(SIMULATION_RULES.runnerAdvance())), null, PitcherPersonality.DEFAULT);
     }
 
     /**
@@ -107,7 +158,7 @@ class BackendSimulatorFlociIntegrationTest {
     @Test
     @DisplayName("投手性格がHTTP要求からSQS契約を経由してsimulatorのLineUpMapperへ渡る")
     void carriesPitcherPersonalityFromHttpRequestToSimulatorMapper() throws Exception {
-        runScenario(new SimulateGameUseCase(1), null, PitcherPersonality.BOLD);
+        runScenario(new SimulateGameUseCase(1, new BaseStateFactory(SIMULATION_RULES.runnerAdvance())), null, PitcherPersonality.BOLD);
     }
 
     /**
@@ -147,7 +198,7 @@ class BackendSimulatorFlociIntegrationTest {
                 .stealToSecondCount(23)
                 .stealToThirdCount(29)
                 .build();
-        var fixedUseCase = new SimulateGameUseCase(1) {
+        var fixedUseCase = new SimulateGameUseCase(1, new BaseStateFactory(SIMULATION_RULES.runnerAdvance())) {
             @Override
             public SimulationResult invoke(LineUpEntity lineup) {
                 assertEquals(9, lineup.getBatterEntities().size());
@@ -192,9 +243,9 @@ class BackendSimulatorFlociIntegrationTest {
                     var registry = backend.getBean(WaitingResultRegistry.class);
                     var mapper = new ObjectMapper();
                     var lineupMapper = new RecordingLineUpMapper(
-                            BehaviorStrategies.middleDistanceHittingStrategy(),
-                            BehaviorStrategies.noSteal(),
-                            BehaviorStrategies.standardBunt());
+                            STRATEGIES.middleDistanceHittingStrategy(),
+                            STRATEGIES.noSteal(),
+                            STRATEGIES.standardBunt());
                     var simulator = new SqsSimulationScheduler(
                             sqs, mapper, useCase, lineupMapper, requestQueue, resultQueue, 10, 10);
                     var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port
@@ -285,7 +336,7 @@ class BackendSimulatorFlociIntegrationTest {
                                 hittingStrategy,
                 com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy stealStrategy,
                 com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy buntStrategy) {
-            super(hittingStrategy, stealStrategy, buntStrategy);
+            super(hittingStrategy, stealStrategy, buntStrategy, STRATEGIES, PITCHER_PROPERTIES);
         }
 
         @Override

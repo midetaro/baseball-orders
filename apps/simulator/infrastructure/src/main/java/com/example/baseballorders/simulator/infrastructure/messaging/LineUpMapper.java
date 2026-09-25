@@ -9,6 +9,8 @@ import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrat
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
+import com.example.baseballorders.simulator.infrastructure.config.SimulationPitcherProperties;
+import com.example.baseballorders.simulator.infrastructure.config.SimulationPitcherProperties.Multipliers;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -19,8 +21,10 @@ public class LineUpMapper {
     private final HittingStrategy hittingStrategy;
     private final StealStrategy stealStrategy;
     private final BuntStrategy buntStrategy;
-    private final StealStrategy noStealStrategy = BehaviorStrategies.noSteal();
-    private final BuntStrategy noBuntStrategy = BehaviorStrategies.noBunt();
+    private final BehaviorStrategies behaviorStrategies;
+    private final SimulationPitcherProperties pitcherProperties;
+    private final StealStrategy noStealStrategy;
+    private final BuntStrategy noBuntStrategy;
 
     /**
      * Creates a mapper using the default batting and stealing strategies.
@@ -28,14 +32,22 @@ public class LineUpMapper {
      * @param hittingStrategy middle-distance batting behavior assigned to each batter
      * @param stealStrategy stealing strategy assigned to each batter
      * @param buntStrategy bunt strategy assigned to each batter
+     * @param behaviorStrategies 設定された確率を保持する行動戦略ファクトリ
+     * @param pitcherProperties 設定から供給された投手性格ごとの補正倍率
      */
     public LineUpMapper(
             HittingStrategy hittingStrategy,
             StealStrategy stealStrategy,
-            BuntStrategy buntStrategy) {
+            BuntStrategy buntStrategy,
+            BehaviorStrategies behaviorStrategies,
+            SimulationPitcherProperties pitcherProperties) {
         this.hittingStrategy = hittingStrategy;
         this.stealStrategy = stealStrategy;
         this.buntStrategy = buntStrategy;
+        this.behaviorStrategies = behaviorStrategies;
+        this.pitcherProperties = pitcherProperties;
+        noStealStrategy = behaviorStrategies.noSteal();
+        noBuntStrategy = behaviorStrategies.noBunt();
     }
 
     /**
@@ -83,20 +95,21 @@ public class LineUpMapper {
         return new LineUpEntity(batters);
     }
 
-    private float onBaseMultiplier(PitcherPersonality personality) {
+    private Multipliers multipliersFor(PitcherPersonality personality) {
         return switch (personality) {
-            case BOLD -> 1.3f;
-            case CAUTIOUS -> 0.7f;
-            case TECHNICAL, DEFAULT -> 1.0f;
+            case BOLD -> pitcherProperties.bold();
+            case CAUTIOUS -> pitcherProperties.cautious();
+            case TECHNICAL -> pitcherProperties.technical();
+            case DEFAULT -> pitcherProperties.standard();
         };
     }
 
+    private float onBaseMultiplier(PitcherPersonality personality) {
+        return multipliersFor(personality).onBaseMultiplier();
+    }
+
     private float sluggingMultiplier(PitcherPersonality personality) {
-        return switch (personality) {
-            case BOLD -> 0.7f;
-            case TECHNICAL -> 1.3f;
-            case CAUTIOUS, DEFAULT -> 1.0f;
-        };
+        return multipliersFor(personality).sluggingMultiplier();
     }
 
     private float sluggingFor(
@@ -113,31 +126,27 @@ public class LineUpMapper {
     }
 
     private float runningMultiplier(PitcherPersonality personality) {
-        return switch (personality) {
-            case CAUTIOUS -> 1.3f;
-            case TECHNICAL -> 0.7f;
-            case BOLD, DEFAULT -> 1.0f;
-        };
+        return multipliersFor(personality).runningMultiplier();
     }
 
     private HittingStrategy battingBehaviorFor(PlayerPersonality personality) {
         return switch (personality) {
             case DEFAULT, EAGER_STEAL, EAGER_BUNT -> hittingStrategy;
-            case EAGER_SLUGGISH -> BehaviorStrategies.longDistanceAtBat();
+            case EAGER_SLUGGISH -> behaviorStrategies.longDistanceAtBat();
         };
     }
 
     private StealStrategy stealStrategyFor(PlayerPersonality personality) {
         return switch (personality) {
             case DEFAULT, EAGER_SLUGGISH, EAGER_BUNT -> stealStrategy;
-            case EAGER_STEAL -> BehaviorStrategies.eagerSteal();
+            case EAGER_STEAL -> behaviorStrategies.eagerSteal();
         };
     }
 
     private BuntStrategy buntStrategyFor(PlayerPersonality personality) {
         return switch (personality) {
             case DEFAULT, EAGER_SLUGGISH, EAGER_STEAL -> buntStrategy;
-            case EAGER_BUNT -> BehaviorStrategies.eagerBunt();
+            case EAGER_BUNT -> behaviorStrategies.eagerBunt();
         };
     }
 }

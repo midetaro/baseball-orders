@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.play.OutCount;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,7 +54,7 @@ class BaseStateFactoryTest {
     @DisplayName("走者配置から対応するStateを生成する")
     void createsStateForConfiguration(int configuration, Class<? extends BasesState> stateType) {
         // given
-        var sut = new BaseStateFactory();
+        var sut = SimulationRulesTestData.baseStateFactory();
         var context = GameStateTestFixture.context(null, null, null, OutCount.NO_OUT);
 
         // when
@@ -67,7 +68,7 @@ class BaseStateFactoryTest {
     @DisplayName("不正な走者配置では例外にする")
     void rejectsInvalidConfiguration() {
         // given
-        var sut = new BaseStateFactory();
+        var sut = SimulationRulesTestData.baseStateFactory();
         var context = GameStateTestFixture.context(null, null, null, OutCount.NO_OUT);
 
         // when

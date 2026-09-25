@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import com.example.baseballorders.simulator.domain.game.GameBattingContext;
+import com.example.baseballorders.simulator.domain.game.GameStateTestFixture;
 import com.example.baseballorders.simulator.domain.player.BatterTestData;
 import com.example.baseballorders.simulator.domain.player.strategy.Draws;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
@@ -70,7 +70,7 @@ class BattedOutAdvanceInningScenarioTest {
     void advancesLeadRunnerOnBattedOut(
             String description, float advancementDraw, long expectedScore) {
         // given
-        var sut = new GameBattingContext(BatterTestData.swingOnlyLineUp());
+        var sut = GameStateTestFixture.game(BatterTestData.swingOnlyLineUp());
 
         // when
         try (ScriptedRandom random =

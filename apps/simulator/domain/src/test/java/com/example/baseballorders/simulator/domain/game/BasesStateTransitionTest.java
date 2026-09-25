@@ -12,8 +12,8 @@ import com.example.baseballorders.simulator.domain.play.BuntResult;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -349,9 +349,9 @@ class BasesStateTransitionTest {
                         0.0f,
                         1.0f,
                         0.0f,
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.noSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().noSteal(),
+                        SimulationRulesTestData.strategies().standardBunt());
         var state =
                 (Buntable)
                         context(mask, outCount.ordinal()).inningStateContext().currentBaseState();

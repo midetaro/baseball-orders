@@ -1,11 +1,13 @@
 package com.example.baseballorders.simulator.domain.game;
 
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.rule.RunnerAdvanceProbabilities;
 
 /** 走者配置0のイベントを処理する試合固有のState。 */
 public final class NoBasesState extends AbstractBasesState implements BasesState {
-    NoBasesState(InningStateContext context) {
-        super(context);
+    NoBasesState(
+            InningStateContext context, RunnerAdvanceProbabilities runnerAdvanceProbabilities) {
+        super(context, runnerAdvanceProbabilities);
     }
 
     @Override

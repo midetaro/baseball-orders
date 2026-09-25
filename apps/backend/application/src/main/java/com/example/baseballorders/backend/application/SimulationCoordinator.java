@@ -8,7 +8,6 @@ import com.example.baseballorders.backend.application.exception.SimulationTimeou
 import com.example.baseballorders.backend.domain.PitcherPersonality;
 import com.example.baseballorders.backend.domain.PlayerData;
 import com.example.baseballorders.backend.domain.SimulationResult;
-import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -19,40 +18,36 @@ import java.util.concurrent.TimeoutException;
 /** シミュレーションユースケースのデータ取得、要求送信、結果待機を調整する。 */
 public final class SimulationCoordinator {
 
+    /** 打順の人数は野球のルールで固定であり設定値ではない。 */
     private static final int LINEUP_SIZE = 9;
+
+    /** 共有メッセージのスキーマ版数であり設定値ではない。 */
     private static final String MESSAGE_VERSION = "1";
-    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
-    private static final float MAXIMUM_AVERAGE_HIT_AVERAGE = 0.350f;
-    private static final float MAXIMUM_AVERAGE_SLUGGISH = 0.400f;
-    private static final float PITCHER_INCREASE_MULTIPLIER = 1.300f;
+
+    /** 確率の定義そのものを表す下限であり設定値ではない。 */
+    private static final float MINIMUM_SUCCESS_RATE = 0.000f;
+
+    /** 確率の定義そのものを表す上限であり設定値ではない。 */
+    private static final float MAXIMUM_PROBABILITY = 1.000f;
 
     private final SimulatorMessagePublisher publisher;
     private final WaitingResultRegistry registry;
-    private final Duration timeout;
+    private final SimulationLimits limits;
 
     /**
-     * 仕様既定の30秒timeoutでCoordinatorを作成する。
-     *
-     * @param publisher SQS要求Publisher
-     * @param registry HTTPとSQS結果の待機レジストリ
-     */
-    public SimulationCoordinator(
-            SimulatorMessagePublisher publisher, WaitingResultRegistry registry) {
-        this(publisher, registry, DEFAULT_TIMEOUT);
-    }
-
-    /**
-     * 指定したtimeoutでCoordinatorを作成する。
+     * 設定から注入された上限値でCoordinatorを作成する。
      *
      * @param publisher シミュレーション要求の送信ポート
      * @param registry HTTPと結果を相関するレジストリ
-     * @param timeout 結果を待機する時間
+     * @param limits 結果待機時間と打順受付の上限値
      */
     public SimulationCoordinator(
-            SimulatorMessagePublisher publisher, WaitingResultRegistry registry, Duration timeout) {
+            SimulatorMessagePublisher publisher,
+            WaitingResultRegistry registry,
+            SimulationLimits limits) {
         this.publisher = publisher;
         this.registry = registry;
-        this.timeout = timeout;
+        this.limits = limits;
     }
 
     /**
@@ -104,7 +99,7 @@ public final class SimulationCoordinator {
         SimulationResult result;
         try {
             // simulation-idの取得
-            result = waiting.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            result = waiting.get(limits.resultTimeout().toMillis(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException exception) {
             throw new SimulationTimeoutException(simulationId);
         } catch (InterruptedException exception) {
@@ -122,31 +117,46 @@ public final class SimulationCoordinator {
         return result;
     }
 
-    private static void validateLineup(
-            List<PlayerData> players, PitcherPersonality pitcherPersonality) {
+    private void validateLineup(List<PlayerData> players, PitcherPersonality pitcherPersonality) {
         double totalHitAverage = 0;
         double totalSluggish = 0;
         for (PlayerData player : players) {
             totalHitAverage += player.hitAverage();
             totalSluggish += player.sluggish();
+            requireSuccessRate(player.buntSuccessRate(), "buntSuccessRate");
+            requireSuccessRate(player.stealSuccessRate(), "stealSuccessRate");
             validatePitcherAdjustedProbabilities(player, pitcherPersonality);
         }
-        if (totalHitAverage / LINEUP_SIZE > MAXIMUM_AVERAGE_HIT_AVERAGE) {
-            throw new IllegalArgumentException("the average hitAverage must not exceed 0.35");
+        if (totalHitAverage / LINEUP_SIZE > limits.maximumAverageHitAverage()) {
+            throw new IllegalArgumentException(
+                    "the average hitAverage must not exceed " + limits.maximumAverageHitAverage());
         }
-        if (totalSluggish / LINEUP_SIZE > MAXIMUM_AVERAGE_SLUGGISH) {
-            throw new IllegalArgumentException("the average sluggish must not exceed 0.4");
+        if (totalSluggish / LINEUP_SIZE > limits.maximumAverageSluggish()) {
+            throw new IllegalArgumentException(
+                    "the average sluggish must not exceed " + limits.maximumAverageSluggish());
         }
     }
 
-    private static void validatePitcherAdjustedProbabilities(
+    private void requireSuccessRate(float value, String name) {
+        if (value > limits.maximumSuccessRate()) {
+            throw new IllegalArgumentException(
+                    name
+                            + " must be between "
+                            + MINIMUM_SUCCESS_RATE
+                            + " and "
+                            + limits.maximumSuccessRate());
+        }
+    }
+
+    private void validatePitcherAdjustedProbabilities(
             PlayerData player, PitcherPersonality pitcherPersonality) {
         switch (pitcherPersonality) {
             case BOLD ->
                     requireProbability(
-                            player.hitAverage() * PITCHER_INCREASE_MULTIPLIER, "hitAverage");
+                            player.hitAverage() * limits.pitcherIncreaseMultiplier(), "hitAverage");
             case TECHNICAL ->
-                    requireProbability(player.sluggish() * PITCHER_INCREASE_MULTIPLIER, "sluggish");
+                    requireProbability(
+                            player.sluggish() * limits.pitcherIncreaseMultiplier(), "sluggish");
             case CAUTIOUS, DEFAULT -> {
                 // These personalities do not increase batting probabilities beyond the input range.
             }
@@ -154,7 +164,7 @@ public final class SimulationCoordinator {
     }
 
     private static void requireProbability(float value, String name) {
-        if (value > 1.0f) {
+        if (value > MAXIMUM_PROBABILITY) {
             throw new IllegalArgumentException("pitcher-adjusted " + name + " must not exceed 1.0");
         }
     }

@@ -4,12 +4,14 @@ import com.example.baseballorders.simulator.domain.game.capability.SqueezeBuntab
 import com.example.baseballorders.simulator.domain.play.BuntResult;
 import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.rule.RunnerAdvanceProbabilities;
 
 /** 走者配置6のイベントを処理する試合固有のState。 */
 public final class DoubleThirdBaseState extends AbstractBasesState
         implements BasesState, SqueezeBuntable {
-    DoubleThirdBaseState(InningStateContext context) {
-        super(context);
+    DoubleThirdBaseState(
+            InningStateContext context, RunnerAdvanceProbabilities runnerAdvanceProbabilities) {
+        super(context, runnerAdvanceProbabilities);
     }
 
     @Override
