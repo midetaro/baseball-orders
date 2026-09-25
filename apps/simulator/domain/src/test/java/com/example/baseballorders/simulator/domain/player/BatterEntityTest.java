@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.play.*;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsRecorder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,9 +20,9 @@ class BatterEntityTest {
                 0.4f,
                 0.75f,
                 0.85f,
-                BehaviorStrategies.longDistanceAtBat(),
-                BehaviorStrategies.noSteal(),
-                BehaviorStrategies.noBunt());
+                SimulationRulesTestData.strategies().longDistanceAtBat(),
+                SimulationRulesTestData.strategies().noSteal(),
+                SimulationRulesTestData.strategies().noBunt());
     }
 
     @Test
@@ -35,9 +35,9 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.noSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().noSteal(),
+                        SimulationRulesTestData.strategies().standardBunt());
 
         var statisticsRecorder = new GameStatisticsRecorder();
 
@@ -68,9 +68,9 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.eagerSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().eagerSteal(),
+                        SimulationRulesTestData.strategies().standardBunt());
 
         var statisticsRecorder = new GameStatisticsRecorder();
 
@@ -119,9 +119,9 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.noSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().noSteal(),
+                        SimulationRulesTestData.strategies().standardBunt());
         var statisticsRecorder = new GameStatisticsRecorder();
 
         // when

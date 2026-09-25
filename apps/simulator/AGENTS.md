@@ -36,8 +36,17 @@ Inherit the repository rules from `../../AGENTS.md`.
 - Put configurable operational numbers such as game count and SQS polling limits
   in `application-local.yml`, `application-dev.yml`, and `application-prod.yml`.
   Keep defaults in `application.yml` for launches without an active profile.
-  Numeric game-rule values (innings, outs, probabilities, and base transitions)
-  are domain rules and remain in domain code unless a feature changes the rule.
+- Tunable probability values (walk and strikeout rates, long-hit distribution
+  divisors, steal attempt rates, and runner advance probabilities) also live in
+  those four files under `simulation.rule`, and the pitcher personality
+  multipliers under `simulation.pitcher`. `domain` holds no default for them:
+  `SimulationRuleProperties` binds them, converts them to the value objects in
+  `com.example.baseballorders.simulator.domain.rule`, and the configuration
+  injects those into `BehaviorStrategies` and `BaseStateFactory` through
+  constructors. Supply them explicitly in tests through
+  `SimulationRulesTestData`.
+- Structural game-rule numbers (9 innings, 9 batters, out counts, base
+  bitmasks, and state indexes) are fixed rules and remain in domain code.
 - Run the simulator convention checker in `baseball-orders-test` after changing
   concrete subtypes or operational numeric configuration.
 - Every Java test method has a Japanese `@DisplayName` and `// given`, `// when`, `// then` sections.

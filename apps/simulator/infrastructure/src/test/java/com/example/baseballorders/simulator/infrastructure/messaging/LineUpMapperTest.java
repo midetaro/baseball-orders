@@ -10,13 +10,16 @@ import com.example.baseballorders.messaging.PitcherPersonality;
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.play.*;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.MiddleDistanceHittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.StandardBuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StandardStealStrategy;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsRecorder;
+import com.example.baseballorders.simulator.infrastructure.config.SimulationPitcherProperties;
+import com.example.baseballorders.simulator.infrastructure.config.SimulationPitcherProperties.Multipliers;
+import com.example.baseballorders.simulator.infrastructure.config.SimulationPropertiesTestData;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +43,13 @@ class LineUpMapperTest {
         var hitting = mock(MiddleDistanceHittingStrategy.class);
         var stealing = mock(StandardStealStrategy.class);
         var bunting = mock(StandardBuntStrategy.class);
-        var mapper = new LineUpMapper(hitting, stealing, bunting);
+        var mapper =
+                new LineUpMapper(
+                        hitting,
+                        stealing,
+                        bunting,
+                        SimulationRulesTestData.strategies(),
+                        SimulationPropertiesTestData.standardPitcherProperties());
         var player =
                 new SimulationPlayerMessage(
                         "1番", 0.3f, 0.4f, 0.5f, true, 0.6f, true, PlayerPersonality.DEFAULT);
@@ -76,9 +85,11 @@ class LineUpMapperTest {
         // given
         var mapper =
                 new LineUpMapper(
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.eagerSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().eagerSteal(),
+                        SimulationRulesTestData.strategies().standardBunt(),
+                        SimulationRulesTestData.strategies(),
+                        SimulationPropertiesTestData.standardPitcherProperties());
         var player =
                 new SimulationPlayerMessage(
                         "1番", 0.3f, 0.4f, 0.0f, false, 0.0f, false, PlayerPersonality.DEFAULT);
@@ -105,9 +116,11 @@ class LineUpMapperTest {
         // given
         var mapper =
                 new LineUpMapper(
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.eagerSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().eagerSteal(),
+                        SimulationRulesTestData.strategies().standardBunt(),
+                        SimulationRulesTestData.strategies(),
+                        SimulationPropertiesTestData.standardPitcherProperties());
         var player =
                 new SimulationPlayerMessage("1番", 0.3f, 0.4f, 0.0f, true, 0.8f, true, personality);
 
@@ -169,9 +182,11 @@ class LineUpMapperTest {
                                 SimulationPlayerMessage.class);
         var mapper =
                 new LineUpMapper(
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.eagerSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().eagerSteal(),
+                        SimulationRulesTestData.strategies().standardBunt(),
+                        SimulationRulesTestData.strategies(),
+                        SimulationPropertiesTestData.standardPitcherProperties());
         var statisticsRecorder = new GameStatisticsRecorder();
 
         // when
@@ -216,12 +231,15 @@ class LineUpMapperTest {
     @DisplayName("SQSの選手情報を打順へ変換すると全選手の能力と振る舞いが保持される")
     void mapsSqsPlayersToLineUpEntity() {
         // given
-        HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceHittingStrategy();
+        HittingStrategy hittingStrategy =
+                SimulationRulesTestData.strategies().middleDistanceHittingStrategy();
         LineUpMapper mapper =
                 new LineUpMapper(
                         hittingStrategy,
-                        BehaviorStrategies.eagerSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().eagerSteal(),
+                        SimulationRulesTestData.strategies().standardBunt(),
+                        SimulationRulesTestData.strategies(),
+                        SimulationPropertiesTestData.standardPitcherProperties());
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
                         .mapToObj(
@@ -254,5 +272,54 @@ class LineUpMapperTest {
                 () -> assertEquals(9, result.getBatterEntities().size()),
                 () -> assertEquals(BattingResult.HIT_SINGLE, battingResult),
                 () -> assertEquals(StealResult.SUCCESS, stealResult));
+    }
+
+    @Test
+    @DisplayName("設定された投手補正倍率で各確率を補正する")
+    void usesConfiguredPitcherMultipliers() {
+        // given
+        var hitting = mock(MiddleDistanceHittingStrategy.class);
+        var stealing = mock(StandardStealStrategy.class);
+        var bunting = mock(StandardBuntStrategy.class);
+        var pitcherProperties =
+                new SimulationPitcherProperties(
+                        new Multipliers(2.0f, 0.5f, 0.25f),
+                        new Multipliers(1.0f, 1.0f, 1.0f),
+                        new Multipliers(1.0f, 1.0f, 1.0f),
+                        new Multipliers(1.0f, 1.0f, 1.0f));
+        var mapper =
+                new LineUpMapper(
+                        hitting,
+                        stealing,
+                        bunting,
+                        SimulationRulesTestData.strategies(),
+                        pitcherProperties);
+        var player =
+                new SimulationPlayerMessage(
+                        "1番", 0.3f, 0.4f, 0.5f, true, 0.6f, true, PlayerPersonality.DEFAULT);
+        var onBaseCaptor = ArgumentCaptor.forClass(Float.class);
+        var sluggingCaptor = ArgumentCaptor.forClass(Float.class);
+        var buntCaptor = ArgumentCaptor.forClass(Float.class);
+        var stealCaptor = ArgumentCaptor.forClass(Float.class);
+
+        // when
+        var batter =
+                mapper.map(java.util.Collections.nCopies(9, player), PitcherPersonality.BOLD)
+                        .getBatterEntities()
+                        .getFirst();
+        batter.swing(0);
+        batter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
+        batter.stealToDouble();
+        verify(hitting).batting(onBaseCaptor.capture(), sluggingCaptor.capture());
+        verify(bunting)
+                .bunt(buntCaptor.capture(), org.mockito.ArgumentMatchers.eq(OutCount.NO_OUT));
+        verify(stealing).runToDouble(stealCaptor.capture());
+
+        // then
+        assertAll(
+                () -> assertEquals(0.6f, onBaseCaptor.getValue(), 0.00001f),
+                () -> assertEquals(0.65f, sluggingCaptor.getValue(), 0.00001f),
+                () -> assertEquals(0.125f, buntCaptor.getValue(), 0.00001f),
+                () -> assertEquals(0.15f, stealCaptor.getValue(), 0.00001f));
     }
 }

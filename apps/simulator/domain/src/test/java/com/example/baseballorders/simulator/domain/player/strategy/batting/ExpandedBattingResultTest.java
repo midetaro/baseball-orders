@@ -7,6 +7,7 @@ import static org.mockito.Mockito.times;
 
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,7 +37,10 @@ class ExpandedBattingResultTest {
             float random,
             BattingResult expectedResult) {
         // given
-        var strategy = new MiddleDistanceHittingStrategy();
+        var strategy =
+                new MiddleDistanceHittingStrategy(
+                        SimulationRulesTestData.standard().batting(),
+                        SimulationRulesTestData.standard().middleDistanceHitting());
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
 

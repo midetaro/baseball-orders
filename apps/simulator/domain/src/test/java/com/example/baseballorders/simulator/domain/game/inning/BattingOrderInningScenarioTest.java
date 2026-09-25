@@ -3,7 +3,7 @@ package com.example.baseballorders.simulator.domain.game.inning;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.example.baseballorders.simulator.domain.game.GameBattingContext;
+import com.example.baseballorders.simulator.domain.game.GameStateTestFixture;
 import com.example.baseballorders.simulator.domain.player.BatterTestData;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
 import com.example.baseballorders.simulator.domain.statistics.GameStatistics;
@@ -74,7 +74,7 @@ class BattingOrderInningScenarioTest {
         // given
         // 1番打者だけがこの乱数で本塁打になり、2番以降は三振になる打順。
         // 10打席目が1番打者なら本塁打が2本・2得点、2番打者なら本塁打1本・1得点になる。
-        var sut = new GameBattingContext(BatterTestData.distinctLineUp());
+        var sut = GameStateTestFixture.game(BatterTestData.distinctLineUp());
 
         // when
         try (ScriptedRandom random =

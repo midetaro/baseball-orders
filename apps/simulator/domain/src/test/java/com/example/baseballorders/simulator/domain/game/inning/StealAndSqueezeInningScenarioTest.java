@@ -3,11 +3,11 @@ package com.example.baseballorders.simulator.domain.game.inning;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.example.baseballorders.simulator.domain.game.GameBattingContext;
+import com.example.baseballorders.simulator.domain.game.GameStateTestFixture;
 import com.example.baseballorders.simulator.domain.player.BatterTestData;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.Draws;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatistics;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsBuilder;
 import com.example.baseballorders.simulator.domain.statistics.StatisticsAssertions;
@@ -59,12 +59,13 @@ class StealAndSqueezeInningScenarioTest {
     void scoresOneRunByStealAndSqueeze() {
         // given
         var sut =
-                new GameBattingContext(
+                GameStateTestFixture.game(
                         BatterTestData.lineUpOf(
                                 BatterTestData.batter(
-                                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                                        BehaviorStrategies.standardSteal(),
-                                        BehaviorStrategies.eagerBunt())));
+                                        SimulationRulesTestData.strategies()
+                                                .middleDistanceHittingStrategy(),
+                                        SimulationRulesTestData.strategies().standardSteal(),
+                                        SimulationRulesTestData.strategies().eagerBunt())));
 
         // when
         try (ScriptedRandom random =

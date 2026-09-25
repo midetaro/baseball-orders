@@ -2,21 +2,24 @@ package com.example.baseballorders.simulator.domain.player.strategy.steal;
 
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.rule.StealAttemptRates;
+import lombok.RequiredArgsConstructor;
 
+/** 標準戦略より高い企図率で盗塁を試みる積極的な戦略。 */
+@RequiredArgsConstructor
 public final class EagerStealStrategy implements StealStrategy {
 
-    private final float TO_DOUBLE_TRY_AVERAGE = 0.3f;
-    private final float TO_DOUBLE_NOT_TRY = 1 - TO_DOUBLE_TRY_AVERAGE;
-    private final float TO_TRIPLE_TRY_AVERAGE = 0.15f;
-    private final float TO_TRIPLE_NOT_TRY = 1 - TO_TRIPLE_TRY_AVERAGE;
+    private final StealAttemptRates attemptRates;
 
     @Override
     public StealResult runToDouble(float successRate) {
         float random = RandomGenerator.nextFloat();
-        float successProbability = TO_DOUBLE_NOT_TRY + successRate * TO_DOUBLE_TRY_AVERAGE;
-        if (random < TO_DOUBLE_NOT_TRY) {
+        float tryAverage = attemptRates.toDoubleAttemptRate();
+        float notTry = 1 - tryAverage;
+        float successProbability = notTry + successRate * tryAverage;
+        if (random < notTry) {
             return StealResult.NOT_TRY;
-        } else if (TO_DOUBLE_NOT_TRY < random && random < successProbability) {
+        } else if (notTry < random && random < successProbability) {
             return StealResult.SUCCESS;
         } else {
             return StealResult.FAILURE;
@@ -26,10 +29,12 @@ public final class EagerStealStrategy implements StealStrategy {
     @Override
     public StealResult runToTriple(float successRate) {
         float random = RandomGenerator.nextFloat();
-        float successProbability = TO_TRIPLE_NOT_TRY + successRate * TO_TRIPLE_TRY_AVERAGE;
-        if (random < TO_TRIPLE_NOT_TRY) {
+        float tryAverage = attemptRates.toTripleAttemptRate();
+        float notTry = 1 - tryAverage;
+        float successProbability = notTry + successRate * tryAverage;
+        if (random < notTry) {
             return StealResult.NOT_TRY;
-        } else if (TO_TRIPLE_NOT_TRY < random && random < successProbability) {
+        } else if (notTry < random && random < successProbability) {
             return StealResult.SUCCESS;
         } else {
             return StealResult.FAILURE;

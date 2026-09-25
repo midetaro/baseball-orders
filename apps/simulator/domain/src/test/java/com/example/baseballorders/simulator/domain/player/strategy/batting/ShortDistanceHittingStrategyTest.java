@@ -7,6 +7,9 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
+import com.example.baseballorders.simulator.domain.rule.BattingProbabilities;
+import com.example.baseballorders.simulator.domain.rule.BattingProbabilitiesBuilder;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -55,7 +58,7 @@ class ShortDistanceHittingStrategyTest {
     void determinesBattingResultAtBoundary(
             String description, float random, BattingResult expectedResult) {
         // given
-        var sut = new ShortDistanceHittingStrategy();
+        var sut = new ShortDistanceHittingStrategy(SimulationRulesTestData.standard().batting());
 
         // when
         BattingResult result;
@@ -75,7 +78,7 @@ class ShortDistanceHittingStrategyTest {
     @DisplayName("短距離打者は三塁打と本塁打の重みが0のためどの乱数でも到達しない")
     void neverProducesTripleOrHomer() {
         // given
-        var sut = new ShortDistanceHittingStrategy();
+        var sut = new ShortDistanceHittingStrategy(SimulationRulesTestData.standard().batting());
         Set<BattingResult> observed = EnumSet.noneOf(BattingResult.class);
         float[] script = new float[UNREACHABLE_SCAN_STEPS + 1];
         for (int step = 0; step <= UNREACHABLE_SCAN_STEPS; step++) {
@@ -103,6 +106,60 @@ class ShortDistanceHittingStrategyTest {
                                     observed,
                                     "到達可能な結果は四球・単打・二塁打・三振・凡退の5種類であること"),
                     () -> scriptedRandom.assertFullyConsumed());
+        }
+    }
+
+    static Stream<Arguments> configuredBattingProbabilities() {
+        return Stream.of(
+                arguments(
+                        "既定の四球確率0.050では0.1000000は単打",
+                        SimulationRulesTestData.standard().batting(),
+                        0.1f,
+                        BattingResult.HIT_SINGLE),
+                arguments(
+                        "四球確率を0.250にすると0.1000000は四球",
+                        BattingProbabilitiesBuilder.battingProbabilities()
+                                .walkProbability(0.25f)
+                                .strikeoutProbabilityWhenNotOnBase(0.25f)
+                                .build(),
+                        0.1f,
+                        BattingResult.WALK),
+                arguments(
+                        "既定の三振割合0.250では0.6000000は凡退",
+                        SimulationRulesTestData.standard().batting(),
+                        0.6f,
+                        BattingResult.BATTED_OUT),
+                arguments(
+                        "三振割合を0.500にすると0.6000000は三振",
+                        BattingProbabilitiesBuilder.battingProbabilities()
+                                .walkProbability(0.05f)
+                                .strikeoutProbabilityWhenNotOnBase(0.5f)
+                                .build(),
+                        0.6f,
+                        BattingResult.STRIKEOUT));
+    }
+
+    @DisplayName("四球と三振の区間は設定された打席確率で決まる")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("configuredBattingProbabilities")
+    void usesConfiguredBattingProbabilities(
+            String description,
+            BattingProbabilities probabilities,
+            float random,
+            BattingResult expectedResult) {
+        // given
+        var sut = new ShortDistanceHittingStrategy(probabilities);
+
+        // when
+        BattingResult result;
+        try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
+            result = sut.batting(ON_BASE_PERCENTAGE, SLUGGING);
+
+            // then
+            assertAll(
+                    description,
+                    () -> assertEquals(expectedResult, result),
+                    scriptedRandom::assertFullyConsumed);
         }
     }
 }

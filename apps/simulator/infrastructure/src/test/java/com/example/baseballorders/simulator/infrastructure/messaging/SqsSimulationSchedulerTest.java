@@ -15,12 +15,13 @@ import com.example.baseballorders.simulator.application.contract.SimulationResul
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsBuilder;
 import com.example.baseballorders.simulator.domain.statistics.ScoreAccumulator;
+import com.example.baseballorders.simulator.infrastructure.config.SimulationPropertiesTestData;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
@@ -220,10 +221,16 @@ class SqsSimulationSchedulerTest {
         // given
         SqsClient sqsClient = mock(SqsClient.class);
         SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
-        HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceHittingStrategy();
-        StealStrategy stealStrategy = BehaviorStrategies.eagerSteal();
+        HittingStrategy hittingStrategy =
+                SimulationRulesTestData.strategies().middleDistanceHittingStrategy();
+        StealStrategy stealStrategy = SimulationRulesTestData.strategies().eagerSteal();
         LineUpMapper mapper =
-                new LineUpMapper(hittingStrategy, stealStrategy, BehaviorStrategies.standardBunt());
+                new LineUpMapper(
+                        hittingStrategy,
+                        stealStrategy,
+                        SimulationRulesTestData.strategies().standardBunt(),
+                        SimulationRulesTestData.strategies(),
+                        SimulationPropertiesTestData.standardPitcherProperties());
         ObjectMapper objectMapper = new ObjectMapper();
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)

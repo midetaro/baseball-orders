@@ -1,18 +1,19 @@
 package com.example.baseballorders.simulator.domain.game;
 
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import java.util.List;
 
 public final class BatterTestDataFactory {
 
-    static HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceHittingStrategy();
-    static StealStrategy eagerStealStrategy = BehaviorStrategies.eagerSteal();
-    static StealStrategy nowayStealBehavior = BehaviorStrategies.noSteal();
-    static BuntStrategy standardBuntStrategy = BehaviorStrategies.standardBunt();
+    static HittingStrategy hittingStrategy =
+            SimulationRulesTestData.strategies().middleDistanceHittingStrategy();
+    static StealStrategy eagerStealStrategy = SimulationRulesTestData.strategies().eagerSteal();
+    static StealStrategy nowayStealBehavior = SimulationRulesTestData.strategies().noSteal();
+    static BuntStrategy standardBuntStrategy = SimulationRulesTestData.strategies().standardBunt();
 
     private BatterTestDataFactory() {}
 

@@ -2,9 +2,26 @@ package com.example.baseballorders.simulator.domain.player.strategy.batting;
 
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.rule.BattingProbabilities;
+import com.example.baseballorders.simulator.domain.rule.HittingDistribution;
 
 /** 中距離バッター */
 public final class MiddleDistanceHittingStrategy implements HittingStrategy {
+
+    private final BattingResultSelector selector;
+    private final HittingDistribution distribution;
+
+    /**
+     * 設定された打席確率と長打配分で中距離打者の打撃を作成する。
+     *
+     * @param battingProbabilities 打席結果の判定に使う確率
+     * @param distribution 長打によって増えた塁数の配分
+     */
+    public MiddleDistanceHittingStrategy(
+            BattingProbabilities battingProbabilities, HittingDistribution distribution) {
+        selector = new BattingResultSelector(battingProbabilities);
+        this.distribution = distribution;
+    }
 
     @Override
     public BattingResult batting(float onBasePercentage, float slugging) {
@@ -13,14 +30,15 @@ public final class MiddleDistanceHittingStrategy implements HittingStrategy {
         // 長打によって増えた塁数
         float extraBaseProbability = slugging - onBasePercentage;
 
-        // 二塁打・三塁打・本塁打を同じ確率と仮定
-        float doubleProbability = extraBaseProbability / 6;
-        float tripleProbability = extraBaseProbability / 6;
-        float homeRunProbability = extraBaseProbability / 6;
+        // 二塁打・三塁打・本塁打の配分は設定された除数に従う
+        float doubleProbability = extraBaseProbability / distribution.doubleDivisor();
+        float tripleProbability = extraBaseProbability / distribution.tripleDivisor();
+        float homeRunProbability = extraBaseProbability / distribution.homeRunDivisor();
 
-        float singleProbability = onBasePercentage - extraBaseProbability / 2;
+        float singleProbability =
+                onBasePercentage - extraBaseProbability / distribution.singleReductionDivisor();
 
-        return BattingResultSelector.select(
+        return selector.select(
                 random,
                 onBasePercentage,
                 singleProbability,

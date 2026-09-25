@@ -1,5 +1,6 @@
 package com.example.baseballorders.simulator.domain.game;
 
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -24,6 +25,7 @@ public final class ScriptedBaseStateFactory extends BaseStateFactory {
     private final List<ScriptedBasesState> startedGames = new ArrayList<>();
 
     private ScriptedBaseStateFactory(List<InningScript> gameScripts) {
+        super(SimulationRulesTestData.standard().runnerAdvance());
         this.gameScripts = new ArrayDeque<>(gameScripts);
     }
 

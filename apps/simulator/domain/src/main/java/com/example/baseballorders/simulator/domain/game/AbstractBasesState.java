@@ -8,17 +8,17 @@ import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.rule.RunnerAdvanceProbabilities;
 import lombok.RequiredArgsConstructor;
 
 /** 試合とイニング状態を共有するStateの共通基底実装。 */
 @RequiredArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public abstract class AbstractBasesState {
 
-    private static final float ADVANCE_FROM_FIRST_PROBABILITY = 0.2f;
-    private static final float ADVANCE_FROM_SECOND_PROBABILITY = 0.2f;
-    private static final float ADVANCE_FROM_THIRD_PROBABILITY = 0.1f;
-
     protected final InningStateContext context;
+
+    /** 凡退時の進塁確率。設定から供給される。 */
+    private final RunnerAdvanceProbabilities runnerAdvanceProbabilities;
 
     public final BatterEntity runnerAt(Base base) {
         return context.runnerAt(base);
@@ -165,9 +165,9 @@ public abstract class AbstractBasesState {
 
     private float advancementProbability(Base base) {
         return switch (base) {
-            case FIRST -> ADVANCE_FROM_FIRST_PROBABILITY;
-            case SECOND -> ADVANCE_FROM_SECOND_PROBABILITY;
-            case THIRD -> ADVANCE_FROM_THIRD_PROBABILITY;
+            case FIRST -> runnerAdvanceProbabilities.fromFirstProbability();
+            case SECOND -> runnerAdvanceProbabilities.fromSecondProbability();
+            case THIRD -> runnerAdvanceProbabilities.fromThirdProbability();
         };
     }
 

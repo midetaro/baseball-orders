@@ -32,15 +32,6 @@ public class SimulateGameUseCase {
     }
 
     /**
-     * 指定された試合数でシミュレーション用ユースケースを作成する。
-     *
-     * @param gameCount リクエストごとに実行する試合数
-     */
-    public SimulateGameUseCase(int gameCount) {
-        this(gameCount, new BaseStateFactory());
-    }
-
-    /**
      * Simulates the configured number of games with a nine-player lineup and calculates their score
      * statistics.
      *

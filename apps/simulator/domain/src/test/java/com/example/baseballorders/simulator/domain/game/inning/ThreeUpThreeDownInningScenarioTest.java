@@ -3,7 +3,7 @@ package com.example.baseballorders.simulator.domain.game.inning;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.example.baseballorders.simulator.domain.game.GameBattingContext;
+import com.example.baseballorders.simulator.domain.game.GameStateTestFixture;
 import com.example.baseballorders.simulator.domain.player.BatterTestData;
 import com.example.baseballorders.simulator.domain.player.strategy.Draws;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
@@ -57,7 +57,7 @@ class ThreeUpThreeDownInningScenarioTest {
     @DisplayName("三振3つで無得点のままイニングが完了し、乱数を3個だけ消費する")
     void completesInningWithThreeStrikeouts() {
         // given
-        var sut = new GameBattingContext(BatterTestData.uniformLineUp());
+        var sut = GameStateTestFixture.game(BatterTestData.uniformLineUp());
 
         // when
         try (ScriptedRandom random =

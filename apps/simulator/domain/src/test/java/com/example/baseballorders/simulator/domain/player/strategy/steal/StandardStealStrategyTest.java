@@ -6,6 +6,9 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
+import com.example.baseballorders.simulator.domain.rule.StealAttemptRates;
+import com.example.baseballorders.simulator.domain.rule.StealAttemptRatesBuilder;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -67,7 +70,7 @@ class StandardStealStrategyTest {
     void determinesStealToSecondAtBoundary(
             String description, float random, StealResult expectedResult) {
         // given
-        var sut = new StandardStealStrategy();
+        var sut = new StandardStealStrategy(SimulationRulesTestData.standard().standardSteal());
 
         // when
         StealResult result;
@@ -89,7 +92,7 @@ class StandardStealStrategyTest {
     void determinesStealToThirdAtBoundary(
             String description, float random, StealResult expectedResult) {
         // given
-        var sut = new StandardStealStrategy();
+        var sut = new StandardStealStrategy(SimulationRulesTestData.standard().standardSteal());
 
         // when
         StealResult result;
@@ -111,12 +114,48 @@ class StandardStealStrategyTest {
     void usesRunnerStealSuccessRateForSecond(
             String description, float stealSuccessRate, StealResult expectedResult) {
         // given
-        var sut = new StandardStealStrategy();
+        var sut = new StandardStealStrategy(SimulationRulesTestData.standard().standardSteal());
 
         // when
         StealResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.95f)) {
             result = sut.runToDouble(stealSuccessRate);
+
+            // then
+            assertAll(
+                    description,
+                    () -> assertEquals(expectedResult, result),
+                    scriptedRandom::assertFullyConsumed);
+        }
+    }
+
+    static Stream<Arguments> configuredAttemptRates() {
+        return Stream.of(
+                arguments(
+                        "設定値0.200では0.6000000は試行しない",
+                        SimulationRulesTestData.standard().standardSteal(),
+                        StealResult.NOT_TRY),
+                arguments(
+                        "設定値0.500では0.6000000は成功する",
+                        StealAttemptRatesBuilder.stealAttemptRates()
+                                .toDoubleAttemptRate(0.5f)
+                                .toTripleAttemptRate(0.05f)
+                                .build(),
+                        StealResult.SUCCESS));
+    }
+
+    @DisplayName("標準戦略の二盗試行境界は設定された企図率で決まる")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("configuredAttemptRates")
+    void usesConfiguredAttemptRateForSecond(
+            String description, StealAttemptRates attemptRates, StealResult expectedResult) {
+        // given
+        var sut = new StandardStealStrategy(attemptRates);
+
+        // when
+        StealResult result;
+        try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.6f)) {
+            result = sut.runToDouble(STEAL_SUCCESS_RATE);
 
             // then
             assertAll(

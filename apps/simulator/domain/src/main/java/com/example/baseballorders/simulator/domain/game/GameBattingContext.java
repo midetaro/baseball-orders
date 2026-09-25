@@ -10,7 +10,6 @@ import lombok.Getter;
 
 /** 試合全体の情報を保持し、プレーを現在の塁Stateへ委譲するContext。 */
 public class GameBattingContext {
-    private static final GameCompletionObserver NO_OPERATION_OBSERVER = (score, statistics) -> {};
     private final InningStateContext inningStateContext;
     private final GameStatisticsRecorder statisticsRecorder = new GameStatisticsRecorder();
     private final GameCompletionObserver gameCompletionObserver;
@@ -19,26 +18,6 @@ public class GameBattingContext {
     private long totalScore;
     private int numberOfNextBatter;
     @Getter private boolean isGameOver;
-
-    /**
-     * 初回・無死・走者なしの試合を作成する。
-     *
-     * @param batterEntityOrders 試合で使用する打順
-     */
-    public GameBattingContext(LineUpEntity batterEntityOrders) {
-        this(batterEntityOrders, NO_OPERATION_OBSERVER, new BaseStateFactory());
-    }
-
-    /**
-     * 終了通知先を指定して試合を作成する。
-     *
-     * @param batterEntityOrders 試合で使用する打順
-     * @param gameCompletionObserver 試合終了時の通知先
-     */
-    public GameBattingContext(
-            LineUpEntity batterEntityOrders, GameCompletionObserver gameCompletionObserver) {
-        this(batterEntityOrders, gameCompletionObserver, new BaseStateFactory());
-    }
 
     /**
      * 同一イニング状態を共有する8種類のStateと試合を作成する。

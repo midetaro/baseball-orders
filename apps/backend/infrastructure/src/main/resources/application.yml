@@ -12,10 +12,18 @@ spring:
       ddl-auto: validate
 
 baseball-orders:
+  simulation:
+    result-timeout: ${SIMULATION_RESULT_TIMEOUT:30s}
+    maximum-average-hit-average: ${SIMULATION_MAXIMUM_AVERAGE_HIT_AVERAGE:0.35}
+    maximum-average-sluggish: ${SIMULATION_MAXIMUM_AVERAGE_SLUGGISH:0.4}
+    pitcher-increase-multiplier: ${SIMULATION_PITCHER_INCREASE_MULTIPLIER:1.3}
+    maximum-success-rate: ${SIMULATION_MAXIMUM_SUCCESS_RATE:0.7}
   security:
     google:
       client-id: ${GOOGLE_CLIENT_ID:}
       client-secret: ${GOOGLE_CLIENT_SECRET:}
+    local-account:
+      minimum-password-length: ${LOCAL_ACCOUNT_MINIMUM_PASSWORD_LENGTH:12}
 spring.cloud.aws:
   region:
     static: ap-northeast-1

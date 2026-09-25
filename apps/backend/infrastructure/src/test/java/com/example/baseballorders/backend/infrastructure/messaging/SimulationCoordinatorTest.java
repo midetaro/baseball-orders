@@ -3,6 +3,8 @@ package com.example.baseballorders.backend.infrastructure.messaging;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
+import com.example.baseballorders.backend.application.SimulationLimits;
+import com.example.baseballorders.backend.application.SimulationLimitsBuilder;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
@@ -21,6 +23,23 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class SimulationCoordinatorTest {
+
+    private static final float CONFIGURED_MAXIMUM_SUCCESS_RATE = 0.700f;
+
+    /** application.ymlの既定値と同じ上限を組み立てる。 */
+    private static SimulationLimits limits(Duration resultTimeout) {
+        return limits(resultTimeout, CONFIGURED_MAXIMUM_SUCCESS_RATE);
+    }
+
+    private static SimulationLimits limits(Duration resultTimeout, float maximumSuccessRate) {
+        return SimulationLimitsBuilder.simulationLimits()
+                .resultTimeout(resultTimeout)
+                .maximumAverageHitAverage(0.350f)
+                .maximumAverageSluggish(0.400f)
+                .pitcherIncreaseMultiplier(1.300f)
+                .maximumSuccessRate(maximumSuccessRate)
+                .build();
+    }
 
     private static List<PlayerData> players(int size) {
         return java.util.stream.IntStream.rangeClosed(1, size)
@@ -55,7 +74,8 @@ class SimulationCoordinatorTest {
                                     List.of(new SimulationResult.Result(5, 4)),
                                     new SimulationResult.Statistics(5, 5, 5)));
                 };
-        var coordinator = new SimulationCoordinator(publisher, registry, Duration.ofSeconds(1));
+        var coordinator =
+                new SimulationCoordinator(publisher, registry, limits(Duration.ofSeconds(1)));
 
         // when
         SimulationResult result = coordinator.simulate(players(9));
@@ -81,7 +101,8 @@ class SimulationCoordinatorTest {
     void removesWaitAfterTimeout() {
         // given
         var registry = new WaitingResultRegistry();
-        var coordinator = new SimulationCoordinator(request -> {}, registry, Duration.ofMillis(1));
+        var coordinator =
+                new SimulationCoordinator(request -> {}, registry, limits(Duration.ofMillis(1)));
 
         // when
         var exception =
@@ -112,7 +133,7 @@ class SimulationCoordinatorTest {
                             throw failure;
                         },
                         registry,
-                        Duration.ofSeconds(1));
+                        limits(Duration.ofSeconds(1)));
 
         // when
         var exception =
@@ -130,7 +151,8 @@ class SimulationCoordinatorTest {
         // given
         var registry = new WaitingResultRegistry();
         var failure = new AtomicReference<Throwable>();
-        var coordinator = new SimulationCoordinator(request -> {}, registry, Duration.ofSeconds(5));
+        var coordinator =
+                new SimulationCoordinator(request -> {}, registry, limits(Duration.ofSeconds(5)));
         Thread thread =
                 Thread.ofPlatform()
                         .unstarted(
@@ -163,7 +185,7 @@ class SimulationCoordinatorTest {
         // given
         var coordinator =
                 new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), Duration.ofSeconds(1));
+                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofSeconds(1)));
 
         // when
         var exception =
@@ -183,7 +205,7 @@ class SimulationCoordinatorTest {
         // given
         var coordinator =
                 new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), Duration.ofSeconds(1));
+                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofSeconds(1)));
 
         // when
         var exception =
@@ -203,7 +225,7 @@ class SimulationCoordinatorTest {
         // given
         var coordinator =
                 new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), Duration.ofMillis(1));
+                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
         var excessivePlayers =
                 java.util.stream.IntStream.range(0, 9)
                         .mapToObj(
@@ -240,7 +262,7 @@ class SimulationCoordinatorTest {
         // given
         var coordinator =
                 new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), Duration.ofMillis(1));
+                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
         var excessivePlayers =
                 java.util.stream.IntStream.range(0, 9)
                         .mapToObj(
@@ -272,12 +294,98 @@ class SimulationCoordinatorTest {
     }
 
     @Test
+    @DisplayName("確率範囲内でも既定の成功率上限を超えるバント成功率はCoordinatorが拒否する")
+    void rejectsBuntSuccessRateAboveConfiguredMaximum() {
+        // given
+        var sut =
+                new SimulationCoordinator(
+                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
+        var lineup = new ArrayList<>(players(9));
+        lineup.set(
+                0,
+                PlayerDataBuilder.playerData()
+                        .name("山田")
+                        .hitAverage(0.301f)
+                        .sluggish(0.351f)
+                        .buntSuccessRate(0.710f)
+                        .buntEnabled(true)
+                        .stealSuccessRate(0.700f)
+                        .stealEnabled(true)
+                        .personality(PlayerPersonality.DEFAULT)
+                        .build());
+
+        // when
+        var exception = assertThrows(IllegalArgumentException.class, () -> sut.simulate(lineup));
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                "buntSuccessRate must be between 0.0 and 0.7",
+                                exception.getMessage()));
+    }
+
+    @Test
+    @DisplayName("成功率上限を設定で下げると既定では通る打順を拒否する")
+    void rejectsSuccessRateAboveLoweredConfiguredMaximum() {
+        // given
+        var sut =
+                new SimulationCoordinator(
+                        request -> {},
+                        new WaitingResultRegistry(),
+                        limits(Duration.ofMillis(1), 0.500f));
+        var lineup = players(9);
+
+        // when
+        var exception = assertThrows(IllegalArgumentException.class, () -> sut.simulate(lineup));
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                "buntSuccessRate must be between 0.0 and 0.5",
+                                exception.getMessage()));
+    }
+
+    @Test
+    @DisplayName("盗塁成功率だけが設定上限を超える打順も拒否する")
+    void rejectsStealSuccessRateAboveConfiguredMaximum() {
+        // given
+        var sut =
+                new SimulationCoordinator(
+                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
+        var lineup = new ArrayList<>(players(9));
+        lineup.set(
+                0,
+                PlayerDataBuilder.playerData()
+                        .name("山田")
+                        .hitAverage(0.301f)
+                        .sluggish(0.351f)
+                        .buntSuccessRate(0.700f)
+                        .buntEnabled(true)
+                        .stealSuccessRate(0.900f)
+                        .stealEnabled(true)
+                        .personality(PlayerPersonality.DEFAULT)
+                        .build());
+
+        // when
+        var exception = assertThrows(IllegalArgumentException.class, () -> sut.simulate(lineup));
+
+        // then
+        assertAll(
+                () ->
+                        assertEquals(
+                                "stealSuccessRate must be between 0.0 and 0.7",
+                                exception.getMessage()));
+    }
+
+    @Test
     @DisplayName("大胆な投手で出塁率が1を超える打順はSQS送信をせず拒否する")
     void rejectsBoldPitcherLineupWithAdjustedHitAverageAboveOne() {
         // given
         var sut =
                 new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), Duration.ofMillis(1));
+                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
         var lineup = new ArrayList<>(players(9));
         lineup.set(
                 0,

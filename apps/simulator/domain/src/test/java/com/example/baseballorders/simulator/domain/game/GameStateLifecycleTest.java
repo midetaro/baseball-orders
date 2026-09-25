@@ -9,6 +9,7 @@ import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameCompletionObserver;
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +36,7 @@ class GameStateLifecycleTest {
         when(first.swing(0)).thenReturn(BattingResult.HIT_SINGLE);
         when(first.stealToDouble()).thenReturn(StealResult.FAILURE);
         when(second.swing(0)).thenReturn(BattingResult.STRIKEOUT);
-        var context = new GameBattingContext(new LineUpEntity(List.of(first, second)));
+        var context = GameStateTestFixture.game(new LineUpEntity(List.of(first, second)));
         for (int i = 0; i < (inning - 1) * 3 + 2; i++) {
             context.inningStateContext().currentBaseState().out();
         }
@@ -69,7 +70,10 @@ class GameStateLifecycleTest {
         var observer = mock(GameCompletionObserver.class);
         var batter = batter();
         var context =
-                new GameBattingContext(new LineUpEntity(Collections.nCopies(9, batter)), observer);
+                new GameBattingContext(
+                        new LineUpEntity(Collections.nCopies(9, batter)),
+                        observer,
+                        SimulationRulesTestData.baseStateFactory());
         context.inningStateContext().currentBaseState().hitHomer();
         context.inningStateContext().currentBaseState().hitSingle(batter);
         // when
@@ -103,7 +107,7 @@ class GameStateLifecycleTest {
         // given
         var batter = batter();
         when(batter.swing(0)).thenReturn(result);
-        var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
+        var context = GameStateTestFixture.game(new LineUpEntity(List.of(batter)));
         // when
         context.nextAtBat();
         // then
@@ -131,7 +135,7 @@ class GameStateLifecycleTest {
         when(runner.stealToTriple()).thenReturn(result);
         when(hitter.bunt(any(), any())).thenReturn(BuntResult.NOT_TRY);
         when(hitter.swing(anyInt())).thenReturn(BattingResult.HIT_HOMER);
-        var context = new GameBattingContext(new LineUpEntity(List.of(hitter)));
+        var context = GameStateTestFixture.game(new LineUpEntity(List.of(hitter)));
         context.inningStateContext().currentBaseState().hitDouble(runner);
         // when
         context.nextAtBat();
@@ -156,7 +160,7 @@ class GameStateLifecycleTest {
         var hitter = batter();
         when(runner.stealToDouble()).thenReturn(StealResult.NOT_TRY);
         when(hitter.bunt(any(), any())).thenReturn(result);
-        var context = new GameBattingContext(new LineUpEntity(List.of(hitter)));
+        var context = GameStateTestFixture.game(new LineUpEntity(List.of(hitter)));
         context.inningStateContext().currentBaseState().hitSingle(runner);
         // when
         context.nextAtBat();
