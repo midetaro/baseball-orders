@@ -3,44 +3,74 @@ package com.example.baseballorders.simulator.domain.player.strategy.batting;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.play.BattingResult;
-import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.MockedStatic;
 
+/**
+ * 中距離打者の確率仕様。
+ *
+ * <p>出塁率 0.400 / 長打率 0.550 の基準打者での乱数区間は次のとおり。長打分 0.150 を二塁打・三塁打・本塁打へ 1/6 ずつ、単打へ残りを配分する。
+ *
+ * <pre>
+ * [0.000000, 0.050000) 四球
+ * [0.050000, 0.334375) 単打
+ * [0.334375, 0.356250) 二塁打
+ * [0.356250, 0.378125) 三塁打
+ * [0.378125, 0.400000) 本塁打
+ * [0.400000, 0.550000) 三振
+ * [0.550000, 1.000000] 凡退
+ * </pre>
+ *
+ * <p>各区間は下端（含む）と直前（排他）の 2 点を置く。1 区間 1 ケースでは閾値の移動を検出できない。
+ */
 class MiddleDistanceHittingStrategyTest {
 
-    static Stream<Arguments> battingTestCases() {
+    private static final float ON_BASE_PERCENTAGE = 0.400f;
+    private static final float SLUGGING = 0.550f;
+
+    static Stream<Arguments> battingBoundaries() {
         return Stream.of(
-                arguments("5%未満なら四球になる", 0.04f, BattingResult.WALK),
-                arguments("単打配分なら単打になる", 0.30f, BattingResult.HIT_SINGLE),
-                arguments("二塁打配分なら二塁打になる", 0.34f, BattingResult.HIT_DOUBLE),
-                arguments("三塁打配分なら三塁打になる", 0.36f, BattingResult.HIT_TRIPLE),
-                arguments("本塁打配分なら本塁打になる", 0.39f, BattingResult.HIT_HOMER),
-                arguments("出塁率と等しければ三振になる", 0.4f, BattingResult.STRIKEOUT),
-                arguments("非出塁の25%以降なら凡退になる", 0.55f, BattingResult.BATTED_OUT));
+                arguments("0.000000は四球区間の下端", 0.0f, BattingResult.WALK),
+                arguments("0.049999997は四球区間の直前", 0.049999997f, BattingResult.WALK),
+                arguments("0.050000は単打区間の下端", 0.05f, BattingResult.HIT_SINGLE),
+                arguments("0.33437496は単打区間の直前", 0.33437496f, BattingResult.HIT_SINGLE),
+                arguments("0.334375は二塁打区間の下端", 0.334375f, BattingResult.HIT_DOUBLE),
+                arguments("0.35624996は二塁打区間の直前", 0.35624996f, BattingResult.HIT_DOUBLE),
+                arguments("0.356250は三塁打区間の下端", 0.35625f, BattingResult.HIT_TRIPLE),
+                arguments("0.37812495は三塁打区間の直前", 0.37812495f, BattingResult.HIT_TRIPLE),
+                arguments("0.37812498は本塁打区間の下端", 0.37812498f, BattingResult.HIT_HOMER),
+                arguments("0.39999998は本塁打区間の直前", 0.39999998f, BattingResult.HIT_HOMER),
+                arguments("0.400000は三振区間の下端で出塁率と等しい", 0.4f, BattingResult.STRIKEOUT),
+                arguments("0.54999995は三振区間の直前", 0.54999995f, BattingResult.STRIKEOUT),
+                arguments("0.550000は凡退区間の下端", 0.55f, BattingResult.BATTED_OUT),
+                arguments("1.000000は凡退区間の上端", 1.0f, BattingResult.BATTED_OUT));
     }
 
-    @DisplayName("乱数と打撃成績に応じて打席結果を決定する")
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("battingTestCases")
-    void determinesBattingResult(String description, float random, BattingResult expectedResult) {
+    @DisplayName("中距離打者は乱数区間の境界どおりに打席結果を決定し、乱数を1個だけ消費する")
+    @ParameterizedTest(name = "{0} -> {2}")
+    @MethodSource("battingBoundaries")
+    void determinesBattingResultAtBoundary(
+            String description, float random, BattingResult expectedResult) {
         // given
-        var behavior = new MiddleDistanceHittingStrategy();
-        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
+        var sut = new MiddleDistanceHittingStrategy();
 
-            // when
-            BattingResult result = behavior.batting(0.4f, 0.55f);
+        // when
+        BattingResult result;
+        try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
+            result = sut.batting(ON_BASE_PERCENTAGE, SLUGGING);
 
             // then
-            assertAll(() -> assertEquals(expectedResult, result, description));
+            assertAll(
+                    description,
+                    () -> assertEquals(expectedResult, result),
+                    () -> assertEquals(1, scriptedRandom.consumedCount()),
+                    () -> scriptedRandom.assertFullyConsumed());
         }
     }
 }
