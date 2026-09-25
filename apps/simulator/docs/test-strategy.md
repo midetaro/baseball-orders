@@ -482,16 +482,38 @@ ScoreStatistics:
 
 ## 10. 段階導入計画
 
-| Phase | 内容 | 完了条件 |
-| --- | --- | --- |
-| 1 | `Draws` + `DrawsSelfTest` + `ScriptedRandom`（既存テストは触らない） | `:domain:test` green |
-| 2 | L1 確率仕様テストの境界値拡充（全 Strategy） | jacoco 100% 維持、確率表が `@DisplayName` から読める |
-| 3 | L2 の capability `default` 分岐の穴埋め | `check-simulator-conventions.sh` green |
-| 4 | L3 イニングシナリオ（§5.4 の 6 本） | 統計の record 全体比較が入る |
-| 5 | `ScriptedBaseStateFactory` + L4 試合シナリオ | 9 イニング・通知 1 回・集計統計の決定論検証 |
-| 6 | `SimulateGameUseCaseScenarioTest`（中央値の偶奇 2 本を含む） | `verify.sh simulator` green |
+| Phase | 内容 | 完了条件 | 状態 |
+| --- | --- | --- | --- |
+| 1 | `Draws` + `DrawsSelfTest` + `ScriptedRandom` | `:domain:test` green | 完了 |
+| 2 | L1 確率仕様テストの境界値拡充（全 Strategy） | jacoco 100% 維持、確率表が `@DisplayName` から読める | 完了 |
+| 3 | L2 の capability `default` 分岐の穴埋め | `check-simulator-conventions.sh` green | 完了 |
+| 4 | L3 イニングシナリオ（§5.4） | 統計の record 全体比較が入る | 完了 |
+| 5 | `ScriptedBaseStateFactory` + L4 試合シナリオ | 9 イニング・通知 1 回・集計統計の決定論検証 | 完了 |
+| 6 | `SimulateGameUseCaseScenarioTest`（中央値の偶奇 2 本を含む） | `verify.sh simulator` green | 完了 |
 
 各 Phase は独立して価値を出すので、1 セッション 1 Phase を推奨する。
+
+Phase 1〜6 の実装後の構成は次のとおり。
+
+```text
+domain/src/testFixtures/java/.../domain/
+  player/strategy/ScriptedRandom.java      乱数列のスクリプト化と消費個数の検証
+  player/strategy/Draws.java               名前付き乱数定数（基準打者前提）
+  player/BatterTestData.java               基準打者・打順ビルダ
+  game/GameStateTestFixture.java           走者配置の作成（既存）
+  game/ScriptedBaseStateFactory.java       イニング情報のフェイク（試合ごとに脚本を割り当てる）
+  game/ScriptedBasesState.java             脚本どおりに得点・アウト・イニング完了を適用する
+  game/InningScript.java / InningPlan.java イニング単位の脚本
+  statistics/StatisticsAssertions.java     統計の恒等式アサーション
+
+domain/src/test/java/.../domain/
+  player/strategy/DrawsSelfTest.java       名前付き乱数定数の自己検証
+  game/inning/*InningScenarioTest.java     L3（§5.4 の代表シナリオ）
+  game/GameScenarioTest.java               L4（試合単位。completeInning がパッケージ内のため game 直下）
+
+application/src/test/java/.../application/
+  SimulateGameUseCaseScenarioTest.java     L4（集計統計。中央値の偶奇 2 本）
+```
 
 ---
 
@@ -499,13 +521,24 @@ ScoreStatistics:
 
 テスト化は仕様の固定を意味するため、以下は「現状を固定する／修正する」の判断が先に要る。
 
+**Phase 1〜6 での判断: 6 件すべて「現状を固定する」を採った。** 各項目を固定しているテストは
+以下に併記する。修正する場合は、該当テストの期待値を書き換えることがそのまま仕様変更の宣言になる
+ため、feature specification を切って対応する。
+
 1. 盗塁戦略の `r == NOT_TRY` がちょうどの場合に `FAILURE` になる件（§3.3）。
+   → `StandardStealStrategyTest` / `EagerStealStrategyTest` の「試行境界と等しく失敗になる」ケース。
 2. `BattingResultSelector` の `r == onBasePercentage` が `STRIKEOUT` になる件（§3.3）。
+   → 各 `*HittingStrategyTest` の「三振区間の下端で出塁率と等しい」ケース。
 3. `ShortDistanceHittingStrategy` で三塁打・本塁打が到達不能な件。
+   → `ShortDistanceHittingStrategyTest#neverProducesTripleOrHomer`。
 4. 盗塁でイニングが変わった打席は未完了扱い（`false`）となり、
    **次イニングの先頭打者が同じ打者になる**件（`AtBatProcessor` 30–32 行目）。
+   → 既存の `GameStateLifecycleTest#thirdOutStealDoesNotConsumeBatter`。
 5. `SqueezeBuntable#buntFailure` の二死適用条件 `getOutCount() != NO_OUT`。
+   → `ThirdBaseStateTest` / `FirstThirdBaseStateTest` / `DoubleThirdBaseStateTest` /
+   `FullBasesStateTest` の無死・二死の 2 ケース、および `SqueezeFailureInningScenarioTest`。
 6. **`GameBattingContext#nextAtBat` の打順一巡（不具合の疑いが濃い）**。
+   → `BattingOrderInningScenarioTest`（現状の挙動を固定していることをクラス Javadoc に明記）。
 
    ```java
    if (numberOfNextBatter == 8) { numberOfNextBatter = 0; }
