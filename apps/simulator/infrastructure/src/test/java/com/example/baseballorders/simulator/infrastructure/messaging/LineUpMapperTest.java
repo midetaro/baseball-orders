@@ -6,7 +6,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
-import com.example.baseballorders.messaging.PitcherPersonality;
 import com.example.baseballorders.messaging.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.simulator.domain.play.*;
@@ -28,86 +27,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 class LineUpMapperTest {
-
-    @org.junit.jupiter.params.ParameterizedTest
-    @org.junit.jupiter.params.provider.CsvSource({
-        "BOLD,0.39,0.46,0.5,0.6",
-        "CAUTIOUS,0.21,0.4,0.65,0.78",
-        "TECHNICAL,0.3,0.52,0.35,0.42",
-        "DEFAULT,0.3,0.4,0.5,0.6"
-    })
-    @DisplayName("投手の性格に応じて各確率を補正し選手の行動戦略へ渡す")
-    void adjustsAllProbabilitiesForPitcher(
-            PitcherPersonality pitcher, float onBase, float slugging, float bunt, float steal) {
-        // given
-        var hitting = mock(MiddleDistanceHittingStrategy.class);
-        var stealing = mock(StandardStealStrategy.class);
-        var bunting = mock(StandardBuntStrategy.class);
-        var mapper =
-                new LineUpMapper(
-                        hitting,
-                        stealing,
-                        bunting,
-                        SimulationRulesTestData.strategies(),
-                        SimulationPropertiesTestData.standardPitcherProperties());
-        var player =
-                new SimulationPlayerMessage(
-                        "1番", 0.3f, 0.4f, 0.5f, true, 0.6f, true, PlayerPersonality.DEFAULT);
-        var onBaseCaptor = ArgumentCaptor.forClass(Float.class);
-        var sluggingCaptor = ArgumentCaptor.forClass(Float.class);
-        var buntCaptor = ArgumentCaptor.forClass(Float.class);
-        var stealCaptor = ArgumentCaptor.forClass(Float.class);
-
-        // when
-        var batter =
-                mapper.map(java.util.Collections.nCopies(9, player), pitcher)
-                        .getBatterEntities()
-                        .getFirst();
-        batter.swing(0);
-        batter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
-        batter.stealToDouble();
-        verify(hitting).batting(onBaseCaptor.capture(), sluggingCaptor.capture());
-        verify(bunting)
-                .bunt(buntCaptor.capture(), org.mockito.ArgumentMatchers.eq(OutCount.NO_OUT));
-        verify(stealing).runToDouble(stealCaptor.capture());
-
-        // then
-        assertAll(
-                () -> assertEquals(onBase, onBaseCaptor.getValue(), 0.00001f),
-                () -> assertEquals(slugging, sluggingCaptor.getValue(), 0.00001f),
-                () -> assertEquals(bunt, buntCaptor.getValue(), 0.00001f),
-                () -> assertEquals(steal, stealCaptor.getValue(), 0.00001f));
-    }
-
-    @Test
-    @DisplayName("大胆な投手でも通常時の7割の本塁打配分で本塁打になる")
-    void allowsHomeRunAgainstBoldPitcherAtReducedProbability() {
-        // given
-        var mapper =
-                new LineUpMapper(
-                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
-                        SimulationRulesTestData.strategies().eagerSteal(),
-                        SimulationRulesTestData.strategies().standardBunt(),
-                        SimulationRulesTestData.strategies(),
-                        SimulationPropertiesTestData.standardPitcherProperties());
-        var player =
-                new SimulationPlayerMessage(
-                        "1番", 0.3f, 0.4f, 0.0f, false, 0.0f, false, PlayerPersonality.DEFAULT);
-
-        // when
-        BattingResult battingResult;
-        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.385f);
-            battingResult =
-                    mapper.map(java.util.Collections.nCopies(9, player), PitcherPersonality.BOLD)
-                            .getBatterEntities()
-                            .getFirst()
-                            .swing(0);
-        }
-
-        // then
-        assertAll(() -> assertEquals(BattingResult.HIT_HOMER, battingResult));
-    }
 
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.EnumSource(PlayerPersonality.class)
@@ -275,18 +194,13 @@ class LineUpMapperTest {
     }
 
     @Test
-    @DisplayName("設定された投手補正倍率で各確率を補正する")
+    @DisplayName("設定された既定の投手補正倍率で各確率を補正する")
     void usesConfiguredPitcherMultipliers() {
         // given
         var hitting = mock(MiddleDistanceHittingStrategy.class);
         var stealing = mock(StandardStealStrategy.class);
         var bunting = mock(StandardBuntStrategy.class);
-        var pitcherProperties =
-                new SimulationPitcherProperties(
-                        new Multipliers(2.0f, 0.5f, 0.25f),
-                        new Multipliers(1.0f, 1.0f, 1.0f),
-                        new Multipliers(1.0f, 1.0f, 1.0f),
-                        new Multipliers(1.0f, 1.0f, 1.0f));
+        var pitcherProperties = new SimulationPitcherProperties(new Multipliers(2.0f, 0.5f, 0.25f));
         var mapper =
                 new LineUpMapper(
                         hitting,
@@ -304,9 +218,7 @@ class LineUpMapperTest {
 
         // when
         var batter =
-                mapper.map(java.util.Collections.nCopies(9, player), PitcherPersonality.BOLD)
-                        .getBatterEntities()
-                        .getFirst();
+                mapper.map(java.util.Collections.nCopies(9, player)).getBatterEntities().getFirst();
         batter.swing(0);
         batter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
         batter.stealToDouble();
@@ -318,7 +230,7 @@ class LineUpMapperTest {
         // then
         assertAll(
                 () -> assertEquals(0.6f, onBaseCaptor.getValue(), 0.00001f),
-                () -> assertEquals(0.65f, sluggingCaptor.getValue(), 0.00001f),
+                () -> assertEquals(0.2f, sluggingCaptor.getValue(), 0.00001f),
                 () -> assertEquals(0.125f, buntCaptor.getValue(), 0.00001f),
                 () -> assertEquals(0.15f, stealCaptor.getValue(), 0.00001f));
     }

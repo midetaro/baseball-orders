@@ -246,6 +246,7 @@ class SqsSimulationSchedulerTest {
                                                 true))
                         .toList();
         UUID simulationId = UUID.randomUUID();
+        // 投手性格の入力(BOLD)は無視され、標準の補正倍率が適用されることを検証する
         String body =
                 objectMapper.writeValueAsString(
                         new SimulationRequestMessage(
@@ -306,10 +307,10 @@ class SqsSimulationSchedulerTest {
 
         // then
         ordered.verify(useCase).invoke(lineUpCaptor.capture());
-        BattingResult pitcherAdjustedBattingResult;
+        BattingResult battingResultWithStandardMultipliers;
         try (MockedStatic<RandomGenerator> random = mockStatic(RandomGenerator.class)) {
             random.when(RandomGenerator::nextFloat).thenReturn(0.35f);
-            pitcherAdjustedBattingResult =
+            battingResultWithStandardMultipliers =
                     lineUpCaptor.getValue().getBatterEntities().getFirst().swing(0);
         }
         ordered.verify(sqsClient, org.mockito.Mockito.times(1))
@@ -331,7 +332,7 @@ class SqsSimulationSchedulerTest {
         var sentJson = objectMapper.readTree(sendMessageCaptor.getValue().messageBody());
         assertAll(
                 () -> assertEquals(9, lineUpCaptor.getValue().getBatterEntities().size()),
-                () -> assertEquals(BattingResult.HIT_SINGLE, pitcherAdjustedBattingResult),
+                () -> assertEquals(BattingResult.STRIKEOUT, battingResultWithStandardMultipliers),
                 () -> assertEquals("result-url", sendMessageCaptor.getValue().queueUrl()),
                 () -> assertEquals(1, sentResponses.size()),
                 () ->

@@ -3,16 +3,14 @@ package com.example.baseballorders.simulator.infrastructure.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * {@code simulation.pitcher} 配下の、対戦する投手の性格ごとの打撃・走塁補正倍率。
+ * {@code simulation.pitcher} 配下の、対戦する投手の打撃・走塁補正倍率。
  *
- * @param bold 力勝負型の投手に対する補正
- * @param cautious 慎重型の投手に対する補正
- * @param technical 技巧型の投手に対する補正
- * @param standard 投手を指定しない既定状態の補正
+ * <p>simulationは対戦相手の投手の性格という入力を無視するため、既定状態の補正のみを保持する。
+ *
+ * @param standard 対戦する投手を区別しない既定の補正
  */
 @ConfigurationProperties(prefix = "simulation.pitcher")
-public record SimulationPitcherProperties(
-        Multipliers bold, Multipliers cautious, Multipliers technical, Multipliers standard) {
+public record SimulationPitcherProperties(Multipliers standard) {
 
     /**
      * 1つの投手性格に対する補正倍率。

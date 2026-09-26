@@ -87,8 +87,7 @@ public class SqsSimulationScheduler {
                 // 送信
                 SimulationRequestMessage request = deserialize(message.body());
                 SimulationResult simulationResult =
-                        simulateGameUseCase.invoke(
-                                lineUpMapper.map(request.players(), request.pitcherPersonality()));
+                        simulateGameUseCase.invoke(lineUpMapper.map(request.players()));
                 var resultMessage =
                         SimulationResultMessageBuilder.simulationResultMessage()
                                 .simulationId(request.simulationId())
