@@ -9,6 +9,7 @@ import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
+import com.example.baseballorders.simulator.application.contract.SimulationResultBuilder;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
 import com.example.baseballorders.simulator.domain.play.BuntType;
@@ -90,7 +91,10 @@ class SqsSimulationSchedulerIntegrationTest {
         responses.forEach(
                 response ->
                         accumulator.onGameCompleted(response.score(), response.gameStatistics()));
-        return new SimulationResult(accumulator.toScoreStatistics());
+        return SimulationResultBuilder.simulationResult()
+                .statistics(accumulator.toScoreStatistics())
+                .transitions(List.of())
+                .build();
     }
 
     /**
@@ -132,8 +136,9 @@ class SqsSimulationSchedulerIntegrationTest {
                                                                         .identity(),
                                                                 _ -> 1))),
                                 new SimulationResultMessage.GameContentStatistics(
-                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
-        when(useCase.invoke(any(LineUpEntity.class)))
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                                List.of()));
+        when(useCase.invoke(any(LineUpEntity.class), any()))
                 .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =
                 new LineUpMapper(
@@ -187,7 +192,7 @@ class SqsSimulationSchedulerIntegrationTest {
 
                 // then
                 var captor = org.mockito.ArgumentCaptor.forClass(LineUpEntity.class);
-                verify(useCase).invoke(captor.capture());
+                verify(useCase).invoke(captor.capture(), any());
                 var batters = captor.getValue().getBatterEntities();
                 List<Message> resultMessages = receive(sqsClient, resultQueueUrl);
                 List<Message> requestMessages = receive(sqsClient, requestQueueUrl);
