@@ -21,7 +21,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 /**
  * 実物: HTTPサーバー、Spring Security、ローカルフォームログイン、SimulationPageController、SimulationGuidePageController、
  * LoginPageController、Thymeleaf。 モック: SqsTemplate。 担保する疎通: HTTP GET /login -> HTTP POST /login ->
- * 認証済みHTTP GET / -> Spring Security -> SimulationPageController -> Thymeleaf HTML応答。担保しないもの:
+ * 認証済みHTTP GET / -> Spring Security -> SimulationPageController -> Thymeleaf HTML応答。認証済みHTTP GET
+ * /large-scale -> Spring Security -> SimulationPageController -> Thymeleaf HTML応答も担保する。担保しないもの:
  * SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
  */
 @SpringBootTest(
@@ -93,11 +94,40 @@ class SimulationPageIntegrationTest {
     }
 
     @Test
-    @DisplayName("トップ画面へアクセスすると打者一覧と打順設定画面がHTMLで表示される")
-    void rendersSimulationPage() throws Exception {
+    @DisplayName("トップ画面へアクセスすると1試合実行用の打順設定画面がHTMLで表示される")
+    void rendersSingleGamePage() throws Exception {
         // given
         var request =
                 HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+
+        // when
+        HttpResponse<String> response;
+        try (var client = authenticatedClient()) {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+
+        // then
+        assertAll(
+                () -> assertEquals(200, response.statusCode()),
+                () -> assertTrue(response.body().contains("打順入力")),
+                () -> assertTrue(response.body().contains("<title>打順監督</title>")),
+                () -> assertTrue(response.body().contains("<h1>打順監督</h1>")),
+                () -> assertTrue(response.body().contains("1試合を実行")),
+                () -> assertTrue(response.body().contains("id=\"transitions\"")),
+                () -> assertTrue(response.body().contains("fetch('/simulations/single-game'")),
+                () -> assertTrue(response.body().contains("data.transitions")),
+                () -> assertTrue(response.body().contains("href=\"/large-scale\"")),
+                () -> assertFalse(response.body().contains("data.statistics")));
+    }
+
+    @Test
+    @DisplayName("大規模実行画面へアクセスすると打者一覧と打順設定画面がHTMLで表示される")
+    void rendersSimulationPage() throws Exception {
+        // given
+        var request =
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/large-scale"))
+                        .GET()
+                        .build();
 
         // when
         HttpResponse<String> response;
@@ -240,11 +270,13 @@ class SimulationPageIntegrationTest {
     }
 
     @Test
-    @DisplayName("トップ画面は選手性格を選択して全員をデフォルトへ初期化できる")
+    @DisplayName("大規模実行画面は選手性格を選択して全員をデフォルトへ初期化できる")
     void rendersPlayerPersonalityControls() throws Exception {
         // given
         var request =
-                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/large-scale"))
+                        .GET()
+                        .build();
 
         // when
         HttpResponse<String> response;

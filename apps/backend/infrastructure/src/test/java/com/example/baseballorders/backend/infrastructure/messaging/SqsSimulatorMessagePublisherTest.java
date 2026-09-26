@@ -7,8 +7,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
+import com.example.baseballorders.backend.application.dto.SimulationRequestBuilder;
 import com.example.baseballorders.backend.domain.PlayerDataBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
+import com.example.baseballorders.backend.domain.SimulationMode;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import java.util.List;
@@ -83,5 +85,32 @@ class SqsSimulatorMessagePublisherTest {
                         assertEquals(
                                 com.example.baseballorders.messaging.PitcherPersonality.DEFAULT,
                                 messageCaptor.getValue().pitcherPersonality()));
+    }
+
+    @Test
+    @DisplayName("backendの1試合実行モードを共有contractの1試合実行モードへ変換する")
+    void mapsSingleGameModeToSharedRequest() {
+        // given
+        SqsTemplate sqsTemplate = mock(SqsTemplate.class);
+        var publisher = new SqsSimulatorMessagePublisher(sqsTemplate, "test-request-queue");
+        var request =
+                SimulationRequestBuilder.simulationRequest()
+                        .simulationId(UUID.randomUUID())
+                        .version("1")
+                        .players(List.of())
+                        .mode(SimulationMode.SINGLE_GAME_RUN)
+                        .build();
+        var messageCaptor = ArgumentCaptor.forClass(SimulationRequestMessage.class);
+
+        // when
+        publisher.publish(request);
+
+        // then
+        verify(sqsTemplate).send(eq("test-request-queue"), messageCaptor.capture());
+        assertAll(
+                () ->
+                        assertEquals(
+                                com.example.baseballorders.messaging.SimulationMode.SINGLE_GAME_RUN,
+                                messageCaptor.getValue().mode()));
     }
 }

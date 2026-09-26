@@ -22,8 +22,13 @@ class SimulationResultMessageTest {
                 new SimulationResultMessage.GameContentStatistics(
                         40, 15, 10, 8, 25, 10, 8, 5, 2, 14, 11, 6, 3, 9, 5, 4, 2, 7, 4);
         var sut =
-                new SimulationResultMessage(
-                        UUID.randomUUID(), SimulationResultMessage.CURRENT_VERSION, score, content);
+                SimulationResultMessageBuilder.simulationResultMessage()
+                        .simulationId(UUID.randomUUID())
+                        .version(SimulationResultMessage.CURRENT_VERSION)
+                        .gameScoreStatistics(score)
+                        .gameContentStatistics(content)
+                        .gameTransitions(List.of())
+                        .build();
 
         // when
         var messageProperties =
@@ -51,7 +56,8 @@ class SimulationResultMessageTest {
                                         "simulationId",
                                         "version",
                                         "gameScoreStatistics",
-                                        "gameContentStatistics"),
+                                        "gameContentStatistics",
+                                        "gameTransitions"),
                                 messageProperties),
                 () ->
                         assertEquals(
@@ -86,8 +92,54 @@ class SimulationResultMessageTest {
                                         "stealToThirdCount"),
                                 contentProperties),
                 () -> assertEquals(100, sut.gameScoreStatistics().gameCount()),
-                () -> assertEquals("3", sut.version()),
+                () -> assertEquals("4", sut.version()),
                 () -> assertEquals(40, sut.gameContentStatistics().hitCount()),
-                () -> assertEquals(9, sut.gameContentStatistics().advancingBuntCount()));
+                () -> assertEquals(9, sut.gameContentStatistics().advancingBuntCount()),
+                () -> assertEquals(List.of(), sut.gameTransitions()));
+    }
+
+    @Test
+    @DisplayName("1試合実行の推移リストをSQS結果メッセージに含める")
+    void includesGameTransitionsForSingleGameRun() {
+        // given
+        var transition =
+                GameTransitionMessageBuilder.gameTransitionMessage()
+                        .inning(1)
+                        .actionResult("1番 単打")
+                        .outCount(0)
+                        .cumulativeScore(1)
+                        .runnerState("一塁")
+                        .build();
+
+        // when
+        var sut =
+                SimulationResultMessageBuilder.simulationResultMessage()
+                        .simulationId(UUID.randomUUID())
+                        .version(SimulationResultMessage.CURRENT_VERSION)
+                        .gameScoreStatistics(null)
+                        .gameContentStatistics(null)
+                        .gameTransitions(List.of(transition))
+                        .build();
+
+        // then
+        assertAll(
+                () -> assertEquals(1, sut.gameTransitions().size()),
+                () -> assertEquals("1番 単打", sut.gameTransitions().get(0).actionResult()),
+                () -> assertEquals("一塁", sut.gameTransitions().get(0).runnerState()));
+    }
+
+    @Test
+    @DisplayName("廃止された移行用コンストラクタは推移リストを空で既定値にする")
+    void defaultsGameTransitionsToEmptyForLegacyConstructor() {
+        // given
+        var simulationId = UUID.randomUUID();
+
+        // when
+        var sut =
+                new SimulationResultMessage(
+                        simulationId, SimulationResultMessage.CURRENT_VERSION, List.of());
+
+        // then
+        assertAll(() -> assertEquals(List.of(), sut.gameTransitions()));
     }
 }

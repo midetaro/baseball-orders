@@ -6,8 +6,11 @@ import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.SimulationLimits;
 import com.example.baseballorders.backend.application.SimulationLimitsBuilder;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.domain.GameTransitionBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
+import com.example.baseballorders.backend.domain.SimulationMode;
 import com.example.baseballorders.backend.domain.SimulationResult;
+import com.example.baseballorders.backend.domain.SimulationResultBuilder;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -114,6 +117,53 @@ class SimulatorRequestControllerTest {
         assertAll(
                 () -> assertEquals(5, result.statistics().averageScore()),
                 () -> assertEquals(5, result.statistics().maximumScore()));
+    }
+
+    @Test
+    @DisplayName("1試合実行エンドポイントは1試合実行モードで要求し状況推移を含む結果を返す")
+    void returnsSingleGameResultWithTransitions() {
+        // given
+        var registry = new WaitingResultRegistry();
+        var requestedMode = new java.util.concurrent.atomic.AtomicReference<SimulationMode>();
+        var coordinator =
+                new SimulationCoordinator(
+                        request -> {
+                            requestedMode.set(request.mode());
+                            registry.complete(
+                                    request.simulationId(),
+                                    SimulationResultBuilder.simulationResult()
+                                            .simulationId(request.simulationId())
+                                            .statistics(new SimulationResult.Statistics(5, 5, 5))
+                                            .transitions(
+                                                    List.of(
+                                                            GameTransitionBuilder.gameTransition()
+                                                                    .inning(1)
+                                                                    .actionResult("中前安打")
+                                                                    .outCount(0)
+                                                                    .cumulativeScore(0)
+                                                                    .runnerState("一塁")
+                                                                    .build()))
+                                            .build());
+                        },
+                        registry,
+                        limits());
+        var controller = new SimulatorRequestController(coordinator);
+
+        // when
+        SimulationResult result =
+                controller.sendSingleGame(
+                        java.util.stream.IntStream.rangeClosed(1, 9)
+                                .mapToObj(
+                                        number ->
+                                                new PlayerInputRequest(
+                                                        0.300f, 0.400f, 0.700f, 0.700f, true, true))
+                                .toList());
+
+        // then
+        assertAll(
+                () -> assertEquals(SimulationMode.SINGLE_GAME_RUN, requestedMode.get()),
+                () -> assertEquals(1, result.transitions().size()),
+                () -> assertEquals("中前安打", result.transitions().getFirst().actionResult()));
     }
 
     @Test

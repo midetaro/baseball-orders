@@ -18,6 +18,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -124,7 +125,8 @@ class SimulationResultHttpIntegrationTest {
                             new SimulationResultMessage.GameScoreStatistics(
                                     99, 99, 99, 1, Map.of(99, 1)),
                             new SimulationResultMessage.GameContentStatistics(
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                            List.of()));
             assertAll(() -> assertFalse(first.isDone()), () -> assertFalse(second.isDone()));
             listener.receive(
                     new SimulationResultMessage(
@@ -133,7 +135,8 @@ class SimulationResultHttpIntegrationTest {
                             new SimulationResultMessage.GameScoreStatistics(
                                     0, 0, 0, 1, Map.of(0, 1)),
                             new SimulationResultMessage.GameContentStatistics(
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                            List.of()));
             var secondResponse = second.get(10, TimeUnit.SECONDS);
             assertAll(() -> assertFalse(first.isDone()));
             listener.receive(
@@ -143,7 +146,8 @@ class SimulationResultHttpIntegrationTest {
                             new SimulationResultMessage.GameScoreStatistics(
                                     99, 99, 99, 1, Map.of(99, 1)),
                             new SimulationResultMessage.GameContentStatistics(
-                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+                                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                            List.of()));
             listener.receive(
                     new SimulationResultMessage(
                             firstSent.simulationId(),
@@ -152,7 +156,8 @@ class SimulationResultHttpIntegrationTest {
                                     6.5, 6.5, 8, 2, Map.of(5, 1, 8, 1)),
                             new SimulationResultMessage.GameContentStatistics(
                                     20, 8, 5, 3, 4, 1, 1, 1, 1, 24, 25, 26, 27, 11, 13, 17, 19, 23,
-                                    29)));
+                                    29),
+                            List.of()));
             var firstResponse = first.get(10, TimeUnit.SECONDS);
             var firstBody = objectMapper.readTree(firstResponse.body());
             var secondBody = objectMapper.readTree(secondResponse.body());

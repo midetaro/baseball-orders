@@ -14,16 +14,23 @@ import org.jilt.BuilderStyle;
  * @param version メッセージスキーマのバージョン
  * @param gameScoreStatistics 全試合の得点統計
  * @param gameContentStatistics 全試合のプレー内容統計
+ * @param gameTransitions 1試合実行における状況推移のリスト
  */
 @Builder(style = BuilderStyle.STAGED)
 public record SimulationResultMessage(
         @JsonProperty("simulation_id") UUID simulationId,
         String version,
         GameScoreStatistics gameScoreStatistics,
-        GameContentStatistics gameContentStatistics) {
+        GameContentStatistics gameContentStatistics,
+        List<GameTransitionMessage> gameTransitions) {
 
-    /** 安打内訳を含む得点・プレー内容結果メッセージのスキーマバージョン。 */
-    public static final String CURRENT_VERSION = "3";
+    /** 1試合実行の状況推移リストを含む結果メッセージのスキーマバージョン。 */
+    public static final String CURRENT_VERSION = "4";
+
+    /** Defaults a missing transition list to an empty, immutable list. */
+    public SimulationResultMessage {
+        gameTransitions = gameTransitions == null ? List.of() : List.copyOf(gameTransitions);
+    }
 
     /**
      * 全試合の得点統計。
@@ -93,7 +100,7 @@ public record SimulationResultMessage(
      * @param ignoredResults 廃止された試合ごとの結果
      */
     public SimulationResultMessage(UUID simulationId, String version, List<Result> ignoredResults) {
-        this(simulationId, version, null, null);
+        this(simulationId, version, null, null, List.of());
     }
 
     /** 廃止された1試合の結果を表す移行用型。 */
