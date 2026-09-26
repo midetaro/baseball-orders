@@ -119,7 +119,7 @@ public class SecurityConfiguration {
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated());
-        http.csrf(csrf -> csrf.ignoringRequestMatchers("/simulations"));
+        http.csrf(csrf -> csrf.ignoringRequestMatchers("/simulations", "/simulations/**"));
         http.formLogin(form -> form.loginPage("/login").usernameParameter("userId").permitAll());
         if (properties.enabled()) {
             http.oauth2Login(

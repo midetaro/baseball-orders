@@ -3,7 +3,9 @@ package com.example.baseballorders.backend.infrastructure.messaging;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
+import com.example.baseballorders.messaging.GameTransitionMessageBuilder;
 import com.example.baseballorders.messaging.SimulationResultMessage;
+import com.example.baseballorders.messaging.SimulationResultMessageBuilder;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +31,8 @@ class SimulationResultListenerTest {
                         "1",
                         new SimulationResultMessage.GameScoreStatistics(5, 5, 5, 10, Map.of(5, 10)),
                         new SimulationResultMessage.GameContentStatistics(
-                                20, 8, 5, 3, 4, 1, 1, 1, 1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29)));
+                                20, 8, 5, 3, 4, 1, 1, 1, 1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29),
+                        List.of()));
 
         // then
         assertAll(
@@ -58,6 +61,47 @@ class SimulationResultListenerTest {
                 () -> assertEquals(19, waiting.join().statistics().squeezeBuntFailureCount()),
                 () -> assertEquals(23, waiting.join().statistics().stealToSecondCount()),
                 () -> assertEquals(29, waiting.join().statistics().stealToThirdCount()));
+    }
+
+    @Test
+    @DisplayName("1試合実行の状況推移リストをbackendの状況推移へ変換する")
+    void mapsGameTransitionsToDomainTransitions() {
+        // given
+        var registry = new WaitingResultRegistry();
+        UUID simulationId = UUID.randomUUID();
+        var waiting = registry.register(simulationId);
+        var sut = new SimulationResultListener(registry);
+
+        // when
+        sut.receive(
+                SimulationResultMessageBuilder.simulationResultMessage()
+                        .simulationId(simulationId)
+                        .version("4")
+                        .gameScoreStatistics(
+                                new SimulationResultMessage.GameScoreStatistics(
+                                        5, 5, 5, 1, Map.of(5, 1)))
+                        .gameContentStatistics(
+                                new SimulationResultMessage.GameContentStatistics(
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+                        .gameTransitions(
+                                List.of(
+                                        GameTransitionMessageBuilder.gameTransitionMessage()
+                                                .inning(1)
+                                                .actionResult("中前安打")
+                                                .outCount(0)
+                                                .cumulativeScore(0)
+                                                .runnerState("一塁")
+                                                .build()))
+                        .build());
+
+        // then
+        assertAll(
+                () -> assertEquals(1, waiting.join().transitions().size()),
+                () -> assertEquals(1, waiting.join().transitions().getFirst().inning()),
+                () -> assertEquals("中前安打", waiting.join().transitions().getFirst().actionResult()),
+                () -> assertEquals(0, waiting.join().transitions().getFirst().outCount()),
+                () -> assertEquals(0, waiting.join().transitions().getFirst().cumulativeScore()),
+                () -> assertEquals("一塁", waiting.join().transitions().getFirst().runnerState()));
     }
 
     @Test
@@ -92,7 +136,8 @@ class SimulationResultListenerTest {
                         "1",
                         new SimulationResultMessage.GameScoreStatistics(5, 5, 5, 1, Map.of(5, 1)),
                         new SimulationResultMessage.GameContentStatistics(
-                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)));
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                        List.of()));
 
         // then
         assertAll(() -> assertFalse(registry.pendingCount() > 0));
@@ -119,7 +164,8 @@ class SimulationResultListenerTest {
                                                 null,
                                                 new SimulationResultMessage.GameContentStatistics(
                                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                        0, 0, 0, 0))));
+                                                        0, 0, 0, 0),
+                                                List.of())));
 
         // then
         assertAll(
@@ -150,7 +196,8 @@ class SimulationResultListenerTest {
                                                 "1",
                                                 new SimulationResultMessage.GameScoreStatistics(
                                                         5, 5, 5, 1, Map.of(5, 1)),
-                                                null)));
+                                                null,
+                                                List.of())));
 
         // then
         assertAll(

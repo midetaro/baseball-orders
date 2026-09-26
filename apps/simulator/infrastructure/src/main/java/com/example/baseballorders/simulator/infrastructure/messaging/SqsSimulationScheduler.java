@@ -1,12 +1,17 @@
 package com.example.baseballorders.simulator.infrastructure.messaging;
 
+import com.example.baseballorders.messaging.GameTransitionMessage;
+import com.example.baseballorders.messaging.GameTransitionMessageBuilder;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.messaging.SimulationResultMessageBuilder;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
+import com.example.baseballorders.simulator.application.usecase.SimulationRunMode;
+import com.example.baseballorders.simulator.domain.statistics.GameTransition;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -87,7 +92,8 @@ public class SqsSimulationScheduler {
                 // 送信
                 SimulationRequestMessage request = deserialize(message.body());
                 SimulationResult simulationResult =
-                        simulateGameUseCase.invoke(lineUpMapper.map(request.players()));
+                        simulateGameUseCase.invoke(
+                                lineUpMapper.map(request.players()), toRunMode(request.mode()));
                 var resultMessage =
                         SimulationResultMessageBuilder.simulationResultMessage()
                                 .simulationId(request.simulationId())
@@ -126,6 +132,8 @@ public class SqsSimulationScheduler {
                                                         .squeezeBuntFailureCount(),
                                                 simulationResult.statistics().stealToSecondCount(),
                                                 simulationResult.statistics().stealToThirdCount()))
+                                .gameTransitions(
+                                        toMessageTransitions(simulationResult.transitions()))
                                 .build();
                 sqsClient.sendMessage(
                         SendMessageRequest.builder()
@@ -144,6 +152,29 @@ public class SqsSimulationScheduler {
                         throwable);
             }
         }
+    }
+
+    private static SimulationRunMode toRunMode(
+            com.example.baseballorders.messaging.SimulationMode mode) {
+        return switch (mode) {
+            case LARGE_SCALE_RUN -> SimulationRunMode.LARGE_SCALE_RUN;
+            case SINGLE_GAME_RUN -> SimulationRunMode.SINGLE_GAME_RUN;
+        };
+    }
+
+    private static List<GameTransitionMessage> toMessageTransitions(
+            List<GameTransition> transitions) {
+        return transitions.stream().map(SqsSimulationScheduler::toMessageTransition).toList();
+    }
+
+    private static GameTransitionMessage toMessageTransition(GameTransition transition) {
+        return GameTransitionMessageBuilder.gameTransitionMessage()
+                .inning(transition.inning())
+                .actionResult(transition.actionResult())
+                .outCount(transition.outCount())
+                .cumulativeScore(transition.cumulativeScore())
+                .runnerState(transition.runnerState())
+                .build();
     }
 
     private SimulationRequestMessage deserialize(String body) {

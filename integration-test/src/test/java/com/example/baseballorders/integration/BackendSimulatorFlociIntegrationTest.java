@@ -11,6 +11,7 @@ import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
+import com.example.baseballorders.simulator.application.usecase.SimulationRunMode;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.game.BaseStateFactory;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
@@ -182,8 +183,9 @@ class BackendSimulatorFlociIntegrationTest {
                 .build();
         var fixedUseCase = new SimulateGameUseCase(1, new BaseStateFactory(SIMULATION_RULES.runnerAdvance())) {
             @Override
-            public SimulationResult invoke(LineUpEntity lineup) {
+            public SimulationResult invoke(LineUpEntity lineup, SimulationRunMode mode) {
                 assertEquals(9, lineup.getBatterEntities().size());
+                assertEquals(SimulationRunMode.LARGE_SCALE_RUN, mode);
                 return new SimulationResult(expected);
             }
         };

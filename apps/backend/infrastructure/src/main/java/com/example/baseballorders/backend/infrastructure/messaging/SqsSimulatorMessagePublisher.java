@@ -45,6 +45,16 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
         };
     }
 
+    private static com.example.baseballorders.messaging.SimulationMode toMessageMode(
+            com.example.baseballorders.backend.domain.SimulationMode mode) {
+        return switch (mode) {
+            case LARGE_SCALE_RUN ->
+                    com.example.baseballorders.messaging.SimulationMode.LARGE_SCALE_RUN;
+            case SINGLE_GAME_RUN ->
+                    com.example.baseballorders.messaging.SimulationMode.SINGLE_GAME_RUN;
+        };
+    }
+
     @Override
     public void publish(SimulationRequest request) {
         var message =
@@ -74,6 +84,7 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
                                         .toList())
                         .pitcherPersonality(
                                 com.example.baseballorders.messaging.PitcherPersonality.DEFAULT)
+                        .mode(toMessageMode(request.mode()))
                         .build();
         sqsTemplate.send(requestQueueName, message);
         LOGGER.info("simulation request sent simulationId={}", request.simulationId());

@@ -19,7 +19,9 @@ import org.springframework.web.context.WebApplicationContext;
 /**
  * 実物: Spring Security、SimulationPageController、SimulatorRequestController、アプリケーションコンテキスト。 モック:
  * HTTPサーブレット環境をMockMvcで代替。 担保する疎通: HTTP GET / -> Spring Security -> /login、および HTTP POST
- * /simulations -> Spring Security -> /login。 担保しないもの: 認証済みユーザーによるシミュレーション実行と外部SQS通信。
+ * /simulations -> Spring Security -> /login、および HTTP POST /simulations/single-game -> Spring
+ * Security(CSRF除外) -> /login。CSRFトークン未送信でも403ではなく認証要求のリダイレクトになることで、/simulations/single-game
+ * がCSRF検証の対象外であることを確認する。 担保しないもの: 認証済みユーザーによるシミュレーション実行と外部SQS通信。
  */
 @SpringBootTest
 class SimulationAccessSecurityIntegrationTest {
@@ -52,6 +54,23 @@ class SimulationAccessSecurityIntegrationTest {
     void redirectsUnauthenticatedUserFromSimulationApi() throws Exception {
         // given
         var request = post("/simulations").contentType(MediaType.APPLICATION_JSON).content("[]");
+
+        // when
+        var result = mockMvc.perform(request);
+
+        // then
+        result.andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
+    }
+
+    @Test
+    @DisplayName("CSRFトークン未送信でも1試合実行APIは403ではなくログイン要求へリダイレクトされる")
+    void redirectsUnauthenticatedUserFromSingleGameSimulationApiWithoutCsrfToken()
+            throws Exception {
+        // given
+        var request =
+                post("/simulations/single-game")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]");
 
         // when
         var result = mockMvc.perform(request);

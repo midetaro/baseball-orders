@@ -12,13 +12,26 @@ import org.jilt.BuilderStyle;
  *
  * @param simulationId シミュレーションの相関ID
  * @param statistics 全試合の得点統計
+ * @param transitions 1試合実行における状況推移のリスト
  */
 @Builder(style = BuilderStyle.STAGED)
-public record SimulationResult(UUID simulationId, Statistics statistics) {
-    /** 統計情報を必須にしてシミュレーション結果を作成する。 */
+public record SimulationResult(
+        UUID simulationId, Statistics statistics, List<GameTransition> transitions) {
+    /** 統計情報を必須にし、状況推移リストが未指定の場合は空リストへ補完してシミュレーション結果を作成する。 */
     public SimulationResult {
         Objects.requireNonNull(simulationId, "simulationId must not be null");
         Objects.requireNonNull(statistics, "statistics must not be null");
+        transitions = transitions == null ? List.of() : List.copyOf(transitions);
+    }
+
+    /**
+     * Creates a result with no game transitions for compatibility with existing callers.
+     *
+     * @param simulationId シミュレーションの相関ID
+     * @param statistics 全試合の得点統計
+     */
+    public SimulationResult(UUID simulationId, Statistics statistics) {
+        this(simulationId, statistics, List.of());
     }
 
     /**
@@ -29,7 +42,7 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
      * @param statistics 画面表示用の集計統計
      */
     public SimulationResult(UUID simulationId, List<Result> ignoredResults, Statistics statistics) {
-        this(simulationId, statistics);
+        this(simulationId, statistics, List.of());
     }
 
     /**

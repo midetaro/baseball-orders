@@ -1,6 +1,7 @@
 package com.example.baseballorders.backend.infrastructure.messaging;
 
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.domain.GameTransitionBuilder;
 import com.example.baseballorders.backend.domain.SimulationResultBuilder;
 import com.example.baseballorders.backend.domain.StatisticsBuilder;
 import com.example.baseballorders.messaging.SimulationResultMessage;
@@ -19,6 +20,17 @@ public final class SimulationResultListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(SimulationResultListener.class);
 
     private final WaitingResultRegistry registry;
+
+    private static com.example.baseballorders.backend.domain.GameTransition toDomainTransition(
+            com.example.baseballorders.messaging.GameTransitionMessage transition) {
+        return GameTransitionBuilder.gameTransition()
+                .inning(transition.inning())
+                .actionResult(transition.actionResult())
+                .outCount(transition.outCount())
+                .cumulativeScore(transition.cumulativeScore())
+                .runnerState(transition.runnerState())
+                .build();
+    }
 
     /**
      * SQS結果をbackend結果へ変換し、同じsimulation IDの待機を完了する。
@@ -82,6 +94,10 @@ public final class SimulationResultListener {
                                                 .stealToThirdCount(
                                                         contentStatistics.stealToThirdCount())
                                                 .build())
+                                .transitions(
+                                        message.gameTransitions().stream()
+                                                .map(SimulationResultListener::toDomainTransition)
+                                                .toList())
                                 .build());
         if (!completed) {
             LOGGER.warn("simulation result ignored simulationId={}", message.simulationId());

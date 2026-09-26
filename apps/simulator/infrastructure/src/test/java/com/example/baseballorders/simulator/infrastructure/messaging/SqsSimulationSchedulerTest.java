@@ -3,16 +3,20 @@ package com.example.baseballorders.simulator.infrastructure.messaging;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.example.baseballorders.messaging.PitcherPersonality;
+import com.example.baseballorders.messaging.SimulationMode;
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResponseBuilder;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
+import com.example.baseballorders.simulator.application.contract.SimulationResultBuilder;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
+import com.example.baseballorders.simulator.application.usecase.SimulationRunMode;
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
@@ -20,6 +24,8 @@ import com.example.baseballorders.simulator.domain.player.strategy.batting.Hitti
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsBuilder;
+import com.example.baseballorders.simulator.domain.statistics.GameTransition;
+import com.example.baseballorders.simulator.domain.statistics.GameTransitionBuilder;
 import com.example.baseballorders.simulator.domain.statistics.ScoreAccumulator;
 import com.example.baseballorders.simulator.infrastructure.config.SimulationPropertiesTestData;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -80,11 +86,19 @@ class SqsSimulationSchedulerTest {
     }
 
     private static SimulationResult simulationResult(List<SimulationResponse> responses) {
+        return simulationResult(responses, List.of());
+    }
+
+    private static SimulationResult simulationResult(
+            List<SimulationResponse> responses, List<GameTransition> transitions) {
         ScoreAccumulator accumulator = new ScoreAccumulator();
         responses.forEach(
                 response ->
                         accumulator.onGameCompleted(response.score(), response.gameStatistics()));
-        return new SimulationResult(accumulator.toScoreStatistics());
+        return SimulationResultBuilder.simulationResult()
+                .statistics(accumulator.toScoreStatistics())
+                .transitions(transitions)
+                .build();
     }
 
     private static void stubQueueUrls(SqsClient sqsClient) {
@@ -250,7 +264,12 @@ class SqsSimulationSchedulerTest {
         String body =
                 objectMapper.writeValueAsString(
                         new SimulationRequestMessage(
-                                simulationId, "1", players, PitcherPersonality.BOLD));
+                                simulationId,
+                                "1",
+                                players,
+                                PitcherPersonality.BOLD,
+                                com.example.baseballorders.messaging.SimulationMode
+                                        .LARGE_SCALE_RUN));
         Message message = Message.builder().body(body).receiptHandle("receipt-1").build();
         when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
@@ -285,7 +304,7 @@ class SqsSimulationSchedulerTest {
                                                                 .build())
                                                 .build())
                         .toList();
-        when(useCase.invoke(any(LineUpEntity.class)))
+        when(useCase.invoke(any(LineUpEntity.class), any(SimulationRunMode.class)))
                 .thenReturn(simulationResult(simulationResponses));
         SqsSimulationScheduler sut =
                 new SqsSimulationScheduler(
@@ -299,6 +318,7 @@ class SqsSimulationSchedulerTest {
                         10);
         stubQueueUrls(sqsClient);
         var lineUpCaptor = ArgumentCaptor.forClass(LineUpEntity.class);
+        var modeCaptor = ArgumentCaptor.forClass(SimulationRunMode.class);
         var sendMessageCaptor = ArgumentCaptor.forClass(SendMessageRequest.class);
         var ordered = inOrder(useCase, sqsClient);
 
@@ -306,7 +326,7 @@ class SqsSimulationSchedulerTest {
         sut.poll();
 
         // then
-        ordered.verify(useCase).invoke(lineUpCaptor.capture());
+        ordered.verify(useCase).invoke(lineUpCaptor.capture(), modeCaptor.capture());
         BattingResult battingResultWithStandardMultipliers;
         try (MockedStatic<RandomGenerator> random = mockStatic(RandomGenerator.class)) {
             random.when(RandomGenerator::nextFloat).thenReturn(0.35f);
@@ -475,7 +495,80 @@ class SqsSimulationSchedulerTest {
                         assertEquals(
                                 430,
                                 sentJson.at("/gameContentStatistics/stealToThirdCount").intValue()),
-                () -> assertEquals(true, sentJson.path("statistics").isMissingNode()));
+                () -> assertEquals(true, sentJson.path("statistics").isMissingNode()),
+                () -> assertEquals(SimulationRunMode.LARGE_SCALE_RUN, modeCaptor.getValue()),
+                () -> assertEquals(List.of(), sentResponses.getFirst().gameTransitions()),
+                () -> assertEquals(true, sentJson.path("gameTransitions").isArray()),
+                () -> assertEquals(0, sentJson.path("gameTransitions").size()));
+    }
+
+    @Test
+    @DisplayName("1試合実行モードの要求は実行モードをそのまま使用実行し状況推移を結果メッセージへ変換する")
+    void mapsSingleGameRunModeAndTransitionsToResultMessage() throws Exception {
+        // given
+        SqsClient sqsClient = mock(SqsClient.class);
+        SimulateGameUseCase useCase = mock(SimulateGameUseCase.class);
+        LineUpMapper mapper = mock(LineUpMapper.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+        LineUpEntity lineUp = mock(LineUpEntity.class);
+        when(mapper.map(any())).thenReturn(lineUp);
+        UUID simulationId = UUID.randomUUID();
+        var request =
+                new SimulationRequestMessage(
+                        simulationId,
+                        "1",
+                        List.of(),
+                        PitcherPersonality.DEFAULT,
+                        SimulationMode.SINGLE_GAME_RUN);
+        Message message =
+                Message.builder()
+                        .body(objectMapper.writeValueAsString(request))
+                        .receiptHandle("receipt-1")
+                        .build();
+        when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
+                .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
+        GameTransition transition =
+                GameTransitionBuilder.gameTransition()
+                        .inning(1)
+                        .actionResult("四球")
+                        .outCount(0)
+                        .cumulativeScore(0)
+                        .runnerState("一塁に走者")
+                        .build();
+        when(useCase.invoke(eq(lineUp), eq(SimulationRunMode.SINGLE_GAME_RUN)))
+                .thenReturn(
+                        simulationResult(
+                                List.of(new SimulationResponse(0, 0)), List.of(transition)));
+        stubQueueUrls(sqsClient);
+        var scheduler =
+                new SqsSimulationScheduler(
+                        sqsClient,
+                        objectMapper,
+                        useCase,
+                        mapper,
+                        "request-queue",
+                        "result-queue",
+                        10,
+                        10);
+        var sendMessageCaptor = ArgumentCaptor.forClass(SendMessageRequest.class);
+
+        // when
+        scheduler.poll();
+
+        // then
+        verify(sqsClient).sendMessage(sendMessageCaptor.capture());
+        SimulationResultMessage sent =
+                objectMapper.readValue(
+                        sendMessageCaptor.getValue().messageBody(), SimulationResultMessage.class);
+        var sentTransition = sent.gameTransitions().getFirst();
+        assertAll(
+                () -> verify(useCase).invoke(lineUp, SimulationRunMode.SINGLE_GAME_RUN),
+                () -> assertEquals(1, sent.gameTransitions().size()),
+                () -> assertEquals(1, sentTransition.inning()),
+                () -> assertEquals("四球", sentTransition.actionResult()),
+                () -> assertEquals(0, sentTransition.outCount()),
+                () -> assertEquals(0, sentTransition.cumulativeScore()),
+                () -> assertEquals("一塁に走者", sentTransition.runnerState()));
     }
 
     @Test
@@ -505,7 +598,7 @@ class SqsSimulationSchedulerTest {
                         ReceiveMessageResponse.builder()
                                 .messages(failingMessage, succeedingMessage)
                                 .build());
-        when(useCase.invoke(any()))
+        when(useCase.invoke(any(), any()))
                 .thenThrow(new OutOfMemoryError("fatal simulation failure"))
                 .thenReturn(simulationResult(List.of(new SimulationResponse(5, 4))));
         stubQueueUrls(sqsClient);
@@ -526,7 +619,7 @@ class SqsSimulationSchedulerTest {
 
         // then
         assertAll(
-                () -> verify(useCase, org.mockito.Mockito.times(2)).invoke(any()),
+                () -> verify(useCase, org.mockito.Mockito.times(2)).invoke(any(), any()),
                 () -> verify(sqsClient).sendMessage(any(SendMessageRequest.class)),
                 () -> verify(sqsClient).deleteMessage(deleteCaptor.capture()),
                 () -> assertEquals("receipt-2", deleteCaptor.getValue().receiptHandle()));
@@ -547,7 +640,7 @@ class SqsSimulationSchedulerTest {
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
         when(objectMapper.readValue("request-body", SimulationRequestMessage.class))
                 .thenReturn(request);
-        when(useCase.invoke(any())).thenReturn(simulationResult(responses));
+        when(useCase.invoke(any(), any())).thenReturn(simulationResult(responses));
         when(objectMapper.writeValueAsString(any(SimulationResultMessage.class)))
                 .thenThrow(new JsonProcessingException("serialization failed") {});
         SqsSimulationScheduler scheduler =
@@ -588,7 +681,7 @@ class SqsSimulationSchedulerTest {
                         .build();
         when(sqsClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(ReceiveMessageResponse.builder().messages(message).build());
-        when(useCase.invoke(any())).thenReturn(simulationResult(responses));
+        when(useCase.invoke(any(), any())).thenReturn(simulationResult(responses));
         when(sqsClient.sendMessage(any(SendMessageRequest.class)))
                 .thenThrow(SqsException.builder().message("send failed").build());
         SqsSimulationScheduler scheduler =
@@ -663,7 +756,7 @@ class SqsSimulationSchedulerTest {
                                                 .receiptHandle("receipt-1")
                                                 .build())
                                 .build());
-        when(useCase.invoke(any()))
+        when(useCase.invoke(any(), any()))
                 .thenThrow(new IllegalArgumentException("scores must not be empty"));
         stubQueueUrls(sqsClient);
         var scheduler =

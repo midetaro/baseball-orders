@@ -18,11 +18,44 @@ class SimulationRequestMessageTest {
         // when
         var request =
                 new SimulationRequestMessage(
-                        simulationId, "1", java.util.List.of(), PitcherPersonality.BOLD);
+                        simulationId,
+                        "1",
+                        java.util.List.of(),
+                        PitcherPersonality.BOLD,
+                        SimulationMode.SINGLE_GAME_RUN);
 
         // then
         assertAll(
                 () -> assertEquals(simulationId, request.simulationId()),
-                () -> assertEquals(PitcherPersonality.BOLD, request.pitcherPersonality()));
+                () -> assertEquals(PitcherPersonality.BOLD, request.pitcherPersonality()),
+                () -> assertEquals(SimulationMode.SINGLE_GAME_RUN, request.mode()));
+    }
+
+    @Test
+    @DisplayName("互換コンストラクタは大規模実行モードを既定値にする")
+    void defaultsModeToLargeScaleRunForLegacyCallers() {
+        // given
+        var simulationId = UUID.randomUUID();
+
+        // when
+        var request = new SimulationRequestMessage(simulationId, "1", java.util.List.of());
+
+        // then
+        assertAll(() -> assertEquals(SimulationMode.LARGE_SCALE_RUN, request.mode()));
+    }
+
+    @Test
+    @DisplayName("正準コンストラクタにnullのモードを渡すと大規模実行モードを既定値にする")
+    void defaultsNullModeToLargeScaleRun() {
+        // given
+        var simulationId = UUID.randomUUID();
+
+        // when
+        var request =
+                new SimulationRequestMessage(
+                        simulationId, "1", java.util.List.of(), PitcherPersonality.BOLD, null);
+
+        // then
+        assertAll(() -> assertEquals(SimulationMode.LARGE_SCALE_RUN, request.mode()));
     }
 }

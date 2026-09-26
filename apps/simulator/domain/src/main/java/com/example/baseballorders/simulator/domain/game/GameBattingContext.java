@@ -5,6 +5,8 @@ import com.example.baseballorders.simulator.domain.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.statistics.GameCompletionObserver;
 import com.example.baseballorders.simulator.domain.statistics.GameStatistics;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsRecorder;
+import com.example.baseballorders.simulator.domain.statistics.GameTransitionRecorder;
+import com.example.baseballorders.simulator.domain.statistics.PlayResultObserver;
 import java.util.List;
 import lombok.Getter;
 
@@ -30,12 +32,37 @@ public class GameBattingContext {
             LineUpEntity batterEntityOrders,
             GameCompletionObserver gameCompletionObserver,
             BaseStateFactory baseStateFactory) {
-        this.batterEntityOrders =
-                batterEntityOrders.getBatterEntities().stream()
-                        .map(batter -> batter.observedBy(statisticsRecorder))
-                        .toList();
+        this(batterEntityOrders, gameCompletionObserver, baseStateFactory, null);
+    }
+
+    /**
+     * 同一イニング状態を共有する8種類のStateと試合を作成し、1試合実行時はプレーごとの状況推移も記録する。
+     *
+     * @param batterEntityOrders 試合で使用する打順
+     * @param gameCompletionObserver 試合終了時の通知先
+     * @param baseStateFactory 試合固有のStateを生成するファクトリ
+     * @param gameTransitionRecorder 1試合実行時にプレー結果の状況推移を記録する先。大規模実行では{@code null}を渡す
+     */
+    public GameBattingContext(
+            LineUpEntity batterEntityOrders,
+            GameCompletionObserver gameCompletionObserver,
+            BaseStateFactory baseStateFactory,
+            GameTransitionRecorder gameTransitionRecorder) {
         this.gameCompletionObserver = gameCompletionObserver;
         inningStateContext = new InningStateContext(baseStateFactory, this::reflectCompletedInning);
+        PlayResultObserver observer =
+                gameTransitionRecorder == null
+                        ? statisticsRecorder
+                        : new SingleGameTransitionObserver(
+                                statisticsRecorder,
+                                gameTransitionRecorder,
+                                inningStateContext,
+                                this::getInning,
+                                this::getTotalScore);
+        this.batterEntityOrders =
+                batterEntityOrders.getBatterEntities().stream()
+                        .map(batter -> batter.observedBy(observer))
+                        .toList();
     }
 
     InningStateContext inningStateContext() {

@@ -6,6 +6,7 @@ import com.example.baseballorders.backend.application.exception.SimulationAccept
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
 import com.example.baseballorders.backend.domain.PlayerData;
+import com.example.baseballorders.backend.domain.SimulationMode;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.util.List;
 import java.util.UUID;
@@ -53,6 +54,18 @@ public final class SimulationCoordinator {
      * @throws SimulationTimeoutException timeout内に結果を受信できなかった場合
      */
     public SimulationResult simulate(List<PlayerData> players) {
+        return simulate(players, SimulationMode.LARGE_SCALE_RUN);
+    }
+
+    /**
+     * 画面入力された選手データを指定した試合実行モードでSQSへ要求し、相関する結果をtimeoutまで待機する。
+     *
+     * @param players 打順どおりの9人の入力済み選手データ
+     * @param mode 大規模実行と1試合実行を見分ける試合実行モード
+     * @return simulatorから受信した結果
+     * @throws SimulationTimeoutException timeout内に結果を受信できなかった場合
+     */
+    public SimulationResult simulate(List<PlayerData> players, SimulationMode mode) {
         if (players.size() != LINEUP_SIZE) {
             throw new IllegalArgumentException("players must contain exactly 9 entries");
         }
@@ -69,6 +82,7 @@ public final class SimulationCoordinator {
                             .simulationId(simulationId)
                             .version(MESSAGE_VERSION)
                             .players(players)
+                            .mode(mode)
                             .build());
         } catch (RuntimeException exception) {
             registry.remove(simulationId);

@@ -13,6 +13,7 @@ import com.example.baseballorders.backend.application.exception.SimulationTimeou
 import com.example.baseballorders.backend.domain.PlayerData;
 import com.example.baseballorders.backend.domain.PlayerDataBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
+import com.example.baseballorders.backend.domain.SimulationMode;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -91,7 +92,34 @@ class SimulationCoordinatorTest {
                                 0.700f,
                                 published.getFirst().players().getFirst().stealSuccessRate()),
                 () -> assertEquals(5, result.statistics().maximumScore()),
+                () -> assertEquals(SimulationMode.LARGE_SCALE_RUN, published.getFirst().mode()),
                 () -> assertEquals(0, registry.pendingCount()));
+    }
+
+    @Test
+    @DisplayName("1試合実行モードを指定すると要求に1試合実行モードが設定される")
+    void sendsSingleGameModeWhenRequested() {
+        // given
+        var registry = new WaitingResultRegistry();
+        var published = new ArrayList<SimulationRequest>();
+        SimulatorMessagePublisher publisher =
+                request -> {
+                    published.add(request);
+                    registry.complete(
+                            request.simulationId(),
+                            new SimulationResult(
+                                    request.simulationId(),
+                                    List.of(new SimulationResult.Result(5, 4)),
+                                    new SimulationResult.Statistics(5, 5, 5)));
+                };
+        var coordinator =
+                new SimulationCoordinator(publisher, registry, limits(Duration.ofSeconds(1)));
+
+        // when
+        coordinator.simulate(players(9), SimulationMode.SINGLE_GAME_RUN);
+
+        // then
+        assertAll(() -> assertEquals(SimulationMode.SINGLE_GAME_RUN, published.getFirst().mode()));
     }
 
     @Test
