@@ -7,7 +7,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
-import com.example.baseballorders.backend.domain.PitcherPersonality;
 import com.example.baseballorders.backend.domain.PlayerDataBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
@@ -83,29 +82,6 @@ class SqsSimulatorMessagePublisherTest {
                 () ->
                         assertEquals(
                                 com.example.baseballorders.messaging.PitcherPersonality.DEFAULT,
-                                messageCaptor.getValue().pitcherPersonality()));
-    }
-
-    @Test
-    @DisplayName("投手性格を共有要求へ変換する")
-    void mapsPitcherPersonalityToSharedRequest() {
-        // given
-        SqsTemplate sqsTemplate = mock(SqsTemplate.class);
-        var publisher = new SqsSimulatorMessagePublisher(sqsTemplate, "test-request-queue");
-        var request =
-                new SimulationRequest(
-                        UUID.randomUUID(), "1", List.of(), PitcherPersonality.TECHNICAL);
-        var messageCaptor = ArgumentCaptor.forClass(SimulationRequestMessage.class);
-
-        // when
-        publisher.publish(request);
-
-        // then
-        verify(sqsTemplate).send(eq("test-request-queue"), messageCaptor.capture());
-        assertAll(
-                () ->
-                        assertEquals(
-                                com.example.baseballorders.messaging.PitcherPersonality.TECHNICAL,
                                 messageCaptor.getValue().pitcherPersonality()));
     }
 }

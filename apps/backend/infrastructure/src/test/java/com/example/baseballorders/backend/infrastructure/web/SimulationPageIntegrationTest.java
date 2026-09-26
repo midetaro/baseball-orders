@@ -155,16 +155,7 @@ class SimulationPageIntegrationTest {
                                 response.body()
                                         .contains("lineup.every(player=>player.stealEnabled)")),
                 () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
-                () ->
-                        assertTrue(
-                                response.body()
-                                        .contains(
-                                                "?pitcher_personality=${encodeURIComponent(pitcherPersonality.value)}")),
-                () -> assertTrue(response.body().contains("id=\"pitcher-personality\"")),
-                () -> assertTrue(response.body().contains("BOLD\">大胆")),
-                () -> assertTrue(response.body().contains("TECHNICAL\">技巧派")),
-                () -> assertTrue(response.body().contains("CAUTIOUS\">慎重")),
-                () -> assertTrue(response.body().contains("DEFAULT\">無印")),
+                () -> assertFalse(response.body().toLowerCase().contains("pitcher")),
                 () -> assertTrue(response.body().contains("function validLineup()")),
                 () ->
                         assertTrue(

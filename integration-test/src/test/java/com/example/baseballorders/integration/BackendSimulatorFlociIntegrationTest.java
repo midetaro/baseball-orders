@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.baseballorders.backend.BackendApplication;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
-import com.example.baseballorders.messaging.PitcherPersonality;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
@@ -98,11 +97,8 @@ class BackendSimulatorFlociIntegrationTest {
 
     private static final BehaviorStrategies STRATEGIES = new BehaviorStrategies(SIMULATION_RULES);
 
-    private static final SimulationPitcherProperties PITCHER_PROPERTIES = new SimulationPitcherProperties(
-            new Multipliers(1.3f, 0.7f, 1.0f),
-            new Multipliers(0.7f, 1.0f, 1.3f),
-            new Multipliers(1.0f, 1.3f, 0.7f),
-            new Multipliers(1.0f, 1.0f, 1.0f));
+    private static final SimulationPitcherProperties PITCHER_PROPERTIES =
+            new SimulationPitcherProperties(new Multipliers(1.0f, 1.0f, 1.0f));
 
 
     private static HttpClient authenticatedClient(int port) throws Exception {
@@ -144,21 +140,7 @@ class BackendSimulatorFlociIntegrationTest {
     @Test
     @DisplayName("HTTP要求をsimulatorがFloci経由で処理しbackendが結果SQSを受信して同じ相関IDで応答する")
     void completesBackendRequestAfterSimulatorProcessesIt() throws Exception {
-        runScenario(new SimulateGameUseCase(1, new BaseStateFactory(SIMULATION_RULES.runnerAdvance())), null, PitcherPersonality.DEFAULT);
-    }
-
-    /**
-     * 実物: backend HTTPサーバー・Controller・Coordinator・SQS Publisher、simulatorの
-     * SqsSimulationScheduler・LineUpMapper、Floci SQS。
-     * モック: AWS SQSをFlociに置換。
-     * 担保する疎通: HTTPのpitcher_personality query -> backend内部要求 -> 要求SQS JSON
-     * -> simulatorのSimulationRequestMessage復元 -> LineUpMapperへの投手性格引き渡し -> 結果SQS -> HTTP応答。
-     * 担保しないもの: 各投手性格における確率補正の詳細、AWS実環境、ブラウザ描画。
-     */
-    @Test
-    @DisplayName("投手性格がHTTP要求からSQS契約を経由してsimulatorのLineUpMapperへ渡る")
-    void carriesPitcherPersonalityFromHttpRequestToSimulatorMapper() throws Exception {
-        runScenario(new SimulateGameUseCase(1, new BaseStateFactory(SIMULATION_RULES.runnerAdvance())), null, PitcherPersonality.BOLD);
+        runScenario(new SimulateGameUseCase(1, new BaseStateFactory(SIMULATION_RULES.runnerAdvance())), null);
     }
 
     /**
@@ -205,13 +187,10 @@ class BackendSimulatorFlociIntegrationTest {
                 return new SimulationResult(expected);
             }
         };
-        runScenario(fixedUseCase, expected, PitcherPersonality.DEFAULT);
+        runScenario(fixedUseCase, expected);
     }
 
-    private void runScenario(
-            SimulateGameUseCase useCase,
-            ScoreStatistics expected,
-            PitcherPersonality expectedPitcherPersonality)
+    private void runScenario(SimulateGameUseCase useCase, ScoreStatistics expected)
             throws Exception {
         // given
         var suffix = UUID.randomUUID().toString();
@@ -242,14 +221,16 @@ class BackendSimulatorFlociIntegrationTest {
                     var port = ((WebServerApplicationContext) backend).getWebServer().getPort();
                     var registry = backend.getBean(WaitingResultRegistry.class);
                     var mapper = new ObjectMapper();
-                    var lineupMapper = new RecordingLineUpMapper(
+                    var lineupMapper = new LineUpMapper(
                             STRATEGIES.middleDistanceHittingStrategy(),
                             STRATEGIES.noSteal(),
-                            STRATEGIES.standardBunt());
+                            STRATEGIES.standardBunt(),
+                            STRATEGIES,
+                            PITCHER_PROPERTIES);
                     var simulator = new SqsSimulationScheduler(
                             sqs, mapper, useCase, lineupMapper, requestQueue, resultQueue, 10, 10);
-                    var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port
-                                    + "/simulations?pitcher_personality=" + expectedPitcherPersonality))
+                    var request = HttpRequest.newBuilder(
+                                    URI.create("http://localhost:" + port + "/simulations"))
                             .timeout(Duration.ofSeconds(30))
                             .header("Content-Type", "application/json")
                             .POST(HttpRequest.BodyPublishers.ofString("""
@@ -288,8 +269,6 @@ class BackendSimulatorFlociIntegrationTest {
                             () -> assertNotNull(wireRequest.simulationId()),
                             () -> assertEquals(wireRequest.simulationId().toString(), body.path("simulationId").asText()),
                             () -> assertEquals(9, wireRequest.players().size()),
-                            () -> assertEquals(expectedPitcherPersonality, wireRequest.pitcherPersonality()),
-                            () -> assertEquals(expectedPitcherPersonality, lineupMapper.pitcherPersonality()),
                             () -> assertEquals(1, body.path("statistics").path("gameCount").asInt(-1)),
                             () -> assertEquals(0, registry.pendingCount())
                     );
@@ -324,31 +303,6 @@ class BackendSimulatorFlociIntegrationTest {
                     }
                 }
             }
-        }
-    }
-
-    private static final class RecordingLineUpMapper extends LineUpMapper {
-
-        private PitcherPersonality pitcherPersonality;
-
-        private RecordingLineUpMapper(
-                com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy
-                                hittingStrategy,
-                com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy stealStrategy,
-                com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy buntStrategy) {
-            super(hittingStrategy, stealStrategy, buntStrategy, STRATEGIES, PITCHER_PROPERTIES);
-        }
-
-        @Override
-        public LineUpEntity map(
-                java.util.List<com.example.baseballorders.messaging.SimulationPlayerMessage> players,
-                PitcherPersonality pitcherPersonality) {
-            this.pitcherPersonality = pitcherPersonality;
-            return super.map(players, pitcherPersonality);
-        }
-
-        private PitcherPersonality pitcherPersonality() {
-            return pitcherPersonality;
         }
     }
 }

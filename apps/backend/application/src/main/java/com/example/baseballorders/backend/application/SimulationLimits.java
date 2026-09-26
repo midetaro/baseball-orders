@@ -15,7 +15,6 @@ public record SimulationLimits(
         Duration resultTimeout,
         float maximumAverageHitAverage,
         float maximumAverageSluggish,
-        float pitcherIncreaseMultiplier,
         float maximumSuccessRate) {
 
     /**

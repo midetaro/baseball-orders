@@ -25,7 +25,6 @@ public class InfrastructureConfiguration {
      * @param resultTimeout SQS結果を待機する時間
      * @param maximumAverageHitAverage 打順9人の打率平均の上限
      * @param maximumAverageSluggish 打順9人の長打率平均の上限
-     * @param pitcherIncreaseMultiplier 投手性格による打撃確率の増加倍率
      * @param maximumSuccessRate バント成功率と盗塁成功率の受付上限
      */
     public InfrastructureConfiguration(
@@ -34,15 +33,12 @@ public class InfrastructureConfiguration {
                     float maximumAverageHitAverage,
             @Value("${baseball-orders.simulation.maximum-average-sluggish}")
                     float maximumAverageSluggish,
-            @Value("${baseball-orders.simulation.pitcher-increase-multiplier}")
-                    float pitcherIncreaseMultiplier,
             @Value("${baseball-orders.simulation.maximum-success-rate}") float maximumSuccessRate) {
         simulationLimits =
                 SimulationLimitsBuilder.simulationLimits()
                         .resultTimeout(resultTimeout)
                         .maximumAverageHitAverage(maximumAverageHitAverage)
                         .maximumAverageSluggish(maximumAverageSluggish)
-                        .pitcherIncreaseMultiplier(pitcherIncreaseMultiplier)
                         .maximumSuccessRate(maximumSuccessRate)
                         .build();
     }

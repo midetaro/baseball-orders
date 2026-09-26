@@ -1,7 +1,6 @@
 package com.example.baseballorders.backend.infrastructure.api;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
-import com.example.baseballorders.backend.domain.PitcherPersonality;
 import com.example.baseballorders.backend.domain.PlayerDataBuilder;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.util.List;
@@ -10,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** シミュレーション要求を同期HTTP APIとして受け付けるController。 */
@@ -28,10 +26,7 @@ public final class SimulatorRequestController {
      * @return simulatorから返されたシミュレーション結果
      */
     @PostMapping
-    public SimulationResult send(
-            @RequestBody List<PlayerInputRequest> players,
-            @RequestParam(name = "pitcher_personality", defaultValue = "DEFAULT")
-                    PitcherPersonality pitcherPersonality) {
+    public SimulationResult send(@RequestBody List<PlayerInputRequest> players) {
         return coordinator.simulate(
                 java.util.stream.IntStream.range(0, players.size())
                         .mapToObj(
@@ -48,17 +43,6 @@ public final class SimulatorRequestController {
                                             .personality(player.personality())
                                             .build();
                                 })
-                        .toList(),
-                pitcherPersonality);
-    }
-
-    /**
-     * Submits a simulation with the default pitcher personality for direct Java callers.
-     *
-     * @param players batting-order input from the simulation page
-     * @return the correlated simulation result
-     */
-    public SimulationResult send(List<PlayerInputRequest> players) {
-        return send(players, PitcherPersonality.DEFAULT);
+                        .toList());
     }
 }
