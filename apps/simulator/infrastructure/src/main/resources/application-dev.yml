@@ -29,18 +29,6 @@ simulation:
       from-second-probability: 0.2
       from-third-probability: 0.1
   pitcher:
-    bold:
-      on-base-multiplier: 1.3
-      slugging-multiplier: 0.7
-      running-multiplier: 1.0
-    cautious:
-      on-base-multiplier: 0.7
-      slugging-multiplier: 1.0
-      running-multiplier: 1.3
-    technical:
-      on-base-multiplier: 1.0
-      slugging-multiplier: 1.3
-      running-multiplier: 0.7
     standard:
       on-base-multiplier: 1.0
       slugging-multiplier: 1.0

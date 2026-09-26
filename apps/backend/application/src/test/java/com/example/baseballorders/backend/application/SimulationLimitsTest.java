@@ -22,7 +22,6 @@ class SimulationLimitsTest {
                         .resultTimeout(resultTimeout)
                         .maximumAverageHitAverage(0.320f)
                         .maximumAverageSluggish(0.380f)
-                        .pitcherIncreaseMultiplier(1.200f)
                         .maximumSuccessRate(0.650f)
                         .build();
 
@@ -31,7 +30,6 @@ class SimulationLimitsTest {
                 () -> assertEquals(resultTimeout, sut.resultTimeout()),
                 () -> assertEquals(0.320f, sut.maximumAverageHitAverage()),
                 () -> assertEquals(0.380f, sut.maximumAverageSluggish()),
-                () -> assertEquals(1.200f, sut.pitcherIncreaseMultiplier()),
                 () -> assertEquals(0.650f, sut.maximumSuccessRate()));
     }
 
@@ -44,7 +42,6 @@ class SimulationLimitsTest {
                         .resultTimeout(null)
                         .maximumAverageHitAverage(0.350f)
                         .maximumAverageSluggish(0.400f)
-                        .pitcherIncreaseMultiplier(1.300f)
                         .maximumSuccessRate(0.700f);
 
         // when

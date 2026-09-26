@@ -38,12 +38,6 @@ assert.ok(html.includes("buntSuccessRate:[0,0.7], stealSuccessRate:[0.1,0.7]"), 
 assert.ok(html.includes("function validLineup()"), '打順全体の入力制約を検証する');
 assert.ok(html.includes("lineup.reduce((sum,player)=>sum+Number(player.hitAverage),0)/lineup.length<=0.35"), '出塁率の平均を3割5分以下に制限する');
 assert.ok(html.includes("lineup.reduce((sum,player)=>sum+Number(player.sluggish),0)/lineup.length<=0.4"), '長打率の平均を4割以下に制限する');
-assert.ok(html.includes('id="pitcher-personality"'), '投手性格を選択できる');
-assert.ok(html.includes('value="BOLD">大胆'), '大胆な投手を選択できる');
-assert.ok(html.includes('value="TECHNICAL">技巧派'), '技巧派の投手を選択できる');
-assert.ok(html.includes('value="CAUTIOUS">慎重'), '慎重な投手を選択できる');
-assert.ok(html.includes('value="DEFAULT">無印'), '無印の投手を選択できる');
-assert.ok(html.includes("?pitcher_personality=${encodeURIComponent(pitcherPersonality.value)}"), '投手性格をリクエストクエリとして送る');
 assert.ok(html.includes("input.step='0.01'"), '数値入力は小数第2位刻みにする');
 assert.ok(html.includes("key:'hitAverage',label:'出塁率',min:0.01,max:0.6"), '出塁率の上限を60%にする');
 assert.ok(html.includes('function formatPercentage(value)'), '入力値を小数第2位に整形する');
@@ -135,7 +129,7 @@ assert.ok(html.includes("steal_success_rate:Number(player.stealSuccessRate)"), '
 assert.ok(html.includes("enabledKey:'buntEnabled'"), 'バント成功率はバント選択に連動させる');
 assert.ok(html.includes("enabledKey:'stealEnabled'"), '盗塁成功率は盗塁選択に連動させる');
 assert.ok(html.includes("input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]);"), 'バント・盗塁をしない場合は対応する成功率を入力不可にする');
-assert.ok(html.includes('fetch(`/simulations?pitcher_personality='), '直接入力と投手性格をシミュレーションAPIへ送る');
+assert.ok(html.includes("fetch('/simulations'"), '直接入力をシミュレーションAPIへ送る');
 assert.ok(!html.includes('name:'), '固定表示の打者名をAPIへ送らない');
 assert.match(html, /--cyan:\s*#25d9ff/, 'ビビットなシアンを画面全体の強調色に使う');
 assert.match(html, /--pink:\s*#ff4da6/, 'ビビットなピンクを画面全体の強調色に使う');

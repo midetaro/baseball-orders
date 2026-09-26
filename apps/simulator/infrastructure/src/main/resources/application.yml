@@ -31,18 +31,6 @@ simulation:
       from-second-probability: ${SIMULATION_RULE_ADVANCE_FROM_SECOND_PROBABILITY:0.2}
       from-third-probability: ${SIMULATION_RULE_ADVANCE_FROM_THIRD_PROBABILITY:0.1}
   pitcher:
-    bold:
-      on-base-multiplier: ${SIMULATION_PITCHER_BOLD_ON_BASE_MULTIPLIER:1.3}
-      slugging-multiplier: ${SIMULATION_PITCHER_BOLD_SLUGGING_MULTIPLIER:0.7}
-      running-multiplier: ${SIMULATION_PITCHER_BOLD_RUNNING_MULTIPLIER:1.0}
-    cautious:
-      on-base-multiplier: ${SIMULATION_PITCHER_CAUTIOUS_ON_BASE_MULTIPLIER:0.7}
-      slugging-multiplier: ${SIMULATION_PITCHER_CAUTIOUS_SLUGGING_MULTIPLIER:1.0}
-      running-multiplier: ${SIMULATION_PITCHER_CAUTIOUS_RUNNING_MULTIPLIER:1.3}
-    technical:
-      on-base-multiplier: ${SIMULATION_PITCHER_TECHNICAL_ON_BASE_MULTIPLIER:1.0}
-      slugging-multiplier: ${SIMULATION_PITCHER_TECHNICAL_SLUGGING_MULTIPLIER:1.3}
-      running-multiplier: ${SIMULATION_PITCHER_TECHNICAL_RUNNING_MULTIPLIER:0.7}
     standard:
       on-base-multiplier: ${SIMULATION_PITCHER_STANDARD_ON_BASE_MULTIPLIER:1.0}
       slugging-multiplier: ${SIMULATION_PITCHER_STANDARD_SLUGGING_MULTIPLIER:1.0}

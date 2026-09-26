@@ -10,7 +10,6 @@ import com.example.baseballorders.backend.application.adapter.SimulatorMessagePu
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
-import com.example.baseballorders.backend.domain.PitcherPersonality;
 import com.example.baseballorders.backend.domain.PlayerData;
 import com.example.baseballorders.backend.domain.PlayerDataBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
@@ -36,7 +35,6 @@ class SimulationCoordinatorTest {
                 .resultTimeout(resultTimeout)
                 .maximumAverageHitAverage(0.350f)
                 .maximumAverageSluggish(0.400f)
-                .pitcherIncreaseMultiplier(1.300f)
                 .maximumSuccessRate(maximumSuccessRate)
                 .build();
     }
@@ -376,41 +374,6 @@ class SimulationCoordinatorTest {
                 () ->
                         assertEquals(
                                 "stealSuccessRate must be between 0.0 and 0.7",
-                                exception.getMessage()));
-    }
-
-    @Test
-    @DisplayName("大胆な投手で出塁率が1を超える打順はSQS送信をせず拒否する")
-    void rejectsBoldPitcherLineupWithAdjustedHitAverageAboveOne() {
-        // given
-        var sut =
-                new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
-        var lineup = new ArrayList<>(players(9));
-        lineup.set(
-                0,
-                PlayerDataBuilder.playerData()
-                        .name("山田")
-                        .hitAverage(0.8f)
-                        .sluggish(0.351f)
-                        .buntSuccessRate(0.700f)
-                        .buntEnabled(true)
-                        .stealSuccessRate(0.700f)
-                        .stealEnabled(true)
-                        .personality(PlayerPersonality.DEFAULT)
-                        .build());
-
-        // when
-        var exception =
-                assertThrows(
-                        IllegalArgumentException.class,
-                        () -> sut.simulate(lineup, PitcherPersonality.BOLD));
-
-        // then
-        assertAll(
-                () ->
-                        assertEquals(
-                                "pitcher-adjusted hitAverage must not exceed 1.0",
                                 exception.getMessage()));
     }
 }

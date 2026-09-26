@@ -5,11 +5,9 @@ import com.example.baseballorders.backend.application.dto.SimulationRequestBuild
 import com.example.baseballorders.backend.application.exception.SimulationAcceptException;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
-import com.example.baseballorders.backend.domain.PitcherPersonality;
 import com.example.baseballorders.backend.domain.PlayerData;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -26,9 +24,6 @@ public final class SimulationCoordinator {
 
     /** 確率の定義そのものを表す下限であり設定値ではない。 */
     private static final float MINIMUM_SUCCESS_RATE = 0.000f;
-
-    /** 確率の定義そのものを表す上限であり設定値ではない。 */
-    private static final float MAXIMUM_PROBABILITY = 1.000f;
 
     private final SimulatorMessagePublisher publisher;
     private final WaitingResultRegistry registry;
@@ -58,24 +53,10 @@ public final class SimulationCoordinator {
      * @throws SimulationTimeoutException timeout内に結果を受信できなかった場合
      */
     public SimulationResult simulate(List<PlayerData> players) {
-        return simulate(players, PitcherPersonality.DEFAULT);
-    }
-
-    /**
-     * 画面入力された選手データと投手性格をSQSへ要求し、相関する結果をtimeoutまで待機する。
-     *
-     * @param players 打順どおりの9人の入力済み選手データ
-     * @param pitcherPersonality 対戦する投手の性格
-     * @return simulatorから受信した結果
-     * @throws SimulationTimeoutException timeout内に結果を受信できなかった場合
-     */
-    public SimulationResult simulate(
-            List<PlayerData> players, PitcherPersonality pitcherPersonality) {
-        Objects.requireNonNull(pitcherPersonality, "pitcherPersonality must not be null");
         if (players.size() != LINEUP_SIZE) {
             throw new IllegalArgumentException("players must contain exactly 9 entries");
         }
-        validateLineup(players, pitcherPersonality);
+        validateLineup(players);
         UUID simulationId = UUID.randomUUID();
 
         // 送信
@@ -88,7 +69,6 @@ public final class SimulationCoordinator {
                             .simulationId(simulationId)
                             .version(MESSAGE_VERSION)
                             .players(players)
-                            .pitcherPersonality(pitcherPersonality)
                             .build());
         } catch (RuntimeException exception) {
             registry.remove(simulationId);
@@ -117,7 +97,7 @@ public final class SimulationCoordinator {
         return result;
     }
 
-    private void validateLineup(List<PlayerData> players, PitcherPersonality pitcherPersonality) {
+    private void validateLineup(List<PlayerData> players) {
         double totalHitAverage = 0;
         double totalSluggish = 0;
         for (PlayerData player : players) {
@@ -125,7 +105,6 @@ public final class SimulationCoordinator {
             totalSluggish += player.sluggish();
             requireSuccessRate(player.buntSuccessRate(), "buntSuccessRate");
             requireSuccessRate(player.stealSuccessRate(), "stealSuccessRate");
-            validatePitcherAdjustedProbabilities(player, pitcherPersonality);
         }
         if (totalHitAverage / LINEUP_SIZE > limits.maximumAverageHitAverage()) {
             throw new IllegalArgumentException(
@@ -145,27 +124,6 @@ public final class SimulationCoordinator {
                             + MINIMUM_SUCCESS_RATE
                             + " and "
                             + limits.maximumSuccessRate());
-        }
-    }
-
-    private void validatePitcherAdjustedProbabilities(
-            PlayerData player, PitcherPersonality pitcherPersonality) {
-        switch (pitcherPersonality) {
-            case BOLD ->
-                    requireProbability(
-                            player.hitAverage() * limits.pitcherIncreaseMultiplier(), "hitAverage");
-            case TECHNICAL ->
-                    requireProbability(
-                            player.sluggish() * limits.pitcherIncreaseMultiplier(), "sluggish");
-            case CAUTIOUS, DEFAULT -> {
-                // These personalities do not increase batting probabilities beyond the input range.
-            }
-        }
-    }
-
-    private static void requireProbability(float value, String name) {
-        if (value > MAXIMUM_PROBABILITY) {
-            throw new IllegalArgumentException("pitcher-adjusted " + name + " must not exceed 1.0");
         }
     }
 }

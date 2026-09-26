@@ -92,15 +92,6 @@ class SimulationRulePropertiesTest {
         // then
         assertAll(
                 resourceName,
-                () -> assertEquals(1.3f, pitcher.bold().onBaseMultiplier()),
-                () -> assertEquals(0.7f, pitcher.bold().sluggingMultiplier()),
-                () -> assertEquals(1.0f, pitcher.bold().runningMultiplier()),
-                () -> assertEquals(0.7f, pitcher.cautious().onBaseMultiplier()),
-                () -> assertEquals(1.0f, pitcher.cautious().sluggingMultiplier()),
-                () -> assertEquals(1.3f, pitcher.cautious().runningMultiplier()),
-                () -> assertEquals(1.0f, pitcher.technical().onBaseMultiplier()),
-                () -> assertEquals(1.3f, pitcher.technical().sluggingMultiplier()),
-                () -> assertEquals(0.7f, pitcher.technical().runningMultiplier()),
                 () -> assertEquals(1.0f, pitcher.standard().onBaseMultiplier()),
                 () -> assertEquals(1.0f, pitcher.standard().sluggingMultiplier()),
                 () -> assertEquals(1.0f, pitcher.standard().runningMultiplier()));
