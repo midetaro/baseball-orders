@@ -347,45 +347,32 @@ A feature is not complete until all of the following are done:
 - Only report completion, per "Feature completion" above, once `gh pr checks`
   shows every required check passing.
 
-## Git worktree workflow
+## Git branch workflow
 
-Work autonomously from a dedicated `git worktree` per GitHub Issue so that
-independent issues never share a checked-out branch, mid-flight edits, or
-staged-but-unrelated changes.
+Do not create or use additional Git worktrees. Work in the existing repository
+checkout and isolate each GitHub Issue's changes on its own branch.
 
-- Only create a worktree, and only start implementation, for an issue that is
-  currently open. Confirm with `gh issue view <number> --json state` (or `gh
-  issue list --state open`) before creating the worktree; never branch off a
-  closed issue.
-- One issue maps to exactly one worktree and one branch. Do not reuse an
-  issue's worktree for a second, unrelated issue, and do not mix two issues'
-  changes inside a single worktree, even sequentially.
-- Create the worktree as a sibling directory of the main checkout, not nested
-  inside it, named after the issue so concurrent worktrees stay
-  distinguishable, and branch from `develop`:
-  `git worktree add ../baseball-orders-issue-<number> -b feature/<date>[-<n>] develop`
+- Only start implementation for an issue that is currently open. Confirm with
+  `gh issue view <number> --json state` (or `gh issue list --state open`)
+  before creating its branch; never branch off a closed issue.
+- One issue maps to exactly one branch. Do not reuse an issue's branch for a
+  second, unrelated issue or mix changes from multiple issues on one branch.
+- Create the issue branch from `develop` in the existing checkout:
+  `git switch -c feature/<date>[-<n>] develop`
   (see `git branch` for this repository's existing `feature/YYYYMMDD[-n]`
   naming).
-- When multiple open issues are being worked at once, create one worktree per
-  issue rather than time-slicing a single worktree between them.
-- Before starting a new issue's worktree while another issue's worktree is
-  still in progress, check whether the two issues are likely to touch the same
-  files: compare their expected changes against the module boundaries in
-  "Application and module boundaries" above and the file-ownership table in
-  `docs/codex-graph.md`. If both issues plausibly change the same module,
-  Gradle build file, or shared contract (for example both touch
-  `libs/messaging-contract`, the same application's `infrastructure` module, or
-  `settings.gradle`), do not run them concurrently — finish, review, and merge
-  one issue's pull request first, then create or rebase the other issue's
-  worktree from the updated `develop` before continuing. When the two issues'
-  expected file sets are disjoint by this check, concurrent worktrees are safe.
-- After an issue's pull request is merged, remove its worktree
-  (`git worktree remove <path>`) and delete the now-merged local branch
-  (`git branch -d <branch>`). Do not leave a worktree in place once its issue
-  is closed and its PR merged.
-- Never force-remove a worktree that still has uncommitted or unpushed work
-  without first checking with the user; a worktree with outstanding changes is
-  in-progress state, not disposable state.
+- Work on only one issue at a time in this checkout. Finish, review, and merge
+  its pull request before starting another issue from the updated `develop`.
+  Independent worker nodes within the same issue may still run concurrently
+  under the feature graph workflow and exclusive file-ownership rules.
+- Before switching branches, inspect `git status` and preserve all uncommitted
+  and unpushed work. Do not discard changes or carry unrelated changes into
+  another issue's branch. If existing work prevents a safe switch, report the
+  blocker rather than creating a worktree as a workaround.
+- After an issue's pull request is merged, switch back to `develop` and delete
+  the now-merged local branch with `git branch -d <branch>`.
+- Do not remove pre-existing worktrees as part of this workflow change. Any
+  cleanup must preserve uncommitted and unpushed work and be explicitly scoped.
 
 ## Screen screenshots in pull requests
 

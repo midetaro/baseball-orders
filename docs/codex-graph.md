@@ -12,10 +12,10 @@ Gradle builds and source code are authoritative when this document and an older
 design document differ.
 
 This document governs concurrency between worker nodes inside one feature. See
-`AGENTS.md`'s "Git worktree workflow" for the separate, higher-level rule that
-each GitHub Issue gets its own git worktree, and for how to decide whether two
-issues' worktrees are safe to run concurrently using the same module boundaries
-and file-ownership table referenced below.
+`AGENTS.md`'s "Git branch workflow" for the higher-level rule that each GitHub
+Issue gets its own branch in the existing checkout, without additional Git
+worktrees. Work on issues sequentially; concurrency is limited to independent
+worker nodes within the same issue using the file-ownership rules below.
 
 ## Repository facts used by the graph
 
