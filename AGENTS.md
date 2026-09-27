@@ -301,8 +301,49 @@ A feature is not complete until all of the following are done:
    against the current feature diff.
 5. Fix all blocking findings.
 6. Re-run affected tests.
-7. Report completion.
-8. Recommend starting a new Codex session before beginning another feature.
+7. Open a pull request linked to the tracking GitHub Issue, per "Issue-driven
+   development" above.
+8. Report completion.
+9. Recommend starting a new Codex session before beginning another feature.
+
+## Issue-driven development
+
+- Development tasks are tracked as GitHub Issues in this repository (`gh issue
+  list`, `gh issue view <number>`), not only as documents under
+  `docs/features`.
+- Before starting implementation, identify the GitHub Issue this session is
+  working on. If the user does not name one, ask for the issue number, or
+  create the issue first with `gh issue create` before writing code.
+- Do not open a pull request for tracked development work without an
+  associated issue. A small, incidental fix explicitly scoped by the user in
+  the same session is the only exception.
+- When implementation is complete, deterministic verification has passed, and
+  `baseball-orders-test` then `baseball-orders-review` have run against the
+  diff per "Feature completion" below, open the pull request with `gh pr
+  create` and link it to the issue by including `Closes #<issue-number>` (or
+  `Refs #<issue-number>` when the PR does not fully close the issue) in the PR
+  body.
+- If a `docs/features` specification document is also used for a feature that
+  has a tracking issue, keep the two in sync: mark the specification
+  `status: done` and close the issue together, in the same session that merges
+  the PR.
+
+## Screen screenshots in pull requests
+
+- When a change alters what a backend Thymeleaf screen (`apps/backend/infrastructure/src/main/resources/templates/*.html`)
+  looks like — template, inline style, or a presentation view-model change —
+  capture a screenshot of every changed screen, per the representative PC
+  (1280×800) and smartphone (390×844) viewports used by the
+  `baseball-orders-screen-review` skill, and paste them into the pull request
+  description before opening or updating it.
+- Capture screenshots against the real rendered screen (through its actual
+  route, controller, and authentication), not a static file opened directly.
+- A change that only affects non-visual behavior (backend logic, SQS
+  messaging, Terraform, tests) with no template/CSS/view-model diff does not
+  require screenshots.
+- When updating an already-open pull request for a screen change made after
+  the PR was created, add the new screenshots to that PR's description rather
+  than leaving them undocumented.
 
 ## Feature specification status
 

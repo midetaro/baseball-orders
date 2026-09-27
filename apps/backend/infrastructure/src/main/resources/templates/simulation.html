@@ -18,6 +18,16 @@
             --pink: #ff4da6;
             --violet: #875cff;
             --amber: #ffb12b;
+
+            --space-2xs: 4px;
+            --space-xs: 8px;
+            --space-sm: 12px;
+            --space-md: 16px;
+            --space-lg: 20px;
+            --space-xl: 24px;
+            --space-2xl: 28px;
+
+            --control-height: 36px;
         }
 
         * {
@@ -132,8 +142,8 @@
         .section-head {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 20px 24px;
+            gap: var(--space-xs);
+            padding: var(--space-lg) var(--space-xl);
             border-bottom: 1px solid var(--line);
             background: linear-gradient(90deg, rgba(37, 217, 255, .08), rgba(255, 77, 166, .05));
         }
@@ -152,15 +162,15 @@
         .order {
             width: max-content;
             min-width: 570px;
-            padding: 0 12px 12px;
+            padding: 0 var(--space-sm) var(--space-sm);
         }
 
         .columns, .slot {
             display: grid;
             grid-template-columns:38px repeat(4, 76px) 118px 78px 78px;
-            gap: 8px;
+            gap: var(--space-xs);
             align-items: center;
-            padding: 8px;
+            padding: var(--space-xs);
             border-bottom: 1px solid var(--line);
         }
 
@@ -180,7 +190,8 @@
 
         input, select {
             width: 100%;
-            padding: 9px;
+            min-height: var(--control-height);
+            padding: var(--space-xs);
             color: var(--ink);
             background: rgba(5, 10, 26, .78);
             border: 1px solid rgba(117, 150, 205, .65);
@@ -211,6 +222,10 @@
         }
 
         button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: var(--control-height);
             border: 0;
             cursor: pointer;
             font: 800 13px inherit;
@@ -223,7 +238,7 @@
         }
 
         .bunt-toggle {
-            padding: 9px;
+            padding: 0 var(--space-xs);
             border: 1px solid rgba(135, 92, 255, .45);
             border-radius: 8px;
             background: rgba(135, 92, 255, .15);
@@ -242,7 +257,7 @@
         }
 
         .submit {
-            padding: 10px 14px;
+            padding: 0 var(--space-md);
             border-radius: 8px;
             background: linear-gradient(135deg, var(--cyan), var(--lime));
             color: #07141a;
@@ -250,7 +265,7 @@
         }
 
         .all-toggle {
-            padding: 9px 12px;
+            padding: 0 var(--space-sm);
             border: 1px solid var(--violet);
             border-radius: 8px;
             background: rgba(135, 92, 255, .12);
@@ -271,8 +286,8 @@
 
         #feedback {
             min-height: 48px;
-            margin: 12px 24px 20px;
-            padding: 13px;
+            margin: var(--space-sm) var(--space-xl) var(--space-lg);
+            padding: var(--space-sm);
             border: 1px solid rgba(37, 217, 255, .18);
             border-radius: 10px;
             background: rgba(5, 10, 26, .68);
@@ -302,7 +317,7 @@
         }
 
         .share {
-            padding: 9px 12px;
+            padding: 0 var(--space-sm);
             border: 1px solid var(--cyan);
             border-radius: 8px;
             background: rgba(37, 217, 255, .08);
@@ -326,9 +341,9 @@
             display: flex;
             align-items: baseline;
             justify-content: space-between;
-            gap: 12px;
+            gap: var(--space-sm);
             margin: 0;
-            padding: 14px 18px;
+            padding: var(--space-sm) var(--space-md);
             color: var(--pink);
             font-size: 12px;
             letter-spacing: .08em;
@@ -390,7 +405,7 @@
         }
 
         .statistic {
-            padding: 18px;
+            padding: var(--space-md);
             border-right: 1px solid var(--line);
             background: linear-gradient(145deg, rgba(37, 217, 255, .035), transparent);
         }
@@ -412,7 +427,7 @@
         }
 
         .chart {
-            padding: 18px;
+            padding: var(--space-md);
             border-top: 1px solid var(--line);
         }
 
@@ -426,7 +441,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 0 8px 26px 0;
+            padding: 0 var(--space-xs) var(--space-xl) 0;
             color: var(--muted);
             font: 11px monospace;
             text-align: right;
@@ -549,8 +564,8 @@
         .home-run-legend {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px 12px;
-            margin: 12px 0 0;
+            gap: var(--space-xs) var(--space-sm);
+            margin: var(--space-sm) 0 0;
             padding: 0;
             list-style: none;
             color: var(--muted);
@@ -571,7 +586,7 @@
         }
 
         .empty-chart-state {
-            margin: 12px 0 0;
+            margin: var(--space-sm) 0 0;
             color: var(--muted);
             font-size: 12px;
         }
