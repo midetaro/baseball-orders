@@ -303,8 +303,10 @@ A feature is not complete until all of the following are done:
 6. Re-run affected tests.
 7. Open a pull request linked to the tracking GitHub Issue, per "Issue-driven
    development" above.
-8. Report completion.
-9. Recommend starting a new Codex session before beginning another feature.
+8. Confirm the pull request's CI succeeds, per "Pull request CI verification"
+   below.
+9. Report completion.
+10. Recommend starting a new Codex session before beginning another feature.
 
 ## Issue-driven development
 
@@ -327,6 +329,23 @@ A feature is not complete until all of the following are done:
   has a tracking issue, keep the two in sync: mark the specification
   `status: done` and close the issue together, in the same session that merges
   the PR.
+
+## Pull request CI verification
+
+- After opening or updating a pull request, a task is not complete until that
+  pull request's CI has succeeded. Do not report completion, mark a feature
+  specification `status: done`, or close the tracking issue while CI is still
+  running, unknown, or failing.
+- Check CI status with `gh pr checks <pr-number>` (add `--watch` to block until
+  checks finish, since this is monitoring your own PR's automated checks, not
+  an unrelated interactive command). Re-check after pushing new commits.
+- If CI fails, continue the same task: inspect the failure with `gh run view
+  --log-failed` (or the equivalent check output), fix the root cause, push a
+  new commit to the same branch, and re-check CI. Do not amend or force-push to
+  hide a failed run unless the user explicitly asks. Do not consider the task
+  complete until CI succeeds.
+- Only report completion, per "Feature completion" above, once `gh pr checks`
+  shows every required check passing.
 
 ## Git worktree workflow
 
