@@ -11,6 +11,12 @@ The graph is coordination guidance, not permission to redesign modules. Existing
 Gradle builds and source code are authoritative when this document and an older
 design document differ.
 
+This document governs concurrency between worker nodes inside one feature. See
+`AGENTS.md`'s "Git worktree workflow" for the separate, higher-level rule that
+each GitHub Issue gets its own git worktree, and for how to decide whether two
+issues' worktrees are safe to run concurrently using the same module boundaries
+and file-ownership table referenced below.
+
 ## Repository facts used by the graph
 
 - The root Gradle build is a composite. `settings.gradle` includes the independent
