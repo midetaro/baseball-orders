@@ -1,3 +1,8 @@
 # Copy this file to terraform.tfvars and set the AWS CLI shared-config profile
 # that has permission to manage this Terraform state and its AWS resources.
 aws_profile = "baseball-orders"
+
+# The ALB's domain and an existing Route 53 public hosted zone that covers it.
+# Both are required; there is no default.
+domain_name       = "orders.example.com"
+route53_zone_name = "example.com"
