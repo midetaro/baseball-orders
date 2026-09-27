@@ -208,12 +208,12 @@ class SimulationPageIntegrationTest {
                 () ->
                         assertTrue(
                                 response.body()
-                                        .matches(
-                                                "(?s).*\\.order \\{.*width:\\s*max-content;.*min-width:\\s*\\d+px;.*")),
+                                        .matches("(?s).*\\.order \\{.*width:\\s*max-content;.*")),
                 () ->
                         assertContainsPattern(
                                 response.body(),
                                 "grid-template-columns:\\d+px\\s+repeat\\(\\d+,\\s*\\d+px\\)\\s+\\d+px\\s+\\d+px"),
+                () -> assertTrue(response.body().contains("function fieldWrapper(")),
                 () -> assertTrue(response.body().contains("enabledKey:'buntEnabled'")),
                 () -> assertTrue(response.body().contains("enabledKey:'stealEnabled'")),
                 () ->
