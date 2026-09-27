@@ -5,6 +5,7 @@
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>打順監督</title>
     <style>
+        .out-count { color: #ff4d4d; }
         :root {
             color-scheme: dark;
             --ink: #fffaf1;
@@ -103,7 +104,7 @@
 
         .simulation-workspace {
             display: grid;
-            grid-template-columns:minmax(0, 1fr) minmax(420px, 1.05fr);
+            grid-template-columns: 1fr;
             align-items: start;
             gap: 28px;
             margin-top: 28px;
@@ -301,26 +302,117 @@
             gap: 16px;
         }
 
-        #transitions {
-            max-height: 640px;
-            margin: 0;
-            padding: 18px 24px;
-            overflow-y: auto;
+        .frame-stage {
+            min-height: 220px;
+            padding: 20px 24px;
+        }
+
+        .frame-banner {
+            margin: 0 0 16px;
+            color: var(--lime);
+            font: 800 20px monospace;
+            text-align: center;
+            letter-spacing: .04em;
+        }
+
+        .diamond {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 16px;
+        }
+
+        .base {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: rgba(13, 20, 42, .9);
+            border: 2px solid var(--line);
+            border-radius: 4px;
+            transform: rotate(45deg);
+            transition: background .2s ease, border-color .2s ease;
+        }
+
+        .base.occupied {
+            background: var(--lime);
+            border-color: var(--lime);
+            box-shadow: 0 0 14px rgba(217, 255, 67, .55);
+        }
+
+        .base-second {
+            top: 0;
+            left: 69px;
+        }
+
+        .base-first {
+            top: 69px;
+            left: 138px;
+        }
+
+        .base-third {
+            top: 69px;
+            left: 0;
+        }
+
+        .batter-order {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--cyan);
+            font: 700 12px monospace;
+            white-space: nowrap;
+        }
+
+        .frame-meta {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            color: var(--muted);
+            font: 12px monospace;
+        }
+
+        .order-table-wrap {
+            padding: 0 24px 20px;
+        }
+
+        .order-table-heading {
+            margin: 0 0 8px;
+            font-size: 14px;
             color: var(--ink);
-            font: 13px monospace;
-            white-space: pre-line;
+        }
+
+        .order-table-scroll {
+            overflow-x: auto;
+        }
+
+        .order-table {
+            min-width: 100%;
+            border-collapse: collapse;
+            font: 12px monospace;
+        }
+
+        .order-table th, .order-table td {
+            padding: 6px 10px;
+            border: 1px solid var(--line);
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .order-table thead th {
+            color: var(--cyan);
+            background: rgba(37, 217, 255, .08);
+        }
+
+        .order-table tbody th {
+            color: var(--lime);
+            background: rgba(217, 255, 67, .05);
         }
 
         .empty-chart-state {
             margin: 12px 0 0;
             color: var(--muted);
             font-size: 12px;
-        }
-
-        @media (max-width: 980px) {
-            .simulation-workspace {
-                grid-template-columns:1fr;
-            }
         }
 
         @media (max-width: 760px) {
@@ -362,8 +454,9 @@
                 <button aria-pressed="false" class="all-toggle" id="toggle-all-bunt" type="button">全員バント</button>
                 <button aria-pressed="false" class="all-toggle" id="toggle-all-steal" type="button">全員盗塁</button>
                 <button class="all-toggle" id="reset-all-personalities" type="button">性格を初期化</button>
+                <button aria-controls="lineup-body" aria-expanded="true" class="all-toggle" id="toggle-lineup" type="button">入力欄を閉じる</button>
             </div>
-            <div class="lineup-workspace">
+            <div class="lineup-workspace" id="lineup-body">
                 <div class="order-scroll">
                     <div class="order">
                         <div class="columns">
@@ -378,13 +471,21 @@
         <section aria-labelledby="results-heading" id="results">
             <div class="section-head result-head">
                 <div><h2 id="results-heading">試合の推移</h2>
-                    <p class="hint">1試合分のイニングごとの推移</p></div>
+                    <p class="hint">1試合分のイニングごとの推移をアニメーションで再生する</p></div>
             </div>
-            <pre id="transitions">まだ試合を実行していません。</pre>
+            <div class="frame-stage" id="frame-stage" th:attr="data-frame-duration-millis=${frameDurationMillis}">
+                <p class="empty-chart-state" id="frame-placeholder">まだ試合を実行していません。</p>
+            </div>
+            <div class="order-table-wrap">
+                <h3 class="order-table-heading">打順成績表</h3>
+                <div class="order-table-scroll" id="order-table-scroll">
+                    <p class="empty-chart-state" id="order-table-placeholder">まだ試合を実行していません。</p>
+                </div>
+            </div>
         </section>
     </div>
 </main>
-<script>
+<script th:inline="none">
     const lineup = [
       {hitAverage:'0.35',sluggish:'0.35',buntSuccessRate:'0.70',stealSuccessRate:'0.70',buntEnabled:true,stealEnabled:true,personality:'DEFAULT'},
       {hitAverage:'0.35',sluggish:'0.35',buntSuccessRate:'0.70',stealSuccessRate:'0.70',buntEnabled:true,stealEnabled:true,personality:'DEFAULT'},
@@ -397,23 +498,87 @@
       {hitAverage:'0.27',sluggish:'0.40',buntSuccessRate:'0.70',stealSuccessRate:'0.70',buntEnabled:true,stealEnabled:true,personality:'DEFAULT'}
     ];
     let inFlight = false;
-    const order = document.querySelector('#order'), submit = document.querySelector('#submit'), feedback = document.querySelector('#feedback'), toggleAllBunt = document.querySelector('#toggle-all-bunt'), toggleAllSteal = document.querySelector('#toggle-all-steal'), resetAllPersonalities = document.querySelector('#reset-all-personalities'), transitions = document.querySelector('#transitions');
-    const ranges = {hitAverage:[0.01,0.6], sluggish:[0.1,0.6], buntSuccessRate:[0,0.7], stealSuccessRate:[0.1,0.7]};
-    function hasAtMostTwoDecimalPlaces(value) { return /^(?:\d+|\d*\.\d{1,2})$/.test(value); }
-    function valid(player) { return Object.values(player).every(value => value !== '') && Object.entries(ranges).every(([key,[min,max]]) => hasAtMostTwoDecimalPlaces(player[key]) && Number(player[key]) >= min && Number(player[key]) <= max); }
-    function validLineup() { return lineup.every(valid) && lineup.reduce((sum,player)=>sum+Number(player.hitAverage),0)/lineup.length<=0.35 && lineup.reduce((sum,player)=>sum+Number(player.sluggish),0)/lineup.length<=0.4; }
-    const fields = [{key:'hitAverage',label:'出塁率',min:0.01,max:0.6},{key:'sluggish',label:'長打率',min:0.1,max:0.6},{key:'buntSuccessRate',label:'バント成功率',min:0,max:0.7,enabledKey:'buntEnabled'},{key:'stealSuccessRate',label:'盗塁成功率',min:0.1,max:0.7,enabledKey:'stealEnabled'}];
+    const order = document.querySelector('#order'), submit = document.querySelector('#submit'), feedback = document.querySelector('#feedback'), toggleAllBunt = document.querySelector('#toggle-all-bunt'), toggleAllSteal = document.querySelector('#toggle-all-steal'), resetAllPersonalities = document.querySelector('#reset-all-personalities'), toggleLineup = document.querySelector('#toggle-lineup'), lineupBody = document.querySelector('#lineup-body'), frameStage = document.querySelector('#frame-stage'), orderTableScroll = document.querySelector('#order-table-scroll');
+    const frameDurationMillis = Number(frameStage.dataset.frameDurationMillis) || 1000;
+    let frameTimer = null;
+    const ranges = {hitAverage:[0.01,0.6], sluggish:[0.1,0.6], buntSuccessRate:[0,Infinity], stealSuccessRate:[0.1,Infinity]};
+    function valid(player) { return Object.values(player).every(value => value !== '') && Object.entries(ranges).every(([key,[min,max]]) => Number(player[key]) >= min && Number(player[key]) <= max); }
+    function validLineup() { return lineup.every(valid); }
+    const fields = [{key:'hitAverage',label:'出塁率',min:0.01,max:0.6},{key:'sluggish',label:'長打率',min:0.1,max:0.6},{key:'buntSuccessRate',label:'バント成功率',min:0,enabledKey:'buntEnabled'},{key:'stealSuccessRate',label:'盗塁成功率',min:0.1,enabledKey:'stealEnabled'}];
     function toggle(label, enabled, onClick) { const button=document.createElement('button'); button.type='button'; button.className='bunt-toggle'; button.disabled=inFlight; button.textContent=`${label}: ${enabled?'する':'しない'}`; button.setAttribute('aria-pressed',String(enabled)); button.addEventListener('click',onClick); return button; }
-    function formatPercentage(value) { return value === '' || !hasAtMostTwoDecimalPlaces(value) ? value : Number(value).toFixed(2); }
-    const personalityLabels = {DEFAULT:'標準',EAGER_SLUGGISH:'ブンブン丸',EAGER_STEAL:'盗塁重視',EAGER_BUNT:'バント重視'};
+    function formatPercentage(value) { return value === '' ? value : Number(value).toFixed(2); }
+    const personalityLabels = {DEFAULT:'標準',EAGER_SLUGGISH:'長距離砲',EAGER_STEAL:'盗塁重視',EAGER_BUNT:'バント重視'};
     function personalitySelect(player) { const select=document.createElement('select'); select.setAttribute('aria-label','性格'); select.disabled=inFlight; Object.entries(personalityLabels).forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;option.selected=player.personality===value;select.append(option);}); select.addEventListener('change',()=>{player.personality=select.value;}); return select; }
-    function render() { order.replaceChildren(); lineup.forEach((player,index) => { const row=document.createElement('div'); row.className='slot'; const position=document.createElement('span'); position.className='slot-index'; position.textContent=`${index+1}番`; row.append(position); fields.forEach(field => { const input=document.createElement('input'); input.type='number'; input.required=true; input.setAttribute('aria-label',field.label); input.min=String(field.min); input.max=String(field.max); input.step='0.01'; input.value=player[field.key]; input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]); input.addEventListener('input',()=>{const value=input.value.startsWith('.') ? `0${input.value}` : input.value;input.value=value;player[field.key]=value;update();}); input.addEventListener('change',()=>{const value=formatPercentage(input.value);input.value=value;player[field.key]=value;update();}); row.append(input); }); row.append(personalitySelect(player),toggle('バント',player.buntEnabled,()=>{player.buntEnabled=!player.buntEnabled; render();}),toggle('盗塁',player.stealEnabled,()=>{player.stealEnabled=!player.stealEnabled; render();})); order.append(row); }); update(); }
-    function update() { const complete=validLineup(); const allBuntEnabled=lineup.every(player=>player.buntEnabled); const allStealEnabled=lineup.every(player=>player.stealEnabled); submit.disabled=inFlight || !complete; toggleAllBunt.disabled=inFlight; toggleAllBunt.setAttribute('aria-pressed',String(allBuntEnabled)); toggleAllSteal.disabled=inFlight; toggleAllSteal.setAttribute('aria-pressed',String(allStealEnabled)); resetAllPersonalities.disabled=inFlight; if (!inFlight) { feedback.className=''; feedback.textContent=complete?'準備完了。1試合を実行できます。':'出塁率の平均は0.35以下、長打率の平均は0.40以下、バント・盗塁成功率は0.70以下で小数第2位まで入力してください。'; } }
-    function renderTransitions(gameTransitions) { if (!Array.isArray(gameTransitions) || gameTransitions.length === 0) { transitions.textContent='試合結果はありません。'; return; } transitions.textContent=gameTransitions.map(t=>`イニング${t.inning} ${t.actionResult} アウト${t.outCount} 得点${t.cumulativeScore} 走者:${t.runnerState}`).join('\n'); }
+    function render() { order.replaceChildren(); lineup.forEach((player,index) => { const row=document.createElement('div'); row.className='slot'; const position=document.createElement('span'); position.className='slot-index'; position.textContent=`${index+1}番`; row.append(position); fields.forEach(field => { const input=document.createElement('input'); input.type='number'; input.required=true; input.setAttribute('aria-label',field.label); input.min=String(field.min); if (field.max !== undefined) input.max=String(field.max); input.step='0.01'; input.value=player[field.key]; input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]); input.addEventListener('input',()=>{const value=input.value.startsWith('.') ? `0${input.value}` : input.value;input.value=value;player[field.key]=value;update();}); input.addEventListener('change',()=>{const value=formatPercentage(input.value);input.value=value;player[field.key]=value;update();}); row.append(input); }); row.append(personalitySelect(player),toggle('バント',player.buntEnabled,()=>{player.buntEnabled=!player.buntEnabled; render();}),toggle('盗塁',player.stealEnabled,()=>{player.stealEnabled=!player.stealEnabled; render();})); order.append(row); }); update(); }
+    function update() { const complete=validLineup(); const allBuntEnabled=lineup.every(player=>player.buntEnabled); const allStealEnabled=lineup.every(player=>player.stealEnabled); submit.disabled=inFlight || !complete || lineupBody.hidden; toggleAllBunt.disabled=inFlight; toggleAllBunt.setAttribute('aria-pressed',String(allBuntEnabled)); toggleAllSteal.disabled=inFlight; toggleAllSteal.setAttribute('aria-pressed',String(allStealEnabled)); resetAllPersonalities.disabled=inFlight; toggleLineup.disabled=inFlight; if (!inFlight) { feedback.className=''; feedback.textContent=lineupBody.hidden?'打順入力を開くと再実行できます。':complete?'準備完了。1試合を実行できます。':'出塁率は0.01〜0.6、長打率は0.1〜0.6の範囲ですべての項目を入力してください。'; } }
+    function setLineupCollapsed(collapsed) { lineupBody.hidden=collapsed; toggleLineup.setAttribute('aria-expanded',String(!collapsed)); toggleLineup.textContent=collapsed?'打順入力を開く':'入力欄を閉じる'; update(); }
+    toggleLineup.addEventListener('click',()=>setLineupCollapsed(!lineupBody.hidden));
+    const RUNNER_LAYOUT = {
+      '走者なし':{first:false,second:false,third:false},
+      '一塁':{first:true,second:false,third:false},
+      '二塁':{first:false,second:true,third:false},
+      '一・二塁':{first:true,second:true,third:false},
+      '三塁':{first:false,second:false,third:true},
+      '一・三塁':{first:true,second:false,third:true},
+      '二・三塁':{first:false,second:true,third:true},
+      '満塁':{first:true,second:true,third:true}
+    };
+    function placeholder(text) { const p=document.createElement('p'); p.className='empty-chart-state'; p.textContent=text; return p; }
+    function annotateBattingOrder(gameTransitions) { let battingOrder=1; return gameTransitions.map(transition=>{ const annotated={...transition,battingOrder}; if (!transition.actionResult.startsWith('盗塁')) { battingOrder = battingOrder === 9 ? 1 : battingOrder + 1; } return annotated; }); }
+    function buildFrame(transition) {
+      const layout = RUNNER_LAYOUT[transition.runnerState] ?? {first:false,second:false,third:false};
+      const frame=document.createElement('div'); frame.className='frame';
+      const banner=document.createElement('p'); banner.className='frame-banner'; banner.textContent=transition.actionResult;
+      const diamond=document.createElement('div'); diamond.className='diamond';
+      [['second',layout.second],['first',layout.first],['third',layout.third]].forEach(([base,occupied])=>{ const marker=document.createElement('span'); marker.className=`base base-${base}${occupied?' occupied':''}`; diamond.append(marker); });
+      const batter=document.createElement('span'); batter.className='batter-order'; batter.textContent=`${transition.battingOrder}番打者`; diamond.append(batter);
+      const meta=document.createElement('div'); meta.className='frame-meta';
+      const outs='●'.repeat(transition.outCount)+'○'.repeat(3-transition.outCount);
+      [`${transition.inning}回`,`アウト ${outs}`,`得点 ${transition.cumulativeScore}`].forEach((text,index)=>{ const span=document.createElement('span'); span.textContent=text; if(index===1) span.className='out-count'; meta.append(span); });
+      frame.append(banner,diamond,meta);
+      return frame;
+    }
+    function stopFramePlayback() { if (frameTimer !== null) { clearInterval(frameTimer); frameTimer=null; } }
+    function playFrames(annotated) {
+      stopFramePlayback();
+      let index=0;
+      frameStage.replaceChildren(buildFrame(annotated[index]));
+      frameTimer=setInterval(()=>{ index+=1; if (index >= annotated.length) { stopFramePlayback(); return; } frameStage.replaceChildren(buildFrame(annotated[index])); }, frameDurationMillis);
+    }
+    function buildOrderTable(annotated) {
+      const plateAppearances = annotated.filter(t=>!t.actionResult.startsWith('盗塁'));
+      const innings = [...new Set(plateAppearances.map(t=>t.inning))].sort((a,b)=>a-b);
+      const results = new Map(plateAppearances.map(t=>[`${t.battingOrder}-${t.inning}`, t.actionResult]));
+      const table=document.createElement('table'); table.className='order-table';
+      const thead=document.createElement('thead'); const headRow=document.createElement('tr');
+      const corner=document.createElement('th'); corner.textContent='打順'; headRow.append(corner);
+      innings.forEach(inning=>{ const th=document.createElement('th'); th.scope='col'; th.textContent=`${inning}回`; headRow.append(th); });
+      thead.append(headRow);
+      const tbody=document.createElement('tbody');
+      for (let battingOrder=1; battingOrder <= 9; battingOrder+=1) {
+        const row=document.createElement('tr');
+        const label=document.createElement('th'); label.scope='row'; label.textContent=`${battingOrder}番`; row.append(label);
+        innings.forEach(inning=>{ const cell=document.createElement('td'); cell.textContent=results.get(`${battingOrder}-${inning}`) ?? ''; row.append(cell); });
+        tbody.append(row);
+      }
+      table.append(thead,tbody);
+      return table;
+    }
+    function renderGame(gameTransitions) {
+      stopFramePlayback();
+      if (!Array.isArray(gameTransitions) || gameTransitions.length === 0) {
+        frameStage.replaceChildren(placeholder('試合結果はありません。'));
+        orderTableScroll.replaceChildren(placeholder('試合結果はありません。'));
+        return;
+      }
+      const annotated = annotateBattingOrder(gameTransitions);
+      playFrames(annotated);
+      orderTableScroll.replaceChildren(buildOrderTable(annotated));
+    }
     toggleAllBunt.addEventListener('click',()=>{const enabled=!lineup.every(player=>player.buntEnabled);lineup.forEach(player=>{player.buntEnabled=enabled;});render();});
     toggleAllSteal.addEventListener('click',()=>{const enabled=!lineup.every(player=>player.stealEnabled);lineup.forEach(player=>{player.stealEnabled=enabled;});render();});
     resetAllPersonalities.addEventListener('click',()=>{lineup.forEach(player=>{player.personality='DEFAULT';});render();});
-    submit.addEventListener('click',async()=>{if(inFlight||!validLineup())return; inFlight=true;render();feedback.className='';feedback.textContent='試合を実行中…';try {const response=await fetch('/simulations/single-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lineup.map(player=>({hit_average:Number(player.hitAverage),sluggish:Number(player.sluggish),bunt_success_rate:Number(player.buntSuccessRate),steal_success_rate:Number(player.stealSuccessRate),bunt_enabled:player.buntEnabled,steal_enabled:player.stealEnabled,personality:player.personality})))});const data=await response.json();if(!response.ok)throw new Error(data.error||data.message||'リクエストに失敗しました。');renderTransitions(data.transitions);feedback.className='success';feedback.textContent='試合が終了しました。';}catch(error){feedback.className='error';feedback.textContent=error.message;}finally{inFlight=false;render();}});
+    submit.addEventListener('click',async()=>{if(inFlight||!validLineup())return; inFlight=true;render();feedback.className='';feedback.textContent='試合を実行中…';try {const response=await fetch('/simulations/single-game',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lineup.map(player=>({hit_average:Number(player.hitAverage),sluggish:Number(player.sluggish),bunt_success_rate:Number(player.buntSuccessRate),steal_success_rate:Number(player.stealSuccessRate),bunt_enabled:player.buntEnabled,steal_enabled:player.stealEnabled,personality:player.personality})))});const data=await response.json();if(!response.ok)throw new Error(data.error||data.message||'リクエストに失敗しました。');renderGame(data.transitions);setLineupCollapsed(true);feedback.className='success';feedback.textContent='試合が終了しました。';}catch(error){feedback.className='error';feedback.textContent=error.message;}finally{inFlight=false;render();}});
     render();
 </script>
 </body>

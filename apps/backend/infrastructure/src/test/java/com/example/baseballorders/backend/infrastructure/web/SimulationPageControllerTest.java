@@ -9,25 +9,36 @@ import org.junit.jupiter.api.Test;
 class SimulationPageControllerTest {
 
     @Test
-    @DisplayName("トップ画面を表示すると1試合実行画面を返す")
+    @DisplayName("1試合実行画面をアニメーション用フレーム間隔とともに返す")
     void showsSingleGamePage() {
         // given
-        var controller = new SimulationPageController();
+        var sut = new SimulationPageController(1000L);
 
         // when
-        var page = controller.index();
+        var page = sut.singleGame();
 
         // then
         assertAll(
                 () -> assertEquals("single-game", page.getViewName()),
-                () -> assertEquals(true, page.getModel().isEmpty()));
+                () -> assertEquals(1000L, page.getModel().get("frameDurationMillis")));
+    }
+
+    @Test
+    @DisplayName("トップ画面は大規模実行画面を返す")
+    void showsLargeScaleAtRoot() {
+        // given
+        var sut = new SimulationPageController(1000L);
+        // when
+        var page = sut.index();
+        // then
+        assertAll(() -> assertEquals("simulation", page.getViewName()));
     }
 
     @Test
     @DisplayName("大規模実行画面を表示すると既存の入力画面を返す")
     void showsLargeScaleSimulationPage() {
         // given
-        var controller = new SimulationPageController();
+        var controller = new SimulationPageController(1000L);
 
         // when
         var page = controller.largeScale();

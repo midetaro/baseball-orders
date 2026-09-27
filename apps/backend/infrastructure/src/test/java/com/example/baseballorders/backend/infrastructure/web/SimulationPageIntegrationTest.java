@@ -22,8 +22,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * 実物: HTTPサーバー、Spring Security、ローカルフォームログイン、SimulationPageController、SimulationGuidePageController、
  * LoginPageController、Thymeleaf。 モック: SqsTemplate。 担保する疎通: HTTP GET /login -> HTTP POST /login ->
  * 認証済みHTTP GET / -> Spring Security -> SimulationPageController -> Thymeleaf HTML応答。認証済みHTTP GET
- * /large-scale -> Spring Security -> SimulationPageController -> Thymeleaf HTML応答も担保する。担保しないもの:
- * SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
+ * /large-scale および /single-game -> Spring Security -> SimulationPageController -> Thymeleaf
+ * HTML応答も担保する。担保しないもの: SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -94,11 +94,13 @@ class SimulationPageIntegrationTest {
     }
 
     @Test
-    @DisplayName("トップ画面へアクセスすると1試合実行用の打順設定画面がHTMLで表示される")
+    @DisplayName("1試合実行画面へアクセスすると打順設定画面がHTMLで表示される")
     void rendersSingleGamePage() throws Exception {
         // given
         var request =
-                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/single-game"))
+                        .GET()
+                        .build();
 
         // when
         HttpResponse<String> response;
@@ -113,9 +115,12 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("<title>打順監督</title>")),
                 () -> assertTrue(response.body().contains("<h1>打順監督</h1>")),
                 () -> assertTrue(response.body().contains("1試合を実行")),
-                () -> assertTrue(response.body().contains("id=\"transitions\"")),
+                () -> assertTrue(response.body().contains("id=\"frame-stage\"")),
+                () -> assertTrue(response.body().contains("data-frame-duration-millis=\"1000\"")),
+                () -> assertTrue(response.body().contains("id=\"order-table-scroll\"")),
                 () -> assertTrue(response.body().contains("fetch('/simulations/single-game'")),
                 () -> assertTrue(response.body().contains("data.transitions")),
+                () -> assertTrue(response.body().contains("renderGame(data.transitions)")),
                 () -> assertTrue(response.body().contains("href=\"/large-scale\"")),
                 () -> assertFalse(response.body().contains("data.statistics")));
     }
@@ -125,9 +130,7 @@ class SimulationPageIntegrationTest {
     void rendersSimulationPage() throws Exception {
         // given
         var request =
-                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/large-scale"))
-                        .GET()
-                        .build();
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
 
         // when
         HttpResponse<String> response;
@@ -165,13 +168,13 @@ class SimulationPageIntegrationTest {
                 () ->
                         assertContainsPattern(
                                 response.body(),
-                                "key:'stealSuccessRate',label:'盗塁成功率',min:\\d+\\.\\d+,max:\\d+\\.\\d+"),
-                () -> assertTrue(response.body().contains("buntSuccessRate:[0,0.7]")),
+                                "key:'stealSuccessRate',label:'盗塁成功率',min:\\d+\\.\\d+,enabledKey"),
+                () -> assertTrue(response.body().contains("buntSuccessRate:[0,Infinity]")),
                 () ->
                         assertTrue(
                                 response.body()
                                         .contains(
-                                                "key:'buntSuccessRate',label:'バント成功率',min:0,max:0.7")),
+                                                "key:'buntSuccessRate',label:'バント成功率',min:0,enabledKey:'buntEnabled'")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
                 () -> assertTrue(response.body().contains("<h2 id=\"order-heading\">打順入力</h2>")),
                 () -> assertTrue(response.body().contains("id=\"toggle-all-bunt\"")),
@@ -187,16 +190,8 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
                 () -> assertFalse(response.body().toLowerCase().contains("pitcher")),
                 () -> assertTrue(response.body().contains("function validLineup()")),
-                () ->
-                        assertTrue(
-                                response.body()
-                                        .contains(
-                                                "lineup.reduce((sum,player)=>sum+Number(player.hitAverage),0)/lineup.length<=0.35")),
-                () ->
-                        assertTrue(
-                                response.body()
-                                        .contains(
-                                                "lineup.reduce((sum,player)=>sum+Number(player.sluggish),0)/lineup.length<=0.4")),
+                () -> assertFalse(response.body().contains("lineup.length<=0.35")),
+                () -> assertFalse(response.body().contains("lineup.length<=0.4")),
                 () -> assertTrue(response.body().contains("本塁打")),
                 () -> assertTrue(response.body().contains("ソロ")),
                 () -> assertTrue(response.body().contains("ツーラン")),
@@ -237,7 +232,7 @@ class SimulationPageIntegrationTest {
                                         .contains(
                                                 "input.value.startsWith('.') ? `0${input.value}` : input.value")),
                 () -> assertTrue(response.body().contains(".section-head {")),
-                () -> assertTrue(response.body().contains("hasAtMostTwoDecimalPlaces")),
+                () -> assertFalse(response.body().contains("hasAtMostTwoDecimalPlaces")),
                 () -> assertTrue(response.body().contains("class=\"simulation-workspace\"")),
                 () -> assertTrue(response.body().contains("'homeRunCount'")),
                 () -> assertTrue(response.body().contains("scoreDistribution")),
@@ -290,7 +285,7 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("id=\"reset-all-personalities\"")),
                 () -> assertTrue(response.body().contains("性格")),
                 () -> assertTrue(response.body().contains("DEFAULT:'標準'")),
-                () -> assertTrue(response.body().contains("EAGER_SLUGGISH:'ブンブン丸'")),
+                () -> assertTrue(response.body().contains("EAGER_SLUGGISH:'長距離砲'")),
                 () -> assertFalse(response.body().contains("EAGER_SLUGGISH:'長打重視'")),
                 () -> assertTrue(response.body().contains("EAGER_STEAL:'盗塁重視'")),
                 () -> assertTrue(response.body().contains("EAGER_BUNT:'バント重視'")),
@@ -331,7 +326,7 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("性格による違い")),
                 () -> assertTrue(response.body().contains("標準")),
                 () -> assertTrue(response.body().contains("盗塁は通常の頻度、バントは無死のときに試みます")),
-                () -> assertTrue(response.body().contains("ブンブン丸")),
+                () -> assertTrue(response.body().contains("長距離砲")),
                 () -> assertTrue(response.body().contains("標準より本塁打の割合が増える")),
                 () -> assertTrue(response.body().contains("盗塁重視")),
                 () -> assertTrue(response.body().contains("標準より一塁・二塁走者の盗塁を試みやすくなります")),

@@ -34,10 +34,10 @@ assert.ok(html.includes("hitAverage:'0.28',sluggish:'0.40'"), '下位打線に�
 assert.ok(html.includes("buntSuccessRate:'0.70',stealSuccessRate:'0.70'"), 'バントと盗塁の成功率の初期値を7割にする');
 assert.ok(!html.includes("stealSuccessRate:'.500'"), '盗塁成功率の初期値を役割ごとに変えない');
 assert.ok(!html.includes("buntSuccessRate:'0.80',stealSuccessRate:'0.80'"), 'バントと盗塁の成功率の初期値を8割にしない');
-assert.ok(html.includes("buntSuccessRate:[0,0.7], stealSuccessRate:[0.1,0.7]"), 'バントと盗塁の成功率を7割以下に制限する');
+assert.ok(html.includes("buntSuccessRate:[0,Infinity], stealSuccessRate:[0.1,Infinity]"), 'バントと盗塁の成功率に上限を設けない');
 assert.ok(html.includes("function validLineup()"), '打順全体の入力制約を検証する');
-assert.ok(html.includes("lineup.reduce((sum,player)=>sum+Number(player.hitAverage),0)/lineup.length<=0.35"), '出塁率の平均を3割5分以下に制限する');
-assert.ok(html.includes("lineup.reduce((sum,player)=>sum+Number(player.sluggish),0)/lineup.length<=0.4"), '長打率の平均を4割以下に制限する');
+assert.ok(!html.includes("lineup.length<=0.35"), '出塁率の平均に上限を設けない');
+assert.ok(!html.includes("lineup.length<=0.4"), '長打率の平均に上限を設けない');
 assert.ok(html.includes("input.step='0.01'"), '数値入力は小数第2位刻みにする');
 assert.ok(html.includes("key:'hitAverage',label:'出塁率',min:0.01,max:0.6"), '出塁率の上限を60%にする');
 assert.ok(html.includes('function formatPercentage(value)'), '入力値を小数第2位に整形する');
@@ -45,7 +45,7 @@ assert.ok(html.includes('Number(value).toFixed(2)'), '小数第2位のゼロを�
 assert.ok(html.includes("input.addEventListener('change'"), '入力の確定時に小数第2位へ整形する');
 assert.ok(!html.includes("hitAverage:'.32'"), '小数点前のゼロを省略しない');
 assert.ok(html.includes("input.value.startsWith('.') ? `0${input.value}` : input.value"), '入力時も小数点前のゼロを表示する');
-assert.ok(html.includes('hasAtMostTwoDecimalPlaces'), '小数第3位以降の入力では実行できないようにする');
+assert.ok(!html.includes('hasAtMostTwoDecimalPlaces'), '小数第3位以降の入力を制限しない');
 assert.ok(html.includes('本塁打の内訳'), '本塁打統計を構造化して表示する');
 assert.ok(html.includes('id="hit-count"'), '総安打数を表示する');
 assert.ok(html.indexOf('id="hit-count"') < html.indexOf('id="home-run-count"'), '総安打数を本塁打の上に表示する');
@@ -112,16 +112,17 @@ assert.ok(!html.includes('Baseball Orders / Simulator'), '旧サービス名を�
 assert.ok(!html.includes('LINEUP<br>BUILDER'), '旧見出しを画面から除去する');
 assert.ok(!html.includes('id="results" aria-labelledby="results-heading" hidden'), '初期表示から結果の表示ラベルを隠さない');
 assert.ok(!html.includes('id="home-run-empty-state" hidden'), '初期表示から本塁打なしの表示ラベルを隠さない');
-assert.match(html, /\.simulation-workspace\s*\{\s*display:\s*grid;/, '広い画面では打順入力と結果を横並びにする');
+assert.match(html, /\.simulation-workspace\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*1fr;/, '打順入力と結果を画面幅によらず縦に並べる');
 assert.ok(!html.includes("const labelElement=document.createElement('label');"), '各入力セルに列名を重複表示しない');
 assert.ok(html.includes("input.setAttribute('aria-label',field.label);"), '列見出しを視覚的に重複させず入力の名称を提供する');
 for (const [field, minimum, maximum] of [
   ["key:'hitAverage'", 'min:0.01', 'max:0.6'],
-  ["key:'sluggish'", 'min:0.1', 'max:0.6'],
-  ["key:'stealSuccessRate'", 'min:0.1', 'max:0.7']
+  ["key:'sluggish'", 'min:0.1', 'max:0.6']
 ]) {
   assert.ok(html.includes(field) && html.includes(minimum) && html.includes(maximum), `${field}の入力範囲を画面で制御する`);
 }
+assert.ok(html.includes("key:'stealSuccessRate',label:'盗塁成功率',min:0.1,enabledKey:'stealEnabled'"), '盗塁成功率は下限のみを画面で制御する');
+assert.ok(!html.includes("key:'stealSuccessRate',label:'盗塁成功率',min:0.1,max:"), '盗塁成功率に上限を設けない');
 assert.ok(html.includes("bunt_enabled:player.buntEnabled"), 'バント可否をAPIへ送る');
 assert.ok(html.includes("steal_enabled:player.stealEnabled"), '盗塁可否をAPIへ送る');
 assert.ok(html.includes("bunt_success_rate:Number(player.buntSuccessRate)"), 'バント成功率をAPIへ送る');
@@ -157,7 +158,10 @@ assert.ok(!html.includes('results.hidden'), '結果パネル全体を毎回消�
 assert.ok(html.includes('class="histogram-scroll"'), '得点分布のバー本数が多くても横スクロールで読める幅を確保する');
 assert.match(html, /\.histogram-scroll\s*\{\s*overflow-x:\s*auto;/, '得点分布ヒストグラムを横スクロール可能にする');
 assert.match(html, /\.histogram-bar\s*\{[^}]*flex:\s*0 0 40px;/, '得点分布の棒を固定幅にして詰まりすぎを防ぐ');
-assert.match(html, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(420px,\s*1\.05fr\)/, '結果パネルに入力パネル以上の幅を割り当てる');
+assert.ok(
+  !/@media[^}]*\{\s*\.simulation-workspace\s*\{\s*grid-template-columns/s.test(html),
+  '縦並びが既定のため画面幅切り替え用のグリッド定義を残さない'
+);
 
 // --- 結果画面の可読性改善（Phase2: 内訳グループの折りたたみ・失敗色の統一） ---
 assert.match(html, /--amber:\s*#ffb12b/, 'バント失敗系統の識別用にアンバーの変数を追加する');
@@ -167,5 +171,31 @@ for (const heading of ['安打の内訳', '本塁打の内訳', 'バントの内
 assert.ok((html.match(/<details class="statistics-group" open>/g) ?? []).length === 4, '内訳4グループを初期状態では展開したまま折りたたみ可能にする');
 assert.ok(html.includes('<h3 class="group-heading">得点サマリー'), '得点サマリーは折りたたまず常に見出しをh3で表示する');
 assert.ok(!html.includes('<summary class="group-heading">得点サマリー'), '得点サマリーはdetails/summaryに変更しない');
+
+// --- 実行後に打順入力欄を自動で折りたたみ、結果を見やすくする ---
+assert.ok(
+  html.includes('id="lineup-body"'),
+  '打順入力欄を折りたたみ可能な領域にする'
+);
+assert.ok(
+  html.includes('id="toggle-lineup"'),
+  '打順入力欄の開閉トグルボタンを用意する'
+);
+assert.ok(
+  html.includes('function setLineupCollapsed('),
+  '折りたたみ状態を切り替える関数を用意する'
+);
+assert.ok(
+  html.includes("toggleLineup.addEventListener('click',()=>setLineupCollapsed(!lineupBody.hidden))"),
+  'トグルボタンで開閉を手動切り替えできる'
+);
+assert.ok(
+  html.includes('renderResults(data.statistics);setLineupCollapsed(true);'),
+  'シミュレーションが成功したら打順入力欄を自動で折りたたむ'
+);
+assert.ok(
+  html.includes('submit.disabled=inFlight || !complete || lineupBody.hidden;'),
+  '打順入力欄が閉じている間はシミュレーション実行ボタンを押せなくする'
+);
 
 console.log('PASS: 直接入力、必須値・率の範囲制御、バント選択の送信');

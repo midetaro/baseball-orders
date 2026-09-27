@@ -1,6 +1,6 @@
 # Feature name
 
-Status: todo
+Status: done
 
 ## Goal
 - 1試合実行の結果を描画する機能を追加する

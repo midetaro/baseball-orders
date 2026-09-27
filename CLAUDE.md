@@ -21,10 +21,10 @@ should be reviewable as an isolated diff before merging back.
 ### Skills — same skills, `.claude/skills`
 
 `.agents/skills/baseball-orders-development`, `baseball-orders-test`,
-`baseball-orders-review`, and `simulator-guide-sync` are symlinked under
-`.claude/skills/` so Claude Code's `Skill` tool can discover and invoke them by
-the same names. Use them exactly as `AGENTS.md` and `docs/codex-graph.md`
-describe.
+`baseball-orders-review`, `baseball-orders-screen-review`, and
+`simulator-guide-sync` are symlinked under `.claude/skills/` so Claude Code's
+`Skill` tool can discover and invoke them by the same names. Use them exactly
+as `AGENTS.md` and `docs/codex-graph.md` describe.
 
 ### Permissions
 
