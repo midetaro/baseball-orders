@@ -4,18 +4,26 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mockStatic;
 
-import com.example.baseballorders.simulator.domain.play.BattingResult;
-import com.example.baseballorders.simulator.domain.play.BuntResult;
-import com.example.baseballorders.simulator.domain.play.OutCount;
-import com.example.baseballorders.simulator.domain.play.StealResult;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.play.*;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsRecorder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 class BatterEntityTest {
+
+    private static BatterEntity homeRunBatter() {
+        return new BatterEntity(
+                0.3f,
+                0.4f,
+                0.75f,
+                0.85f,
+                SimulationRulesTestData.strategies().longDistanceAtBat(),
+                SimulationRulesTestData.strategies().noSteal(),
+                SimulationRulesTestData.strategies().noBunt());
+    }
 
     @Test
     @DisplayName("バントすると打者のバント成功率を戦略に渡して結果を返す")
@@ -27,9 +35,9 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.noSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().noSteal(),
+                        SimulationRulesTestData.strategies().standardBunt());
 
         var statisticsRecorder = new GameStatisticsRecorder();
 
@@ -40,13 +48,14 @@ class BatterEntityTest {
         BuntResult result;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.1f);
-            result = observedBatter.bunt(OutCount.NO_OUT);
+            result = observedBatter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
         }
 
         // then
         assertAll(
                 () -> assertEquals(BuntResult.SUCCESS, result),
-                () -> assertEquals(1, statisticsRecorder.snapshot().buntCount()));
+                () -> assertEquals(1, statisticsRecorder.snapshot().buntCount()),
+                () -> assertEquals(1, statisticsRecorder.snapshot().advancingBuntCount()));
     }
 
     @Test
@@ -59,9 +68,9 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.eagerSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().eagerSteal(),
+                        SimulationRulesTestData.strategies().standardBunt());
 
         var statisticsRecorder = new GameStatisticsRecorder();
 
@@ -75,7 +84,8 @@ class BatterEntityTest {
         // then
         assertAll(
                 () -> assertEquals(StealResult.SUCCESS, result),
-                () -> assertEquals(1, statisticsRecorder.snapshot().stealCount()));
+                () -> assertEquals(1, statisticsRecorder.snapshot().stealCount()),
+                () -> assertEquals(1, statisticsRecorder.snapshot().stealToSecondCount()));
     }
 
     @Test
@@ -88,7 +98,7 @@ class BatterEntityTest {
         // when
         BattingResult result;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.23f);
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.29f);
             result = batter.observedBy(statisticsRecorder).swing(2);
         }
 
@@ -109,9 +119,9 @@ class BatterEntityTest {
                         0.4f,
                         0.75f,
                         0.85f,
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.noSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().noSteal(),
+                        SimulationRulesTestData.strategies().standardBunt());
         var statisticsRecorder = new GameStatisticsRecorder();
 
         // when
@@ -119,7 +129,7 @@ class BatterEntityTest {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.99f, 0.99f);
             var observedBatter = batter.observedBy(statisticsRecorder);
             observedBatter.swing(0);
-            observedBatter.bunt(OutCount.NO_OUT);
+            observedBatter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
             observedBatter.stealToDouble();
             observedBatter.stealToTriple();
         }
@@ -141,7 +151,7 @@ class BatterEntityTest {
         // when
         BattingResult result;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.23f);
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.29f);
             result = batter.swing(1);
         }
 
@@ -150,16 +160,5 @@ class BatterEntityTest {
                 () -> assertEquals(BattingResult.HIT_HOMER, result),
                 () -> assertEquals(1, statisticsRecorder.snapshot().homeRunCount()),
                 () -> assertEquals(1, statisticsRecorder.snapshot().twoRunHomeRunCount()));
-    }
-
-    private static BatterEntity homeRunBatter() {
-        return new BatterEntity(
-                0.3f,
-                0.4f,
-                0.75f,
-                0.85f,
-                BehaviorStrategies.longDistanceAtBat(),
-                BehaviorStrategies.noSteal(),
-                BehaviorStrategies.noBunt());
     }
 }

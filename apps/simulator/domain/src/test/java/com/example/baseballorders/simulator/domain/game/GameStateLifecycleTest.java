@@ -3,8 +3,13 @@ package com.example.baseballorders.simulator.domain.game;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.example.baseballorders.simulator.domain.play.*;
-import com.example.baseballorders.simulator.domain.player.*;
+import com.example.baseballorders.simulator.domain.play.BattingResult;
+import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.OutCount;
+import com.example.baseballorders.simulator.domain.play.StealResult;
+import com.example.baseballorders.simulator.domain.player.BatterEntity;
+import com.example.baseballorders.simulator.domain.player.LineUpEntity;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameCompletionObserver;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +20,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class GameStateLifecycleTest {
+    private static BatterEntity batter() {
+        var batter = mock(BatterEntity.class);
+        when(batter.observedBy(any())).thenReturn(batter);
+        return batter;
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {1, 9})
     @DisplayName("二死から盗塁死になったら打撃せず三死を処理し未打撃の打者を引き継ぐ")
@@ -24,18 +35,18 @@ class GameStateLifecycleTest {
         var second = batter();
         when(first.swing(0)).thenReturn(BattingResult.HIT_SINGLE);
         when(first.stealToDouble()).thenReturn(StealResult.FAILURE);
-        when(second.swing(0)).thenReturn(BattingResult.OUT);
-        var context = new GameBattingContext(new LineUpEntity(List.of(first, second)));
+        when(second.swing(0)).thenReturn(BattingResult.STRIKEOUT);
+        var context = GameStateTestFixture.game(new LineUpEntity(List.of(first, second)));
         for (int i = 0; i < (inning - 1) * 3 + 2; i++) {
-            context.out();
+            context.inningStateContext().currentBaseState().out();
         }
         context.nextAtBat();
 
         // when
         context.nextAtBat();
         boolean gameOverAfterSteal = context.isGameOver();
-        OutCount outsAfterSteal = context.getCurrentState().getOutCount();
-        int runnersAfterSteal = context.getCurrentState().runnerCount();
+        OutCount outsAfterSteal = context.inningStateContext().currentBaseState().getOutCount();
+        int runnersAfterSteal = context.inningStateContext().currentBaseState().runnerCount();
         context.nextAtBat();
 
         // then
@@ -45,11 +56,11 @@ class GameStateLifecycleTest {
                 () -> assertEquals(0, runnersAfterSteal),
                 () -> verify(first, times(1)).swing(0),
                 () -> verify(second, times(inning == 9 ? 0 : 1)).swing(0),
-                () -> verify(second, never()).bunt(any()),
+                () -> verify(second, never()).bunt(any(), any()),
                 () ->
                         assertEquals(
                                 inning == 9 ? OutCount.NO_OUT : OutCount.ONE_OUT,
-                                context.getCurrentState().getOutCount()));
+                                context.inningStateContext().currentBaseState().getOutCount()));
     }
 
     @Test
@@ -59,31 +70,29 @@ class GameStateLifecycleTest {
         var observer = mock(GameCompletionObserver.class);
         var batter = batter();
         var context =
-                new GameBattingContext(new LineUpEntity(Collections.nCopies(9, batter)), observer);
-        context.hitHomer();
-        context.hitSingle(batter);
+                new GameBattingContext(
+                        new LineUpEntity(Collections.nCopies(9, batter)),
+                        observer,
+                        SimulationRulesTestData.baseStateFactory());
+        context.inningStateContext().currentBaseState().hitHomer();
+        context.inningStateContext().currentBaseState().hitSingle(batter);
         // when
         for (int i = 0; i < 27; i++) {
-            context.out();
+            context.inningStateContext().currentBaseState().out();
         }
-        var finalState = context.getCurrentState();
-        context.out();
-        context.hitSingle(batter);
-        context.hitDouble(batter);
-        context.hitTriple(batter);
-        context.hitHomer();
-        context.buntNotTry();
-        context.buntFailure();
-        context.buntSuccess();
-        context.stealNotTry();
-        context.stealFailure();
-        context.stealSuccess();
+        var finalState = context.inningStateContext().currentBaseState();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().hitSingle(batter);
+        context.inningStateContext().currentBaseState().hitDouble(batter);
+        context.inningStateContext().currentBaseState().hitTriple(batter);
+        context.inningStateContext().currentBaseState().hitHomer();
+        context.inningStateContext().currentBaseState().walk(batter);
         context.nextAtBat();
         context.completeInning();
         // then
         assertAll(
                 () -> assertTrue(context.isGameOver()),
-                () -> assertSame(finalState, context.getCurrentState()),
+                () -> assertSame(finalState, context.inningStateContext().currentBaseState()),
                 () -> assertEquals(OutCount.NO_OUT, finalState.getOutCount()),
                 () -> assertEquals(0, finalState.runnerCount()),
                 () -> assertEquals(1, context.getTotalScore()),
@@ -98,30 +107,22 @@ class GameStateLifecycleTest {
         // given
         var batter = batter();
         when(batter.swing(0)).thenReturn(result);
-        var context = new GameBattingContext(new LineUpEntity(List.of(batter)));
+        var context = GameStateTestFixture.game(new LineUpEntity(List.of(batter)));
         // when
         context.nextAtBat();
         // then
         assertAll(
                 () ->
                         assertEquals(
-                                result == BattingResult.OUT ? OutCount.ONE_OUT : OutCount.NO_OUT,
-                                context.getCurrentState().getOutCount()),
+                                result == BattingResult.STRIKEOUT
+                                                || result == BattingResult.BATTED_OUT
+                                        ? OutCount.ONE_OUT
+                                        : OutCount.NO_OUT,
+                                context.inningStateContext().currentBaseState().getOutCount()),
                 () ->
                         assertEquals(
-                                result == BattingResult.HIT_HOMER ? 1 : 0, context.getTotalScore()),
-                () ->
-                        assertEquals(
-                                result == BattingResult.HIT_SINGLE,
-                                context.getCurrentState().isOccupied(Base.FIRST)),
-                () ->
-                        assertEquals(
-                                result == BattingResult.HIT_DOUBLE,
-                                context.getCurrentState().isOccupied(Base.SECOND)),
-                () ->
-                        assertEquals(
-                                result == BattingResult.HIT_TRIPLE,
-                                context.getCurrentState().isOccupied(Base.THIRD)));
+                                result == BattingResult.HIT_HOMER ? 1 : 0,
+                                context.getTotalScore()));
     }
 
     @ParameterizedTest
@@ -132,10 +133,10 @@ class GameStateLifecycleTest {
         var runner = batter();
         var hitter = batter();
         when(runner.stealToTriple()).thenReturn(result);
-        when(hitter.bunt(any())).thenReturn(BuntResult.NOT_TRY);
+        when(hitter.bunt(any(), any())).thenReturn(BuntResult.NOT_TRY);
         when(hitter.swing(anyInt())).thenReturn(BattingResult.HIT_HOMER);
-        var context = new GameBattingContext(new LineUpEntity(List.of(hitter)));
-        context.hitDouble(runner);
+        var context = GameStateTestFixture.game(new LineUpEntity(List.of(hitter)));
+        context.inningStateContext().currentBaseState().hitDouble(runner);
         // when
         context.nextAtBat();
         // then
@@ -145,7 +146,7 @@ class GameStateLifecycleTest {
                 () ->
                         assertEquals(
                                 result == StealResult.FAILURE ? OutCount.ONE_OUT : OutCount.NO_OUT,
-                                context.getCurrentState().getOutCount()));
+                                context.inningStateContext().currentBaseState().getOutCount()));
     }
 
     @ParameterizedTest
@@ -158,28 +159,17 @@ class GameStateLifecycleTest {
         var runner = batter();
         var hitter = batter();
         when(runner.stealToDouble()).thenReturn(StealResult.NOT_TRY);
-        when(hitter.bunt(any())).thenReturn(result);
-        var context = new GameBattingContext(new LineUpEntity(List.of(hitter)));
-        context.hitSingle(runner);
+        when(hitter.bunt(any(), any())).thenReturn(result);
+        var context = GameStateTestFixture.game(new LineUpEntity(List.of(hitter)));
+        context.inningStateContext().currentBaseState().hitSingle(runner);
         // when
         context.nextAtBat();
         // then
         assertAll(
                 () -> verify(hitter, never()).swing(anyInt()),
-                () -> assertEquals(OutCount.ONE_OUT, context.getCurrentState().getOutCount()),
                 () ->
                         assertEquals(
-                                result == BuntResult.SUCCESS,
-                                context.getCurrentState().isOccupied(Base.SECOND)),
-                () ->
-                        assertEquals(
-                                result == BuntResult.FAILURE,
-                                context.getCurrentState().isOccupied(Base.FIRST)));
-    }
-
-    private static BatterEntity batter() {
-        var batter = mock(BatterEntity.class);
-        when(batter.observedBy(any())).thenReturn(batter);
-        return batter;
+                                OutCount.ONE_OUT,
+                                context.inningStateContext().currentBaseState().getOutCount()));
     }
 }

@@ -20,19 +20,18 @@ public interface BasesState {
     /** 現在の走者数を返す。 @return 塁上の走者数 */
     int runnerCount();
 
-    /**
-     * 指定した塁の走者の有無を返す。
-     *
-     * @param base 確認する塁
-     * @return 走者がいればtrue
-     */
-    boolean isOccupied(Base base);
-
     /** アウトを一つ加算し、三死ならイニング状態を初期化して試合を進める。 */
     void out();
 
     /** 打撃による凡退を適用し、三死目でなければ一定確率で先頭走者だけを進める。 */
     void battingOut();
+
+    /**
+     * 四球を適用し、一塁から連続して埋まっている走者だけを押し出す。
+     *
+     * @param batter 四球の打者
+     */
+    void walk(BatterEntity batter);
 
     /** 単打による進塁・得点を適用する。 @param batter 単打を打った打者 */
     void hitSingle(BatterEntity batter);

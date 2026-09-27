@@ -6,8 +6,8 @@ import static org.mockito.Mockito.mockStatic;
 
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatistics;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,6 +18,17 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 class GameBattingContextTest {
+
+    private static BatterEntity battingOutBatter() {
+        return new BatterEntity(
+                0.3f,
+                0.4f,
+                0.7f,
+                0.8f,
+                SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                SimulationRulesTestData.strategies().noSteal(),
+                SimulationRulesTestData.strategies().noBunt());
+    }
 
     @Test
     @DisplayName("試合終了時に最終得点と統計を一度だけObserverへ通知する")
@@ -33,20 +44,21 @@ class GameBattingContextTest {
                             notificationCount.incrementAndGet();
                             observedScore.set(totalScore);
                             observedStatistics.set(gameStatistics);
-                        });
+                        },
+                        SimulationRulesTestData.baseStateFactory());
 
         // when
         for (int inning = 0; inning < 8; inning++) {
-            context.out();
-            context.out();
-            context.out();
+            context.inningStateContext().currentBaseState().out();
+            context.inningStateContext().currentBaseState().out();
+            context.inningStateContext().currentBaseState().out();
         }
-        context.out();
-        context.out();
-        context.out();
-        context.out();
-        context.out();
-        context.out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
+        context.inningStateContext().currentBaseState().out();
 
         // then
         assertAll(
@@ -67,14 +79,14 @@ class GameBattingContextTest {
                         0.4f,
                         0.7f,
                         0.8f,
-                        BehaviorStrategies.longDistanceAtBat(),
-                        BehaviorStrategies.noSteal(),
-                        BehaviorStrategies.noBunt());
-        var context = new GameBattingContext(new LineUpEntity(Collections.nCopies(9, batter)));
+                        SimulationRulesTestData.strategies().longDistanceAtBat(),
+                        SimulationRulesTestData.strategies().noSteal(),
+                        SimulationRulesTestData.strategies().noBunt());
+        var context = GameStateTestFixture.game(new LineUpEntity(Collections.nCopies(9, batter)));
 
         // when
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.23f);
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.29f);
             context.nextAtBat();
         }
 
@@ -84,14 +96,22 @@ class GameBattingContextTest {
                 () -> assertEquals(1, context.getGameStatistics().soloHomeRunCount()));
     }
 
-    private static BatterEntity battingOutBatter() {
-        return new BatterEntity(
-                0.3f,
-                0.4f,
-                0.7f,
-                0.8f,
-                BehaviorStrategies.middleDistanceHittingStrategy(),
-                BehaviorStrategies.noSteal(),
-                BehaviorStrategies.noBunt());
+    @Test
+    @DisplayName("イニング終了時にイニングContextの得点と回数を試合へ反映する")
+    void reflectsCompletedInningIntoGame() {
+        // given
+        var sut =
+                GameStateTestFixture.game(
+                        new LineUpEntity(Collections.nCopies(9, battingOutBatter())));
+        sut.inningStateContext().currentBaseState().hitHomer();
+
+        // when
+        sut.inningStateContext().currentBaseState().out();
+        sut.inningStateContext().currentBaseState().out();
+        sut.inningStateContext().currentBaseState().out();
+
+        // then
+        assertAll(
+                () -> assertEquals(2, sut.getInning()), () -> assertEquals(1, sut.getTotalScore()));
     }
 }

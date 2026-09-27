@@ -7,8 +7,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
-import com.example.baseballorders.backend.domain.PlayerData;
+import com.example.baseballorders.backend.application.dto.SimulationRequestBuilder;
+import com.example.baseballorders.backend.domain.PlayerDataBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
+import com.example.baseballorders.backend.domain.SimulationMode;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import java.util.List;
@@ -46,15 +48,16 @@ class SqsSimulatorMessagePublisherTest {
                         UUID.randomUUID(),
                         "1",
                         List.of(
-                                new PlayerData(
-                                        "選手1",
-                                        0.321f,
-                                        0.456f,
-                                        0.789f,
-                                        true,
-                                        0.678f,
-                                        true,
-                                        PlayerPersonality.EAGER_BUNT)));
+                                PlayerDataBuilder.playerData()
+                                        .name("選手1")
+                                        .hitAverage(0.321f)
+                                        .sluggish(0.400f)
+                                        .buntSuccessRate(0.700f)
+                                        .buntEnabled(true)
+                                        .stealSuccessRate(0.678f)
+                                        .stealEnabled(true)
+                                        .personality(PlayerPersonality.EAGER_BUNT)
+                                        .build()));
         var messageCaptor = ArgumentCaptor.forClass(SimulationRequestMessage.class);
 
         // when
@@ -65,7 +68,7 @@ class SqsSimulatorMessagePublisherTest {
         assertAll(
                 () ->
                         assertEquals(
-                                0.789f,
+                                0.700f,
                                 messageCaptor.getValue().players().getFirst().buntSuccessRate()),
                 () ->
                         assertEquals(
@@ -77,6 +80,37 @@ class SqsSimulatorMessagePublisherTest {
                 () ->
                         assertEquals(
                                 com.example.baseballorders.messaging.PlayerPersonality.EAGER_BUNT,
-                                messageCaptor.getValue().players().getFirst().personality()));
+                                messageCaptor.getValue().players().getFirst().personality()),
+                () ->
+                        assertEquals(
+                                com.example.baseballorders.messaging.PitcherPersonality.DEFAULT,
+                                messageCaptor.getValue().pitcherPersonality()));
+    }
+
+    @Test
+    @DisplayName("backendの1試合実行モードを共有contractの1試合実行モードへ変換する")
+    void mapsSingleGameModeToSharedRequest() {
+        // given
+        SqsTemplate sqsTemplate = mock(SqsTemplate.class);
+        var publisher = new SqsSimulatorMessagePublisher(sqsTemplate, "test-request-queue");
+        var request =
+                SimulationRequestBuilder.simulationRequest()
+                        .simulationId(UUID.randomUUID())
+                        .version("1")
+                        .players(List.of())
+                        .mode(SimulationMode.SINGLE_GAME_RUN)
+                        .build();
+        var messageCaptor = ArgumentCaptor.forClass(SimulationRequestMessage.class);
+
+        // when
+        publisher.publish(request);
+
+        // then
+        verify(sqsTemplate).send(eq("test-request-queue"), messageCaptor.capture());
+        assertAll(
+                () ->
+                        assertEquals(
+                                com.example.baseballorders.messaging.SimulationMode.SINGLE_GAME_RUN,
+                                messageCaptor.getValue().mode()));
     }
 }

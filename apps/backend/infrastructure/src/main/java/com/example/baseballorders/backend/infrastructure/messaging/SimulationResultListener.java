@@ -1,7 +1,9 @@
 package com.example.baseballorders.backend.infrastructure.messaging;
 
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
-import com.example.baseballorders.backend.domain.SimulationResult;
+import com.example.baseballorders.backend.domain.GameTransitionBuilder;
+import com.example.baseballorders.backend.domain.SimulationResultBuilder;
+import com.example.baseballorders.backend.domain.StatisticsBuilder;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import java.util.Objects;
@@ -19,6 +21,17 @@ public final class SimulationResultListener {
 
     private final WaitingResultRegistry registry;
 
+    private static com.example.baseballorders.backend.domain.GameTransition toDomainTransition(
+            com.example.baseballorders.messaging.GameTransitionMessage transition) {
+        return GameTransitionBuilder.gameTransition()
+                .inning(transition.inning())
+                .actionResult(transition.actionResult())
+                .outCount(transition.outCount())
+                .cumulativeScore(transition.cumulativeScore())
+                .runnerState(transition.runnerState())
+                .build();
+    }
+
     /**
      * SQS結果をbackend結果へ変換し、同じsimulation IDの待機を完了する。
      *
@@ -27,30 +40,65 @@ public final class SimulationResultListener {
     @SqsListener("${simulation.sqs.result-queue-name}")
     public void receive(SimulationResultMessage message) {
         LOGGER.info("simulation result received simulationId={}", message.simulationId());
-        var statistics =
+        var scoreStatistics =
                 Objects.requireNonNull(
-                        message.statistics(), "simulation result statistics must not be null");
-        LOGGER.info("試合数={}", statistics.gameCount());
+                        message.gameScoreStatistics(),
+                        "simulation result statistics must not be null");
+        var contentStatistics =
+                Objects.requireNonNull(
+                        message.gameContentStatistics(),
+                        "simulation result statistics must not be null");
+        LOGGER.info("試合数={}", scoreStatistics.gameCount());
         boolean completed =
                 registry.complete(
                         message.simulationId(),
-                        new SimulationResult(
-                                message.simulationId(),
-                                new SimulationResult.Statistics(
-                                        statistics.averageScore(),
-                                        statistics.medianScore(),
-                                        statistics.maximumScore(),
-                                        statistics.gameCount(),
-                                        statistics.scoreDistribution(),
-                                        statistics.homeRunCount(),
-                                        statistics.soloHomeRunCount(),
-                                        statistics.twoRunHomeRunCount(),
-                                        statistics.threeRunHomeRunCount(),
-                                        statistics.grandSlamCount(),
-                                        statistics.buntCount(),
-                                        statistics.stealCount(),
-                                        statistics.buntFailureCount(),
-                                        statistics.stealFailureCount())));
+                        SimulationResultBuilder.simulationResult()
+                                .simulationId(message.simulationId())
+                                .statistics(
+                                        StatisticsBuilder.statistics()
+                                                .averageScore(scoreStatistics.averageScore())
+                                                .medianScore(scoreStatistics.medianScore())
+                                                .maximumScore(scoreStatistics.maximumScore())
+                                                .gameCount(scoreStatistics.gameCount())
+                                                .scoreDistribution(
+                                                        scoreStatistics.scoreDistribution())
+                                                .hitCount(contentStatistics.hitCount())
+                                                .singleHitCount(contentStatistics.singleHitCount())
+                                                .doubleHitCount(contentStatistics.doubleHitCount())
+                                                .tripleHitCount(contentStatistics.tripleHitCount())
+                                                .homeRunCount(contentStatistics.homeRunCount())
+                                                .soloHomeRunCount(
+                                                        contentStatistics.soloHomeRunCount())
+                                                .twoRunHomeRunCount(
+                                                        contentStatistics.twoRunHomeRunCount())
+                                                .threeRunHomeRunCount(
+                                                        contentStatistics.threeRunHomeRunCount())
+                                                .grandSlamCount(contentStatistics.grandSlamCount())
+                                                .buntCount(contentStatistics.buntCount())
+                                                .stealCount(contentStatistics.stealCount())
+                                                .buntFailureCount(
+                                                        contentStatistics.buntFailureCount())
+                                                .stealFailureCount(
+                                                        contentStatistics.stealFailureCount())
+                                                .advancingBuntCount(
+                                                        contentStatistics.advancingBuntCount())
+                                                .squeezeBuntCount(
+                                                        contentStatistics.squeezeBuntCount())
+                                                .advancingBuntFailureCount(
+                                                        contentStatistics
+                                                                .advancingBuntFailureCount())
+                                                .squeezeBuntFailureCount(
+                                                        contentStatistics.squeezeBuntFailureCount())
+                                                .stealToSecondCount(
+                                                        contentStatistics.stealToSecondCount())
+                                                .stealToThirdCount(
+                                                        contentStatistics.stealToThirdCount())
+                                                .build())
+                                .transitions(
+                                        message.gameTransitions().stream()
+                                                .map(SimulationResultListener::toDomainTransition)
+                                                .toList())
+                                .build());
         if (!completed) {
             LOGGER.warn("simulation result ignored simulationId={}", message.simulationId());
         }

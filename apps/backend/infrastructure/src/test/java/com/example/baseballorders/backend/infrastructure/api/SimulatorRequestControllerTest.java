@@ -1,13 +1,17 @@
 package com.example.baseballorders.backend.infrastructure.api;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.baseballorders.backend.application.SimulationCoordinator;
+import com.example.baseballorders.backend.application.SimulationLimits;
+import com.example.baseballorders.backend.application.SimulationLimitsBuilder;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.domain.GameTransitionBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
+import com.example.baseballorders.backend.domain.SimulationMode;
 import com.example.baseballorders.backend.domain.SimulationResult;
+import com.example.baseballorders.backend.domain.SimulationResultBuilder;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,7 +46,8 @@ class SimulatorRequestControllerTest {
                                                     List.of(new SimulationResult.Result(0, 0)),
                                                     new SimulationResult.Statistics(0, 0, 0)));
                                 },
-                                registry));
+                                registry,
+                                limits()));
         var captor =
                 org.mockito.ArgumentCaptor.forClass(
                         com.example.baseballorders.messaging.SimulationRequestMessage.class);
@@ -54,7 +59,7 @@ class SimulatorRequestControllerTest {
                                 0.3f,
                                 0.4f,
                                 0.7f,
-                                0.8f,
+                                0.7f,
                                 buntEnabled,
                                 stealEnabled,
                                 PlayerPersonality.EAGER_STEAL)));
@@ -94,7 +99,8 @@ class SimulatorRequestControllerTest {
                                                 request.simulationId(),
                                                 List.of(new SimulationResult.Result(5, 4)),
                                                 new SimulationResult.Statistics(5, 5, 5))),
-                        registry);
+                        registry,
+                        limits());
         var controller = new SimulatorRequestController(coordinator);
 
         // when
@@ -104,7 +110,7 @@ class SimulatorRequestControllerTest {
                                 .mapToObj(
                                         number ->
                                                 new PlayerInputRequest(
-                                                        0.300f, 0.450f, 0.700f, 0.800f, true, true))
+                                                        0.300f, 0.400f, 0.700f, 0.700f, true, true))
                                 .toList());
 
         // then
@@ -114,12 +120,60 @@ class SimulatorRequestControllerTest {
     }
 
     @Test
+    @DisplayName("1試合実行エンドポイントは1試合実行モードで要求し状況推移を含む結果を返す")
+    void returnsSingleGameResultWithTransitions() {
+        // given
+        var registry = new WaitingResultRegistry();
+        var requestedMode = new java.util.concurrent.atomic.AtomicReference<SimulationMode>();
+        var coordinator =
+                new SimulationCoordinator(
+                        request -> {
+                            requestedMode.set(request.mode());
+                            registry.complete(
+                                    request.simulationId(),
+                                    SimulationResultBuilder.simulationResult()
+                                            .simulationId(request.simulationId())
+                                            .statistics(new SimulationResult.Statistics(5, 5, 5))
+                                            .transitions(
+                                                    List.of(
+                                                            GameTransitionBuilder.gameTransition()
+                                                                    .inning(1)
+                                                                    .actionResult("中前安打")
+                                                                    .outCount(0)
+                                                                    .cumulativeScore(0)
+                                                                    .runnerState("一塁")
+                                                                    .build()))
+                                            .build());
+                        },
+                        registry,
+                        limits());
+        var controller = new SimulatorRequestController(coordinator);
+
+        // when
+        SimulationResult result =
+                controller.sendSingleGame(
+                        java.util.stream.IntStream.rangeClosed(1, 9)
+                                .mapToObj(
+                                        number ->
+                                                new PlayerInputRequest(
+                                                        0.300f, 0.400f, 0.700f, 0.700f, true, true))
+                                .toList());
+
+        // then
+        assertAll(
+                () -> assertEquals(SimulationMode.SINGLE_GAME_RUN, requestedMode.get()),
+                () -> assertEquals(1, result.transitions().size()),
+                () -> assertEquals("中前安打", result.transitions().getFirst().actionResult()));
+    }
+
+    @Test
     @DisplayName("範囲外または未入力の打撃データを拒否する")
     void rejectsInvalidPlayerInput() {
         // given
         var registry = new WaitingResultRegistry();
         var controller =
-                new SimulatorRequestController(new SimulationCoordinator(request -> {}, registry));
+                new SimulatorRequestController(
+                        new SimulationCoordinator(request -> {}, registry, limits()));
 
         // when
         var hitAverageException =
@@ -129,7 +183,7 @@ class SimulatorRequestControllerTest {
                                 controller.send(
                                         playersWith(
                                                 new PlayerInputRequest(
-                                                        0.004f, 0.450f, 0.700f, 0.800f, false,
+                                                        -0.001f, 0.400f, 0.700f, 0.700f, false,
                                                         false))));
         var missingValueException =
                 assertThrows(
@@ -138,19 +192,45 @@ class SimulatorRequestControllerTest {
                                 controller.send(
                                         playersWith(
                                                 new PlayerInputRequest(
-                                                        0.300f, 0.450f, null, 0.800f, false,
+                                                        0.300f, 0.400f, null, 0.700f, false,
+                                                        false))));
+        var buntSuccessRateException =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () ->
+                                controller.send(
+                                        playersWith(
+                                                new PlayerInputRequest(
+                                                        0.300f, 0.400f, 0.701f, 0.700f, false,
+                                                        false))));
+        var stealSuccessRateException =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () ->
+                                controller.send(
+                                        playersWith(
+                                                new PlayerInputRequest(
+                                                        0.300f, 0.400f, 0.700f, 0.701f, false,
                                                         false))));
 
         // then
         assertAll(
                 () ->
                         assertEquals(
-                                "hitAverage must be between 0.005 and 0.4",
+                                "hitAverage must be between 0.0 and 1.0",
                                 hitAverageException.getMessage()),
                 () ->
                         assertEquals(
                                 "bunt_success_rate must not be null",
-                                missingValueException.getMessage()));
+                                missingValueException.getMessage()),
+                () ->
+                        assertEquals(
+                                "buntSuccessRate must be between 0.0 and 0.7",
+                                buntSuccessRateException.getMessage()),
+                () ->
+                        assertEquals(
+                                "stealSuccessRate must be between 0.0 and 0.7",
+                                stealSuccessRateException.getMessage()));
     }
 
     @Test
@@ -166,6 +246,16 @@ class SimulatorRequestControllerTest {
         assertAll(
                 () -> assertEquals(PostMapping.class, postMapping.annotationType()),
                 () -> assertEquals(SimulationResult.class, method.getReturnType()));
+    }
+
+    /** application.ymlの既定値と同じ上限を組み立てる。 */
+    private static SimulationLimits limits() {
+        return SimulationLimitsBuilder.simulationLimits()
+                .resultTimeout(Duration.ofSeconds(30))
+                .maximumAverageHitAverage(0.350f)
+                .maximumAverageSluggish(0.400f)
+                .maximumSuccessRate(0.700f)
+                .build();
     }
 
     private List<PlayerInputRequest> playersWith(PlayerInputRequest player) {

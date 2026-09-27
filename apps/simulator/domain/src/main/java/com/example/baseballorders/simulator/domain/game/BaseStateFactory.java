@@ -1,99 +1,33 @@
 package com.example.baseballorders.simulator.domain.game;
 
+import com.example.baseballorders.simulator.domain.rule.RunnerAdvanceProbabilities;
+import lombok.RequiredArgsConstructor;
+
 /** 試合ごとのStateを初期生成する、状態を持たないファクトリ。 */
+@RequiredArgsConstructor
 public class BaseStateFactory {
-    /**
-     * NoBasesStateを生成する。
-     *
-     * @param context 所属する試合
-     * @param inningState 試合内で共有するイニング状態
-     * @return 指定された試合に所属するState
-     */
-    public NoBasesState createNoBasesState(GameBattingContext context, InningState inningState) {
-        return new NoBasesState(context, inningState);
-    }
+
+    /** 生成するStateへ渡す凡退時の進塁確率。設定から供給される。 */
+    private final RunnerAdvanceProbabilities runnerAdvanceProbabilities;
 
     /**
-     * SingleBasesStateを生成する。
+     * 走者配置に対応するStateを生成する。
      *
-     * @param context 所属する試合
-     * @param inningState 試合内で共有するイニング状態
+     * @param context 所属するイニング状態
+     * @param configuration 一塁・二塁・三塁の走者配置ビットマスク
      * @return 指定された試合に所属するState
      */
-    public SingleBasesState createSingleBasesState(
-            GameBattingContext context, InningState inningState) {
-        return new SingleBasesState(context, inningState);
-    }
-
-    /**
-     * DoubleBaseStateを生成する。
-     *
-     * @param context 所属する試合
-     * @param inningState 試合内で共有するイニング状態
-     * @return 指定された試合に所属するState
-     */
-    public DoubleBaseState createDoubleBaseState(
-            GameBattingContext context, InningState inningState) {
-        return new DoubleBaseState(context, inningState);
-    }
-
-    /**
-     * FirstDoubleBaseStateを生成する。
-     *
-     * @param context 所属する試合
-     * @param inningState 試合内で共有するイニング状態
-     * @return 指定された試合に所属するState
-     */
-    public FirstDoubleBaseState createFirstDoubleBaseState(
-            GameBattingContext context, InningState inningState) {
-        return new FirstDoubleBaseState(context, inningState);
-    }
-
-    /**
-     * ThirdBaseStateを生成する。
-     *
-     * @param context 所属する試合
-     * @param inningState 試合内で共有するイニング状態
-     * @return 指定された試合に所属するState
-     */
-    public ThirdBaseState createThirdBaseState(
-            GameBattingContext context, InningState inningState) {
-        return new ThirdBaseState(context, inningState);
-    }
-
-    /**
-     * FirstThirdBaseStateを生成する。
-     *
-     * @param context 所属する試合
-     * @param inningState 試合内で共有するイニング状態
-     * @return 指定された試合に所属するState
-     */
-    public FirstThirdBaseState createFirstThirdBaseState(
-            GameBattingContext context, InningState inningState) {
-        return new FirstThirdBaseState(context, inningState);
-    }
-
-    /**
-     * DoubleThirdBaseStateを生成する。
-     *
-     * @param context 所属する試合
-     * @param inningState 試合内で共有するイニング状態
-     * @return 指定された試合に所属するState
-     */
-    public DoubleThirdBaseState createDoubleThirdBaseState(
-            GameBattingContext context, InningState inningState) {
-        return new DoubleThirdBaseState(context, inningState);
-    }
-
-    /**
-     * FullBasesStateを生成する。
-     *
-     * @param context 所属する試合
-     * @param inningState 試合内で共有するイニング状態
-     * @return 指定された試合に所属するState
-     */
-    public FullBasesState createFullBasesState(
-            GameBattingContext context, InningState inningState) {
-        return new FullBasesState(context, inningState);
+    public BasesState create(InningStateContext context, int configuration) {
+        return switch (configuration) {
+            case 0 -> new NoBasesState(context, runnerAdvanceProbabilities);
+            case 1 -> new SingleBasesState(context, runnerAdvanceProbabilities);
+            case 2 -> new DoubleBaseState(context, runnerAdvanceProbabilities);
+            case 3 -> new FirstDoubleBaseState(context, runnerAdvanceProbabilities);
+            case 4 -> new ThirdBaseState(context, runnerAdvanceProbabilities);
+            case 5 -> new FirstThirdBaseState(context, runnerAdvanceProbabilities);
+            case 6 -> new DoubleThirdBaseState(context, runnerAdvanceProbabilities);
+            case 7 -> new FullBasesState(context, runnerAdvanceProbabilities);
+            default -> throw new IllegalArgumentException("不正な走者配置: " + configuration);
+        };
     }
 }

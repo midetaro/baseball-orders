@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": ["~/.gradle"],
+    "allow": [
+      "Bash",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "NotebookEdit"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "4"
+  }
+}

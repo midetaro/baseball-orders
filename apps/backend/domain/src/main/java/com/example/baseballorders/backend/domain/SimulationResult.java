@@ -12,13 +12,37 @@ import org.jilt.BuilderStyle;
  *
  * @param simulationId シミュレーションの相関ID
  * @param statistics 全試合の得点統計
+ * @param transitions 1試合実行における状況推移のリスト
  */
 @Builder(style = BuilderStyle.STAGED)
-public record SimulationResult(UUID simulationId, Statistics statistics) {
-    /** 統計情報を必須にしてシミュレーション結果を作成する。 */
+public record SimulationResult(
+        UUID simulationId, Statistics statistics, List<GameTransition> transitions) {
+    /** 統計情報を必須にし、状況推移リストが未指定の場合は空リストへ補完してシミュレーション結果を作成する。 */
     public SimulationResult {
         Objects.requireNonNull(simulationId, "simulationId must not be null");
         Objects.requireNonNull(statistics, "statistics must not be null");
+        transitions = transitions == null ? List.of() : List.copyOf(transitions);
+    }
+
+    /**
+     * Creates a result with no game transitions for compatibility with existing callers.
+     *
+     * @param simulationId シミュレーションの相関ID
+     * @param statistics 全試合の得点統計
+     */
+    public SimulationResult(UUID simulationId, Statistics statistics) {
+        this(simulationId, statistics, List.of());
+    }
+
+    /**
+     * Creates a result while discarding legacy per-game results.
+     *
+     * @param simulationId シミュレーションの相関ID
+     * @param ignoredResults 廃止された試合ごとの結果
+     * @param statistics 画面表示用の集計統計
+     */
+    public SimulationResult(UUID simulationId, List<Result> ignoredResults, Statistics statistics) {
+        this(simulationId, statistics, List.of());
     }
 
     /**
@@ -38,6 +62,12 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
      * @param stealCount 成功盗塁数
      * @param buntFailureCount 失敗バント数
      * @param stealFailureCount 失敗盗塁数
+     * @param advancingBuntCount 進塁バント成功数
+     * @param squeezeBuntCount スクイズ成功数
+     * @param advancingBuntFailureCount 進塁バント失敗数
+     * @param squeezeBuntFailureCount スクイズ失敗数
+     * @param stealToSecondCount 二盗成功数
+     * @param stealToThirdCount 三盗成功数
      */
     @Builder(style = BuilderStyle.STAGED)
     public record Statistics(
@@ -46,6 +76,10 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
             int maximumScore,
             int gameCount,
             Map<Integer, Integer> scoreDistribution,
+            int hitCount,
+            int singleHitCount,
+            int doubleHitCount,
+            int tripleHitCount,
             int homeRunCount,
             int soloHomeRunCount,
             int twoRunHomeRunCount,
@@ -54,7 +88,13 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
             int buntCount,
             int stealCount,
             int buntFailureCount,
-            int stealFailureCount) {
+            int stealFailureCount,
+            int advancingBuntCount,
+            int squeezeBuntCount,
+            int advancingBuntFailureCount,
+            int squeezeBuntFailureCount,
+            int stealToSecondCount,
+            int stealToThirdCount) {
 
         /**
          * Creates statistics with no failed tactical-play counts.
@@ -64,6 +104,10 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
          * @param maximumScore 最大得点
          * @param gameCount シミュレーションした試合数
          * @param scoreDistribution 得点ごとの試合数
+         * @param hitCount 総安打数
+         * @param singleHitCount 一塁打数
+         * @param doubleHitCount 二塁打数
+         * @param tripleHitCount 三塁打数
          * @param homeRunCount 本塁打数
          * @param soloHomeRunCount ソロ本塁打数
          * @param twoRunHomeRunCount ツーラン本塁打数
@@ -91,6 +135,10 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
                     maximumScore,
                     gameCount,
                     scoreDistribution,
+                    0,
+                    0,
+                    0,
+                    0,
                     homeRunCount,
                     soloHomeRunCount,
                     twoRunHomeRunCount,
@@ -98,6 +146,12 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
                     grandSlamCount,
                     buntCount,
                     stealCount,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
                     0,
                     0);
         }
@@ -110,19 +164,32 @@ public record SimulationResult(UUID simulationId, Statistics statistics) {
          * @param maximumScore 最大得点
          */
         public Statistics(double averageScore, double medianScore, int maximumScore) {
-            this(averageScore, medianScore, maximumScore, 0, Map.of(), 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            this(
+                    averageScore,
+                    medianScore,
+                    maximumScore,
+                    0,
+                    Map.of(),
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0);
         }
-    }
-
-    /**
-     * Creates a result while discarding legacy per-game results.
-     *
-     * @param simulationId シミュレーションの相関ID
-     * @param ignoredResults 廃止された試合ごとの結果
-     * @param statistics 画面表示用の集計統計
-     */
-    public SimulationResult(UUID simulationId, List<Result> ignoredResults, Statistics statistics) {
-        this(simulationId, statistics);
     }
 
     /** 廃止された1試合の結果を表す移行用型。 */

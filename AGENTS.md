@@ -8,6 +8,11 @@
 - `infra/aws-terraform`: native HCL for AWS messaging resources.
 - `.agents/skills/baseball-orders-development`: task workflow and verification commands.
 
+Before a broad implementation search, use `docs/architecture.md` to select the
+smallest relevant production path and test set. Then confirm that focused path
+against the current source and Gradle files; the map is navigation guidance, not
+a substitute for the code.
+
 Read the nearest nested `AGENTS.md` before changing an application. Use the
 `baseball-orders-development` skill for Java, SQS-contract, cross-application, or
 Terraform changes.
@@ -19,6 +24,80 @@ Terraform changes.
 - Do not wait on interactive commands, foreground servers, credentials, or selectors.
 - Keep SQS wire types in `libs/messaging-contract`; do not create application-local copies.
 - Keep domain and application models independent from transport types unless the boundary mapper itself consumes a shared message.
+- Before implementation, inspect the related production path, tests, specifications,
+  and build files. Protect existing code and all uncommitted user changes; never
+  discard or overwrite work outside the assigned scope.
+
+## Application and module boundaries
+
+- `apps/backend` owns the synchronous HTTP API, server-rendered Thymeleaf UI,
+  application coordination, result waiting, and SQS adapters. It must not contain
+  simulator business rules or directly depend on simulator classes.
+- `apps/simulator` owns simulation use cases and business rules and consumes and
+  produces SQS messages through adapters. It must not directly depend on backend
+  classes.
+- `libs/messaging-contract` is limited to the existing SQS wire contract. Do not
+  move domain models, persistence entities, forms, or view models into it.
+- `integration-test` verifies the assembled backend -> SQS -> simulator -> SQS ->
+  backend path. `infra` owns deployment and local-environment definitions.
+- Within each application, dependencies point inward: `infrastructure ->
+  application -> domain`. Existing direct dependencies declared in Gradle are the
+  authority; do not introduce a reverse dependency. Framework, Thymeleaf, SQS,
+  HTTP, and persistence details are forbidden in domain code.
+- Controllers and listeners translate and delegate. They must not implement
+  business rules. Keep transport DTOs, backend internal models, simulator internal
+  models, and persistence entities separate at their boundaries.
+- Preserve the current modules, composite builds, and dependency directions. Do
+  not add, remove, rename, or move modules to complete a feature.
+
+## Feature graph workflow
+
+Use the custom agents in `.codex/agents` for a feature that crosses independent
+areas. Small, single-area changes should remain in the parent agent when delegation
+would cost more coordination than it saves.
+
+1. Run `explorer` first to map the execution path, dependencies, tests, candidate
+   files, and conflicts without editing.
+2. The parent agent turns that evidence into a dependency graph and assigns each
+   writable file to exactly one node.
+3. Run only independent worker nodes concurrently. A node that consumes another
+   node's contract or output must wait for that upstream node.
+4. Wait for every worker to finish. A blocked, failed, or incomplete worker is not
+   a successful node.
+5. Run `integrator` only after all required workers are complete.
+6. Run `reviewer` in a fresh context using the specification, final diff, and test
+   evidence rather than worker conversation history.
+7. Fix blocking findings, rerun affected checks, then run the full verification.
+
+Prefer parallel read-heavy exploration, tests, and review. Parallelization being
+possible does not make it worthwhile: do not parallelize tightly coupled edits or
+small changes. Never assign the same file to multiple agents at the same time.
+Give every writing agent an explicit writable file or directory scope. The parent
+agent must wait for all spawned agents before integration and final reporting.
+
+Each worker may perform at most five implementation loops: implement, run its
+owning-module tests, identify the failure, fix the single most fundamental cause,
+and rerun. Stop earlier when all tests and acceptance criteria pass, or stop and
+report when five loops are exhausted, an out-of-scope change is required, or an
+ambiguous decision would materially change behavior. Every worker reports:
+
+```text
+## Result
+
+- Status: completed | blocked | failed
+- Files changed:
+- Tests executed:
+- Test result:
+- Decisions:
+- Remaining risks:
+- Required follow-up:
+```
+
+The simulator's stochastic behavior must be reproducible for the same explicit
+seed and input when a feature introduces or changes seeded simulation. Do not add
+hidden entropy or replace a supplied seed. The current code still uses
+`Math.random()` and has no seed input; changing that public behavior requires an
+explicit feature specification rather than an incidental refactor.
 
 ## Module dependency protection
 
@@ -39,8 +118,19 @@ Terraform changes.
 5. For shared contracts, run verification for both applications.
 
 Use `./.agents/skills/baseball-orders-development/scripts/verify.sh` as the canonical verification entrypoint.
-When changing a repository skill, also run its official-validator wrapper,
-`./.agents/skills/baseball-orders-development/scripts/validate-skill.sh`.
+Use `baseball-orders-test` for deterministic test and static checks before
+`baseball-orders-review` assesses the completed feature diff. When changing a
+repository skill, validate each changed skill with the official
+`skill-creator/scripts/quick_validate.py`. Use the existing
+`./.agents/skills/baseball-orders-development/scripts/validate-skill.sh` wrapper
+for `baseball-orders-development`.
+
+In the simulator, every concrete class that implements an interface or extends
+an abstract class must have a dedicated test class named after that concrete
+class. Shared behavior tests may supplement those tests. Keep tunable numeric
+values in named properties where practical, with explicit local, dev, and prod
+profile values; retain numeric literals that express fixed rules or indexes in
+code. Run the checks provided by `baseball-orders-test` for these rules.
 
 ## Production Java
 
@@ -68,6 +158,10 @@ When changing a repository skill, also run its official-validator wrapper,
   exception. A `default` branch must never return a fallback value, silently do
   nothing, or handle ordinary control flow.
 - use `_` instead of `ignored` as a local variable name. 
+- use Staged Builders over `new`: Always use the Staged Builder pattern 
+  instead of direct instantiation (`new`) for value object creation 
+  to enforce compile-time safety and prevent missing required fields.
+
 
 ## コレクション集計におけるStream利用方針
 
@@ -127,6 +221,21 @@ scoreDistribution
   - 1回のStream処理に集計ロジックを集約したカスタムCollectorを使用する場合
   - 可読性上の理由から複数回走査が適切であり、性能上の影響を計測・確認済みの場合
 - ただし、許容事項に該当する場合でも、複数回走査の理由をコメントまたは設計書に残す。
+
+## 数値定数の構成ファイル化方針
+
+### 目的
+- 挙動を調整するための数値をコードのリテラルに埋め込むと、環境ごとの調整にコード変更とビルドが必要になり、変更の影響範囲も追跡しにくくなる。
+
+### 方針
+- しきい値・重み・確率・時間・上限など、チューニング対象になり得る数値定数は、原則としてコード中のリテラルではなく構成ファイル（`application.yml`/`application-{profile}.yml` 等）のプロパティとして定義する。
+- 各設定値は既存の local・dev・prod プロファイルごとに明示的な値を持たせる。
+- 配列やコレクションの添字、業務ルールそのものを表す不変の数値（例: 3ストライク、9イニングなど、ゲーム定義上変更され得ない値）はコード内のリテラルのままでよい。
+- 設定値はコンストラクタ注入でフィールドとして保持し、既存メソッド（`@Bean` メソッドや static ユーティリティメソッドを含む）のシグネチャに引数を追加して受け渡すことは禁止する。static ユーティリティに設定が必要になった場合はインスタンス化する。
+
+### 対象外
+- 単体テストのみで使うテスト用の数値。
+- 恒久的な設定として管理する必要のない、一度きりのスクリプトやマイグレーションの数値。
 
 ## Completion report
 
@@ -188,11 +297,99 @@ A feature is not complete until all of the following are done:
 1. Acceptance criteria are satisfied.
 2. Focused tests pass.
 3. Owning application verification passes.
-4. Run the baseball-orders-review skill against the current feature diff.
+4. Run the baseball-orders-test skill, then the baseball-orders-review skill
+   against the current feature diff.
 5. Fix all blocking findings.
 6. Re-run affected tests.
-7. Report completion.
-8. Recommend starting a new Codex session before beginning another feature.
+7. Open a pull request linked to the tracking GitHub Issue, per "Issue-driven
+   development" above.
+8. Confirm the pull request's CI succeeds, per "Pull request CI verification"
+   below.
+9. Report completion.
+10. Recommend starting a new Codex session before beginning another feature.
+
+## Issue-driven development
+
+- Development tasks are tracked as GitHub Issues in this repository (`gh issue
+  list`, `gh issue view <number>`), not only as documents under
+  `docs/features`.
+- Before starting implementation, identify the GitHub Issue this session is
+  working on. If the user does not name one, ask for the issue number, or
+  create the issue first with `gh issue create` before writing code.
+- Do not open a pull request for tracked development work without an
+  associated issue. A small, incidental fix explicitly scoped by the user in
+  the same session is the only exception.
+- When implementation is complete, deterministic verification has passed, and
+  `baseball-orders-test` then `baseball-orders-review` have run against the
+  diff per "Feature completion" below, open the pull request with `gh pr
+  create` and link it to the issue by including `Closes #<issue-number>` (or
+  `Refs #<issue-number>` when the PR does not fully close the issue) in the PR
+  body.
+- If a `docs/features` specification document is also used for a feature that
+  has a tracking issue, keep the two in sync: mark the specification
+  `status: done` and close the issue together, in the same session that merges
+  the PR.
+
+## Pull request CI verification
+
+- After opening or updating a pull request, a task is not complete until that
+  pull request's CI has succeeded. Do not report completion, mark a feature
+  specification `status: done`, or close the tracking issue while CI is still
+  running, unknown, or failing.
+- Check CI status with `gh pr checks <pr-number>` (add `--watch` to block until
+  checks finish, since this is monitoring your own PR's automated checks, not
+  an unrelated interactive command). Re-check after pushing new commits.
+- If CI fails, continue the same task: inspect the failure with `gh run view
+  --log-failed` (or the equivalent check output), fix the root cause, push a
+  new commit to the same branch, and re-check CI. Do not amend or force-push to
+  hide a failed run unless the user explicitly asks. Do not consider the task
+  complete until CI succeeds.
+- Only report completion, per "Feature completion" above, once `gh pr checks`
+  shows every required check passing.
+
+## Git branch workflow
+
+Do not create or use additional Git worktrees. Work in the existing repository
+checkout and isolate each GitHub Issue's changes on its own branch.
+
+- Only start implementation for an issue that is currently open. Confirm with
+  `gh issue view <number> --json state` (or `gh issue list --state open`)
+  before creating its branch; never branch off a closed issue.
+- One issue maps to exactly one branch. Do not reuse an issue's branch for a
+  second, unrelated issue or mix changes from multiple issues on one branch.
+- Create the issue branch from `develop` in the existing checkout:
+  `git switch -c feature/<date>[-<n>] develop`
+  (see `git branch` for this repository's existing `feature/YYYYMMDD[-n]`
+  naming).
+- Work on only one issue at a time in this checkout. Finish, review, and merge
+  its pull request before starting another issue from the updated `develop`.
+  Independent worker nodes within the same issue may still run concurrently
+  under the feature graph workflow and exclusive file-ownership rules.
+- Before switching branches, inspect `git status` and preserve all uncommitted
+  and unpushed work. Do not discard changes or carry unrelated changes into
+  another issue's branch. If existing work prevents a safe switch, report the
+  blocker rather than creating a worktree as a workaround.
+- After an issue's pull request is merged, switch back to `develop` and delete
+  the now-merged local branch with `git branch -d <branch>`.
+- Do not remove pre-existing worktrees as part of this workflow change. Any
+  cleanup must preserve uncommitted and unpushed work and be explicitly scoped.
+
+## Screen screenshots in pull requests
+
+- When a change alters what a backend Thymeleaf screen (`apps/backend/infrastructure/src/main/resources/templates/*.html`)
+  looks like — template, inline style, or a presentation view-model change —
+  capture a screenshot of every changed screen, per the representative PC
+  (1280×800) and smartphone (390×844) viewports used by the
+  `baseball-orders-screen-review` skill, and paste them into the pull request
+  description before opening or updating it.
+- Capture screenshots against the real rendered screen (through its actual
+  route, controller, and authentication), not a static file opened directly.
+- A change that only affects non-visual behavior (backend logic, SQS
+  messaging, Terraform, tests) with no template/CSS/view-model diff does not
+  require screenshots.
+- When updating an already-open pull request for a screen change made after
+  the PR was created, add the new screenshots to that PR's description rather
+  than leaving them undocumented.
 
 ## Feature specification status
 

@@ -6,8 +6,8 @@ import com.example.baseballorders.simulator.application.contract.SimulationResul
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.DisplayName;
@@ -15,9 +15,11 @@ import org.junit.jupiter.api.Test;
 
 class SimulateGameUseCaseTest {
 
-    HittingStrategy hittingStrategy = BehaviorStrategies.middleDistanceHittingStrategy();
+    HittingStrategy hittingStrategy =
+            SimulationRulesTestData.strategies().middleDistanceHittingStrategy();
 
-    SimulateGameUseCase simulateGameUseCase = new SimulateGameUseCase(3);
+    SimulateGameUseCase simulateGameUseCase =
+            new SimulateGameUseCase(3, SimulationRulesTestData.baseStateFactory());
 
     @DisplayName("9人の打順でシミュレーションを実行すると表示用の集計統計を返す")
     @Test
@@ -33,8 +35,9 @@ class SimulateGameUseCaseTest {
                                                 0.7f,
                                                 0.8f,
                                                 hittingStrategy,
-                                                BehaviorStrategies.noSteal(),
-                                                BehaviorStrategies.standardBunt()))
+                                                SimulationRulesTestData.strategies().noSteal(),
+                                                SimulationRulesTestData.strategies()
+                                                        .standardBunt()))
                         .toList();
         // when
         SimulationResult result = simulateGameUseCase.invoke(new LineUpEntity(batterEntities));

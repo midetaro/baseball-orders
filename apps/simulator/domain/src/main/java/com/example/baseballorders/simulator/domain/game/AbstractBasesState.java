@@ -3,29 +3,29 @@ package com.example.baseballorders.simulator.domain.game;
 import com.example.baseballorders.simulator.domain.game.capability.StealableToDoubleBase;
 import com.example.baseballorders.simulator.domain.game.capability.StealableToTripleBase;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerator;
+import com.example.baseballorders.simulator.domain.rule.RunnerAdvanceProbabilities;
 import lombok.RequiredArgsConstructor;
 
 /** 試合とイニング状態を共有するStateの共通基底実装。 */
 @RequiredArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public abstract class AbstractBasesState {
 
-    private static final float ADVANCE_FROM_FIRST_PROBABILITY = 0.2f;
-    private static final float ADVANCE_FROM_SECOND_PROBABILITY = 0.2f;
-    private static final float ADVANCE_FROM_THIRD_PROBABILITY = 0.1f;
+    protected final InningStateContext context;
 
-    protected final GameBattingContext context;
-    private final InningState inningState;
+    /** 凡退時の進塁確率。設定から供給される。 */
+    private final RunnerAdvanceProbabilities runnerAdvanceProbabilities;
 
     public final BatterEntity runnerAt(Base base) {
-        return inningState.runnerAt(base);
+        return context.runnerAt(base);
     }
 
     public final OutCount getOutCount() {
-        return inningState.getOutCount();
+        return context.outCount();
     }
 
     public final int runnerCount() {
@@ -34,19 +34,22 @@ public abstract class AbstractBasesState {
                 + (isOccupied(Base.THIRD) ? 1 : 0);
     }
 
-    public final boolean isOccupied(Base base) {
+    private boolean isOccupied(Base base) {
         return runnerAt(base) != null;
     }
 
     public final void out() {
-        inningState.addOut();
+        if (context.isGameOver()) {
+            return;
+        }
+        context.addOut();
         boolean completed =
                 switch (getOutCount()) {
                     case NO_OUT, ONE_OUT, TWO_OUT -> false;
                     case THREE_OUT -> true;
                 };
         if (completed) {
-            inningState.reset();
+            context.reset();
             context.changeState(0);
             context.completeInning();
         }
@@ -68,14 +71,26 @@ public abstract class AbstractBasesState {
         out();
     }
 
-    protected final BuntResult attemptBunt(BatterEntity batter) {
-        return batter.bunt(inningState.getOutCount());
+    protected final BuntResult attemptBunt(BatterEntity batter, BuntType buntType) {
+        return batter.bunt(context.outCount(), buntType);
     }
 
+    /**
+     * 全てのconcreteクラスで同じ処理をするので一律で定義
+     *
+     * <p>templateパターン
+     *
+     * @param batter 打者
+     */
     protected final void applyHitTriple(BatterEntity batter) {
         transition(null, null, batter, runnerCount());
     }
 
+    /**
+     * 全てのconcreteクラスで同じ処理をするので一律で定義
+     *
+     * <p>templateパターン
+     */
     protected final void applyHitHomer() {
         transition(null, null, null, runnerCount() + 1L);
     }
@@ -115,7 +130,7 @@ public abstract class AbstractBasesState {
         } else {
             transition(runnerAt(Base.FIRST), null, runnerAt(Base.THIRD), 0);
         }
-        context.out();
+        out();
     }
 
     public final void stealSuccess() {
@@ -128,7 +143,10 @@ public abstract class AbstractBasesState {
 
     protected final void transition(
             BatterEntity first, BatterEntity second, BatterEntity third, long runs) {
-        inningState.place(first, second, third);
+        if (context.isGameOver()) {
+            return;
+        }
+        context.place(first, second, third);
         context.addScore(runs);
         int configuration =
                 (first == null ? 0 : 1) | (second == null ? 0 : 2) | (third == null ? 0 : 4);
@@ -147,9 +165,9 @@ public abstract class AbstractBasesState {
 
     private float advancementProbability(Base base) {
         return switch (base) {
-            case FIRST -> ADVANCE_FROM_FIRST_PROBABILITY;
-            case SECOND -> ADVANCE_FROM_SECOND_PROBABILITY;
-            case THIRD -> ADVANCE_FROM_THIRD_PROBABILITY;
+            case FIRST -> runnerAdvanceProbabilities.fromFirstProbability();
+            case SECOND -> runnerAdvanceProbabilities.fromSecondProbability();
+            case THIRD -> runnerAdvanceProbabilities.fromThirdProbability();
         };
     }
 

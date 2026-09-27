@@ -67,4 +67,8 @@ jobs:
 
       - name: Create execution plan
         # production 向けの変更予定を確認するだけで、terraform apply は実行しない。
-        run: terraform plan -input=false -var="environment=production"
+        run: >-
+          terraform plan -input=false
+          -var="environment=production"
+          -var="domain_name=${{ vars.DOMAIN_NAME }}"
+          -var="route53_zone_name=${{ vars.ROUTE53_ZONE_NAME }}"

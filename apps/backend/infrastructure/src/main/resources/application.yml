@@ -3,6 +3,29 @@ spring:
     default: local
   application:
     name: baseball-orders-backend
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:mem:baseball-orders;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+baseball-orders:
+  simulation:
+    result-timeout: ${SIMULATION_RESULT_TIMEOUT:30s}
+    maximum-average-hit-average: ${SIMULATION_MAXIMUM_AVERAGE_HIT_AVERAGE:0.35}
+    maximum-average-sluggish: ${SIMULATION_MAXIMUM_AVERAGE_SLUGGISH:0.4}
+    maximum-success-rate: ${SIMULATION_MAXIMUM_SUCCESS_RATE:0.7}
+  rendering:
+    single-game:
+      frame-duration-millis: ${SINGLE_GAME_FRAME_DURATION_MILLIS:1000}
+  security:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
+      client-secret: ${GOOGLE_CLIENT_SECRET:}
+    local-account:
+      minimum-password-length: ${LOCAL_ACCOUNT_MINIMUM_PASSWORD_LENGTH:12}
 spring.cloud.aws:
   region:
     static: ap-northeast-1

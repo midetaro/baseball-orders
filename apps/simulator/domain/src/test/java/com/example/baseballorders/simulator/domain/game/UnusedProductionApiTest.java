@@ -1,8 +1,6 @@
 package com.example.baseballorders.simulator.domain.game;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
@@ -13,25 +11,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class UnusedProductionApiTest {
-
-    @DisplayName("プロダクトコードに未使用のメソッドを定義しない")
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("unusedMethodTestCases")
-    void doesNotExposeUnusedMethod(
-            String description,
-            Class<?> targetClass,
-            String methodName,
-            Class<?>[] parameterTypes) {
-        // given
-        // when
-        NoSuchMethodException exception =
-                assertThrows(
-                        NoSuchMethodException.class,
-                        () -> targetClass.getDeclaredMethod(methodName, parameterTypes));
-
-        // then
-        assertAll(description, () -> assertTrue(exception.getMessage().contains(methodName)));
-    }
 
     static Stream<Arguments> unusedMethodTestCases() {
         return Stream.of(
@@ -95,5 +74,24 @@ class UnusedProductionApiTest {
                 arguments("打撃戦略 getter", BatterEntity.class, "getAtBatBehavior", new Class<?>[0]),
                 arguments("盗塁戦略 getter", BatterEntity.class, "getStealStrategy", new Class<?>[0]),
                 arguments("バント戦略 getter", BatterEntity.class, "getBuntStrategy", new Class<?>[0]));
+    }
+
+    @DisplayName("プロダクトコードに未使用のメソッドを定義しない")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("unusedMethodTestCases")
+    void doesNotExposeUnusedMethod(
+            String description,
+            Class<?> targetClass,
+            String methodName,
+            Class<?>[] parameterTypes) {
+        // given
+        // when
+        NoSuchMethodException exception =
+                assertThrows(
+                        NoSuchMethodException.class,
+                        () -> targetClass.getDeclaredMethod(methodName, parameterTypes));
+
+        // then
+        assertAll(description, () -> assertTrue(exception.getMessage().contains(methodName)));
     }
 }

@@ -1,11 +1,17 @@
 package com.example.baseballorders.simulator.infrastructure.messaging;
 
+import com.example.baseballorders.messaging.GameTransitionMessage;
+import com.example.baseballorders.messaging.GameTransitionMessageBuilder;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
+import com.example.baseballorders.messaging.SimulationResultMessageBuilder;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
+import com.example.baseballorders.simulator.application.usecase.SimulationRunMode;
+import com.example.baseballorders.simulator.domain.statistics.GameTransition;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,15 +28,14 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 @Slf4j
 public class SqsSimulationScheduler {
 
-    private static final int MAX_MESSAGES_PER_POLL = 10;
-    private static final int LONG_POLL_SECONDS = 10;
-
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
     private final SimulateGameUseCase simulateGameUseCase;
     private final LineUpMapper lineUpMapper;
     private final String requestQueueName;
     private final String resultQueueName;
+    private final int maxMessagesPerPoll;
+    private final int longPollSeconds;
 
     /**
      * Creates an SQS simulation scheduler.
@@ -41,6 +46,8 @@ public class SqsSimulationScheduler {
      * @param lineUpMapper application mapper from request data to the domain lineup
      * @param requestQueueName name of the simulation request queue
      * @param resultQueueName name of the simulation result queue
+     * @param maxMessagesPerPoll maximum requests received in one poll
+     * @param longPollSeconds maximum seconds spent waiting for a request
      */
     public SqsSimulationScheduler(
             SqsClient sqsClient,
@@ -48,13 +55,17 @@ public class SqsSimulationScheduler {
             SimulateGameUseCase simulateGameUseCase,
             LineUpMapper lineUpMapper,
             @Value("${simulation.sqs.request-queue-name}") String requestQueueName,
-            @Value("${simulation.sqs.result-queue-name}") String resultQueueName) {
+            @Value("${simulation.sqs.result-queue-name}") String resultQueueName,
+            @Value("${simulation.sqs.max-messages-per-poll}") int maxMessagesPerPoll,
+            @Value("${simulation.sqs.long-poll-seconds}") int longPollSeconds) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
         this.simulateGameUseCase = simulateGameUseCase;
         this.lineUpMapper = lineUpMapper;
         this.requestQueueName = requestQueueName;
         this.resultQueueName = resultQueueName;
+        this.maxMessagesPerPoll = maxMessagesPerPoll;
+        this.longPollSeconds = longPollSeconds;
     }
 
     /**
@@ -73,34 +84,57 @@ public class SqsSimulationScheduler {
                 sqsClient.receiveMessage(
                         ReceiveMessageRequest.builder()
                                 .queueUrl(requestQueueUrl)
-                                .waitTimeSeconds(LONG_POLL_SECONDS)
-                                .maxNumberOfMessages(MAX_MESSAGES_PER_POLL)
+                                .waitTimeSeconds(longPollSeconds)
+                                .maxNumberOfMessages(maxMessagesPerPoll)
                                 .build());
         for (var message : response.messages()) {
             try {
                 // 送信
                 SimulationRequestMessage request = deserialize(message.body());
                 SimulationResult simulationResult =
-                        simulateGameUseCase.invoke(lineUpMapper.map(request.players()));
+                        simulateGameUseCase.invoke(
+                                lineUpMapper.map(request.players()), toRunMode(request.mode()));
                 var resultMessage =
-                        new SimulationResultMessage(
-                                request.simulationId(),
-                                request.version(),
-                                new SimulationResultMessage.Statistics(
-                                        simulationResult.statistics().averageScore(),
-                                        simulationResult.statistics().medianScore(),
-                                        simulationResult.statistics().maximumScore(),
-                                        simulationResult.statistics().gameCount(),
-                                        simulationResult.statistics().scoreDistribution(),
-                                        simulationResult.statistics().homeRunCount(),
-                                        simulationResult.statistics().soloHomeRunCount(),
-                                        simulationResult.statistics().twoRunHomeRunCount(),
-                                        simulationResult.statistics().threeRunHomeRunCount(),
-                                        simulationResult.statistics().grandSlamCount(),
-                                        simulationResult.statistics().buntCount(),
-                                        simulationResult.statistics().stealCount(),
-                                        simulationResult.statistics().buntFailureCount(),
-                                        simulationResult.statistics().stealFailureCount()));
+                        SimulationResultMessageBuilder.simulationResultMessage()
+                                .simulationId(request.simulationId())
+                                .version(SimulationResultMessage.CURRENT_VERSION)
+                                .gameScoreStatistics(
+                                        new SimulationResultMessage.GameScoreStatistics(
+                                                simulationResult.statistics().averageScore(),
+                                                simulationResult.statistics().medianScore(),
+                                                simulationResult.statistics().maximumScore(),
+                                                simulationResult.statistics().gameCount(),
+                                                simulationResult.statistics().scoreDistribution()))
+                                .gameContentStatistics(
+                                        new SimulationResultMessage.GameContentStatistics(
+                                                simulationResult.statistics().hitCount(),
+                                                simulationResult.statistics().singleHitCount(),
+                                                simulationResult.statistics().doubleHitCount(),
+                                                simulationResult.statistics().tripleHitCount(),
+                                                simulationResult.statistics().homeRunCount(),
+                                                simulationResult.statistics().soloHomeRunCount(),
+                                                simulationResult.statistics().twoRunHomeRunCount(),
+                                                simulationResult
+                                                        .statistics()
+                                                        .threeRunHomeRunCount(),
+                                                simulationResult.statistics().grandSlamCount(),
+                                                simulationResult.statistics().buntCount(),
+                                                simulationResult.statistics().stealCount(),
+                                                simulationResult.statistics().buntFailureCount(),
+                                                simulationResult.statistics().stealFailureCount(),
+                                                simulationResult.statistics().advancingBuntCount(),
+                                                simulationResult.statistics().squeezeBuntCount(),
+                                                simulationResult
+                                                        .statistics()
+                                                        .advancingBuntFailureCount(),
+                                                simulationResult
+                                                        .statistics()
+                                                        .squeezeBuntFailureCount(),
+                                                simulationResult.statistics().stealToSecondCount(),
+                                                simulationResult.statistics().stealToThirdCount()))
+                                .gameTransitions(
+                                        toMessageTransitions(simulationResult.transitions()))
+                                .build();
                 sqsClient.sendMessage(
                         SendMessageRequest.builder()
                                 .queueUrl(resultQueueUrl)
@@ -118,6 +152,29 @@ public class SqsSimulationScheduler {
                         throwable);
             }
         }
+    }
+
+    private static SimulationRunMode toRunMode(
+            com.example.baseballorders.messaging.SimulationMode mode) {
+        return switch (mode) {
+            case LARGE_SCALE_RUN -> SimulationRunMode.LARGE_SCALE_RUN;
+            case SINGLE_GAME_RUN -> SimulationRunMode.SINGLE_GAME_RUN;
+        };
+    }
+
+    private static List<GameTransitionMessage> toMessageTransitions(
+            List<GameTransition> transitions) {
+        return transitions.stream().map(SqsSimulationScheduler::toMessageTransition).toList();
+    }
+
+    private static GameTransitionMessage toMessageTransition(GameTransition transition) {
+        return GameTransitionMessageBuilder.gameTransitionMessage()
+                .inning(transition.inning())
+                .actionResult(transition.actionResult())
+                .outCount(transition.outCount())
+                .cumulativeScore(transition.cumulativeScore())
+                .runnerState(transition.runnerState())
+                .build();
     }
 
     private SimulationRequestMessage deserialize(String body) {

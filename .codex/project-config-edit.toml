@@ -1,0 +1,8 @@
+name = "project-config-edit"
+description = "Edit project configuration files, including .codex."
+sandbox_mode = "workspace-write"
+
+developer_instructions = """
+Project configuration files, including .codex files, may be edited when necessary.
+Keep changes limited to the requested configuration.
+"""

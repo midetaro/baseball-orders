@@ -1,6 +1,37 @@
 simulation:
-  game-count: 100
+  game-count: ${SIMULATION_GAME_COUNT:100}
   sqs:
+    max-messages-per-poll: ${SIMULATION_SQS_MAX_MESSAGES_PER_POLL:10}
+    long-poll-seconds: ${SIMULATION_SQS_LONG_POLL_SECONDS:10}
     poll-fixed-delay: ${SIMULATION_SQS_POLL_FIXED_DELAY:60s}
     request-queue-name: ${SIMULATION_REQUEST_QUEUE_NAME:simulation-request}
     result-queue-name: ${SIMULATION_RESULT_QUEUE_NAME:simulation-result}
+  rule:
+    batting:
+      walk-probability: ${SIMULATION_RULE_WALK_PROBABILITY:0.05}
+      strikeout-probability-when-not-on-base: ${SIMULATION_RULE_STRIKEOUT_PROBABILITY:0.25}
+    middle-distance-hitting:
+      double-divisor: ${SIMULATION_RULE_MIDDLE_DOUBLE_DIVISOR:6}
+      triple-divisor: ${SIMULATION_RULE_MIDDLE_TRIPLE_DIVISOR:6}
+      home-run-divisor: ${SIMULATION_RULE_MIDDLE_HOME_RUN_DIVISOR:6}
+      single-reduction-divisor: ${SIMULATION_RULE_MIDDLE_SINGLE_REDUCTION_DIVISOR:2}
+    long-distance-hitting:
+      double-divisor: ${SIMULATION_RULE_LONG_DOUBLE_DIVISOR:8}
+      triple-divisor: ${SIMULATION_RULE_LONG_TRIPLE_DIVISOR:8}
+      home-run-divisor: ${SIMULATION_RULE_LONG_HOME_RUN_DIVISOR:2}
+      single-reduction-divisor: ${SIMULATION_RULE_LONG_SINGLE_REDUCTION_DIVISOR:1}
+    standard-steal:
+      to-double-attempt-rate: ${SIMULATION_RULE_STANDARD_STEAL_TO_DOUBLE_RATE:0.2}
+      to-triple-attempt-rate: ${SIMULATION_RULE_STANDARD_STEAL_TO_TRIPLE_RATE:0.05}
+    eager-steal:
+      to-double-attempt-rate: ${SIMULATION_RULE_EAGER_STEAL_TO_DOUBLE_RATE:0.3}
+      to-triple-attempt-rate: ${SIMULATION_RULE_EAGER_STEAL_TO_TRIPLE_RATE:0.15}
+    runner-advance:
+      from-first-probability: ${SIMULATION_RULE_ADVANCE_FROM_FIRST_PROBABILITY:0.2}
+      from-second-probability: ${SIMULATION_RULE_ADVANCE_FROM_SECOND_PROBABILITY:0.2}
+      from-third-probability: ${SIMULATION_RULE_ADVANCE_FROM_THIRD_PROBABILITY:0.1}
+  pitcher:
+    standard:
+      on-base-multiplier: ${SIMULATION_PITCHER_STANDARD_ON_BASE_MULTIPLIER:1.0}
+      slugging-multiplier: ${SIMULATION_PITCHER_STANDARD_SLUGGING_MULTIPLIER:1.0}
+      running-multiplier: ${SIMULATION_PITCHER_STANDARD_RUNNING_MULTIPLIER:1.0}

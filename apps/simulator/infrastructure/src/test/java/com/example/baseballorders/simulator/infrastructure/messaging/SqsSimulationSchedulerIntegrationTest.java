@@ -1,27 +1,26 @@
 package com.example.baseballorders.simulator.infrastructure.messaging;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.example.baseballorders.messaging.SimulationPlayerMessage;
 import com.example.baseballorders.messaging.SimulationRequestMessage;
 import com.example.baseballorders.messaging.SimulationResultMessage;
 import com.example.baseballorders.simulator.application.contract.SimulationResponse;
 import com.example.baseballorders.simulator.application.contract.SimulationResult;
+import com.example.baseballorders.simulator.application.contract.SimulationResultBuilder;
 import com.example.baseballorders.simulator.application.usecase.SimulateGameUseCase;
 import com.example.baseballorders.simulator.domain.play.BuntResult;
+import com.example.baseballorders.simulator.domain.play.BuntType;
 import com.example.baseballorders.simulator.domain.play.OutCount;
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.BatterEntity;
 import com.example.baseballorders.simulator.domain.player.LineUpEntity;
-import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
+import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.statistics.GameStatisticsRecorder;
 import com.example.baseballorders.simulator.domain.statistics.ScoreAccumulator;
+import com.example.baseballorders.simulator.infrastructure.config.SimulationPropertiesTestData;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.List;
@@ -34,13 +33,69 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.CreateQueueRequest;
-import software.amazon.awssdk.services.sqs.model.DeleteQueueRequest;
-import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.*;
 
 class SqsSimulationSchedulerIntegrationTest {
+
+    private static void assertOptions(
+            BatterEntity batter, boolean stealEnabled, boolean buntEnabled) {
+        var expectedSteal = stealEnabled ? StealResult.SUCCESS : StealResult.NOT_TRY;
+        var expectedBunt = buntEnabled ? BuntResult.SUCCESS : BuntResult.NOT_TRY;
+        assertAll(
+                () ->
+                        assertEquals(
+                                expectedSteal,
+                                batter.observedBy(new GameStatisticsRecorder()).stealToDouble()),
+                () ->
+                        assertEquals(
+                                expectedSteal,
+                                batter.observedBy(new GameStatisticsRecorder()).stealToTriple()),
+                () ->
+                        assertEquals(
+                                expectedBunt,
+                                batter.observedBy(new GameStatisticsRecorder())
+                                        .bunt(OutCount.NO_OUT, BuntType.ADVANCING)));
+    }
+
+    private static SqsClient createClient() {
+        return SqsClient.builder()
+                .endpointOverride(URI.create(System.getenv("ELASTICMQ_ENDPOINT_URL")))
+                .region(Region.US_EAST_1)
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create("test", "test")))
+                .build();
+    }
+
+    private static String createQueue(SqsClient client, String queueName) {
+        return client.createQueue(CreateQueueRequest.builder().queueName(queueName).build())
+                .queueUrl();
+    }
+
+    private static List<Message> receive(SqsClient client, String queueUrl) {
+        return client.receiveMessage(
+                        ReceiveMessageRequest.builder()
+                                .queueUrl(queueUrl)
+                                .waitTimeSeconds(1)
+                                .maxNumberOfMessages(10)
+                                .build())
+                .messages();
+    }
+
+    private static void deleteQueue(SqsClient client, String queueUrl) {
+        client.deleteQueue(DeleteQueueRequest.builder().queueUrl(queueUrl).build());
+    }
+
+    private static SimulationResult simulationResult(List<SimulationResponse> responses) {
+        ScoreAccumulator accumulator = new ScoreAccumulator();
+        responses.forEach(
+                response ->
+                        accumulator.onGameCompleted(response.score(), response.gameStatistics()));
+        return SimulationResultBuilder.simulationResult()
+                .statistics(accumulator.toScoreStatistics())
+                .transitions(List.of())
+                .build();
+    }
 
     /**
      * Integration Test
@@ -67,8 +122,8 @@ class SqsSimulationSchedulerIntegrationTest {
                 List.of(
                         new SimulationResultMessage(
                                 UUID.fromString("00000000-0000-0000-0000-000000000001"),
-                                "1",
-                                new SimulationResultMessage.Statistics(
+                                SimulationResultMessage.CURRENT_VERSION,
+                                new SimulationResultMessage.GameScoreStatistics(
                                         4.5,
                                         4.5,
                                         9,
@@ -79,21 +134,19 @@ class SqsSimulationSchedulerIntegrationTest {
                                                         java.util.stream.Collectors.toMap(
                                                                 java.util.function.Function
                                                                         .identity(),
-                                                                ignored -> 1)),
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        0)));
-        when(useCase.invoke(any(LineUpEntity.class)))
+                                                                _ -> 1))),
+                                new SimulationResultMessage.GameContentStatistics(
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                                List.of()));
+        when(useCase.invoke(any(LineUpEntity.class), any()))
                 .thenReturn(simulationResult(simulationResults));
         LineUpMapper mapper =
                 new LineUpMapper(
-                        BehaviorStrategies.middleDistanceHittingStrategy(),
-                        BehaviorStrategies.eagerSteal(),
-                        BehaviorStrategies.standardBunt());
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().eagerSteal(),
+                        SimulationRulesTestData.strategies().standardBunt(),
+                        SimulationRulesTestData.strategies(),
+                        SimulationPropertiesTestData.standardPitcherProperties());
         List<SimulationPlayerMessage> players =
                 IntStream.rangeClosed(1, 9)
                         .mapToObj(
@@ -123,21 +176,23 @@ class SqsSimulationSchedulerIntegrationTest {
                                 .queueUrl(requestQueueUrl)
                                 .messageBody(objectMapper.writeValueAsString(request))
                                 .build());
-                var scheduler =
+                var sut =
                         new SqsSimulationScheduler(
                                 sqsClient,
                                 objectMapper,
                                 useCase,
                                 mapper,
                                 "simulation-requests-" + suffix,
-                                "simulation-results-" + suffix);
+                                "simulation-results-" + suffix,
+                                10,
+                                10);
 
                 // when
-                scheduler.poll();
+                sut.poll();
 
                 // then
                 var captor = org.mockito.ArgumentCaptor.forClass(LineUpEntity.class);
-                verify(useCase).invoke(captor.capture());
+                verify(useCase).invoke(captor.capture(), any());
                 var batters = captor.getValue().getBatterEntities();
                 List<Message> resultMessages = receive(sqsClient, resultQueueUrl);
                 List<Message> requestMessages = receive(sqsClient, requestQueueUrl);
@@ -178,62 +233,5 @@ class SqsSimulationSchedulerIntegrationTest {
                 deleteQueue(sqsClient, resultQueueUrl);
             }
         }
-    }
-
-    private static void assertOptions(
-            BatterEntity batter, boolean stealEnabled, boolean buntEnabled) {
-        var expectedSteal = stealEnabled ? StealResult.SUCCESS : StealResult.NOT_TRY;
-        var expectedBunt = buntEnabled ? BuntResult.SUCCESS : BuntResult.NOT_TRY;
-        assertAll(
-                () ->
-                        assertEquals(
-                                expectedSteal,
-                                batter.observedBy(new GameStatisticsRecorder()).stealToDouble()),
-                () ->
-                        assertEquals(
-                                expectedSteal,
-                                batter.observedBy(new GameStatisticsRecorder()).stealToTriple()),
-                () ->
-                        assertEquals(
-                                expectedBunt,
-                                batter.observedBy(new GameStatisticsRecorder())
-                                        .bunt(OutCount.NO_OUT)));
-    }
-
-    private static SqsClient createClient() {
-        return SqsClient.builder()
-                .endpointOverride(URI.create(System.getenv("ELASTICMQ_ENDPOINT_URL")))
-                .region(Region.US_EAST_1)
-                .credentialsProvider(
-                        StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create("test", "test")))
-                .build();
-    }
-
-    private static String createQueue(SqsClient client, String queueName) {
-        return client.createQueue(CreateQueueRequest.builder().queueName(queueName).build())
-                .queueUrl();
-    }
-
-    private static List<Message> receive(SqsClient client, String queueUrl) {
-        return client.receiveMessage(
-                        ReceiveMessageRequest.builder()
-                                .queueUrl(queueUrl)
-                                .waitTimeSeconds(1)
-                                .maxNumberOfMessages(10)
-                                .build())
-                .messages();
-    }
-
-    private static void deleteQueue(SqsClient client, String queueUrl) {
-        client.deleteQueue(DeleteQueueRequest.builder().queueUrl(queueUrl).build());
-    }
-
-    private static SimulationResult simulationResult(List<SimulationResponse> responses) {
-        ScoreAccumulator accumulator = new ScoreAccumulator();
-        responses.forEach(
-                response ->
-                        accumulator.onGameCompleted(response.score(), response.gameStatistics()));
-        return new SimulationResult(accumulator.toScoreStatistics());
     }
 }

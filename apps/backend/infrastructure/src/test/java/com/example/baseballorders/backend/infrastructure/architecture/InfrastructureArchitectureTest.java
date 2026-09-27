@@ -22,6 +22,15 @@ class InfrastructureArchitectureTest {
                     .withImportOption(new ImportOption.DoNotIncludeTests())
                     .importPackages(INFRASTRUCTURE_PACKAGE);
 
+    private static ArchRule hasNoDependenciesOn(String sourcePackage, String... targetPackages) {
+        return noClasses()
+                .that()
+                .resideInAPackage(sourcePackage)
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(targetPackages);
+    }
+
     @Test
     @DisplayName("infrastructureアダプタは別アダプタの実装に直接依存しない")
     void adaptersDoNotDependOnOtherAdapters() {
@@ -39,14 +48,5 @@ class InfrastructureArchitectureTest {
                 () -> apiDoesNotDependOnOtherAdapters.check(INFRASTRUCTURE_CLASSES),
                 () -> webDoesNotDependOnOtherAdapters.check(INFRASTRUCTURE_CLASSES),
                 () -> messagingDoesNotDependOnOtherAdapters.check(INFRASTRUCTURE_CLASSES));
-    }
-
-    private static ArchRule hasNoDependenciesOn(String sourcePackage, String... targetPackages) {
-        return noClasses()
-                .that()
-                .resideInAPackage(sourcePackage)
-                .should()
-                .dependOnClassesThat()
-                .resideInAnyPackage(targetPackages);
     }
 }

@@ -6,25 +6,39 @@
 
 ## `domain.game`: 試合進行と塁状態
 
-`GameBattingContext` は試合全体の Context です。イニング、得点、打順、現在の `BasesState` を保持し、`AtBatProcessor` に一打席の進行を委譲します。`AtBatProcessor` は「盗塁、バント、打撃」の順に結果を判定し、その結果に対応するイベントを Context へ返します。Context はイベントを現在の State へ委譲し、State が走者、アウト、得点と次の塁状態を更新します。
+`GameBattingContext` は試合全体の Context です。打順と `InningStateContext` を保持し、`AtBatProcessor` に一打席の進行を委譲します。`InningStateContext` は現在のイニング、その回の得点、共有する走者・アウト数、現在の `BasesState` と走者配置ごとの `BasesState` キャッシュを保持します。ConcreteState を個別フィールドでは保持せず、必要時に `BaseStateFactory` から生成してキャッシュします。イニング終了時には完了通知を通じて `GameBattingContext` が回数、総得点、試合終了を反映します。`AtBatProcessor` は「盗塁、バント、打撃」の順に結果を判定し、能力インターフェースまたは現在の State に結果を適用します。バント成功・失敗時は打席を完了して打撃処理へ進まず、State が走者、アウト、得点と次の塁状態を更新します。
 
 ```mermaid
 classDiagram
     class GameBattingContext {
         -long inning
         -long totalScore
-        -BasesState currentState
+        -InningStateContext inningStateContext
+        -GameStatisticsRecorder statisticsRecorder
+        -GameCompletionObserver gameCompletionObserver
         -List~BatterEntity~ batterEntityOrders
+        -AtBatProcessor atBatProcessor
         +nextAtBat()
-        +changeState(int configuration)
         +completeInning()
-        +hitSingle(BatterEntity batter)
-        +buntSuccess()
-        +stealSuccess()
     }
 
     class AtBatProcessor {
-        ~process(GameBattingContext context, BatterEntity batter) boolean
+        ~process(InningStateContext context, BatterEntity batter) boolean
+    }
+
+    class InningStateContext {
+        -InningState inningState
+        -long inning
+        -long score
+        -boolean gameOver
+        -InningCompletionListener inningCompletionListener
+        -BaseStateFactory baseStateFactory
+        -Map~Integer, BasesState~ baseStates
+        -BasesState currentBaseState
+        ~changeState(int configuration)
+        ~addOut()
+        ~addScore(long runs)
+        ~completeInning()
     }
 
     class BasesState {
@@ -33,6 +47,7 @@ classDiagram
         +runnerCount() int
         +out()
         +battingOut()
+        +walk(BatterEntity batter)
         +hitSingle(BatterEntity batter)
         +hitDouble(BatterEntity batter)
         +hitTriple(BatterEntity batter)
@@ -41,22 +56,18 @@ classDiagram
 
     class AbstractBasesState {
         <<abstract>>
-        #GameBattingContext context
-        -InningState inningState
+        #InningStateContext context
         #transition(BatterEntity first, BatterEntity second, BatterEntity third, long runs)
     }
 
     class NoBasesState
     class SingleBasesState
-    class OtherBasesStates {
-        <<6 concrete states>>
-        DoubleBaseState
-        FirstDoubleBaseState
-        ThirdBaseState
-        FirstThirdBaseState
-        DoubleThirdBaseState
-        FullBasesState
-    }
+    class DoubleBaseState
+    class FirstDoubleBaseState
+    class ThirdBaseState
+    class FirstThirdBaseState
+    class DoubleThirdBaseState
+    class FullBasesState
 
     class InningState {
         -OutCount outCount
@@ -71,7 +82,12 @@ classDiagram
     class BaseStateFactory {
         +createNoBasesState(...) NoBasesState
         +createSingleBasesState(...) SingleBasesState
-        +createOtherStates(...)
+        +createDoubleBaseState(...) DoubleBaseState
+        +createFirstDoubleBaseState(...) FirstDoubleBaseState
+        +createThirdBaseState(...) ThirdBaseState
+        +createFirstThirdBaseState(...) FirstThirdBaseState
+        +createDoubleThirdBaseState(...) DoubleThirdBaseState
+        +createFullBasesState(...) FullBasesState
     }
 
     class Buntable {
@@ -91,6 +107,9 @@ classDiagram
         +runner() BatterEntity
         +sourceBase() Base
         +targetBase() Base
+        +stealToDouble() StealResult
+        +stealToTriple() StealResult
+        +stealNotTry()
         +stealFailure()
         +stealSuccess()
     }
@@ -102,20 +121,41 @@ classDiagram
     }
 
     GameBattingContext *-- AtBatProcessor
-    GameBattingContext *-- BasesState : currentState
-    GameBattingContext --> BaseStateFactory : creates states
+    GameBattingContext *-- InningStateContext
+    InningStateContext *-- BasesState : currentState
+    InningStateContext *-- NoBasesState
+    InningStateContext *-- SingleBasesState
+    InningStateContext *-- DoubleBaseState
+    InningStateContext *-- FirstDoubleBaseState
+    InningStateContext *-- ThirdBaseState
+    InningStateContext *-- FirstThirdBaseState
+    InningStateContext *-- DoubleThirdBaseState
+    InningStateContext *-- FullBasesState
+    InningStateContext *-- InningState
+    InningStateContext --> BaseStateFactory : creates states
     GameBattingContext --> BatterEntity : batting order
-    AtBatProcessor --> GameBattingContext : sends events
+    AtBatProcessor --> InningStateContext : reads current state
     AtBatProcessor --> BatterEntity : requests play result
+    AtBatProcessor --> Buntable : applies bunt result
+    AtBatProcessor --> Stealable : applies steal result
 
-    AbstractBasesState --> GameBattingContext
-    AbstractBasesState --> InningState : shared by 8 states
+    AbstractBasesState --> InningStateContext
     NoBasesState --|> AbstractBasesState
     NoBasesState --|> BasesState
     SingleBasesState --|> AbstractBasesState
     SingleBasesState --|> BasesState
-    OtherBasesStates --|> AbstractBasesState
-    OtherBasesStates --|> BasesState
+    DoubleBaseState --|> AbstractBasesState
+    DoubleBaseState --|> BasesState
+    FirstDoubleBaseState --|> AbstractBasesState
+    FirstDoubleBaseState --|> BasesState
+    ThirdBaseState --|> AbstractBasesState
+    ThirdBaseState --|> BasesState
+    FirstThirdBaseState --|> AbstractBasesState
+    FirstThirdBaseState --|> BasesState
+    DoubleThirdBaseState --|> AbstractBasesState
+    DoubleThirdBaseState --|> BasesState
+    FullBasesState --|> AbstractBasesState
+    FullBasesState --|> BasesState
 
     Buntable --|> BasesState
     AdvancingBuntable --|> Buntable
@@ -124,13 +164,22 @@ classDiagram
     StealableToTripleBase --|> Stealable
     SingleBasesState --|> AdvancingBuntable
     SingleBasesState --|> StealableToDoubleBase
+    DoubleBaseState --|> AdvancingBuntable
+    DoubleBaseState --|> StealableToTripleBase
+    FirstDoubleBaseState --|> AdvancingBuntable
+    FirstDoubleBaseState --|> StealableToTripleBase
+    ThirdBaseState --|> SqueezeBuntable
+    FirstThirdBaseState --|> SqueezeBuntable
+    FirstThirdBaseState --|> StealableToDoubleBase
+    DoubleThirdBaseState --|> SqueezeBuntable
+    FullBasesState --|> SqueezeBuntable
 ```
 
 ### GoF State パターン
 
-State パターンの `Context` が `GameBattingContext`、`State` が `BasesState`、`ConcreteState` が走者配置ごとの8クラスです。たとえば `SingleBasesState.hitDouble()` は打者を二塁、一塁走者を三塁へ置き、配置 `110` に対応する State へ Context を切り替えます。呼び出し側は現在の走者配置を条件分岐せず、同じ `hitDouble` を呼べます。
+State パターンの `Context` が `InningStateContext`、`State` が `BasesState`、`ConcreteState` が走者配置ごとの8クラスです。たとえば `SingleBasesState.hitDouble()` は打者を二塁、一塁走者を三塁へ置き、配置 `110` に対応する State へ `InningStateContext` を切り替えます。`walk()` は打者を一塁へ置き、一塁から連続する走者だけを押し出します。呼び出し側は現在の走者配置を条件分岐せず、同じイベントを呼べます。
 
-全 ConcreteState は同じ試合の `InningState` を共有します。`AbstractBasesState.transition(...)` が走者の配置、得点加算、State 切り替えを一つの操作として行うため、State オブジェクトを切り替えても走者とアウト数は失われません。`out()` で三死になった場合は `InningState` を初期化し、Context の `completeInning()` へ進みます。
+全 ConcreteState は同じ `InningStateContext` を参照し、その内部の `InningState` を共有します。`AbstractBasesState.transition(...)` が走者の配置、得点加算、State 切り替えを一つの操作として行うため、State オブジェクトを切り替えても走者とアウト数は失われません。`out()` で三死になった場合は `InningState` を初期化し、`InningStateContext` が完了イニングを `GameBattingContext` へ通知します。
 
 ### GoF Template Method の考え方と能力インターフェース
 
@@ -172,7 +221,7 @@ classDiagram
         +swing(int runnerCount) BattingResult
         +stealToDouble() StealResult
         +stealToTriple() StealResult
-        +bunt(OutCount outCount) BuntResult
+        +bunt(OutCount outCount, BuntType buntType) BuntResult
         +observedBy(PlayResultObserver observer) BatterEntity
     }
     class LineUpEntity {
@@ -245,7 +294,7 @@ classDiagram
 
 Strategy パターンの `Context` は `BatterEntity`、Strategy は `HittingStrategy`、`StealStrategy`、`BuntStrategy` の三つです。各インターフェースは sealed で実装候補を限定しています。
 
-- 打撃 Strategy は、出塁率と長打率を各打撃結果へ配分する方法を変えます。
+- 打撃 Strategy は、出塁率と長打率を四球と4種類の安打へ配分します。四球は出塁率のうち5%まで、非出塁は三振25%と凡退75%に分けます。
 - 盗塁 Strategy は、二塁・三塁への挑戦頻度と成功判定を変えます。
 - バント Strategy は、アウト数に応じて試みるかどうかと成功判定を変えます。
 
@@ -253,7 +302,7 @@ Strategy パターンの `Context` は `BatterEntity`、Strategy は `HittingStr
 
 `BehaviorStrategies` は具象クラス名を利用側へ露出せず Strategy を生成する静的ファクトリです。これは生成を一箇所へまとめる補助クラスであり、GoF の Factory Method ではありません。
 
-`BatterEntity.observedBy(...)` は能力値と Strategy を共有し、通知先だけを差し替えた新しい打者を返します。これにより、入力された `LineUpEntity` 自体を変更せず、試合ごとの統計記録先を結び付けられます。
+`BatterEntity.observedBy(...)` は能力値と Strategy を共有し、通知先だけを差し替えた新しい打者を返します。これにより、入力された `LineUpEntity` 自体を変更せず、試合ごとの統計記録先を結び付けられます。盗塁は二塁・三塁の各試行メソッドから盗塁先を通知し、バントは走者配置を知る具象 State が進塁バントまたはスクイズの種別を渡します。
 
 ## `domain.statistics`: プレー通知と集計結果
 
@@ -264,8 +313,8 @@ classDiagram
     class PlayResultObserver {
         <<Observer interface>>
         +onBattingResult(BattingResult result, int runnerCount)
-        +onBuntResult(BuntResult result)
-        +onStealResult(StealResult result)
+        +onBuntResult(BuntResult result, BuntType type)
+        +onStealResult(StealResult result, StealTarget target)
     }
     class GameStatisticsRecorder {
         -int homeRunCount
@@ -276,10 +325,20 @@ classDiagram
     class GameStatistics {
         <<immutable record>>
         +int homeRunCount
+        +int soloHomeRunCount
+        +int twoRunHomeRunCount
+        +int threeRunHomeRunCount
+        +int grandSlamCount
         +int buntCount
         +int stealCount
         +int buntFailureCount
         +int stealFailureCount
+        +int advancingBuntCount
+        +int squeezeBuntCount
+        +int advancingBuntFailureCount
+        +int squeezeBuntFailureCount
+        +int stealToSecondCount
+        +int stealToThirdCount
     }
 
     class GameCompletionObserver {
@@ -300,6 +359,21 @@ classDiagram
         +int maximumScore
         +int gameCount
         +Map~Integer,Integer~ scoreDistribution
+        +int homeRunCount
+        +int soloHomeRunCount
+        +int twoRunHomeRunCount
+        +int threeRunHomeRunCount
+        +int grandSlamCount
+        +int buntCount
+        +int stealCount
+        +int buntFailureCount
+        +int stealFailureCount
+        +int advancingBuntCount
+        +int squeezeBuntCount
+        +int advancingBuntFailureCount
+        +int squeezeBuntFailureCount
+        +int stealToSecondCount
+        +int stealToThirdCount
     }
 
     class BatterEntity {
@@ -338,7 +412,8 @@ GameBattingContext.nextAtBat()
      -> BatterEntity
         -> Strategy がプレー結果を決定
         -> GameStatisticsRecorder へ結果を通知
-     -> 現在の BasesState が走者・アウト・得点を更新
+     -> InningStateContext
+        -> 現在の BasesState が走者・アウト・得点を更新
   -> 九回終了時に ScoreAccumulator へ得点と GameStatistics を通知
   -> ScoreAccumulator.toScoreStatistics() が複数試合の集計結果を生成
 ```

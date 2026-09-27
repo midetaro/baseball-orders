@@ -12,6 +12,21 @@ http://127.0.0.1:8080/ を開くと、打者一覧・打順設定・シミュレ
 既存のJavaプロセスなどが8080を使っている場合は、`BACKEND_PORT=18080`をコマンドの前に付け、
 http://127.0.0.1:18080/ を開いてください。
 
+## Googleログインを有効にする
+
+Google Cloud ConsoleでOAuth 2.0クライアントを作成し、認可済みのリダイレクトURIとして
+`http://127.0.0.1:8080/login/oauth2/code/google` を登録します。起動時に発行済みの値を渡すと、
+Backendコンテナへ自動的に引き継がれ、Googleログインを検証できます。
+
+```sh
+GOOGLE_CLIENT_ID='発行したClient ID' \
+GOOGLE_CLIENT_SECRET='発行したClient Secret' \
+docker compose up -d --build --wait --wait-timeout 180
+```
+
+公開ポートを変更する場合は、Google Cloud ConsoleのリダイレクトURIも
+`http://127.0.0.1:変更後ポート/login/oauth2/code/google` に合わせて登録してください。
+
 ## 構成
 
 - `floci`: Floci 2.0.1。AWS SQSをローカルで代替します。

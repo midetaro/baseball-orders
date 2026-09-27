@@ -4,3 +4,16 @@ server:
       cookie:
         secure: true
         same-site: strict
+
+baseball-orders:
+  simulation:
+    result-timeout: 30s
+    maximum-average-hit-average: 0.35
+    maximum-average-sluggish: 0.4
+    maximum-success-rate: 0.7
+  rendering:
+    single-game:
+      frame-duration-millis: 1000
+  security:
+    local-account:
+      minimum-password-length: 12

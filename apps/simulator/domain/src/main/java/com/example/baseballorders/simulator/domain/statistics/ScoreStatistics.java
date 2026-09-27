@@ -12,6 +12,10 @@ public record ScoreStatistics(
         int maximumScore,
         int gameCount,
         Map<Integer, Integer> scoreDistribution,
+        int hitCount,
+        int singleHitCount,
+        int doubleHitCount,
+        int tripleHitCount,
         int homeRunCount,
         int soloHomeRunCount,
         int twoRunHomeRunCount,
@@ -20,16 +24,10 @@ public record ScoreStatistics(
         int buntCount,
         int stealCount,
         int buntFailureCount,
-        int stealFailureCount) {
-
-    /**
-     * Creates score-only statistics with no recorded batting events.
-     *
-     * @param averageScore average score
-     * @param medianScore median score
-     * @param maximumScore maximum score
-     */
-    public ScoreStatistics(double averageScore, double medianScore, int maximumScore) {
-        this(averageScore, medianScore, maximumScore, 0, Map.of(), 0, 0, 0, 0, 0, 0, 0, 0, 0);
-    }
-}
+        int stealFailureCount,
+        int advancingBuntCount,
+        int squeezeBuntCount,
+        int advancingBuntFailureCount,
+        int squeezeBuntFailureCount,
+        int stealToSecondCount,
+        int stealToThirdCount) {}

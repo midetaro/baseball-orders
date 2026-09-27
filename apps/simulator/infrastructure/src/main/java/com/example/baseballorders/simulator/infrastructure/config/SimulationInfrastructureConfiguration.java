@@ -5,7 +5,10 @@ import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrat
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
+import com.example.baseballorders.simulator.domain.rule.SimulationRules;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -14,7 +17,32 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 /** Configures infrastructure and domain collaborators required to consume simulation requests. */
 @Configuration
 @EnableScheduling
+@EnableConfigurationProperties({SimulationRuleProperties.class, SimulationPitcherProperties.class})
+@RequiredArgsConstructor
 public class SimulationInfrastructureConfiguration {
+
+    /** {@code simulation.rule} 配下の束縛済み確率設定。 */
+    private final SimulationRuleProperties ruleProperties;
+
+    /**
+     * 設定ファイルの確率値をドメインの確率設定へ変換する。
+     *
+     * @return シミュレーションの確率設定
+     */
+    @Bean
+    public SimulationRules simulationRules() {
+        return ruleProperties.toSimulationRules();
+    }
+
+    /**
+     * 設定された確率を保持する行動戦略ファクトリを生成する。
+     *
+     * @return 行動戦略ファクトリ
+     */
+    @Bean
+    public BehaviorStrategies behaviorStrategies() {
+        return new BehaviorStrategies(simulationRules());
+    }
 
     /**
      * Creates the JSON object mapper used for SQS request bodies.
@@ -43,7 +71,7 @@ public class SimulationInfrastructureConfiguration {
      */
     @Bean
     public BaseStateFactory baseStateFactory() {
-        return new BaseStateFactory();
+        return new BaseStateFactory(simulationRules().runnerAdvance());
     }
 
     /**
@@ -53,7 +81,7 @@ public class SimulationInfrastructureConfiguration {
      */
     @Bean
     public HittingStrategy hittingStrategy() {
-        return BehaviorStrategies.middleDistanceHittingStrategy();
+        return behaviorStrategies().middleDistanceHittingStrategy();
     }
 
     /**
@@ -63,7 +91,7 @@ public class SimulationInfrastructureConfiguration {
      */
     @Bean
     public StealStrategy stealStrategy() {
-        return BehaviorStrategies.standardSteal();
+        return behaviorStrategies().standardSteal();
     }
 
     /**
@@ -73,6 +101,6 @@ public class SimulationInfrastructureConfiguration {
      */
     @Bean
     public BuntStrategy buntStrategy() {
-        return BehaviorStrategies.standardBunt();
+        return behaviorStrategies().standardBunt();
     }
 }
