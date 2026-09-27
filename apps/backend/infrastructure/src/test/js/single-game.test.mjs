@@ -98,13 +98,20 @@ assert.ok(
 
 // --- 打順入力欄の横スクロール解消（数値入力の余白削減とスマホ表示のカード化） ---
 assert.match(html, /\.order\s*\{\s*width:\s*max-content;\s*padding:/, '入力欄を親幅いっぱいに広げずコンパクトにする');
-assert.match(html, /grid-template-columns:\s*38px\s+repeat\(4,\s*60px\)\s+118px\s+78px\s+78px/, '数値入力列の余白を詰めて幅を最小限にする');
+assert.match(html, /grid-template-columns:\s*38px\s+repeat\(3,\s*60px\)\s+118px\s+78px\s+78px/, '数値入力列の余白を詰めて幅を最小限にする');
 assert.ok(html.includes('input[type="number"]::-webkit-inner-spin-button'), '数値入力のスピンボタンを除去して余白を詰める');
 assert.ok(html.includes('function fieldWrapper('), '各入力欄をキャプション付きのフィールドとして構成する');
 assert.match(html, /\.field-caption\s*\{\s*display:\s*none;\s*\}/, '通常幅では列見出しと入力キャプションを重複表示しない');
 assert.match(html, /@media \(max-width: 760px\)[\s\S]*\.field-caption\s*\{\s*display:\s*block;\s*\}/, 'スマホ幅では列見出しの代わりに入力キャプションを表示する');
 assert.match(html, /@media \(max-width: 760px\)[\s\S]*\.columns\s*\{\s*display:\s*none;\s*\}/, 'スマホ幅では横スクロールが必要な列見出し行を表示しない');
 assert.match(html, /@media \(max-width: 760px\)[\s\S]*\.order-scroll\s*\{\s*overflow-x:\s*visible;\s*\}/, 'スマホ幅では打順入力欄の横スクロールを不要にする');
-assert.match(html, /@media \(max-width: 760px\)[\s\S]*\.slot\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*repeat\(2,\s*1fr\);/, 'スマホ幅では打順入力行をカード形式の2列レイアウトに切り替える');
+assert.match(html, /@media \(max-width: 760px\)[\s\S]*\.slot\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*1fr;/, 'スマホ幅では打順入力行を打者ごとに縦一列のカードへ切り替える');
+
+// --- バント成功率の入力欄を削除する（1試合実行画面のみ） ---
+assert.ok(!html.includes("key:'buntSuccessRate'"), '1試合実行画面ではバント成功率の入力欄を表示しない');
+assert.ok(!html.includes('バント成功率'), '1試合実行画面ではバント成功率のラベル・列見出しを表示しない');
+assert.ok(html.includes("buntSuccessRate:'0.70'"), 'バント成功率は入力欄なしで既定値のままAPIへ送る');
+assert.ok(html.includes('bunt_success_rate:Number(player.buntSuccessRate)'), 'バント成功率の既定値をAPIへ送信する');
+assert.ok(html.includes("toggle('バント',player.buntEnabled"), 'バントを使うかどうかの切り替えボタンは残す');
 
 console.log('PASS: 1試合実行結果のアニメーションフレームと打順成績表の描画');
