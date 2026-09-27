@@ -168,13 +168,13 @@ class SimulationPageIntegrationTest {
                 () ->
                         assertContainsPattern(
                                 response.body(),
-                                "key:'stealSuccessRate',label:'盗塁成功率',min:\\d+\\.\\d+,max:\\d+\\.\\d+"),
-                () -> assertTrue(response.body().contains("buntSuccessRate:[0,0.7]")),
+                                "key:'stealSuccessRate',label:'盗塁成功率',min:\\d+\\.\\d+,enabledKey"),
+                () -> assertTrue(response.body().contains("buntSuccessRate:[0,Infinity]")),
                 () ->
                         assertTrue(
                                 response.body()
                                         .contains(
-                                                "key:'buntSuccessRate',label:'バント成功率',min:0,max:0.7")),
+                                                "key:'buntSuccessRate',label:'バント成功率',min:0,enabledKey:'buntEnabled'")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
                 () -> assertTrue(response.body().contains("<h2 id=\"order-heading\">打順入力</h2>")),
                 () -> assertTrue(response.body().contains("id=\"toggle-all-bunt\"")),
@@ -190,16 +190,8 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
                 () -> assertFalse(response.body().toLowerCase().contains("pitcher")),
                 () -> assertTrue(response.body().contains("function validLineup()")),
-                () ->
-                        assertTrue(
-                                response.body()
-                                        .contains(
-                                                "lineup.reduce((sum,player)=>sum+Number(player.hitAverage),0)/lineup.length<=0.35")),
-                () ->
-                        assertTrue(
-                                response.body()
-                                        .contains(
-                                                "lineup.reduce((sum,player)=>sum+Number(player.sluggish),0)/lineup.length<=0.4")),
+                () -> assertFalse(response.body().contains("lineup.length<=0.35")),
+                () -> assertFalse(response.body().contains("lineup.length<=0.4")),
                 () -> assertTrue(response.body().contains("本塁打")),
                 () -> assertTrue(response.body().contains("ソロ")),
                 () -> assertTrue(response.body().contains("ツーラン")),
@@ -240,7 +232,7 @@ class SimulationPageIntegrationTest {
                                         .contains(
                                                 "input.value.startsWith('.') ? `0${input.value}` : input.value")),
                 () -> assertTrue(response.body().contains(".section-head {")),
-                () -> assertTrue(response.body().contains("hasAtMostTwoDecimalPlaces")),
+                () -> assertFalse(response.body().contains("hasAtMostTwoDecimalPlaces")),
                 () -> assertTrue(response.body().contains("class=\"simulation-workspace\"")),
                 () -> assertTrue(response.body().contains("'homeRunCount'")),
                 () -> assertTrue(response.body().contains("scoreDistribution")),

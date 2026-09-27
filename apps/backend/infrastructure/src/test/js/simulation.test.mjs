@@ -34,10 +34,10 @@ assert.ok(html.includes("hitAverage:'0.28',sluggish:'0.40'"), '下位打線に�
 assert.ok(html.includes("buntSuccessRate:'0.70',stealSuccessRate:'0.70'"), 'バントと盗塁の成功率の初期値を7割にする');
 assert.ok(!html.includes("stealSuccessRate:'.500'"), '盗塁成功率の初期値を役割ごとに変えない');
 assert.ok(!html.includes("buntSuccessRate:'0.80',stealSuccessRate:'0.80'"), 'バントと盗塁の成功率の初期値を8割にしない');
-assert.ok(html.includes("buntSuccessRate:[0,0.7], stealSuccessRate:[0.1,0.7]"), 'バントと盗塁の成功率を7割以下に制限する');
+assert.ok(html.includes("buntSuccessRate:[0,Infinity], stealSuccessRate:[0.1,Infinity]"), 'バントと盗塁の成功率に上限を設けない');
 assert.ok(html.includes("function validLineup()"), '打順全体の入力制約を検証する');
-assert.ok(html.includes("lineup.reduce((sum,player)=>sum+Number(player.hitAverage),0)/lineup.length<=0.35"), '出塁率の平均を3割5分以下に制限する');
-assert.ok(html.includes("lineup.reduce((sum,player)=>sum+Number(player.sluggish),0)/lineup.length<=0.4"), '長打率の平均を4割以下に制限する');
+assert.ok(!html.includes("lineup.length<=0.35"), '出塁率の平均に上限を設けない');
+assert.ok(!html.includes("lineup.length<=0.4"), '長打率の平均に上限を設けない');
 assert.ok(html.includes("input.step='0.01'"), '数値入力は小数第2位刻みにする');
 assert.ok(html.includes("key:'hitAverage',label:'出塁率',min:0.01,max:0.6"), '出塁率の上限を60%にする');
 assert.ok(html.includes('function formatPercentage(value)'), '入力値を小数第2位に整形する');
@@ -45,7 +45,7 @@ assert.ok(html.includes('Number(value).toFixed(2)'), '小数第2位のゼロを�
 assert.ok(html.includes("input.addEventListener('change'"), '入力の確定時に小数第2位へ整形する');
 assert.ok(!html.includes("hitAverage:'.32'"), '小数点前のゼロを省略しない');
 assert.ok(html.includes("input.value.startsWith('.') ? `0${input.value}` : input.value"), '入力時も小数点前のゼロを表示する');
-assert.ok(html.includes('hasAtMostTwoDecimalPlaces'), '小数第3位以降の入力では実行できないようにする');
+assert.ok(!html.includes('hasAtMostTwoDecimalPlaces'), '小数第3位以降の入力を制限しない');
 assert.ok(html.includes('本塁打の内訳'), '本塁打統計を構造化して表示する');
 assert.ok(html.includes('id="hit-count"'), '総安打数を表示する');
 assert.ok(html.indexOf('id="hit-count"') < html.indexOf('id="home-run-count"'), '総安打数を本塁打の上に表示する');
@@ -117,11 +117,12 @@ assert.ok(!html.includes("const labelElement=document.createElement('label');"),
 assert.ok(html.includes("input.setAttribute('aria-label',field.label);"), '列見出しを視覚的に重複させず入力の名称を提供する');
 for (const [field, minimum, maximum] of [
   ["key:'hitAverage'", 'min:0.01', 'max:0.6'],
-  ["key:'sluggish'", 'min:0.1', 'max:0.6'],
-  ["key:'stealSuccessRate'", 'min:0.1', 'max:0.7']
+  ["key:'sluggish'", 'min:0.1', 'max:0.6']
 ]) {
   assert.ok(html.includes(field) && html.includes(minimum) && html.includes(maximum), `${field}の入力範囲を画面で制御する`);
 }
+assert.ok(html.includes("key:'stealSuccessRate',label:'盗塁成功率',min:0.1,enabledKey:'stealEnabled'"), '盗塁成功率は下限のみを画面で制御する');
+assert.ok(!html.includes("key:'stealSuccessRate',label:'盗塁成功率',min:0.1,max:"), '盗塁成功率に上限を設けない');
 assert.ok(html.includes("bunt_enabled:player.buntEnabled"), 'バント可否をAPIへ送る');
 assert.ok(html.includes("steal_enabled:player.stealEnabled"), '盗塁可否をAPIへ送る');
 assert.ok(html.includes("bunt_success_rate:Number(player.buntSuccessRate)"), 'バント成功率をAPIへ送る');
