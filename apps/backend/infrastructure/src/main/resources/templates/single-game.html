@@ -162,17 +162,24 @@
 
         .order {
             width: max-content;
-            min-width: 570px;
             padding: 0 var(--space-sm) var(--space-sm);
         }
 
         .columns, .slot {
             display: grid;
-            grid-template-columns:38px repeat(4, 76px) 118px 78px 78px;
+            grid-template-columns:38px repeat(3, 60px) 118px 78px 78px;
             gap: var(--space-xs);
             align-items: center;
             padding: var(--space-xs);
             border-bottom: 1px solid var(--line);
+        }
+
+        .field {
+            display: contents;
+        }
+
+        .field-caption {
+            display: none;
         }
 
         .columns {
@@ -220,6 +227,16 @@
         input:invalid {
             border-color: var(--orange);
             box-shadow: 0 0 0 2px rgba(255, 120, 73, .12);
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            margin: 0;
+            -webkit-appearance: none;
         }
 
         button {
@@ -445,6 +462,43 @@
                 align-items: flex-start;
                 flex-direction: column;
             }
+
+            .order-scroll {
+                overflow-x: visible;
+            }
+
+            .order {
+                width: 100%;
+                padding: 0 var(--space-md) var(--space-md);
+            }
+
+            .columns {
+                display: none;
+            }
+
+            .slot {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: var(--space-sm);
+                padding: var(--space-md);
+                border: 1px solid var(--line);
+                border-radius: 12px;
+                margin-bottom: var(--space-sm);
+            }
+
+            .slot .slot-index {
+                font-size: 14px;
+            }
+
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .field-caption {
+                display: block;
+            }
         }
     </style>
 </head>
@@ -475,7 +529,7 @@
                 <div class="order-scroll">
                     <div class="order">
                         <div class="columns">
-                            <span>打順</span><span>出塁率</span><span>長打率</span><span>バント成功率</span><span>盗塁成功率</span><span>性格</span><span>バント</span><span>盗塁</span>
+                            <span>打順</span><span>出塁率</span><span>長打率</span><span>盗塁成功率</span><span>性格</span><span>バント</span><span>盗塁</span>
                         </div>
                         <div id="order"></div>
                     </div>
@@ -516,15 +570,16 @@
     const order = document.querySelector('#order'), submit = document.querySelector('#submit'), feedback = document.querySelector('#feedback'), toggleAllBunt = document.querySelector('#toggle-all-bunt'), toggleAllSteal = document.querySelector('#toggle-all-steal'), resetAllPersonalities = document.querySelector('#reset-all-personalities'), toggleLineup = document.querySelector('#toggle-lineup'), lineupBody = document.querySelector('#lineup-body'), frameStage = document.querySelector('#frame-stage'), orderTableScroll = document.querySelector('#order-table-scroll');
     const frameDurationMillis = Number(frameStage.dataset.frameDurationMillis) || 1000;
     let frameTimer = null;
-    const ranges = {hitAverage:[0.01,0.6], sluggish:[0.1,0.6], buntSuccessRate:[0,Infinity], stealSuccessRate:[0.1,Infinity]};
+    const ranges = {hitAverage:[0.01,0.6], sluggish:[0.1,0.6], stealSuccessRate:[0.1,Infinity]};
     function valid(player) { return Object.values(player).every(value => value !== '') && Object.entries(ranges).every(([key,[min,max]]) => Number(player[key]) >= min && Number(player[key]) <= max); }
     function validLineup() { return lineup.every(valid); }
-    const fields = [{key:'hitAverage',label:'出塁率',min:0.01,max:0.6},{key:'sluggish',label:'長打率',min:0.1,max:0.6},{key:'buntSuccessRate',label:'バント成功率',min:0,enabledKey:'buntEnabled'},{key:'stealSuccessRate',label:'盗塁成功率',min:0.1,enabledKey:'stealEnabled'}];
+    const fields = [{key:'hitAverage',label:'出塁率',min:0.01,max:0.6},{key:'sluggish',label:'長打率',min:0.1,max:0.6},{key:'stealSuccessRate',label:'盗塁成功率',min:0.1,enabledKey:'stealEnabled'}];
     function toggle(label, enabled, onClick) { const button=document.createElement('button'); button.type='button'; button.className='bunt-toggle'; button.disabled=inFlight; button.textContent=`${label}: ${enabled?'する':'しない'}`; button.setAttribute('aria-pressed',String(enabled)); button.addEventListener('click',onClick); return button; }
     function formatPercentage(value) { return value === '' ? value : Number(value).toFixed(2); }
     const personalityLabels = {DEFAULT:'標準',EAGER_SLUGGISH:'長距離砲',EAGER_STEAL:'盗塁重視',EAGER_BUNT:'バント重視'};
-    function personalitySelect(player) { const select=document.createElement('select'); select.setAttribute('aria-label','性格'); select.disabled=inFlight; Object.entries(personalityLabels).forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;option.selected=player.personality===value;select.append(option);}); select.addEventListener('change',()=>{player.personality=select.value;}); return select; }
-    function render() { order.replaceChildren(); lineup.forEach((player,index) => { const row=document.createElement('div'); row.className='slot'; const position=document.createElement('span'); position.className='slot-index'; position.textContent=`${index+1}番`; row.append(position); fields.forEach(field => { const input=document.createElement('input'); input.type='number'; input.required=true; input.setAttribute('aria-label',field.label); input.min=String(field.min); if (field.max !== undefined) input.max=String(field.max); input.step='0.01'; input.value=player[field.key]; input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]); input.addEventListener('input',()=>{const value=input.value.startsWith('.') ? `0${input.value}` : input.value;input.value=value;player[field.key]=value;update();}); input.addEventListener('change',()=>{const value=formatPercentage(input.value);input.value=value;player[field.key]=value;update();}); row.append(input); }); row.append(personalitySelect(player),toggle('バント',player.buntEnabled,()=>{player.buntEnabled=!player.buntEnabled; render();}),toggle('盗塁',player.stealEnabled,()=>{player.stealEnabled=!player.stealEnabled; render();})); order.append(row); }); update(); }
+    function fieldWrapper(caption, control, extraClass) { const wrapper=document.createElement('label'); wrapper.className=extraClass ? `field ${extraClass}` : 'field'; const label=document.createElement('span'); label.className='eyebrow field-caption'; label.textContent=caption; wrapper.append(label, control); return wrapper; }
+    function personalitySelect(player) { const select=document.createElement('select'); select.disabled=inFlight; Object.entries(personalityLabels).forEach(([value,label])=>{const option=document.createElement('option');option.value=value;option.textContent=label;option.selected=player.personality===value;select.append(option);}); select.addEventListener('change',()=>{player.personality=select.value;}); return select; }
+    function render() { order.replaceChildren(); lineup.forEach((player,index) => { const row=document.createElement('div'); row.className='slot'; const position=document.createElement('span'); position.className='slot-index'; position.textContent=`${index+1}番`; row.append(position); fields.forEach(field => { const input=document.createElement('input'); input.type='number'; input.required=true; input.min=String(field.min); if (field.max !== undefined) input.max=String(field.max); input.step='0.01'; input.value=player[field.key]; input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]); input.addEventListener('input',()=>{const value=input.value.startsWith('.') ? `0${input.value}` : input.value;input.value=value;player[field.key]=value;update();}); input.addEventListener('change',()=>{const value=formatPercentage(input.value);input.value=value;player[field.key]=value;update();}); row.append(fieldWrapper(field.label, input)); }); row.append(fieldWrapper('性格', personalitySelect(player)),toggle('バント',player.buntEnabled,()=>{player.buntEnabled=!player.buntEnabled; render();}),toggle('盗塁',player.stealEnabled,()=>{player.stealEnabled=!player.stealEnabled; render();})); order.append(row); }); update(); }
     function update() { const complete=validLineup(); const allBuntEnabled=lineup.every(player=>player.buntEnabled); const allStealEnabled=lineup.every(player=>player.stealEnabled); submit.disabled=inFlight || !complete || lineupBody.hidden; toggleAllBunt.disabled=inFlight; toggleAllBunt.setAttribute('aria-pressed',String(allBuntEnabled)); toggleAllSteal.disabled=inFlight; toggleAllSteal.setAttribute('aria-pressed',String(allStealEnabled)); resetAllPersonalities.disabled=inFlight; toggleLineup.disabled=inFlight; if (!inFlight) { feedback.className=''; feedback.textContent=lineupBody.hidden?'打順入力を開くと再実行できます。':complete?'準備完了。1試合を実行できます。':'出塁率は0.01〜0.6、長打率は0.1〜0.6の範囲ですべての項目を入力してください。'; } }
     function setLineupCollapsed(collapsed) { lineupBody.hidden=collapsed; toggleLineup.setAttribute('aria-expanded',String(!collapsed)); toggleLineup.textContent=collapsed?'打順入力を開く':'入力欄を閉じる'; update(); }
     toggleLineup.addEventListener('click',()=>setLineupCollapsed(!lineupBody.hidden));

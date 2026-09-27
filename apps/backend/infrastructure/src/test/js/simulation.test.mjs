@@ -96,8 +96,9 @@ for (const [kind, color] of [
 assert.ok(html.includes('id="share-results"'), '結果をSNS共有できる操作を表示する');
 assert.ok(html.includes('navigator.share'), '対応ブラウザではネイティブ共有を使う');
 assert.ok(html.includes('clipboard.writeText'), 'ネイティブ共有非対応時は共有文をコピーする');
-assert.match(html, /\.order\s*\{\s*width:\s*max-content;\s*min-width:\s*570px;/, '入力欄を親幅いっぱいに広げずコンパクトにする');
-assert.match(html, /grid-template-columns:\s*38px\s+repeat\(4,\s*76px\)\s+118px\s+78px\s+78px/, '性格列を含む入力列を読みやすい固定幅にする');
+assert.match(html, /\.order\s*\{\s*width:\s*max-content;\s*padding:/, '入力欄を親幅いっぱいに広げずコンパクトにする');
+assert.match(html, /grid-template-columns:\s*38px\s+repeat\(4,\s*60px\)\s+118px\s+78px\s+78px/, '数値入力列の余白を詰めて幅を最小限にする');
+assert.ok(html.includes('input[type="number"]::-webkit-inner-spin-button'), '数値入力のスピンボタンを除去して余白を詰める');
 assert.ok(html.includes('class="lineup-workspace"'), '打順入力とシミュレーション操作を横並びに配置する');
 assert.match(html, /\.section-head\s*\{\s*display:\s*flex;/, '打順入力の見出しと実行操作を横並びにする');
 assert.match(html, /<h2 id="order-heading">打順入力<\/h2>\s*<button class="submit"/, '実行操作を打順入力ラベルの直後に置く');
@@ -113,8 +114,12 @@ assert.ok(!html.includes('LINEUP<br>BUILDER'), '旧見出しを画面から除�
 assert.ok(!html.includes('id="results" aria-labelledby="results-heading" hidden'), '初期表示から結果の表示ラベルを隠さない');
 assert.ok(!html.includes('id="home-run-empty-state" hidden'), '初期表示から本塁打なしの表示ラベルを隠さない');
 assert.match(html, /\.simulation-workspace\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*1fr;/, '打順入力と結果を画面幅によらず縦に並べる');
-assert.ok(!html.includes("const labelElement=document.createElement('label');"), '各入力セルに列名を重複表示しない');
-assert.ok(html.includes("input.setAttribute('aria-label',field.label);"), '列見出しを視覚的に重複させず入力の名称を提供する');
+assert.ok(html.includes('function fieldWrapper('), '各入力欄をキャプション付きのフィールドとして構成する');
+assert.match(html, /\.field-caption\s*\{\s*display:\s*none;\s*\}/, '通常幅では列見出しと入力キャプションを重複表示しない');
+assert.match(html, /@media \(max-width: 760px\)[\s\S]*\.field-caption\s*\{\s*display:\s*block;\s*\}/, 'スマホ幅では列見出しの代わりに入力キャプションを表示する');
+assert.match(html, /@media \(max-width: 760px\)[\s\S]*\.columns\s*\{\s*display:\s*none;\s*\}/, 'スマホ幅では横スクロールが必要な列見出し行を表示しない');
+assert.match(html, /@media \(max-width: 760px\)[\s\S]*\.order-scroll\s*\{\s*overflow-x:\s*visible;\s*\}/, 'スマホ幅では打順入力欄の横スクロールを不要にする');
+assert.match(html, /@media \(max-width: 760px\)[\s\S]*\.slot\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*repeat\(2,\s*1fr\);/, 'スマホ幅では打順入力行をカード形式の2列レイアウトに切り替える');
 for (const [field, minimum, maximum] of [
   ["key:'hitAverage'", 'min:0.01', 'max:0.6'],
   ["key:'sluggish'", 'min:0.1', 'max:0.6']
