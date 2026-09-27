@@ -328,6 +328,46 @@ A feature is not complete until all of the following are done:
   `status: done` and close the issue together, in the same session that merges
   the PR.
 
+## Git worktree workflow
+
+Work autonomously from a dedicated `git worktree` per GitHub Issue so that
+independent issues never share a checked-out branch, mid-flight edits, or
+staged-but-unrelated changes.
+
+- Only create a worktree, and only start implementation, for an issue that is
+  currently open. Confirm with `gh issue view <number> --json state` (or `gh
+  issue list --state open`) before creating the worktree; never branch off a
+  closed issue.
+- One issue maps to exactly one worktree and one branch. Do not reuse an
+  issue's worktree for a second, unrelated issue, and do not mix two issues'
+  changes inside a single worktree, even sequentially.
+- Create the worktree as a sibling directory of the main checkout, not nested
+  inside it, named after the issue so concurrent worktrees stay
+  distinguishable, and branch from `develop`:
+  `git worktree add ../baseball-orders-issue-<number> -b feature/<date>[-<n>] develop`
+  (see `git branch` for this repository's existing `feature/YYYYMMDD[-n]`
+  naming).
+- When multiple open issues are being worked at once, create one worktree per
+  issue rather than time-slicing a single worktree between them.
+- Before starting a new issue's worktree while another issue's worktree is
+  still in progress, check whether the two issues are likely to touch the same
+  files: compare their expected changes against the module boundaries in
+  "Application and module boundaries" above and the file-ownership table in
+  `docs/codex-graph.md`. If both issues plausibly change the same module,
+  Gradle build file, or shared contract (for example both touch
+  `libs/messaging-contract`, the same application's `infrastructure` module, or
+  `settings.gradle`), do not run them concurrently — finish, review, and merge
+  one issue's pull request first, then create or rebase the other issue's
+  worktree from the updated `develop` before continuing. When the two issues'
+  expected file sets are disjoint by this check, concurrent worktrees are safe.
+- After an issue's pull request is merged, remove its worktree
+  (`git worktree remove <path>`) and delete the now-merged local branch
+  (`git branch -d <branch>`). Do not leave a worktree in place once its issue
+  is closed and its PR merged.
+- Never force-remove a worktree that still has uncommitted or unpushed work
+  without first checking with the user; a worktree with outstanding changes is
+  in-progress state, not disposable state.
+
 ## Screen screenshots in pull requests
 
 - When a change alters what a backend Thymeleaf screen (`apps/backend/infrastructure/src/main/resources/templates/*.html`)
