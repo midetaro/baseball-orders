@@ -5,7 +5,7 @@ variables {
   route53_zone_name = "example.com"
 }
 
-run "sqs_configuration" {
+run "cluster_and_task_definitions" {
   command = apply
 
   override_resource {
@@ -44,6 +44,27 @@ run "sqs_configuration" {
   }
 
   override_data {
+    target = data.aws_availability_zones.available
+    values = {
+      names = ["ap-northeast-1a", "ap-northeast-1c"]
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.backend_sqs
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.simulator_sqs
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  override_data {
     target = data.aws_iam_policy_document.ecs_tasks_assume_role
     values = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"}}]}"
@@ -110,58 +131,57 @@ run "sqs_configuration" {
     }
   }
 
-  override_data {
-    target = data.aws_iam_policy_document.backend_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.simulator_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_availability_zones.available
-    values = {
-      names = ["ap-northeast-1a", "ap-northeast-1c"]
-    }
+  assert {
+    condition     = aws_ecs_cluster.main.name == "baseball-orders-dev-cluster"
+    error_message = "The ECS cluster must use the project and environment prefix."
   }
 
   assert {
-    condition     = aws_sqs_queue.simulation_request.name == "simulation-request"
-    error_message = "The request queue must use the backend-compatible default name."
+    condition     = toset(aws_ecs_cluster_capacity_providers.main.capacity_providers) == toset(["FARGATE", "FARGATE_SPOT"])
+    error_message = "The cluster must support both FARGATE (backend) and FARGATE_SPOT (simulator)."
   }
 
   assert {
-    condition     = aws_sqs_queue.simulation_result.name == "simulation-result"
-    error_message = "The result queue must use the backend-compatible default name."
+    condition     = aws_ecs_task_definition.backend.cpu == "512" && aws_ecs_task_definition.backend.memory == "1024"
+    error_message = "The backend task must request 0.5 vCPU / 1 GB, per docs/aws-deployment.md."
   }
 
   assert {
-    condition = alltrue([
-      aws_sqs_queue.simulation_request.sqs_managed_sse_enabled,
-      aws_sqs_queue.simulation_result.sqs_managed_sse_enabled,
-      aws_sqs_queue.simulation_request_dlq.sqs_managed_sse_enabled,
-      aws_sqs_queue.simulation_result_dlq.sqs_managed_sse_enabled,
-    ])
-    error_message = "Every SQS queue must use SQS-managed server-side encryption."
+    condition     = aws_ecs_task_definition.simulator.cpu == "1024" && aws_ecs_task_definition.simulator.memory == "2048"
+    error_message = "The simulator task must request 1 vCPU / 2 GB, per docs/aws-deployment.md."
   }
 
   assert {
-    condition = alltrue([
-      jsondecode(aws_sqs_queue.simulation_request.redrive_policy).maxReceiveCount == 5,
-      jsondecode(aws_sqs_queue.simulation_result.redrive_policy).maxReceiveCount == 5,
-    ])
-    error_message = "Request and result queues must move messages to their DLQs after five receives."
+    condition     = jsondecode(aws_ecs_task_definition.backend.container_definitions)[0].image == "${aws_ecr_repository.backend.repository_url}:latest"
+    error_message = "The backend container must pull its default image from the backend ECR repository."
+  }
+
+  assert {
+    condition     = jsondecode(aws_ecs_task_definition.backend.container_definitions)[0].portMappings[0].containerPort == 8080
+    error_message = "The backend container must expose port 8080, matching the ALB target group and health check."
+  }
+
+  assert {
+    condition     = { for e in jsondecode(aws_ecs_task_definition.backend.container_definitions)[0].environment : e.name => e.value }["SPRING_PROFILES_ACTIVE"] == "prod"
+    error_message = "The backend container must set SPRING_PROFILES_ACTIVE=prod."
+  }
+
+  assert {
+    condition = contains(
+      [for e in jsondecode(aws_ecs_task_definition.simulator.container_definitions)[0].environment : e.name],
+      "SIMULATION_SQS_POLL_FIXED_DELAY"
+    )
+    error_message = "The simulator container must set SIMULATION_SQS_POLL_FIXED_DELAY explicitly; the application-prod.yml default (60s) exceeds the backend's 30s wait (docs/aws-deployment.md)."
+  }
+
+  assert {
+    condition     = jsondecode(aws_ecs_task_definition.backend.container_definitions)[0].logConfiguration.options["awslogs-group"] == aws_cloudwatch_log_group.backend.name
+    error_message = "The backend container must log to its dedicated CloudWatch log group."
   }
 }
 
-run "iam_configuration" {
-  command = plan
+run "services" {
+  command = apply
 
   override_resource {
     target = aws_appautoscaling_policy.simulator_scale_out
@@ -199,6 +219,27 @@ run "iam_configuration" {
   }
 
   override_data {
+    target = data.aws_availability_zones.available
+    values = {
+      names = ["ap-northeast-1a", "ap-northeast-1c"]
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.backend_sqs
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.simulator_sqs
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  override_data {
     target = data.aws_iam_policy_document.ecs_tasks_assume_role
     values = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"}}]}"
@@ -265,34 +306,48 @@ run "iam_configuration" {
     }
   }
 
-  override_data {
-    target = data.aws_iam_policy_document.backend_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.simulator_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_availability_zones.available
-    values = {
-      names = ["ap-northeast-1a", "ap-northeast-1c"]
-    }
+  assert {
+    condition     = aws_ecs_service.backend.desired_count == 1 && aws_ecs_service.backend.launch_type == "FARGATE"
+    error_message = "The backend service must run exactly 1 task on standard Fargate (docs/aws-deployment.md: backend is 1 task fixed)."
   }
 
   assert {
-    condition     = aws_iam_policy.backend_sqs.name == "baseball-orders-dev-backend-sqs"
-    error_message = "The backend IAM policy must use the project and environment prefix."
+    condition     = aws_ecs_service.backend.network_configuration[0].assign_public_ip == true
+    error_message = "The backend task must have a public IP; this configuration has no NAT Gateway (docs/aws-deployment-low-cost.md)."
   }
 
   assert {
-    condition     = aws_iam_policy.simulator_sqs.name == "baseball-orders-dev-simulator-sqs"
-    error_message = "The simulator IAM policy must use the project and environment prefix."
+    condition     = contains(aws_ecs_service.backend.network_configuration[0].security_groups, aws_security_group.backend.id)
+    error_message = "The backend service must use the backend security group."
+  }
+
+  assert {
+    condition     = one(aws_ecs_service.backend.load_balancer).target_group_arn == aws_lb_target_group.backend.arn && one(aws_ecs_service.backend.load_balancer).container_port == 8080
+    error_message = "The backend service must register with the ALB target group on port 8080."
+  }
+
+  assert {
+    condition     = aws_ecs_service.simulator.desired_count == 1
+    error_message = "The simulator service must start with the documented minimum of 1 task."
+  }
+
+  assert {
+    condition     = one(aws_ecs_service.simulator.capacity_provider_strategy).capacity_provider == "FARGATE_SPOT" && one(aws_ecs_service.simulator.capacity_provider_strategy).weight == 100
+    error_message = "The simulator service must run entirely on Fargate Spot to keep the always-on cost low."
+  }
+
+  assert {
+    condition     = aws_ecs_service.simulator.network_configuration[0].assign_public_ip == true
+    error_message = "The simulator task must have a public IP; this configuration has no NAT Gateway (docs/aws-deployment-low-cost.md)."
+  }
+
+  assert {
+    condition     = contains(aws_ecs_service.simulator.network_configuration[0].security_groups, aws_security_group.simulator.id)
+    error_message = "The simulator service must use the simulator security group (no inbound rules)."
+  }
+
+  assert {
+    condition     = length(aws_ecs_service.simulator.load_balancer) == 0
+    error_message = "The simulator service has no HTTP endpoint and must not be registered with the ALB."
   }
 }

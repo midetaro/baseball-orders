@@ -5,7 +5,7 @@ variables {
   route53_zone_name = "example.com"
 }
 
-run "sqs_configuration" {
+run "network_configuration" {
   command = apply
 
   override_resource {
@@ -111,6 +111,13 @@ run "sqs_configuration" {
   }
 
   override_data {
+    target = data.aws_availability_zones.available
+    values = {
+      names = ["ap-northeast-1a", "ap-northeast-1c"]
+    }
+  }
+
+  override_data {
     target = data.aws_iam_policy_document.backend_sqs
     values = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
@@ -124,44 +131,49 @@ run "sqs_configuration" {
     }
   }
 
-  override_data {
-    target = data.aws_availability_zones.available
-    values = {
-      names = ["ap-northeast-1a", "ap-northeast-1c"]
-    }
+  assert {
+    condition     = aws_vpc.main.cidr_block == "10.0.0.0/16"
+    error_message = "The VPC must use the documented 10.0.0.0/16 CIDR block."
   }
 
   assert {
-    condition     = aws_sqs_queue.simulation_request.name == "simulation-request"
-    error_message = "The request queue must use the backend-compatible default name."
+    condition     = length(aws_subnet.public) == 2
+    error_message = "Exactly two public subnets must be created, one per availability zone."
   }
 
   assert {
-    condition     = aws_sqs_queue.simulation_result.name == "simulation-result"
-    error_message = "The result queue must use the backend-compatible default name."
+    condition     = alltrue([for s in aws_subnet.public : s.map_public_ip_on_launch])
+    error_message = "Every public subnet must auto-assign public IPs, since ECS tasks run there directly."
   }
 
   assert {
-    condition = alltrue([
-      aws_sqs_queue.simulation_request.sqs_managed_sse_enabled,
-      aws_sqs_queue.simulation_result.sqs_managed_sse_enabled,
-      aws_sqs_queue.simulation_request_dlq.sqs_managed_sse_enabled,
-      aws_sqs_queue.simulation_result_dlq.sqs_managed_sse_enabled,
-    ])
-    error_message = "Every SQS queue must use SQS-managed server-side encryption."
+    condition     = alltrue([for s in aws_subnet.public : s.vpc_id == aws_vpc.main.id])
+    error_message = "Every public subnet must belong to the VPC created for this deployment."
   }
 
   assert {
-    condition = alltrue([
-      jsondecode(aws_sqs_queue.simulation_request.redrive_policy).maxReceiveCount == 5,
-      jsondecode(aws_sqs_queue.simulation_result.redrive_policy).maxReceiveCount == 5,
-    ])
-    error_message = "Request and result queues must move messages to their DLQs after five receives."
+    condition     = length(distinct(aws_subnet.public[*].availability_zone)) == 2
+    error_message = "The two public subnets must be spread across two distinct availability zones."
+  }
+
+  assert {
+    condition     = aws_route_table.public.vpc_id == aws_vpc.main.id
+    error_message = "The public route table must belong to the deployment VPC."
+  }
+
+  assert {
+    condition     = [for r in aws_route_table.public.route : r.gateway_id][0] != null
+    error_message = "The public route table must route 0.0.0.0/0 through the Internet Gateway (no NAT Gateway in this configuration)."
+  }
+
+  assert {
+    condition     = length([for s in aws_subnet.public : s if !can(regex("^private", s.tags.Name))]) == 2
+    error_message = "No subnet in this configuration may be tagged as a private subnet; this configuration has no NAT Gateway."
   }
 }
 
-run "iam_configuration" {
-  command = plan
+run "security_groups" {
+  command = apply
 
   override_resource {
     target = aws_appautoscaling_policy.simulator_scale_out
@@ -266,6 +278,13 @@ run "iam_configuration" {
   }
 
   override_data {
+    target = data.aws_availability_zones.available
+    values = {
+      names = ["ap-northeast-1a", "ap-northeast-1c"]
+    }
+  }
+
+  override_data {
     target = data.aws_iam_policy_document.backend_sqs
     values = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
@@ -279,20 +298,38 @@ run "iam_configuration" {
     }
   }
 
-  override_data {
-    target = data.aws_availability_zones.available
-    values = {
-      names = ["ap-northeast-1a", "ap-northeast-1c"]
-    }
+  assert {
+    condition     = aws_security_group.alb.vpc_id == aws_vpc.main.id
+    error_message = "The ALB security group must belong to the deployment VPC."
   }
 
   assert {
-    condition     = aws_iam_policy.backend_sqs.name == "baseball-orders-dev-backend-sqs"
-    error_message = "The backend IAM policy must use the project and environment prefix."
+    condition     = aws_security_group.backend.vpc_id == aws_vpc.main.id
+    error_message = "The backend security group must belong to the deployment VPC."
   }
 
   assert {
-    condition     = aws_iam_policy.simulator_sqs.name == "baseball-orders-dev-simulator-sqs"
-    error_message = "The simulator IAM policy must use the project and environment prefix."
+    condition     = aws_security_group.simulator.vpc_id == aws_vpc.main.id
+    error_message = "The simulator security group must belong to the deployment VPC."
+  }
+
+  assert {
+    condition     = aws_vpc_security_group_ingress_rule.alb_https.security_group_id == aws_security_group.alb.id
+    error_message = "The ALB must accept inbound HTTPS."
+  }
+
+  assert {
+    condition     = aws_vpc_security_group_ingress_rule.alb_https.from_port == 443 && aws_vpc_security_group_ingress_rule.alb_https.to_port == 443
+    error_message = "The ALB ingress rule must allow only port 443."
+  }
+
+  assert {
+    condition     = aws_vpc_security_group_ingress_rule.backend_from_alb.referenced_security_group_id == aws_security_group.alb.id
+    error_message = "The backend security group must accept inbound traffic only from the ALB security group."
+  }
+
+  assert {
+    condition     = aws_vpc_security_group_ingress_rule.backend_from_alb.from_port == 8080 && aws_vpc_security_group_ingress_rule.backend_from_alb.to_port == 8080
+    error_message = "The backend ingress rule must allow only port 8080, matching the container port."
   }
 }
