@@ -64,13 +64,17 @@ class SimulationRulePropertiesTest {
                 () -> assertEquals(8f, rules.longDistanceHitting().tripleDivisor()),
                 () -> assertEquals(2f, rules.longDistanceHitting().homeRunDivisor()),
                 () -> assertEquals(1f, rules.longDistanceHitting().singleReductionDivisor()),
-                () -> assertEquals(0.2f, rules.standardSteal().toDoubleAttemptRate()),
-                () -> assertEquals(0.05f, rules.standardSteal().toTripleAttemptRate()),
+                () -> assertEquals(0.30f, rules.standardSteal().toDoubleAttemptRate()),
+                () -> assertEquals(0.10f, rules.standardSteal().toTripleAttemptRate()),
                 () -> assertEquals(0.3f, rules.eagerSteal().toDoubleAttemptRate()),
                 () -> assertEquals(0.15f, rules.eagerSteal().toTripleAttemptRate()),
                 () -> assertEquals(0.2f, rules.runnerAdvance().fromFirstProbability()),
                 () -> assertEquals(0.2f, rules.runnerAdvance().fromSecondProbability()),
-                () -> assertEquals(0.1f, rules.runnerAdvance().fromThirdProbability()));
+                () -> assertEquals(0.1f, rules.runnerAdvance().fromThirdProbability()),
+                () -> assertEquals(0.70f, rules.stealSuccessRate()),
+                () -> assertEquals(0.81f, rules.buntProbabilities().advancingSuccessRate()),
+                () -> assertEquals(0.45f, rules.buntProbabilities().squeezeSuccessRate()),
+                () -> assertEquals(0.25f, rules.buntProbabilities().squeezeChallengeRate()));
     }
 
     @DisplayName("全プロファイルの設定ファイルが同じ投手補正倍率を渡す")
@@ -93,8 +97,7 @@ class SimulationRulePropertiesTest {
         assertAll(
                 resourceName,
                 () -> assertEquals(1.0f, pitcher.standard().onBaseMultiplier()),
-                () -> assertEquals(1.0f, pitcher.standard().sluggingMultiplier()),
-                () -> assertEquals(1.0f, pitcher.standard().runningMultiplier()));
+                () -> assertEquals(1.0f, pitcher.standard().sluggingMultiplier()));
     }
 
     private static Binder binderFor(String resourceName) throws IOException {

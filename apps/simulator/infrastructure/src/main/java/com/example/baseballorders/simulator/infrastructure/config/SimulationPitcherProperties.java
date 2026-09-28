@@ -17,8 +17,6 @@ public record SimulationPitcherProperties(Multipliers standard) {
      *
      * @param onBaseMultiplier 出塁率へ掛ける倍率
      * @param sluggingMultiplier 長打率へ掛ける倍率
-     * @param runningMultiplier バント・盗塁成功率へ掛ける倍率
      */
-    public record Multipliers(
-            float onBaseMultiplier, float sluggingMultiplier, float runningMultiplier) {}
+    public record Multipliers(float onBaseMultiplier, float sluggingMultiplier) {}
 }

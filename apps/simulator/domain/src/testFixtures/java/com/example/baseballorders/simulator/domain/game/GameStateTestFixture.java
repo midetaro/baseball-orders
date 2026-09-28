@@ -30,8 +30,6 @@ public final class GameStateTestFixture {
                 new BatterEntity(
                         0,
                         0,
-                        0,
-                        0,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().noSteal(),
                         SimulationRulesTestData.strategies().noBunt());

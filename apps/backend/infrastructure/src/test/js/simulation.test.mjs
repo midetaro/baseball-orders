@@ -31,10 +31,10 @@ assert.ok(html.includes('得点サマリー'), '得点統計を独立したグ�
 assert.ok(html.includes('出塁率'), '打率ではなく出塁率を入力項目として表示する');
 assert.ok(!html.includes("label:'打率'"), '入力項目に打率を表示しない');
 assert.ok(html.includes("hitAverage:'0.28',sluggish:'0.40'"), '下位打線に制約内の出塁率・長打率を設定する');
-assert.ok(html.includes("buntSuccessRate:'0.70',stealSuccessRate:'0.70'"), 'バントと盗塁の成功率の初期値を7割にする');
-assert.ok(!html.includes("stealSuccessRate:'.500'"), '盗塁成功率の初期値を役割ごとに変えない');
-assert.ok(!html.includes("buntSuccessRate:'0.80',stealSuccessRate:'0.80'"), 'バントと盗塁の成功率の初期値を8割にしない');
-assert.ok(html.includes("buntSuccessRate:[0,Infinity], stealSuccessRate:[0.1,Infinity]"), 'バントと盗塁の成功率に上限を設けない');
+assert.ok(!html.includes('buntSuccessRate'), 'バント成功率の入力欄・初期値を保持しない');
+assert.ok(!html.includes('stealSuccessRate'), '盗塁成功率の入力欄・初期値を保持しない');
+assert.ok(!html.includes('バント成功率'), 'バント成功率のラベル・列見出しを表示しない');
+assert.ok(!html.includes('盗塁成功率'), '盗塁成功率のラベル・列見出しを表示しない');
 assert.ok(html.includes("function validLineup()"), '打順全体の入力制約を検証する');
 assert.ok(!html.includes("lineup.length<=0.35"), '出塁率の平均に上限を設けない');
 assert.ok(!html.includes("lineup.length<=0.4"), '長打率の平均に上限を設けない');
@@ -97,7 +97,7 @@ assert.ok(html.includes('id="share-results"'), '結果をSNS共有できる操�
 assert.ok(html.includes('navigator.share'), '対応ブラウザではネイティブ共有を使う');
 assert.ok(html.includes('clipboard.writeText'), 'ネイティブ共有非対応時は共有文をコピーする');
 assert.match(html, /\.order\s*\{\s*width:\s*max-content;\s*padding:/, '入力欄を親幅いっぱいに広げずコンパクトにする');
-assert.match(html, /grid-template-columns:\s*38px\s+repeat\(4,\s*60px\)\s+118px\s+78px\s+78px/, '数値入力列の余白を詰めて幅を最小限にする');
+assert.match(html, /grid-template-columns:\s*38px\s+repeat\(2,\s*60px\)\s+118px\s+78px\s+78px/, '数値入力列の余白を詰めて幅を最小限にする');
 assert.ok(html.includes('input[type="number"]::-webkit-inner-spin-button'), '数値入力のスピンボタンを除去して余白を詰める');
 assert.ok(html.includes('class="lineup-workspace"'), '打順入力とシミュレーション操作を横並びに配置する');
 assert.match(html, /\.section-head\s*\{\s*display:\s*flex;/, '打順入力の見出しと実行操作を横並びにする');
@@ -126,15 +126,12 @@ for (const [field, minimum, maximum] of [
 ]) {
   assert.ok(html.includes(field) && html.includes(minimum) && html.includes(maximum), `${field}の入力範囲を画面で制御する`);
 }
-assert.ok(html.includes("key:'stealSuccessRate',label:'盗塁成功率',min:0.1,enabledKey:'stealEnabled'"), '盗塁成功率は下限のみを画面で制御する');
-assert.ok(!html.includes("key:'stealSuccessRate',label:'盗塁成功率',min:0.1,max:"), '盗塁成功率に上限を設けない');
 assert.ok(html.includes("bunt_enabled:player.buntEnabled"), 'バント可否をAPIへ送る');
 assert.ok(html.includes("steal_enabled:player.stealEnabled"), '盗塁可否をAPIへ送る');
-assert.ok(html.includes("bunt_success_rate:Number(player.buntSuccessRate)"), 'バント成功率をAPIへ送る');
-assert.ok(html.includes("steal_success_rate:Number(player.stealSuccessRate)"), '盗塁成功率をAPIへ送る');
-assert.ok(html.includes("enabledKey:'buntEnabled'"), 'バント成功率はバント選択に連動させる');
-assert.ok(html.includes("enabledKey:'stealEnabled'"), '盗塁成功率は盗塁選択に連動させる');
-assert.ok(html.includes("input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]);"), 'バント・盗塁をしない場合は対応する成功率を入力不可にする');
+assert.ok(!html.includes('bunt_success_rate'), 'バント成功率をAPIへ送らない');
+assert.ok(!html.includes('steal_success_rate'), '盗塁成功率をAPIへ送らない');
+assert.ok(html.includes("toggle('バント',player.buntEnabled"), 'バントを使うかどうかの切り替えボタンは残す');
+assert.ok(html.includes("toggle('盗塁',player.stealEnabled"), '盗塁を使うかどうかの切り替えボタンは残す');
 assert.ok(html.includes("fetch('/simulations'"), '直接入力をシミュレーションAPIへ送る');
 assert.ok(!html.includes('name:'), '固定表示の打者名をAPIへ送らない');
 assert.match(html, /--cyan:\s*#25d9ff/, 'ビビットなシアンを画面全体の強調色に使う');

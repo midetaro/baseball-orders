@@ -14,6 +14,8 @@ import org.jilt.BuilderStyle;
  * @param standardSteal 標準盗塁戦略の企図率
  * @param eagerSteal 積極盗塁戦略の企図率
  * @param runnerAdvance 凡退時の走者進塁確率
+ * @param stealSuccessRate 盗塁成功率
+ * @param buntProbabilities バント戦略の成功率・企図率
  */
 @Builder(style = BuilderStyle.STAGED)
 public record SimulationRules(
@@ -22,4 +24,6 @@ public record SimulationRules(
         HittingDistribution longDistanceHitting,
         StealAttemptRates standardSteal,
         StealAttemptRates eagerSteal,
-        RunnerAdvanceProbabilities runnerAdvance) {}
+        RunnerAdvanceProbabilities runnerAdvance,
+        float stealSuccessRate,
+        BuntProbabilities buntProbabilities) {}

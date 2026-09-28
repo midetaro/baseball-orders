@@ -21,99 +21,99 @@ class StealBehaviorTest {
         return Stream.of(
                 arguments(
                         "積極的戦略で二塁への試行確率未満なら試行しない",
-                        new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal()),
+                        SimulationRulesTestData.strategies().eagerSteal(),
                         Destination.SECOND,
                         0.69f,
                         StealResult.NOT_TRY),
                 arguments(
                         "積極的戦略で二塁への試行境界と等しければ失敗する",
-                        new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal()),
+                        SimulationRulesTestData.strategies().eagerSteal(),
                         Destination.SECOND,
                         0.7f,
                         StealResult.FAILURE),
                 arguments(
                         "積極的戦略で二塁への成功範囲内なら成功する",
-                        new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal()),
+                        SimulationRulesTestData.strategies().eagerSteal(),
                         Destination.SECOND,
                         0.8f,
                         StealResult.SUCCESS),
                 arguments(
                         "積極的戦略で二塁への成功上限と等しければ失敗する",
-                        new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal()),
+                        SimulationRulesTestData.strategies().eagerSteal(),
                         Destination.SECOND,
-                        0.97f,
+                        0.91f,
                         StealResult.FAILURE),
                 arguments(
                         "積極的戦略で三塁への試行確率未満なら試行しない",
-                        new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal()),
+                        SimulationRulesTestData.strategies().eagerSteal(),
                         Destination.THIRD,
                         0.84f,
                         StealResult.NOT_TRY),
                 arguments(
                         "積極的戦略で三塁への試行境界と等しければ失敗する",
-                        new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal()),
+                        SimulationRulesTestData.strategies().eagerSteal(),
                         Destination.THIRD,
                         0.85f,
                         StealResult.FAILURE),
                 arguments(
                         "積極的戦略で三塁への成功範囲内なら成功する",
-                        new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal()),
+                        SimulationRulesTestData.strategies().eagerSteal(),
                         Destination.THIRD,
                         0.9f,
                         StealResult.SUCCESS),
                 arguments(
                         "積極的戦略で三塁への成功上限と等しければ失敗する",
-                        new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal()),
+                        SimulationRulesTestData.strategies().eagerSteal(),
                         Destination.THIRD,
-                        0.985f,
+                        0.95500005f,
                         StealResult.FAILURE),
                 arguments(
                         "標準戦略で二塁への試行確率未満なら試行しない",
                         SimulationRulesTestData.strategies().standardSteal(),
                         Destination.SECOND,
-                        0.79f,
+                        0.69f,
                         StealResult.NOT_TRY),
                 arguments(
                         "標準戦略で二塁への試行境界と等しければ失敗する",
                         SimulationRulesTestData.strategies().standardSteal(),
                         Destination.SECOND,
-                        0.8f,
+                        0.7f,
                         StealResult.FAILURE),
                 arguments(
                         "標準戦略で二塁への成功範囲内なら成功する",
                         SimulationRulesTestData.strategies().standardSteal(),
                         Destination.SECOND,
-                        0.9f,
+                        0.8f,
                         StealResult.SUCCESS),
                 arguments(
                         "標準戦略で二塁への成功上限と等しければ失敗する",
                         SimulationRulesTestData.strategies().standardSteal(),
                         Destination.SECOND,
-                        0.98f,
+                        0.91f,
                         StealResult.FAILURE),
                 arguments(
                         "標準戦略で三塁への試行確率未満なら試行しない",
                         SimulationRulesTestData.strategies().standardSteal(),
                         Destination.THIRD,
-                        0.94f,
+                        0.89f,
                         StealResult.NOT_TRY),
                 arguments(
                         "標準戦略で三塁への試行境界と等しければ失敗する",
                         SimulationRulesTestData.strategies().standardSteal(),
                         Destination.THIRD,
-                        0.95f,
+                        0.9f,
                         StealResult.FAILURE),
                 arguments(
                         "標準戦略で三塁への成功範囲内なら成功する",
                         SimulationRulesTestData.strategies().standardSteal(),
                         Destination.THIRD,
-                        0.97f,
+                        0.95f,
                         StealResult.SUCCESS),
                 arguments(
                         "標準戦略で三塁への成功上限と等しければ失敗する",
                         SimulationRulesTestData.strategies().standardSteal(),
                         Destination.THIRD,
-                        0.995f,
+                        0.97f,
                         StealResult.FAILURE));
     }
 
@@ -137,24 +137,27 @@ class StealBehaviorTest {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
 
             // when
-            StealResult result = destination.run(strategy, 0.9f);
+            StealResult result = destination.run(strategy);
 
             // then
             assertAll(() -> assertEquals(expectedResult, result, description));
         }
     }
 
-    @DisplayName("選手の盗塁成功率が高いほど同じ乱数でも盗塁に成功する")
+    @DisplayName("設定された盗塁成功率が高いほど同じ乱数でも盗塁に成功する")
     @org.junit.jupiter.api.Test
-    void usesPlayerStealSuccessRate() {
+    void usesConfiguredStealSuccessRate() {
         // given
-        var strategy = new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal());
+        var lowSuccessRateStrategy =
+                new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal(), 0.5f);
+        var highSuccessRateStrategy =
+                new EagerStealStrategy(SimulationRulesTestData.standard().eagerSteal(), 0.8f);
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.9f);
 
             // when
-            StealResult lowRateResult = strategy.runToDouble(0.5f);
-            StealResult highRateResult = strategy.runToDouble(0.8f);
+            StealResult lowRateResult = lowSuccessRateStrategy.runToDouble();
+            StealResult highRateResult = highSuccessRateStrategy.runToDouble();
 
             // then
             assertAll(
@@ -172,7 +175,7 @@ class StealBehaviorTest {
         var strategy = new NowayStealStrategy();
 
         // when
-        StealResult result = destination.run(strategy, 0.0f);
+        StealResult result = destination.run(strategy);
 
         // then
         assertAll(() -> assertEquals(expectedResult, result, description));
@@ -181,17 +184,17 @@ class StealBehaviorTest {
     enum Destination {
         SECOND {
             @Override
-            StealResult run(StealStrategy strategy, float successRate) {
-                return strategy.runToDouble(successRate);
+            StealResult run(StealStrategy strategy) {
+                return strategy.runToDouble();
             }
         },
         THIRD {
             @Override
-            StealResult run(StealStrategy strategy, float successRate) {
-                return strategy.runToTriple(successRate);
+            StealResult run(StealStrategy strategy) {
+                return strategy.runToTriple();
             }
         };
 
-        abstract StealResult run(StealStrategy strategy, float successRate);
+        abstract StealResult run(StealStrategy strategy);
     }
 }

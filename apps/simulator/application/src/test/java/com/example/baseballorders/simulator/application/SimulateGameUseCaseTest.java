@@ -32,8 +32,6 @@ class SimulateGameUseCaseTest {
                                         new BatterEntity(
                                                 0.4f,
                                                 0.4f,
-                                                0.7f,
-                                                0.8f,
                                                 hittingStrategy,
                                                 SimulationRulesTestData.strategies().noSteal(),
                                                 SimulationRulesTestData.strategies()

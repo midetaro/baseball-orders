@@ -12,10 +12,7 @@ import org.jilt.BuilderStyle;
  */
 @Builder(style = BuilderStyle.STAGED)
 public record SimulationLimits(
-        Duration resultTimeout,
-        float maximumAverageHitAverage,
-        float maximumAverageSluggish,
-        float maximumSuccessRate) {
+        Duration resultTimeout, float maximumAverageHitAverage, float maximumAverageSluggish) {
 
     /**
      * 結果待機時間が指定されていることだけを検証して上限値を生成する。

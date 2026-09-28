@@ -1,6 +1,8 @@
 package com.example.baseballorders.simulator.infrastructure.config;
 
 import com.example.baseballorders.simulator.domain.rule.BattingProbabilitiesBuilder;
+import com.example.baseballorders.simulator.domain.rule.BuntProbabilities;
+import com.example.baseballorders.simulator.domain.rule.BuntProbabilitiesBuilder;
 import com.example.baseballorders.simulator.domain.rule.HittingDistribution;
 import com.example.baseballorders.simulator.domain.rule.HittingDistributionBuilder;
 import com.example.baseballorders.simulator.domain.rule.RunnerAdvanceProbabilitiesBuilder;
@@ -19,6 +21,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param standardSteal 標準盗塁戦略の企図率
  * @param eagerSteal 積極盗塁戦略の企図率
  * @param runnerAdvance 凡退時の走者進塁確率
+ * @param stealSuccessRate 盗塁成功率
+ * @param bunt バント戦略の成功率・企図率
  */
 @ConfigurationProperties(prefix = "simulation.rule")
 public record SimulationRuleProperties(
@@ -27,7 +31,9 @@ public record SimulationRuleProperties(
         Hitting longDistanceHitting,
         Steal standardSteal,
         Steal eagerSteal,
-        RunnerAdvance runnerAdvance) {
+        RunnerAdvance runnerAdvance,
+        float stealSuccessRate,
+        Bunt bunt) {
 
     /**
      * 打者の成績に依存しない打席確率。
@@ -70,6 +76,16 @@ public record SimulationRuleProperties(
             float fromFirstProbability, float fromSecondProbability, float fromThirdProbability) {}
 
     /**
+     * バント戦略が用いる成功率・企図率。
+     *
+     * @param advancingSuccessRate 進塁バントの成功率
+     * @param squeezeSuccessRate スクイズの成功率
+     * @param squeezeChallengeRate スクイズを試みる（企図する）割合
+     */
+    public record Bunt(
+            float advancingSuccessRate, float squeezeSuccessRate, float squeezeChallengeRate) {}
+
+    /**
      * 束縛した設定値をドメインの確率設定へ変換する。
      *
      * @return ドメインが使用する確率設定
@@ -92,6 +108,8 @@ public record SimulationRuleProperties(
                                 .fromSecondProbability(runnerAdvance.fromSecondProbability())
                                 .fromThirdProbability(runnerAdvance.fromThirdProbability())
                                 .build())
+                .stealSuccessRate(stealSuccessRate)
+                .buntProbabilities(buntProbabilities(bunt))
                 .build();
     }
 
@@ -108,6 +126,14 @@ public record SimulationRuleProperties(
         return StealAttemptRatesBuilder.stealAttemptRates()
                 .toDoubleAttemptRate(steal.toDoubleAttemptRate())
                 .toTripleAttemptRate(steal.toTripleAttemptRate())
+                .build();
+    }
+
+    private static BuntProbabilities buntProbabilities(Bunt bunt) {
+        return BuntProbabilitiesBuilder.buntProbabilities()
+                .advancingSuccessRate(bunt.advancingSuccessRate())
+                .squeezeSuccessRate(bunt.squeezeSuccessRate())
+                .squeezeChallengeRate(bunt.squeezeChallengeRate())
                 .build();
     }
 }

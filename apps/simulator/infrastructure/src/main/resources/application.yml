@@ -21,8 +21,8 @@ simulation:
       home-run-divisor: ${SIMULATION_RULE_LONG_HOME_RUN_DIVISOR:2}
       single-reduction-divisor: ${SIMULATION_RULE_LONG_SINGLE_REDUCTION_DIVISOR:1}
     standard-steal:
-      to-double-attempt-rate: ${SIMULATION_RULE_STANDARD_STEAL_TO_DOUBLE_RATE:0.2}
-      to-triple-attempt-rate: ${SIMULATION_RULE_STANDARD_STEAL_TO_TRIPLE_RATE:0.05}
+      to-double-attempt-rate: ${SIMULATION_RULE_STANDARD_STEAL_TO_DOUBLE_RATE:0.30}
+      to-triple-attempt-rate: ${SIMULATION_RULE_STANDARD_STEAL_TO_TRIPLE_RATE:0.10}
     eager-steal:
       to-double-attempt-rate: ${SIMULATION_RULE_EAGER_STEAL_TO_DOUBLE_RATE:0.3}
       to-triple-attempt-rate: ${SIMULATION_RULE_EAGER_STEAL_TO_TRIPLE_RATE:0.15}
@@ -30,8 +30,12 @@ simulation:
       from-first-probability: ${SIMULATION_RULE_ADVANCE_FROM_FIRST_PROBABILITY:0.2}
       from-second-probability: ${SIMULATION_RULE_ADVANCE_FROM_SECOND_PROBABILITY:0.2}
       from-third-probability: ${SIMULATION_RULE_ADVANCE_FROM_THIRD_PROBABILITY:0.1}
+    steal-success-rate: ${SIMULATION_RULE_STEAL_SUCCESS_RATE:0.70}
+    bunt:
+      advancing-success-rate: ${SIMULATION_RULE_BUNT_ADVANCING_SUCCESS_RATE:0.81}
+      squeeze-success-rate: ${SIMULATION_RULE_BUNT_SQUEEZE_SUCCESS_RATE:0.45}
+      squeeze-challenge-rate: ${SIMULATION_RULE_BUNT_SQUEEZE_CHALLENGE_RATE:0.25}
   pitcher:
     standard:
       on-base-multiplier: ${SIMULATION_PITCHER_STANDARD_ON_BASE_MULTIPLIER:1.0}
       slugging-multiplier: ${SIMULATION_PITCHER_STANDARD_SLUGGING_MULTIPLIER:1.0}
-      running-multiplier: ${SIMULATION_PITCHER_STANDARD_RUNNING_MULTIPLIER:1.0}

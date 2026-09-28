@@ -58,8 +58,6 @@ class SimulatorRequestControllerTest {
                         new PlayerInputRequest(
                                 0.3f,
                                 0.4f,
-                                0.7f,
-                                0.7f,
                                 buntEnabled,
                                 stealEnabled,
                                 PlayerPersonality.EAGER_STEAL)));
@@ -109,8 +107,7 @@ class SimulatorRequestControllerTest {
                         java.util.stream.IntStream.rangeClosed(1, 9)
                                 .mapToObj(
                                         number ->
-                                                new PlayerInputRequest(
-                                                        0.300f, 0.400f, 0.700f, 0.700f, true, true))
+                                                new PlayerInputRequest(0.300f, 0.400f, true, true))
                                 .toList());
 
         // then
@@ -155,8 +152,7 @@ class SimulatorRequestControllerTest {
                         java.util.stream.IntStream.rangeClosed(1, 9)
                                 .mapToObj(
                                         number ->
-                                                new PlayerInputRequest(
-                                                        0.300f, 0.400f, 0.700f, 0.700f, true, true))
+                                                new PlayerInputRequest(0.300f, 0.400f, true, true))
                                 .toList());
 
         // then
@@ -183,8 +179,7 @@ class SimulatorRequestControllerTest {
                                 controller.send(
                                         playersWith(
                                                 new PlayerInputRequest(
-                                                        -0.001f, 0.400f, 0.700f, 0.700f, false,
-                                                        false))));
+                                                        -0.001f, 0.400f, false, false))));
         var missingValueException =
                 assertThrows(
                         NullPointerException.class,
@@ -192,26 +187,7 @@ class SimulatorRequestControllerTest {
                                 controller.send(
                                         playersWith(
                                                 new PlayerInputRequest(
-                                                        0.300f, 0.400f, null, 0.700f, false,
-                                                        false))));
-        var buntSuccessRateException =
-                assertThrows(
-                        IllegalArgumentException.class,
-                        () ->
-                                controller.send(
-                                        playersWith(
-                                                new PlayerInputRequest(
-                                                        0.300f, 0.400f, 0.701f, 0.700f, false,
-                                                        false))));
-        var stealSuccessRateException =
-                assertThrows(
-                        IllegalArgumentException.class,
-                        () ->
-                                controller.send(
-                                        playersWith(
-                                                new PlayerInputRequest(
-                                                        0.300f, 0.400f, 0.700f, 0.701f, false,
-                                                        false))));
+                                                        0.300f, null, false, false))));
 
         // then
         assertAll(
@@ -221,16 +197,7 @@ class SimulatorRequestControllerTest {
                                 hitAverageException.getMessage()),
                 () ->
                         assertEquals(
-                                "bunt_success_rate must not be null",
-                                missingValueException.getMessage()),
-                () ->
-                        assertEquals(
-                                "buntSuccessRate must be between 0.0 and 0.7",
-                                buntSuccessRateException.getMessage()),
-                () ->
-                        assertEquals(
-                                "stealSuccessRate must be between 0.0 and 0.7",
-                                stealSuccessRateException.getMessage()));
+                                "sluggish must not be null", missingValueException.getMessage()));
     }
 
     @Test
@@ -254,7 +221,6 @@ class SimulatorRequestControllerTest {
                 .resultTimeout(Duration.ofSeconds(30))
                 .maximumAverageHitAverage(0.350f)
                 .maximumAverageSluggish(0.400f)
-                .maximumSuccessRate(0.700f)
                 .build();
     }
 

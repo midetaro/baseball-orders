@@ -21,12 +21,6 @@ public final class BatterTestData {
     /** 基準打者の長打率。 */
     public static final float SLUGGING = 0.550f;
 
-    /** 基準打者のバント成功率。 */
-    public static final float BUNT_SUCCESS_RATE = 0.700f;
-
-    /** 基準打者の盗塁成功率。 */
-    public static final float STEAL_SUCCESS_RATE = 0.800f;
-
     /** 打順の人数。 */
     public static final int LINE_UP_SIZE = 9;
 
@@ -83,13 +77,7 @@ public final class BatterTestData {
             StealStrategy stealStrategy,
             BuntStrategy buntStrategy) {
         return new BatterEntity(
-                onBasePercentage,
-                slugging,
-                BUNT_SUCCESS_RATE,
-                STEAL_SUCCESS_RATE,
-                hittingStrategy,
-                stealStrategy,
-                buntStrategy);
+                onBasePercentage, slugging, hittingStrategy, stealStrategy, buntStrategy);
     }
 
     /**

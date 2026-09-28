@@ -19,8 +19,8 @@ simulation:
       home-run-divisor: 2
       single-reduction-divisor: 1
     standard-steal:
-      to-double-attempt-rate: 0.2
-      to-triple-attempt-rate: 0.05
+      to-double-attempt-rate: 0.30
+      to-triple-attempt-rate: 0.10
     eager-steal:
       to-double-attempt-rate: 0.3
       to-triple-attempt-rate: 0.15
@@ -28,8 +28,12 @@ simulation:
       from-first-probability: 0.2
       from-second-probability: 0.2
       from-third-probability: 0.1
+    steal-success-rate: 0.70
+    bunt:
+      advancing-success-rate: 0.81
+      squeeze-success-rate: 0.45
+      squeeze-challenge-rate: 0.25
   pitcher:
     standard:
       on-base-multiplier: 1.0
       slugging-multiplier: 1.0
-      running-multiplier: 1.0

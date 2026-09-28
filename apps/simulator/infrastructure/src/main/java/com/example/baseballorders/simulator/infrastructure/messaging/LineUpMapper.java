@@ -53,7 +53,8 @@ public class LineUpMapper {
      * player's selection. The legacy {@code hitAverage} wire field is interpreted as the domain
      * on-base percentage to retain the existing message contract. The opposing pitcher's
      * personality carried by a request is ignored; every batter receives the same standard
-     * probability adjustment.
+     * probability adjustment. Bunt and steal success rates are fixed simulation constants supplied
+     * through configuration rather than per-player wire data.
      *
      * @param players players contained in a simulation request
      * @return lineup containing mapped batter entities in request order
@@ -66,8 +67,6 @@ public class LineUpMapper {
                                         new BatterEntity(
                                                 player.hitAverage() * onBaseMultiplier(),
                                                 player.sluggish() * sluggingMultiplier(),
-                                                player.buntSuccessRate() * runningMultiplier(),
-                                                player.stealSuccessRate() * runningMultiplier(),
                                                 battingBehaviorFor(player.personality()),
                                                 player.stealEnabled()
                                                         ? stealStrategyFor(player.personality())
@@ -85,10 +84,6 @@ public class LineUpMapper {
 
     private float sluggingMultiplier() {
         return pitcherProperties.standard().sluggingMultiplier();
-    }
-
-    private float runningMultiplier() {
-        return pitcherProperties.standard().runningMultiplier();
     }
 
     private HittingStrategy battingBehaviorFor(PlayerPersonality personality) {
