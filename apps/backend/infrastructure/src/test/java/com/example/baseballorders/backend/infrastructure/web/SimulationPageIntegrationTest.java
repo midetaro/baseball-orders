@@ -147,7 +147,6 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("ログイン中（")),
                 () -> assertTrue(response.body().contains("出塁率")),
                 () -> assertTrue(response.body().contains("長打率")),
-                () -> assertTrue(response.body().contains("盗塁成功率")),
                 () ->
                         assertContainsPattern(
                                 response.body(), "position\\.textContent=`\\$\\{index\\+\\d+}番`"),
@@ -165,16 +164,10 @@ class SimulationPageIntegrationTest {
                                 response.body()
                                         .matches(
                                                 "(?s).*key:'sluggish',label:'長打率',min:\\d+\\.\\d+,max:\\d+\\.\\d+.*")),
-                () ->
-                        assertContainsPattern(
-                                response.body(),
-                                "key:'stealSuccessRate',label:'盗塁成功率',min:\\d+\\.\\d+,enabledKey"),
-                () -> assertTrue(response.body().contains("buntSuccessRate:[0,Infinity]")),
-                () ->
-                        assertTrue(
-                                response.body()
-                                        .contains(
-                                                "key:'buntSuccessRate',label:'バント成功率',min:0,enabledKey:'buntEnabled'")),
+                () -> assertFalse(response.body().contains("盗塁成功率")),
+                () -> assertFalse(response.body().contains("バント成功率")),
+                () -> assertFalse(response.body().contains("stealSuccessRate")),
+                () -> assertFalse(response.body().contains("buntSuccessRate")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
                 () -> assertTrue(response.body().contains("<h2 id=\"order-heading\">打順入力</h2>")),
                 () -> assertTrue(response.body().contains("id=\"toggle-all-bunt\"")),
@@ -214,17 +207,11 @@ class SimulationPageIntegrationTest {
                                 response.body(),
                                 "grid-template-columns:\\d+px\\s+repeat\\(\\d+,\\s*\\d+px\\)\\s+\\d+px\\s+\\d+px"),
                 () -> assertTrue(response.body().contains("function fieldWrapper(")),
-                () -> assertTrue(response.body().contains("enabledKey:'buntEnabled'")),
-                () -> assertTrue(response.body().contains("enabledKey:'stealEnabled'")),
                 () ->
                         assertTrue(
                                 response.body()
                                         .contains(
                                                 "input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]);")),
-                () ->
-                        assertContainsPattern(
-                                response.body(),
-                                "buntSuccessRate:'\\d+\\.\\d{2}',stealSuccessRate:'\\d+\\.\\d{2}'"),
                 () -> assertContainsPattern(response.body(), "input\\.step='\\d+\\.\\d+'"),
                 () ->
                         assertTrue(
@@ -319,9 +306,9 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("各選手の入力項目")),
                 () -> assertTrue(response.body().contains("出塁率")),
                 () -> assertTrue(response.body().contains("長打率")),
-                () -> assertTrue(response.body().contains("バント成功率")),
-                () -> assertTrue(response.body().contains("<strong>0.00〜0.95</strong>")),
-                () -> assertTrue(response.body().contains("盗塁成功率")),
+                () -> assertFalse(response.body().contains("バント成功率")),
+                () -> assertFalse(response.body().contains("<strong>0.00〜0.95</strong>")),
+                () -> assertFalse(response.body().contains("盗塁成功率")),
                 () -> assertTrue(response.body().contains("バント・盗塁のオン／オフ")),
                 () -> assertTrue(response.body().contains("性格による違い")),
                 () -> assertTrue(response.body().contains("標準")),
@@ -329,11 +316,17 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("長距離砲")),
                 () -> assertTrue(response.body().contains("標準より本塁打の割合が増える")),
                 () -> assertTrue(response.body().contains("盗塁重視")),
-                () -> assertTrue(response.body().contains("標準より一塁・二塁走者の盗塁を試みやすくなります")),
+                () -> assertTrue(response.body().contains("標準より二塁走者の盗塁を試みやすくなります")),
                 () -> assertTrue(response.body().contains("バント重視")),
                 () -> assertTrue(response.body().contains("一死でもバントを試みます")),
                 () -> assertTrue(response.body().contains("平均得点")),
+                () -> assertTrue(response.body().contains("盗塁の成功率は<strong>70%</strong>")),
                 () -> assertTrue(response.body().contains("盗塁死となり、アウトが一つ増えます")),
+                () -> assertTrue(response.body().contains("進塁バント")),
+                () -> assertTrue(response.body().contains("成功率は<strong>81%</strong>")),
+                () -> assertTrue(response.body().contains("<strong>25%</strong>の確率で試み")),
+                () -> assertTrue(response.body().contains("試みた場合の成功率は<strong>45%</strong>")),
+                () -> assertTrue(response.body().contains("挑戦しなかった場合は通常の打撃を行います")),
                 () -> assertTrue(response.body().contains("満塁で四球になると押し出しで1点入ります")),
                 () -> assertTrue(response.body().contains("進塁バントとスクイズの成功・失敗をそれぞれ色分け")),
                 () -> assertTrue(response.body().contains("二盗成功・三盗成功・盗塁失敗を色分け")),

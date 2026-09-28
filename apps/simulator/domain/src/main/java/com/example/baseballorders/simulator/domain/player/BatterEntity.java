@@ -31,12 +31,6 @@ public class BatterEntity extends Player {
     /** 長打率 */
     private final float sluggish;
 
-    /** バント成功率 */
-    private final float buntSuccessRate;
-
-    /** 盗塁成功率 */
-    private final float stealSuccessRate;
-
     /** 打撃戦略 */
     private final HittingStrategy hittingStrategy;
 
@@ -54,8 +48,6 @@ public class BatterEntity extends Player {
      *
      * @param onBasePercentage on-base percentage
      * @param sluggish slugging percentage
-     * @param buntSuccessRate bunt success rate
-     * @param stealSuccessRate steal success rate
      * @param hittingStrategy batting behavior
      * @param stealStrategy steal strategy
      * @param buntStrategy bunt strategy
@@ -63,16 +55,12 @@ public class BatterEntity extends Player {
     public BatterEntity(
             float onBasePercentage,
             float sluggish,
-            float buntSuccessRate,
-            float stealSuccessRate,
             HittingStrategy hittingStrategy,
             StealStrategy stealStrategy,
             BuntStrategy buntStrategy) {
         this(
                 onBasePercentage,
                 sluggish,
-                buntSuccessRate,
-                stealSuccessRate,
                 hittingStrategy,
                 stealStrategy,
                 buntStrategy,
@@ -97,7 +85,7 @@ public class BatterEntity extends Player {
      * @return 盗塁結果。結果を購読者へ通知する
      */
     public StealResult stealToDouble() {
-        StealResult stealResult = stealStrategy.runToDouble(stealSuccessRate);
+        StealResult stealResult = stealStrategy.runToDouble();
         playResultObserver.onStealResult(stealResult, StealTarget.SECOND);
         return stealResult;
     }
@@ -108,7 +96,7 @@ public class BatterEntity extends Player {
      * @return 盗塁結果。結果を購読者へ通知する
      */
     public StealResult stealToTriple() {
-        StealResult stealResult = stealStrategy.runToTriple(stealSuccessRate);
+        StealResult stealResult = stealStrategy.runToTriple();
         playResultObserver.onStealResult(stealResult, StealTarget.THIRD);
         return stealResult;
     }
@@ -121,7 +109,7 @@ public class BatterEntity extends Player {
      * @return バント結果。結果を購読者へ通知する
      */
     public BuntResult bunt(OutCount outCount, BuntType buntType) {
-        BuntResult buntResult = buntStrategy.bunt(buntSuccessRate, outCount);
+        BuntResult buntResult = buntStrategy.bunt(outCount, buntType);
         playResultObserver.onBuntResult(buntResult, buntType);
         return buntResult;
     }
@@ -136,8 +124,6 @@ public class BatterEntity extends Player {
         return new BatterEntity(
                 onBasePercentage,
                 sluggish,
-                buntSuccessRate,
-                stealSuccessRate,
                 hittingStrategy,
                 stealStrategy,
                 buntStrategy,

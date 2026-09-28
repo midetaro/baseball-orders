@@ -52,9 +52,7 @@ public final class SimulatorRequestController {
                                     .name((index + 1) + "番")
                                     .hitAverage(player.hitAverage())
                                     .sluggish(player.sluggish())
-                                    .buntSuccessRate(player.buntSuccessRate())
                                     .buntEnabled(player.buntEnabled())
-                                    .stealSuccessRate(player.stealSuccessRate())
                                     .stealEnabled(player.stealEnabled())
                                     .personality(player.personality())
                                     .build();

@@ -40,8 +40,8 @@ public final class SimulationRulesTestData {
                                 .build())
                 .standardSteal(
                         StealAttemptRatesBuilder.stealAttemptRates()
-                                .toDoubleAttemptRate(0.2f)
-                                .toTripleAttemptRate(0.05f)
+                                .toDoubleAttemptRate(0.30f)
+                                .toTripleAttemptRate(0.10f)
                                 .build())
                 .eagerSteal(
                         StealAttemptRatesBuilder.stealAttemptRates()
@@ -53,6 +53,13 @@ public final class SimulationRulesTestData {
                                 .fromFirstProbability(0.2f)
                                 .fromSecondProbability(0.2f)
                                 .fromThirdProbability(0.1f)
+                                .build())
+                .stealSuccessRate(0.70f)
+                .buntProbabilities(
+                        BuntProbabilitiesBuilder.buntProbabilities()
+                                .advancingSuccessRate(0.81f)
+                                .squeezeSuccessRate(0.45f)
+                                .squeezeChallengeRate(0.25f)
                                 .build())
                 .build();
     }

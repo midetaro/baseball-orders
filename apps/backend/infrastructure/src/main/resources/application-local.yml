@@ -5,7 +5,6 @@ baseball-orders:
     result-timeout: 30s
     maximum-average-hit-average: 0.35
     maximum-average-sluggish: 0.4
-    maximum-success-rate: 0.7
   rendering:
     single-game:
       frame-duration-millis: 1000

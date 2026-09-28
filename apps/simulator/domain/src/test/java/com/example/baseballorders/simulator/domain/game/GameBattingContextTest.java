@@ -23,8 +23,6 @@ class GameBattingContextTest {
         return new BatterEntity(
                 0.3f,
                 0.4f,
-                0.7f,
-                0.8f,
                 SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                 SimulationRulesTestData.strategies().noSteal(),
                 SimulationRulesTestData.strategies().noBunt());
@@ -77,8 +75,6 @@ class GameBattingContextTest {
                 new BatterEntity(
                         0.3f,
                         0.4f,
-                        0.7f,
-                        0.8f,
                         SimulationRulesTestData.strategies().longDistanceAtBat(),
                         SimulationRulesTestData.strategies().noSteal(),
                         SimulationRulesTestData.strategies().noBunt());

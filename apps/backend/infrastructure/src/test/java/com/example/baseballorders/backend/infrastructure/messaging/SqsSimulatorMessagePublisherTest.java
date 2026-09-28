@@ -39,7 +39,7 @@ class SqsSimulatorMessagePublisherTest {
 
     @Test
     @DisplayName("backendの選手データを性格を含む共有要求へ変換する")
-    void mapsSuccessRatesToSharedRequest() {
+    void mapsStrategyOptionsToSharedRequest() {
         // given
         SqsTemplate sqsTemplate = mock(SqsTemplate.class);
         var publisher = new SqsSimulatorMessagePublisher(sqsTemplate, "test-request-queue");
@@ -52,9 +52,7 @@ class SqsSimulatorMessagePublisherTest {
                                         .name("選手1")
                                         .hitAverage(0.321f)
                                         .sluggish(0.400f)
-                                        .buntSuccessRate(0.700f)
                                         .buntEnabled(true)
-                                        .stealSuccessRate(0.678f)
                                         .stealEnabled(true)
                                         .personality(PlayerPersonality.EAGER_BUNT)
                                         .build()));
@@ -68,15 +66,10 @@ class SqsSimulatorMessagePublisherTest {
         assertAll(
                 () ->
                         assertEquals(
-                                0.700f,
-                                messageCaptor.getValue().players().getFirst().buntSuccessRate()),
-                () ->
-                        assertEquals(
                                 true, messageCaptor.getValue().players().getFirst().buntEnabled()),
                 () ->
                         assertEquals(
-                                0.678f,
-                                messageCaptor.getValue().players().getFirst().stealSuccessRate()),
+                                true, messageCaptor.getValue().players().getFirst().stealEnabled()),
                 () ->
                         assertEquals(
                                 com.example.baseballorders.messaging.PlayerPersonality.EAGER_BUNT,

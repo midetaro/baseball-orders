@@ -6,7 +6,6 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import com.example.baseballorders.simulator.domain.play.StealResult;
 import com.example.baseballorders.simulator.domain.player.strategy.ScriptedRandom;
-import com.example.baseballorders.simulator.domain.rule.SimulationRulesTestData;
 import com.example.baseballorders.simulator.domain.rule.StealAttemptRates;
 import com.example.baseballorders.simulator.domain.rule.StealAttemptRatesBuilder;
 import java.util.stream.Stream;
@@ -18,15 +17,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 /**
  * 標準盗塁戦略の確率仕様。
  *
- * <p>成功率 0.800 の走者での乱数区間は次のとおり。試行率は二盗 20% / 三盗 5%。
+ * <p>設定された盗塁成功率 0.700・企図率（二盗 30% / 三盗 10%）での乱数区間は次のとおり。
  *
  * <pre>
- * 二盗 : [0.0000000, 0.8000000) 試行しない
- *        (0.8000000, 0.9600000) 成功
- *        その他                 失敗（0.8000000 ちょうどを含む）
- * 三盗 : [0.0000000, 0.9500000) 試行しない
- *        (0.9500000, 0.9900000) 成功
- *        その他                 失敗（0.9500000 ちょうどを含む）
+ * 二盗 : [0.0000000, 0.7000000) 試行しない
+ *        (0.7000000, 0.9100000) 成功
+ *        その他                 失敗（0.7000000 ちょうどを含む）
+ * 三盗 : [0.0000000, 0.9000000) 試行しない
+ *        (0.9000000, 0.9700000) 成功
+ *        その他                 失敗（0.9000000 ちょうどを含む）
  * </pre>
  *
  * <p>実装が {@code if (r < NOT_TRY) ... else if (NOT_TRY < r && r < successProbability) ...}
@@ -34,34 +33,40 @@ import org.junit.jupiter.params.provider.MethodSource;
  */
 class StandardStealStrategyTest {
 
-    private static final float STEAL_SUCCESS_RATE = 0.800f;
+    private static final StealAttemptRates ATTEMPT_RATES =
+            StealAttemptRatesBuilder.stealAttemptRates()
+                    .toDoubleAttemptRate(0.30f)
+                    .toTripleAttemptRate(0.10f)
+                    .build();
+
+    private static final float STEAL_SUCCESS_RATE = 0.700f;
 
     static Stream<Arguments> stealToSecondBoundaries() {
         return Stream.of(
                 arguments("0.0000000は試行しない区間の下端", 0.0f, StealResult.NOT_TRY),
-                arguments("0.79999995は試行しない区間の直前", 0.79999995f, StealResult.NOT_TRY),
-                arguments("0.8000000は試行境界と等しく失敗になる", 0.8f, StealResult.FAILURE),
-                arguments("0.8000001は成功区間の下端", 0.8000001f, StealResult.SUCCESS),
-                arguments("0.9600000は成功区間の直前", 0.96f, StealResult.SUCCESS),
-                arguments("0.96000004は成功上限と等しく失敗になる", 0.96000004f, StealResult.FAILURE),
+                arguments("0.6999999は試行しない区間の直前", 0.6999999f, StealResult.NOT_TRY),
+                arguments("0.7000000は試行境界と等しく失敗になる", 0.7f, StealResult.FAILURE),
+                arguments("0.7000001は成功区間の下端", 0.7000001f, StealResult.SUCCESS),
+                arguments("0.9099999は成功区間の直前", 0.9099999f, StealResult.SUCCESS),
+                arguments("0.9100000は成功上限と等しく失敗になる", 0.91f, StealResult.FAILURE),
                 arguments("1.0000000は失敗区間の上端", 1.0f, StealResult.FAILURE));
     }
 
     static Stream<Arguments> stealToThirdBoundaries() {
         return Stream.of(
                 arguments("0.0000000は試行しない区間の下端", 0.0f, StealResult.NOT_TRY),
-                arguments("0.9499999は試行しない区間の直前", 0.9499999f, StealResult.NOT_TRY),
-                arguments("0.9500000は試行境界と等しく失敗になる", 0.95f, StealResult.FAILURE),
-                arguments("0.95000005は成功区間の下端", 0.95000005f, StealResult.SUCCESS),
-                arguments("0.98999995は成功区間の直前", 0.98999995f, StealResult.SUCCESS),
-                arguments("0.9900000は成功上限と等しく失敗になる", 0.99f, StealResult.FAILURE),
+                arguments("0.8999999は試行しない区間の直前", 0.8999999f, StealResult.NOT_TRY),
+                arguments("0.9000000は試行境界と等しく失敗になる", 0.9f, StealResult.FAILURE),
+                arguments("0.9000001は成功区間の下端", 0.9000001f, StealResult.SUCCESS),
+                arguments("0.9699999は成功区間の直前", 0.9699999f, StealResult.SUCCESS),
+                arguments("0.9700000は成功上限と等しく失敗になる", 0.97f, StealResult.FAILURE),
                 arguments("1.0000000は失敗区間の上端", 1.0f, StealResult.FAILURE));
     }
 
     static Stream<Arguments> successRateComparisons() {
         return Stream.of(
-                arguments("成功率0.800なら0.9500000は成功範囲内", 0.800f, StealResult.SUCCESS),
-                arguments("成功率0.700なら0.9500000は成功上限を超える", 0.700f, StealResult.FAILURE));
+                arguments("成功率0.700なら0.8500000は成功範囲内", 0.700f, StealResult.SUCCESS),
+                arguments("成功率0.300なら0.8500000は成功上限を超える", 0.300f, StealResult.FAILURE));
     }
 
     @DisplayName("標準戦略は二盗の乱数区間の境界どおりに結果を決定し、乱数を1個だけ消費する")
@@ -70,12 +75,12 @@ class StandardStealStrategyTest {
     void determinesStealToSecondAtBoundary(
             String description, float random, StealResult expectedResult) {
         // given
-        var sut = new StandardStealStrategy(SimulationRulesTestData.standard().standardSteal());
+        var sut = new StandardStealStrategy(ATTEMPT_RATES, STEAL_SUCCESS_RATE);
 
         // when
         StealResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            result = sut.runToDouble(STEAL_SUCCESS_RATE);
+            result = sut.runToDouble();
 
             // then
             assertAll(
@@ -92,12 +97,12 @@ class StandardStealStrategyTest {
     void determinesStealToThirdAtBoundary(
             String description, float random, StealResult expectedResult) {
         // given
-        var sut = new StandardStealStrategy(SimulationRulesTestData.standard().standardSteal());
+        var sut = new StandardStealStrategy(ATTEMPT_RATES, STEAL_SUCCESS_RATE);
 
         // when
         StealResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            result = sut.runToTriple(STEAL_SUCCESS_RATE);
+            result = sut.runToTriple();
 
             // then
             assertAll(
@@ -108,18 +113,18 @@ class StandardStealStrategyTest {
         }
     }
 
-    @DisplayName("標準戦略の二盗成功上限は走者本人の盗塁成功率で決まる")
+    @DisplayName("標準戦略の二盗成功上限は設定された盗塁成功率で決まる")
     @ParameterizedTest(name = "{0}")
     @MethodSource("successRateComparisons")
-    void usesRunnerStealSuccessRateForSecond(
+    void usesConfiguredStealSuccessRateForSecond(
             String description, float stealSuccessRate, StealResult expectedResult) {
         // given
-        var sut = new StandardStealStrategy(SimulationRulesTestData.standard().standardSteal());
+        var sut = new StandardStealStrategy(ATTEMPT_RATES, stealSuccessRate);
 
         // when
         StealResult result;
-        try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.95f)) {
-            result = sut.runToDouble(stealSuccessRate);
+        try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.85f)) {
+            result = sut.runToDouble();
 
             // then
             assertAll(
@@ -131,15 +136,12 @@ class StandardStealStrategyTest {
 
     static Stream<Arguments> configuredAttemptRates() {
         return Stream.of(
+                arguments("設定値0.300では0.6000000は試行しない", ATTEMPT_RATES, StealResult.NOT_TRY),
                 arguments(
-                        "設定値0.200では0.6000000は試行しない",
-                        SimulationRulesTestData.standard().standardSteal(),
-                        StealResult.NOT_TRY),
-                arguments(
-                        "設定値0.500では0.6000000は成功する",
+                        "設定値0.700では0.6000000は成功する",
                         StealAttemptRatesBuilder.stealAttemptRates()
-                                .toDoubleAttemptRate(0.5f)
-                                .toTripleAttemptRate(0.05f)
+                                .toDoubleAttemptRate(0.7f)
+                                .toTripleAttemptRate(0.10f)
                                 .build(),
                         StealResult.SUCCESS));
     }
@@ -150,12 +152,12 @@ class StandardStealStrategyTest {
     void usesConfiguredAttemptRateForSecond(
             String description, StealAttemptRates attemptRates, StealResult expectedResult) {
         // given
-        var sut = new StandardStealStrategy(attemptRates);
+        var sut = new StandardStealStrategy(attemptRates, STEAL_SUCCESS_RATE);
 
         // when
         StealResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.6f)) {
-            result = sut.runToDouble(STEAL_SUCCESS_RATE);
+            result = sut.runToDouble();
 
             // then
             assertAll(

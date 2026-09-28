@@ -16,6 +16,7 @@ import com.example.baseballorders.simulator.domain.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.game.BaseStateFactory;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.rule.BattingProbabilitiesBuilder;
+import com.example.baseballorders.simulator.domain.rule.BuntProbabilitiesBuilder;
 import com.example.baseballorders.simulator.domain.rule.HittingDistributionBuilder;
 import com.example.baseballorders.simulator.domain.rule.RunnerAdvanceProbabilitiesBuilder;
 import com.example.baseballorders.simulator.domain.rule.SimulationRules;
@@ -82,8 +83,8 @@ class BackendSimulatorFlociIntegrationTest {
                     .singleReductionDivisor(1)
                     .build())
             .standardSteal(StealAttemptRatesBuilder.stealAttemptRates()
-                    .toDoubleAttemptRate(0.2f)
-                    .toTripleAttemptRate(0.05f)
+                    .toDoubleAttemptRate(0.30f)
+                    .toTripleAttemptRate(0.10f)
                     .build())
             .eagerSteal(StealAttemptRatesBuilder.stealAttemptRates()
                     .toDoubleAttemptRate(0.3f)
@@ -94,12 +95,18 @@ class BackendSimulatorFlociIntegrationTest {
                     .fromSecondProbability(0.2f)
                     .fromThirdProbability(0.1f)
                     .build())
+            .stealSuccessRate(0.70f)
+            .buntProbabilities(BuntProbabilitiesBuilder.buntProbabilities()
+                    .advancingSuccessRate(0.81f)
+                    .squeezeSuccessRate(0.45f)
+                    .squeezeChallengeRate(0.25f)
+                    .build())
             .build();
 
     private static final BehaviorStrategies STRATEGIES = new BehaviorStrategies(SIMULATION_RULES);
 
     private static final SimulationPitcherProperties PITCHER_PROPERTIES =
-            new SimulationPitcherProperties(new Multipliers(1.0f, 1.0f, 1.0f));
+            new SimulationPitcherProperties(new Multipliers(1.0f, 1.0f));
 
 
     private static HttpClient authenticatedClient(int port) throws Exception {
@@ -236,15 +243,15 @@ class BackendSimulatorFlociIntegrationTest {
                             .timeout(Duration.ofSeconds(30))
                             .header("Content-Type", "application/json")
                             .POST(HttpRequest.BodyPublishers.ofString("""
-                                    [{"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false}]
+                                    [{"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false}]
                                     """))
                             .build();
 

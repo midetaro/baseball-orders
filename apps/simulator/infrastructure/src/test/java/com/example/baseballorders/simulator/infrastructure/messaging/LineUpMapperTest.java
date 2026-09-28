@@ -40,8 +40,7 @@ class LineUpMapperTest {
                         SimulationRulesTestData.strategies().standardBunt(),
                         SimulationRulesTestData.strategies(),
                         SimulationPropertiesTestData.standardPitcherProperties());
-        var player =
-                new SimulationPlayerMessage("1番", 0.3f, 0.4f, 0.0f, true, 0.8f, true, personality);
+        var player = new SimulationPlayerMessage("1番", 0.3f, 0.4f, true, true, personality);
 
         // when
         BattingResult battingResult;
@@ -53,7 +52,7 @@ class LineUpMapperTest {
                     .thenReturn(
                             personality == PlayerPersonality.EAGER_SLUGGISH ? 0.27f : 0.8f,
                             0.9f,
-                            0.1f);
+                            0.9f);
             var batter =
                     mapper.map(java.util.Collections.nCopies(9, player))
                             .getBatterEntities()
@@ -94,8 +93,8 @@ class LineUpMapperTest {
                 new com.fasterxml.jackson.databind.ObjectMapper()
                         .readValue(
                                 """
-                                        {"name":"1番","hitAverage":0.3,"sluggish":0.4,"buntSuccessRate":0.7,
-                                         "buntEnabled":%s,"stealSuccessRate":0.8,"stealEnabled":%s}
+                                        {"name":"1番","hitAverage":0.3,"sluggish":0.4,
+                                         "buntEnabled":%s,"stealEnabled":%s}
                                         """
                                         .formatted(buntEnabled, stealEnabled),
                                 SimulationPlayerMessage.class);
@@ -164,13 +163,7 @@ class LineUpMapperTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number,
-                                                1.0f,
-                                                0.0f,
-                                                0.8f,
-                                                false,
-                                                0.9f,
-                                                true))
+                                                "player-" + number, 1.0f, 0.0f, false, true))
                         .toList();
 
         // when
@@ -194,13 +187,13 @@ class LineUpMapperTest {
     }
 
     @Test
-    @DisplayName("設定された既定の投手補正倍率で各確率を補正する")
+    @DisplayName("設定された既定の投手補正倍率で出塁率・長打率を補正する")
     void usesConfiguredPitcherMultipliers() {
         // given
         var hitting = mock(MiddleDistanceHittingStrategy.class);
         var stealing = mock(StandardStealStrategy.class);
         var bunting = mock(StandardBuntStrategy.class);
-        var pitcherProperties = new SimulationPitcherProperties(new Multipliers(2.0f, 0.5f, 0.25f));
+        var pitcherProperties = new SimulationPitcherProperties(new Multipliers(2.0f, 0.5f));
         var mapper =
                 new LineUpMapper(
                         hitting,
@@ -210,11 +203,9 @@ class LineUpMapperTest {
                         pitcherProperties);
         var player =
                 new SimulationPlayerMessage(
-                        "1番", 0.3f, 0.4f, 0.5f, true, 0.6f, true, PlayerPersonality.DEFAULT);
+                        "1番", 0.3f, 0.4f, true, true, PlayerPersonality.DEFAULT);
         var onBaseCaptor = ArgumentCaptor.forClass(Float.class);
         var sluggingCaptor = ArgumentCaptor.forClass(Float.class);
-        var buntCaptor = ArgumentCaptor.forClass(Float.class);
-        var stealCaptor = ArgumentCaptor.forClass(Float.class);
 
         // when
         var batter =
@@ -223,15 +214,12 @@ class LineUpMapperTest {
         batter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
         batter.stealToDouble();
         verify(hitting).batting(onBaseCaptor.capture(), sluggingCaptor.capture());
-        verify(bunting)
-                .bunt(buntCaptor.capture(), org.mockito.ArgumentMatchers.eq(OutCount.NO_OUT));
-        verify(stealing).runToDouble(stealCaptor.capture());
+        verify(bunting).bunt(OutCount.NO_OUT, BuntType.ADVANCING);
+        verify(stealing).runToDouble();
 
         // then
         assertAll(
                 () -> assertEquals(0.6f, onBaseCaptor.getValue(), 0.00001f),
-                () -> assertEquals(0.2f, sluggingCaptor.getValue(), 0.00001f),
-                () -> assertEquals(0.125f, buntCaptor.getValue(), 0.00001f),
-                () -> assertEquals(0.15f, stealCaptor.getValue(), 0.00001f));
+                () -> assertEquals(0.2f, sluggingCaptor.getValue(), 0.00001f));
     }
 }

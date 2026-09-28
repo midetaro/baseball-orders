@@ -48,7 +48,7 @@ public final class BehaviorStrategies {
      * @return an eager stealing behavior
      */
     public StealStrategy eagerSteal() {
-        return new EagerStealStrategy(rules.eagerSteal());
+        return new EagerStealStrategy(rules.eagerSteal(), rules.stealSuccessRate());
     }
 
     /**
@@ -57,7 +57,7 @@ public final class BehaviorStrategies {
      * @return a standard stealing behavior
      */
     public StealStrategy standardSteal() {
-        return new StandardStealStrategy(rules.standardSteal());
+        return new StandardStealStrategy(rules.standardSteal(), rules.stealSuccessRate());
     }
 
     /**
@@ -75,7 +75,7 @@ public final class BehaviorStrategies {
      * @return a standard bunt strategy
      */
     public BuntStrategy standardBunt() {
-        return new StandardBuntStrategy();
+        return new StandardBuntStrategy(rules.buntProbabilities());
     }
 
     /**
@@ -84,7 +84,7 @@ public final class BehaviorStrategies {
      * @return an eager bunt strategy
      */
     public BuntStrategy eagerBunt() {
-        return new EagerBuntStrategy();
+        return new EagerBuntStrategy(rules.buntProbabilities());
     }
 
     /**

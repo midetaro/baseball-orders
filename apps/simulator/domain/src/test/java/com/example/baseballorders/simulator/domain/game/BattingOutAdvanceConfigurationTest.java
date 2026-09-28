@@ -95,8 +95,6 @@ class BattingOutAdvanceConfigurationTest {
         return new BatterEntity(
                 0.3f,
                 0.4f,
-                0.0f,
-                0.0f,
                 SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                 SimulationRulesTestData.strategies().noSteal(),
                 SimulationRulesTestData.strategies().noBunt());
