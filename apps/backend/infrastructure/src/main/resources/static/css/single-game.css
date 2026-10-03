@@ -234,6 +234,12 @@
             white-space: normal;
             background: #fffdf8;
             color: var(--muted);
+            flex-wrap: wrap;
+            column-gap: .3em;
+        }
+
+        .toggle-label, .toggle-state {
+            white-space: nowrap;
         }
 
         .bunt-toggle[aria-pressed="true"] {
@@ -483,34 +489,34 @@
 
             .order {
                 width: 100%;
-                padding: 0 var(--space-md) var(--space-md);
+                padding: 0 var(--space-xs) var(--space-sm);
+            }
+
+            .columns, .slot {
+                grid-template-columns: 24px repeat(2, minmax(0, .8fr)) minmax(0, 1.4fr) repeat(2, minmax(0, .8fr));
+                gap: var(--space-2xs);
+                padding: var(--space-2xs) 0;
             }
 
             .columns {
-                display: none;
-            }
-
-            .slot {
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: var(--space-sm);
-                padding: var(--space-md);
-                border: 1px solid var(--line);
-                border-radius: 12px;
-                margin-bottom: var(--space-sm);
+                font-size: 11px;
             }
 
             .slot .slot-index {
-                font-size: 14px;
+                font-size: 12px;
             }
 
-            .field {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
+            .slot input, .slot select {
+                padding: 0 var(--space-2xs);
+                font-size: 13px;
             }
 
-            .field-caption {
-                display: block;
+            .slot .bunt-toggle {
+                padding: 0 2px;
+                font-size: 12px;
+            }
+
+            .toggle-label {
+                display: none;
             }
         }

@@ -120,16 +120,23 @@ assert.ok(
   '打順入力欄が閉じている間は1試合実行ボタンを押せなくする'
 );
 
-// --- 打順入力欄の横スクロール解消（数値入力の余白削減とスマホ表示のカード化） ---
+// --- 打順入力欄の横スクロール解消（数値入力の余白削減とスマホ表示の一行化） ---
 assert.match(css, /\.order\s*\{\s*width:\s*max-content;\s*padding:/, '入力欄を親幅いっぱいに広げずコンパクトにする');
 assert.match(css, /grid-template-columns:\s*38px\s+repeat\(2,\s*60px\)\s+118px\s+78px\s+78px/, '数値入力列の余白を詰めて幅を最小限にする');
 assert.ok(css.includes('input[type="number"]::-webkit-inner-spin-button'), '数値入力のスピンボタンを除去して余白を詰める');
 assert.ok(js.includes('function fieldWrapper('), '各入力欄をキャプション付きのフィールドとして構成する');
 assert.match(css, /\.field-caption\s*\{\s*display:\s*none;\s*\}/, '通常幅では列見出しと入力キャプションを重複表示しない');
-assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.field-caption\s*\{\s*display:\s*block;\s*\}/, 'スマホ幅では列見出しの代わりに入力キャプションを表示する');
-assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.columns\s*\{\s*display:\s*none;\s*\}/, 'スマホ幅では横スクロールが必要な列見出し行を表示しない');
-assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.order-scroll\s*\{\s*overflow-x:\s*visible;\s*\}/, 'スマホ幅では打順入力欄の横スクロールを不要にする');
-assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.slot\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*1fr;/, 'スマホ幅では打順入力行を打者ごとに縦一列のカードへ切り替える');
+const mobileCss = css.slice(css.indexOf('@media (max-width: 760px)'));
+assert.ok(!/\.field-caption\s*\{\s*display:\s*block;\s*\}/.test(mobileCss), 'スマホ幅でもPC幅と同じく入力キャプションを重複表示しない');
+assert.ok(!/\.columns\s*\{\s*display:\s*none;\s*\}/.test(mobileCss), 'スマホ幅でもPC幅と同じく列見出し行を表示する');
+assert.match(mobileCss, /\.order-scroll\s*\{\s*overflow-x:\s*visible;\s*\}/, 'スマホ幅では打順入力欄の横スクロールを不要にする');
+assert.match(mobileCss, /\.columns, \.slot\s*\{\s*grid-template-columns:\s*24px\s+repeat\(2,\s*minmax\(0,\s*\.8fr\)\)\s+minmax\(0,\s*1\.4fr\)\s+repeat\(2,\s*minmax\(0,\s*\.8fr\)\);/, 'スマホ幅でもPC幅と同じく打者ごとに一行で入力欄を横に並べる');
+assert.ok(js.includes("caption.className='toggle-label'"), 'バント・盗塁トグルの項目名を別要素にして幅に応じて省略できるようにする');
+assert.ok(js.includes("button.setAttribute('aria-label',`${label}: ${enabled?'する':'しない'}`)"), '項目名を省略しても読み上げではトグルの項目名と状態を伝える');
+assert.ok(js.includes("state.className='toggle-state'"), 'トグルの状態を項目名と別要素にして語の途中で折り返さないようにする');
+assert.match(css, /\.toggle-label, \.toggle-state\s*\{\s*white-space:\s*nowrap;\s*\}/, 'トグルの項目名と状態はそれぞれ語の途中で折り返さない');
+assert.match(css, /\.bunt-toggle\s*\{[^}]*flex-wrap:\s*wrap;\s*column-gap:\s*\.3em;/, '幅が足りない場合は項目名と状態の間で折り返し、横並びでは間に余白を空ける');
+assert.match(mobileCss, /\.toggle-label\s*\{\s*display:\s*none;\s*\}/, 'スマホ幅では列見出しと重複するトグルの項目名を省略して1行で収める');
 
 // --- バント成功率・盗塁成功率の入力欄を削除する（1試合実行画面） ---
 assert.ok(!js.includes("key:'buntSuccessRate'"), '1試合実行画面ではバント成功率の入力欄を表示しない');
