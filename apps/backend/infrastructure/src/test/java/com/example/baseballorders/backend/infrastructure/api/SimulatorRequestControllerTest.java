@@ -56,17 +56,14 @@ class SimulatorRequestControllerTest {
         controller.send(
                 playersWith(
                         new PlayerInputRequest(
-                                0.3f,
-                                0.4f,
-                                buntEnabled,
-                                stealEnabled,
-                                PlayerPersonality.EAGER_STEAL)));
+                                0.3f, buntEnabled, stealEnabled, PlayerPersonality.EAGER_STEAL)));
 
         // then
         org.mockito.Mockito.verify(template)
                 .send(org.mockito.ArgumentMatchers.eq("request"), captor.capture());
         var json = new tools.jackson.databind.ObjectMapper().valueToTree(captor.getValue());
         assertAll(
+                () -> assertFalse(json.path("players").get(0).has("sluggish")),
                 () ->
                         assertEquals(
                                 stealEnabled,
@@ -105,9 +102,7 @@ class SimulatorRequestControllerTest {
         SimulationResult result =
                 controller.send(
                         java.util.stream.IntStream.rangeClosed(1, 9)
-                                .mapToObj(
-                                        number ->
-                                                new PlayerInputRequest(0.300f, 0.400f, true, true))
+                                .mapToObj(number -> new PlayerInputRequest(0.300f, true, true))
                                 .toList());
 
         // then
@@ -150,9 +145,7 @@ class SimulatorRequestControllerTest {
         SimulationResult result =
                 controller.sendSingleGame(
                         java.util.stream.IntStream.rangeClosed(1, 9)
-                                .mapToObj(
-                                        number ->
-                                                new PlayerInputRequest(0.300f, 0.400f, true, true))
+                                .mapToObj(number -> new PlayerInputRequest(0.300f, true, true))
                                 .toList());
 
         // then
@@ -178,16 +171,13 @@ class SimulatorRequestControllerTest {
                         () ->
                                 controller.send(
                                         playersWith(
-                                                new PlayerInputRequest(
-                                                        -0.001f, 0.400f, false, false))));
+                                                new PlayerInputRequest(-0.001f, false, false))));
         var missingValueException =
                 assertThrows(
                         NullPointerException.class,
                         () ->
                                 controller.send(
-                                        playersWith(
-                                                new PlayerInputRequest(
-                                                        0.300f, null, false, false))));
+                                        playersWith(new PlayerInputRequest(null, false, false))));
 
         // then
         assertAll(
@@ -197,7 +187,8 @@ class SimulatorRequestControllerTest {
                                 hitAverageException.getMessage()),
                 () ->
                         assertEquals(
-                                "sluggish must not be null", missingValueException.getMessage()));
+                                "hit_average must not be null",
+                                missingValueException.getMessage()));
     }
 
     @Test
@@ -220,7 +211,6 @@ class SimulatorRequestControllerTest {
         return SimulationLimitsBuilder.simulationLimits()
                 .resultTimeout(Duration.ofSeconds(30))
                 .maximumAverageHitAverage(0.350f)
-                .maximumAverageSluggish(0.400f)
                 .build();
     }
 

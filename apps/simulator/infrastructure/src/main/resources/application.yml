@@ -10,16 +10,21 @@ simulation:
     batting:
       walk-probability: ${SIMULATION_RULE_WALK_PROBABILITY:0.05}
       strikeout-probability-when-not-on-base: ${SIMULATION_RULE_STRIKEOUT_PROBABILITY:0.25}
+    short-distance-hitting:
+      single-weight: ${SIMULATION_RULE_SHORT_SINGLE_WEIGHT:3}
+      double-weight: ${SIMULATION_RULE_SHORT_DOUBLE_WEIGHT:2}
+      triple-weight: ${SIMULATION_RULE_SHORT_TRIPLE_WEIGHT:0}
+      home-run-weight: ${SIMULATION_RULE_SHORT_HOME_RUN_WEIGHT:0}
     middle-distance-hitting:
-      double-divisor: ${SIMULATION_RULE_MIDDLE_DOUBLE_DIVISOR:6}
-      triple-divisor: ${SIMULATION_RULE_MIDDLE_TRIPLE_DIVISOR:6}
-      home-run-divisor: ${SIMULATION_RULE_MIDDLE_HOME_RUN_DIVISOR:6}
-      single-reduction-divisor: ${SIMULATION_RULE_MIDDLE_SINGLE_REDUCTION_DIVISOR:2}
+      single-weight: ${SIMULATION_RULE_MIDDLE_SINGLE_WEIGHT:15}
+      double-weight: ${SIMULATION_RULE_MIDDLE_DOUBLE_WEIGHT:1}
+      triple-weight: ${SIMULATION_RULE_MIDDLE_TRIPLE_WEIGHT:1}
+      home-run-weight: ${SIMULATION_RULE_MIDDLE_HOME_RUN_WEIGHT:1}
     long-distance-hitting:
-      double-divisor: ${SIMULATION_RULE_LONG_DOUBLE_DIVISOR:8}
-      triple-divisor: ${SIMULATION_RULE_LONG_TRIPLE_DIVISOR:8}
-      home-run-divisor: ${SIMULATION_RULE_LONG_HOME_RUN_DIVISOR:2}
-      single-reduction-divisor: ${SIMULATION_RULE_LONG_SINGLE_REDUCTION_DIVISOR:1}
+      single-weight: ${SIMULATION_RULE_LONG_SINGLE_WEIGHT:16}
+      double-weight: ${SIMULATION_RULE_LONG_DOUBLE_WEIGHT:1}
+      triple-weight: ${SIMULATION_RULE_LONG_TRIPLE_WEIGHT:1}
+      home-run-weight: ${SIMULATION_RULE_LONG_HOME_RUN_WEIGHT:4}
     high-on-base-batting:
       walk-probability: ${SIMULATION_RULE_HIGH_ON_BASE_WALK_PROBABILITY:0.1}
     standard-steal:
@@ -40,4 +45,3 @@ simulation:
   pitcher:
     standard:
       on-base-multiplier: ${SIMULATION_PITCHER_STANDARD_ON_BASE_MULTIPLIER:1.0}
-      slugging-multiplier: ${SIMULATION_PITCHER_STANDARD_SLUGGING_MULTIPLIER:1.0}

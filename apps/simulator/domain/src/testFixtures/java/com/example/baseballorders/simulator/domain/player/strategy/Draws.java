@@ -3,9 +3,9 @@ package com.example.baseballorders.simulator.domain.player.strategy;
 /**
  * 基準打者に対する名前付き乱数定数。
  *
- * <p>基準打者は打率 0.400・長打率 0.550 で、固定された盗塁成功率 0.70・進塁バント成功率 0.81・スクイズ企図率 0.25・スクイズ成功率 0.45 の設定を用いる
- * {@code MiddleDistanceHittingStrategy} / {@code StandardBuntStrategy} / {@code
- * StandardStealStrategy} を持つ（{@code BatterTestData#referenceBatter()}）。
+ * <p>基準打者は打率 0.400 で、固定された盗塁成功率 0.70・進塁バント成功率 0.81・スクイズ企図率 0.25・スクイズ成功率 0.45 の設定を用いる {@code
+ * MiddleDistanceHittingStrategy} / {@code StandardBuntStrategy} / {@code StandardStealStrategy}
+ * を持つ（{@code BatterTestData#referenceBatter()}）。
  *
  * <p>同じ {@code 0.90f} が「二盗成功」と「バント失敗」を同時に意味するとおり、値の意味は どの戦略がその乱数を引いたかという文脈に依存する。だから生の float
  * ではなく名前付き定数でシナリオを書く。 各定数が表どおりの結果になることは {@code DrawsSelfTest} が検証する。

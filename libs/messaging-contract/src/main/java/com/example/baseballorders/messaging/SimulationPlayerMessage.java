@@ -9,7 +9,6 @@ import org.jilt.BuilderStyle;
  *
  * @param name 選手名
  * @param hitAverage 打率
- * @param sluggish 長打率
  * @param buntEnabled バントを試みるかどうか
  * @param stealEnabled 盗塁を試みるかどうか
  * @param personality 選手の行動傾向
@@ -18,7 +17,6 @@ import org.jilt.BuilderStyle;
 public record SimulationPlayerMessage(
         String name,
         Float hitAverage,
-        Float sluggish,
         Boolean buntEnabled,
         Boolean stealEnabled,
         PlayerPersonality personality) {
@@ -28,17 +26,12 @@ public record SimulationPlayerMessage(
      *
      * @param name 選手名
      * @param hitAverage 打率
-     * @param sluggish 長打率
      * @param buntEnabled バントを試みるかどうか
      * @param stealEnabled 盗塁を試みるかどうか
      */
     public SimulationPlayerMessage(
-            String name,
-            Float hitAverage,
-            Float sluggish,
-            Boolean buntEnabled,
-            Boolean stealEnabled) {
-        this(name, hitAverage, sluggish, buntEnabled, stealEnabled, PlayerPersonality.DEFAULT);
+            String name, Float hitAverage, Boolean buntEnabled, Boolean stealEnabled) {
+        this(name, hitAverage, buntEnabled, stealEnabled, PlayerPersonality.DEFAULT);
     }
 
     /**
@@ -49,7 +42,6 @@ public record SimulationPlayerMessage(
     public SimulationPlayerMessage {
         Objects.requireNonNull(name, "name must not be null");
         Objects.requireNonNull(hitAverage, "hitAverage must not be null");
-        Objects.requireNonNull(sluggish, "sluggish must not be null");
         Objects.requireNonNull(buntEnabled, "buntEnabled must not be null");
         Objects.requireNonNull(stealEnabled, "stealEnabled must not be null");
         personality = personality == null ? PlayerPersonality.DEFAULT : personality;

@@ -8,7 +8,6 @@ baseball-orders:
   simulation:
     result-timeout: ${SIMULATION_RESULT_TIMEOUT:30s}
     maximum-average-hit-average: ${SIMULATION_MAXIMUM_AVERAGE_HIT_AVERAGE:0.35}
-    maximum-average-sluggish: ${SIMULATION_MAXIMUM_AVERAGE_SLUGGISH:0.4}
   rendering:
     single-game:
       frame-duration-millis: ${SINGLE_GAME_FRAME_DURATION_MILLIS:1000}

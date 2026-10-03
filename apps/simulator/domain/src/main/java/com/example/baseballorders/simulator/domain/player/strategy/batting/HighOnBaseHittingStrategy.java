@@ -15,7 +15,7 @@ public final class HighOnBaseHittingStrategy implements HittingStrategy {
      * 高出塁率打者用の打席確率と長打配分で高出塁率打者の打撃を作成する。
      *
      * @param highOnBaseBatting 高出塁率打者用の四球確率を持つ打席確率
-     * @param distribution 長打によって増えた塁数の配分
+     * @param distribution 安打種別の配分
      */
     public HighOnBaseHittingStrategy(
             BattingProbabilities highOnBaseBatting, HittingDistribution distribution) {
@@ -24,26 +24,16 @@ public final class HighOnBaseHittingStrategy implements HittingStrategy {
     }
 
     @Override
-    public BattingResult batting(float battingAverage, float slugging) {
+    public BattingResult batting(float battingAverage) {
         float random = RandomGenerator.nextFloat();
 
-        // 長打によって増えた塁数
-        float extraBaseProbability = slugging - battingAverage;
-
-        // 安打の配分は設定された除数に従い、四球確率だけが標準と異なる
-        float doubleProbability = extraBaseProbability / distribution.doubleDivisor();
-        float tripleProbability = extraBaseProbability / distribution.tripleDivisor();
-        float homeRunProbability = extraBaseProbability / distribution.homeRunDivisor();
-
-        float singleProbability =
-                battingAverage - extraBaseProbability / distribution.singleReductionDivisor();
-
+        // 安打確率は打率で決まり、安打種別は設定された重みの比率で配分する
         return selector.select(
                 random,
                 battingAverage,
-                singleProbability,
-                doubleProbability,
-                tripleProbability,
-                homeRunProbability);
+                distribution.singleWeight(),
+                distribution.doubleWeight(),
+                distribution.tripleWeight(),
+                distribution.homeRunWeight());
     }
 }

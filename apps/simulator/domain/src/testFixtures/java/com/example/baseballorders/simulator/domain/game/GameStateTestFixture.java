@@ -29,7 +29,6 @@ public final class GameStateTestFixture {
         var batter =
                 new BatterEntity(
                         0,
-                        0,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().noSteal(),
                         SimulationRulesTestData.strategies().noBunt());

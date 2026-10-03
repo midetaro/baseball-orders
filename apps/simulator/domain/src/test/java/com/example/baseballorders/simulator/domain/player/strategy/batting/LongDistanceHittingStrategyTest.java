@@ -19,19 +19,19 @@ import org.junit.jupiter.params.provider.MethodSource;
 class LongDistanceHittingStrategyTest {
 
     private static final float BATTING_AVERAGE = 0.400f;
-    private static final float SLUGGING = 0.550f;
 
     static Stream<Arguments> battingBoundaries() {
         return Stream.of(
                 arguments("乱数0は四球", 0.0f, BattingResult.WALK),
                 arguments("0.05の直前", Math.nextDown(0.05f), BattingResult.WALK),
                 arguments("0.05と等しい境界", 0.05f, BattingResult.HIT_SINGLE),
-                arguments("0.31206897の直前", Math.nextDown(0.31206897f), BattingResult.HIT_SINGLE),
-                arguments("0.31206897と等しい境界", 0.31206897f, BattingResult.HIT_DOUBLE),
-                arguments("0.33172414の直前", Math.nextDown(0.33172414f), BattingResult.HIT_DOUBLE),
-                arguments("0.33172414と等しい境界", 0.33172414f, BattingResult.HIT_TRIPLE),
-                arguments("0.3513793の直前", Math.nextDown(0.3513793f), BattingResult.HIT_TRIPLE),
-                arguments("0.3513793と等しい境界", 0.3513793f, BattingResult.HIT_HOMER),
+                // 安打確率 0.38 を 16:1:1:4 で配分し、単打 0.3264、二塁打 0.3436、三塁打 0.3609 まで。
+                arguments("単打上限の直前", 0.3263f, BattingResult.HIT_SINGLE),
+                arguments("単打上限の直後", 0.3265f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直前", 0.3435f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直後", 0.3437f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直前", 0.3608f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直後", 0.3610f, BattingResult.HIT_HOMER),
                 arguments("0.43の直前", Math.nextDown(0.43f), BattingResult.HIT_HOMER),
                 arguments("0.43と等しい境界", 0.43f, BattingResult.STRIKEOUT),
                 arguments("0.5725の直前", Math.nextDown(0.5725f), BattingResult.STRIKEOUT),
@@ -53,7 +53,7 @@ class LongDistanceHittingStrategyTest {
         // when
         BattingResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            result = sut.batting(BATTING_AVERAGE, SLUGGING);
+            result = sut.batting(BATTING_AVERAGE);
 
             // then
             assertAll(
@@ -67,13 +67,13 @@ class LongDistanceHittingStrategyTest {
     static Stream<Arguments> distanceComparisons() {
         return Stream.of(
                 arguments(
-                        "0.32は長距離で二塁打・中距離で単打",
-                        0.32f,
+                        "0.33は長距離で二塁打・中距離で単打",
+                        0.33f,
                         BattingResult.HIT_DOUBLE,
                         BattingResult.HIT_SINGLE),
                 arguments(
-                        "0.365は長距離で本塁打・中距離で二塁打",
-                        0.365f,
+                        "0.38は長距離で本塁打・中距離で二塁打",
+                        0.38f,
                         BattingResult.HIT_HOMER,
                         BattingResult.HIT_DOUBLE),
                 arguments(
@@ -104,12 +104,12 @@ class LongDistanceHittingStrategyTest {
         // when
         BattingResult longResult;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            longResult = sut.batting(BATTING_AVERAGE, SLUGGING);
+            longResult = sut.batting(BATTING_AVERAGE);
             scriptedRandom.assertFullyConsumed();
         }
         BattingResult middleResult;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            middleResult = middleDistance.batting(BATTING_AVERAGE, SLUGGING);
+            middleResult = middleDistance.batting(BATTING_AVERAGE);
             scriptedRandom.assertFullyConsumed();
         }
 
@@ -127,17 +127,17 @@ class LongDistanceHittingStrategyTest {
                         SimulationRulesTestData.standard().longDistanceHitting(),
                         BattingResult.HIT_HOMER),
                 arguments(
-                        "本塁打除数を8にすると0.3800000は二塁打",
+                        "本塁打の重みを1にすると0.3800000は二塁打",
                         HittingDistributionBuilder.hittingDistribution()
-                                .doubleDivisor(8)
-                                .tripleDivisor(8)
-                                .homeRunDivisor(8)
-                                .singleReductionDivisor(1)
+                                .singleWeight(16)
+                                .doubleWeight(1)
+                                .tripleWeight(1)
+                                .homeRunWeight(1)
                                 .build(),
                         BattingResult.HIT_DOUBLE));
     }
 
-    @DisplayName("長距離打者の長打配分は設定された除数で決まる")
+    @DisplayName("長距離打者の長打配分は設定された重みで決まる")
     @ParameterizedTest(name = "{0}")
     @MethodSource("configuredDistributions")
     void usesConfiguredHittingDistribution(
@@ -150,7 +150,7 @@ class LongDistanceHittingStrategyTest {
         // when
         BattingResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.38f)) {
-            result = sut.batting(BATTING_AVERAGE, SLUGGING);
+            result = sut.batting(BATTING_AVERAGE);
 
             // then
             assertAll(

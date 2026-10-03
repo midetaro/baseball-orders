@@ -18,19 +18,22 @@ import org.junit.jupiter.params.provider.MethodSource;
 class HighOnBaseHittingStrategyTest {
 
     private static final float BATTING_AVERAGE = 0.400f;
-    private static final float SLUGGING = 0.550f;
 
     static Stream<Arguments> battingResults() {
         // 四球0.1、安打確率は(1 - 0.1) * 0.4 = 0.36、出塁確率は0.46。
-        // 中距離の配分で単打0.3925、二塁打0.415、三塁打0.4375、本塁打0.46、三振0.595までが各区間。
+        // 中距離の重み15:1:1:1で単打0.40、二塁打0.42、三塁打0.44、本塁打0.46、三振0.595までが各区間。
         return Stream.of(
                 arguments("乱数0は四球", 0.0f, BattingResult.WALK),
                 arguments("0.1の直前は四球", Math.nextDown(0.1f), BattingResult.WALK),
                 arguments("0.1と等しい境界は単打", 0.1f, BattingResult.HIT_SINGLE),
-                arguments("単打区間の内側", 0.39f, BattingResult.HIT_SINGLE),
-                arguments("二塁打区間の内側", 0.40f, BattingResult.HIT_DOUBLE),
-                arguments("三塁打区間の内側", 0.42f, BattingResult.HIT_TRIPLE),
-                arguments("本塁打区間の内側", 0.45f, BattingResult.HIT_HOMER),
+                arguments("単打上限の直前", 0.3999f, BattingResult.HIT_SINGLE),
+                arguments("単打上限の直後", 0.4001f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直前", 0.4199f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直後", 0.4201f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直前", 0.4399f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直後", 0.4401f, BattingResult.HIT_HOMER),
+                arguments("本塁打上限の直前", 0.4599f, BattingResult.HIT_HOMER),
+                arguments("本塁打上限の直後は三振", 0.4601f, BattingResult.STRIKEOUT),
                 arguments("三振区間の内側", 0.50f, BattingResult.STRIKEOUT),
                 arguments("乱数1は凡退", 1.0f, BattingResult.BATTED_OUT));
     }
@@ -45,7 +48,7 @@ class HighOnBaseHittingStrategyTest {
         // when
         BattingResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            result = sut.batting(BATTING_AVERAGE, SLUGGING);
+            result = sut.batting(BATTING_AVERAGE);
 
             // then
             assertAll(
@@ -68,8 +71,8 @@ class HighOnBaseHittingStrategyTest {
         BattingResult middleDistanceResult;
         BattingResult highOnBaseResult;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.07f, 0.07f)) {
-            middleDistanceResult = middleDistance.batting(BATTING_AVERAGE, SLUGGING);
-            highOnBaseResult = sut.batting(BATTING_AVERAGE, SLUGGING);
+            middleDistanceResult = middleDistance.batting(BATTING_AVERAGE);
+            highOnBaseResult = sut.batting(BATTING_AVERAGE);
             scriptedRandom.assertFullyConsumed();
         }
 

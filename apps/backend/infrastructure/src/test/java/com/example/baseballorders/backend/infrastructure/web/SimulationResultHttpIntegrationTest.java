@@ -63,15 +63,15 @@ class SimulationResultHttpIntegrationTest {
                         .POST(
                                 HttpRequest.BodyPublishers.ofString(
                                         """
-                                                [{"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                                 {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false}]
+                                                [{"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                                 {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false}]
                                                 """))
                         .build();
 

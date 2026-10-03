@@ -40,14 +40,14 @@ class LineUpMapperTest {
                         SimulationRulesTestData.strategies().standardBunt(),
                         SimulationRulesTestData.strategies(),
                         SimulationPropertiesTestData.standardPitcherProperties());
-        var player = new SimulationPlayerMessage("1番", 0.3f, 0.4f, true, true, personality);
+        var player = new SimulationPlayerMessage("1番", 0.3f, true, true, personality);
 
         // when
         BattingResult battingResult;
         StealResult stealResult;
         BuntResult buntResult;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            // 打率0.3・長打率0.4で0.31は、短距離戦略では二塁打、中距離戦略では三塁打、
+            // 打率0.3で0.31は、短距離戦略では二塁打、中距離戦略では三塁打、
             // 長距離戦略では本塁打、高出塁率戦略では単打となり、打撃戦略の選択を識別する。
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.31f, 0.9f, 0.9f);
             var batter =
@@ -94,8 +94,7 @@ class LineUpMapperTest {
                 new com.fasterxml.jackson.databind.ObjectMapper()
                         .readValue(
                                 """
-                                        {"name":"1番","hitAverage":0.3,"sluggish":0.4,
-                                         "buntEnabled":%s,"stealEnabled":%s}
+                                        {"name":"1番","hitAverage":0.3,"buntEnabled":%s,"stealEnabled":%s}
                                         """
                                         .formatted(buntEnabled, stealEnabled),
                                 SimulationPlayerMessage.class);
@@ -154,7 +153,7 @@ class LineUpMapperTest {
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.CsvSource({
         "0.01,WALK",
-        "0.32,HIT_SINGLE",
+        "0.2,HIT_SINGLE",
         "0.34,STRIKEOUT",
         "0.8,BATTED_OUT"
     })
@@ -165,8 +164,7 @@ class LineUpMapperTest {
                 new com.fasterxml.jackson.databind.ObjectMapper()
                         .readValue(
                                 """
-                                {"name":"1番","hitAverage":0.3,"sluggish":0.3,
-                                 "buntEnabled":false,"stealEnabled":false,
+                                {"name":"1番","hitAverage":0.3,"buntEnabled":false,"stealEnabled":false,
                                  "personality":"MIDDLE_DISTANCE"}
                                 """,
                                 SimulationPlayerMessage.class);
@@ -211,7 +209,7 @@ class LineUpMapperTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 1.0f, 0.0f, false, true))
+                                                "player-" + number, 1.0f, false, true))
                         .toList();
 
         // when
@@ -241,7 +239,7 @@ class LineUpMapperTest {
         var hitting = mock(MiddleDistanceHittingStrategy.class);
         var stealing = mock(StandardStealStrategy.class);
         var bunting = mock(StandardBuntStrategy.class);
-        var pitcherProperties = new SimulationPitcherProperties(new Multipliers(2.0f, 0.5f));
+        var pitcherProperties = new SimulationPitcherProperties(new Multipliers(2.0f));
         var sut =
                 new LineUpMapper(
                         hitting,
@@ -251,9 +249,8 @@ class LineUpMapperTest {
                         pitcherProperties);
         var player =
                 new SimulationPlayerMessage(
-                        "1番", 0.3f, 0.4f, true, true, PlayerPersonality.MIDDLE_DISTANCE);
+                        "1番", 0.3f, true, true, PlayerPersonality.MIDDLE_DISTANCE);
         var battingAverageCaptor = ArgumentCaptor.forClass(Float.class);
-        var sluggingCaptor = ArgumentCaptor.forClass(Float.class);
 
         // when
         var batter =
@@ -261,13 +258,11 @@ class LineUpMapperTest {
         batter.swing(0);
         batter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
         batter.stealToDouble();
-        verify(hitting).batting(battingAverageCaptor.capture(), sluggingCaptor.capture());
+        verify(hitting).batting(battingAverageCaptor.capture());
         verify(bunting).bunt(OutCount.NO_OUT, BuntType.ADVANCING);
         verify(stealing).runToDouble();
 
         // then
-        assertAll(
-                () -> assertEquals(0.6f, battingAverageCaptor.getValue(), 0.00001f),
-                () -> assertEquals(0.2f, sluggingCaptor.getValue(), 0.00001f));
+        assertEquals(0.6f, battingAverageCaptor.getValue(), 0.00001f);
     }
 }

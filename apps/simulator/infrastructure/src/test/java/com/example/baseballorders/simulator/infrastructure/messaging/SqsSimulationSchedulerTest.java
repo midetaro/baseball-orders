@@ -49,8 +49,7 @@ class SqsSimulationSchedulerTest {
                 objectMapper.readTree(
                         """
                                 {"simulation_id":"00000000-0000-0000-0000-000000000001","version":"1",
-                                 "players":[{"name":"1番","hitAverage":0.3,"sluggish":0.4,
-                                 "buntEnabled":false,"stealEnabled":false}]}
+                                 "players":[{"name":"1番","hitAverage":0.3,"buntEnabled":false,"stealEnabled":false}]}
                                 """);
         var bodies = new java.util.ArrayList<String>();
         for (String field :
@@ -60,7 +59,6 @@ class SqsSimulationSchedulerTest {
                         "players",
                         "name",
                         "hitAverage",
-                        "sluggish",
                         "buntEnabled",
                         "stealEnabled")) {
             for (boolean omit : List.of(true, false)) {
@@ -249,7 +247,7 @@ class SqsSimulationSchedulerTest {
                         .mapToObj(
                                 number ->
                                         new SimulationPlayerMessage(
-                                                "player-" + number, 0.3f, 0.4f, true, true))
+                                                "player-" + number, 0.3f, true, true))
                         .toList();
         UUID simulationId = UUID.randomUUID();
         // 投手性格の入力(BOLD)は無視され、標準の補正倍率が適用されることを検証する

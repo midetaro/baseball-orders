@@ -73,7 +73,6 @@ public class LineUpMapper {
                                 player ->
                                         new BatterEntity(
                                                 player.hitAverage() * battingAverageMultiplier(),
-                                                player.sluggish() * sluggingMultiplier(),
                                                 battingBehaviorFor(player.personality()),
                                                 player.stealEnabled()
                                                         ? stealStrategyFor(player.personality())
@@ -87,10 +86,6 @@ public class LineUpMapper {
 
     private float battingAverageMultiplier() {
         return pitcherProperties.standard().onBaseMultiplier();
-    }
-
-    private float sluggingMultiplier() {
-        return pitcherProperties.standard().sluggingMultiplier();
     }
 
     private HittingStrategy battingBehaviorFor(PlayerPersonality personality) {

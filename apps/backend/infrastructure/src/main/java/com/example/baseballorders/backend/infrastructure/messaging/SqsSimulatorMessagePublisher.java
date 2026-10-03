@@ -73,7 +73,6 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
                                                                 .simulationPlayerMessage()
                                                                 .name(player.name())
                                                                 .hitAverage(player.hitAverage())
-                                                                .sluggish(player.sluggish())
                                                                 .buntEnabled(player.buntEnabled())
                                                                 .stealEnabled(player.stealEnabled())
                                                                 .personality(

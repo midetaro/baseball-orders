@@ -13,6 +13,6 @@ public final class SimulationPropertiesTestData {
      * @return 標準の補正倍率設定
      */
     public static SimulationPitcherProperties standardPitcherProperties() {
-        return new SimulationPitcherProperties(new Multipliers(1.0f, 1.0f));
+        return new SimulationPitcherProperties(new Multipliers(1.0f));
     }
 }

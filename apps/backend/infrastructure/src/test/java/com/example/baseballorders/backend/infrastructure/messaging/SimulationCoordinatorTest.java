@@ -29,7 +29,6 @@ class SimulationCoordinatorTest {
         return SimulationLimitsBuilder.simulationLimits()
                 .resultTimeout(resultTimeout)
                 .maximumAverageHitAverage(0.350f)
-                .maximumAverageSluggish(0.400f)
                 .build();
     }
 
@@ -40,7 +39,6 @@ class SimulationCoordinatorTest {
                                 PlayerDataBuilder.playerData()
                                         .name("山田")
                                         .hitAverage(0.301f)
-                                        .sluggish(0.351f)
                                         .buntEnabled(true)
                                         .stealEnabled(true)
                                         .personality(PlayerPersonality.DEFAULT)
@@ -76,7 +74,6 @@ class SimulationCoordinatorTest {
                 () -> assertEquals("1", published.getFirst().version()),
                 () -> assertEquals("山田", published.getFirst().players().getFirst().name()),
                 () -> assertEquals(0.301f, published.getFirst().players().getFirst().hitAverage()),
-                () -> assertEquals(0.351f, published.getFirst().players().getFirst().sluggish()),
                 () -> assertEquals(true, published.getFirst().players().getFirst().buntEnabled()),
                 () -> assertEquals(true, published.getFirst().players().getFirst().stealEnabled()),
                 () -> assertEquals(5, result.statistics().maximumScore()),
@@ -247,7 +244,6 @@ class SimulationCoordinatorTest {
                                         PlayerDataBuilder.playerData()
                                                 .name("山田")
                                                 .hitAverage(0.351f)
-                                                .sluggish(0.400f)
                                                 .buntEnabled(true)
                                                 .stealEnabled(true)
                                                 .personality(PlayerPersonality.DEFAULT)
@@ -265,41 +261,6 @@ class SimulationCoordinatorTest {
                 () ->
                         assertEquals(
                                 "the average hitAverage must not exceed 0.35",
-                                exception.getMessage()));
-    }
-
-    @Test
-    @DisplayName("9人の長打率平均が上限を超える場合はSQS送信をせず拒否する")
-    void rejectsLineupWithExcessiveSluggish() {
-        // given
-        var coordinator =
-                new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
-        var excessivePlayers =
-                java.util.stream.IntStream.range(0, 9)
-                        .mapToObj(
-                                _ ->
-                                        PlayerDataBuilder.playerData()
-                                                .name("山田")
-                                                .hitAverage(0.350f)
-                                                .sluggish(0.401f)
-                                                .buntEnabled(true)
-                                                .stealEnabled(true)
-                                                .personality(PlayerPersonality.DEFAULT)
-                                                .build())
-                        .toList();
-
-        // when
-        var exception =
-                assertThrows(
-                        IllegalArgumentException.class,
-                        () -> coordinator.simulate(excessivePlayers));
-
-        // then
-        assertAll(
-                () ->
-                        assertEquals(
-                                "the average sluggish must not exceed 0.4",
                                 exception.getMessage()));
     }
 }

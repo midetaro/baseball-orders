@@ -28,9 +28,6 @@ public class BatterEntity extends Player {
     /** 打率 */
     private final float battingAverage;
 
-    /** 長打率 */
-    private final float sluggish;
-
     /** 打撃戦略 */
     private final HittingStrategy hittingStrategy;
 
@@ -47,24 +44,16 @@ public class BatterEntity extends Player {
      * Creates a batter without a play-result observer.
      *
      * @param battingAverage batting average excluding walks
-     * @param sluggish slugging percentage
      * @param hittingStrategy batting behavior
      * @param stealStrategy steal strategy
      * @param buntStrategy bunt strategy
      */
     public BatterEntity(
             float battingAverage,
-            float sluggish,
             HittingStrategy hittingStrategy,
             StealStrategy stealStrategy,
             BuntStrategy buntStrategy) {
-        this(
-                battingAverage,
-                sluggish,
-                hittingStrategy,
-                stealStrategy,
-                buntStrategy,
-                NO_OPERATION_OBSERVER);
+        this(battingAverage, hittingStrategy, stealStrategy, buntStrategy, NO_OPERATION_OBSERVER);
     }
 
     /**
@@ -74,7 +63,7 @@ public class BatterEntity extends Player {
      * @return 打席結果。結果を購読者へ通知する
      */
     public BattingResult swing(int runnerCount) {
-        BattingResult battingResult = hittingStrategy.batting(this.battingAverage, this.sluggish);
+        BattingResult battingResult = hittingStrategy.batting(this.battingAverage);
         playResultObserver.onBattingResult(battingResult, runnerCount);
         return battingResult;
     }
@@ -123,7 +112,6 @@ public class BatterEntity extends Player {
     public BatterEntity observedBy(PlayResultObserver observer) {
         return new BatterEntity(
                 battingAverage,
-                sluggish,
                 hittingStrategy,
                 stealStrategy,
                 buntStrategy,

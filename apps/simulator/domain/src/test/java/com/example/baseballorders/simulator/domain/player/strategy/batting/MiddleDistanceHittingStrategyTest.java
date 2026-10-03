@@ -19,19 +19,19 @@ import org.junit.jupiter.params.provider.MethodSource;
 class MiddleDistanceHittingStrategyTest {
 
     private static final float BATTING_AVERAGE = 0.400f;
-    private static final float SLUGGING = 0.550f;
 
     static Stream<Arguments> battingBoundaries() {
         return Stream.of(
                 arguments("乱数0は四球", 0.0f, BattingResult.WALK),
                 arguments("0.05の直前", Math.nextDown(0.05f), BattingResult.WALK),
                 arguments("0.05と等しい境界", 0.05f, BattingResult.HIT_SINGLE),
-                arguments("0.35875の直前", Math.nextDown(0.35875f), BattingResult.HIT_SINGLE),
-                arguments("0.35875と等しい境界", 0.35875f, BattingResult.HIT_DOUBLE),
-                arguments("0.3825の直前", Math.nextDown(0.3825f), BattingResult.HIT_DOUBLE),
-                arguments("0.3825と等しい境界", 0.3825f, BattingResult.HIT_TRIPLE),
-                arguments("0.40625の直前", Math.nextDown(0.40625f), BattingResult.HIT_TRIPLE),
-                arguments("0.40625と等しい境界", 0.40625f, BattingResult.HIT_HOMER),
+                // 安打確率 0.38 を 15:1:1:1 で配分し、単打 0.3667、二塁打 0.3878、三塁打 0.4089 まで。
+                arguments("単打上限の直前", 0.3666f, BattingResult.HIT_SINGLE),
+                arguments("単打上限の直後", 0.3668f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直前", 0.3877f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直後", 0.3879f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直前", 0.4088f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直後", 0.4090f, BattingResult.HIT_HOMER),
                 arguments("0.43の直前", Math.nextDown(0.43f), BattingResult.HIT_HOMER),
                 arguments("0.43と等しい境界", 0.43f, BattingResult.STRIKEOUT),
                 arguments("0.5725の直前", Math.nextDown(0.5725f), BattingResult.STRIKEOUT),
@@ -53,7 +53,7 @@ class MiddleDistanceHittingStrategyTest {
         // when
         BattingResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            result = sut.batting(BATTING_AVERAGE, SLUGGING);
+            result = sut.batting(BATTING_AVERAGE);
 
             // then
             assertAll(
@@ -71,17 +71,26 @@ class MiddleDistanceHittingStrategyTest {
                         SimulationRulesTestData.standard().middleDistanceHitting(),
                         BattingResult.HIT_TRIPLE),
                 arguments(
-                        "本塁打除数を2にすると0.3950000は本塁打",
+                        "本塁打の重みを15にすると0.3950000は本塁打",
                         HittingDistributionBuilder.hittingDistribution()
-                                .doubleDivisor(6)
-                                .tripleDivisor(6)
-                                .homeRunDivisor(2)
-                                .singleReductionDivisor(2)
+                                .singleWeight(15)
+                                .doubleWeight(1)
+                                .tripleWeight(1)
+                                .homeRunWeight(15)
+                                .build(),
+                        BattingResult.HIT_HOMER),
+                arguments(
+                        "二塁打と三塁打の重みが0なら0.3950000は本塁打",
+                        HittingDistributionBuilder.hittingDistribution()
+                                .singleWeight(15)
+                                .doubleWeight(0)
+                                .tripleWeight(0)
+                                .homeRunWeight(15)
                                 .build(),
                         BattingResult.HIT_HOMER));
     }
 
-    @DisplayName("中距離打者の長打配分は設定された除数で決まる")
+    @DisplayName("中距離打者の長打配分は設定された重みで決まる")
     @ParameterizedTest(name = "{0}")
     @MethodSource("configuredDistributions")
     void usesConfiguredHittingDistribution(
@@ -94,7 +103,7 @@ class MiddleDistanceHittingStrategyTest {
         // when
         BattingResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.395f)) {
-            result = sut.batting(BATTING_AVERAGE, SLUGGING);
+            result = sut.batting(BATTING_AVERAGE);
 
             // then
             assertAll(

@@ -110,18 +110,12 @@ public final class SimulationCoordinator {
 
     private void validateLineup(List<PlayerData> players) {
         double totalHitAverage = 0;
-        double totalSluggish = 0;
         for (PlayerData player : players) {
             totalHitAverage += player.hitAverage();
-            totalSluggish += player.sluggish();
         }
         if (totalHitAverage / LINEUP_SIZE > limits.maximumAverageHitAverage()) {
             throw new IllegalArgumentException(
                     "the average hitAverage must not exceed " + limits.maximumAverageHitAverage());
-        }
-        if (totalSluggish / LINEUP_SIZE > limits.maximumAverageSluggish()) {
-            throw new IllegalArgumentException(
-                    "the average sluggish must not exceed " + limits.maximumAverageSluggish());
         }
     }
 }

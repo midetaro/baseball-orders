@@ -11,8 +11,7 @@ import org.jilt.BuilderStyle;
  * <p>すべての値は設定ファイル(application.yml)から注入される運用パラメータであり、コード上の既定値を持たない。
  */
 @Builder(style = BuilderStyle.STAGED)
-public record SimulationLimits(
-        Duration resultTimeout, float maximumAverageHitAverage, float maximumAverageSluggish) {
+public record SimulationLimits(Duration resultTimeout, float maximumAverageHitAverage) {
 
     /**
      * 結果待機時間が指定されていることだけを検証して上限値を生成する。

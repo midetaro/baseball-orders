@@ -21,14 +21,12 @@ class SimulationLimitsTest {
                 SimulationLimitsBuilder.simulationLimits()
                         .resultTimeout(resultTimeout)
                         .maximumAverageHitAverage(0.320f)
-                        .maximumAverageSluggish(0.380f)
                         .build();
 
         // then
         assertAll(
                 () -> assertEquals(resultTimeout, sut.resultTimeout()),
-                () -> assertEquals(0.320f, sut.maximumAverageHitAverage()),
-                () -> assertEquals(0.380f, sut.maximumAverageSluggish()));
+                () -> assertEquals(0.320f, sut.maximumAverageHitAverage()));
     }
 
     @Test
@@ -38,8 +36,7 @@ class SimulationLimitsTest {
         var builder =
                 SimulationLimitsBuilder.simulationLimits()
                         .resultTimeout(null)
-                        .maximumAverageHitAverage(0.350f)
-                        .maximumAverageSluggish(0.400f);
+                        .maximumAverageHitAverage(0.350f);
 
         // when
         var exception = assertThrows(NullPointerException.class, builder::build);

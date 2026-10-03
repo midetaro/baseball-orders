@@ -43,7 +43,7 @@ public final class BehaviorStrategies {
      * @return 短距離打者の打撃
      */
     public HittingStrategy shortDistanceHittingStrategy() {
-        return new ShortDistanceHittingStrategy(rules.batting());
+        return new ShortDistanceHittingStrategy(rules.batting(), rules.shortDistanceHitting());
     }
 
     /**
