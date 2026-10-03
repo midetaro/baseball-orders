@@ -264,6 +264,31 @@ assert.ok(js.includes("{1:'ヒット!',2:'ツーベース!',3:'スリーベー�
 assert.ok(js.includes('`+${effect.runs}点`'), '得点数を「+N点」で表示する');
 assert.ok(!js.includes('Math.random'), '演出は乱数を使わず同じ結果なら同じ表示にする');
 
+// --- アニメーションの再生速度（issue #156） ---
+assert.ok(
+  html.includes('<div aria-label="再生速度" class="playback-speed" role="group">'),
+  '試合結果に再生速度の切り替えを用意する'
+);
+for (const [speed, label, pressed] of [['slow', '遅い', 'false'], ['normal', '普通', 'true'], ['fast', '速い', 'false']]) {
+  assert.ok(
+    html.includes(`<button aria-pressed="${pressed}" class="speed-option" data-speed="${speed}" type="button">${label}</button>`),
+    `再生速度「${label}」を選べ、初期値は「普通」にする`
+  );
+}
+assert.ok(
+  html.indexOf('class="playback-speed"') < html.indexOf('id="frame-stage"'),
+  '再生速度の切り替えはアニメーションの直上に置く'
+);
+const speedMultipliers = new Function(`${js.match(/const PLAYBACK_SPEED_MULTIPLIERS = \{[^}]*\};/)[0]}\nreturn PLAYBACK_SPEED_MULTIPLIERS;`)();
+assert.deepEqual(Object.keys(speedMultipliers), ['slow', 'normal', 'fast'], '再生速度は遅い・普通・速いの3択にする');
+assert.equal(speedMultipliers.normal, 1, '「普通」はサーバー設定どおりの表示時間で再生する');
+assert.equal(speedMultipliers.slow / speedMultipliers.normal, 2, '「遅い」は「普通」の2倍の時間をかけて再生する');
+assert.equal(speedMultipliers.normal / speedMultipliers.fast, 2, '「速い」は「普通」の半分の時間で再生する');
+assert.ok(js.includes('frameDurations[effect.kind] * PLAYBACK_SPEED_MULTIPLIERS[playbackSpeed]'), '選んだ速度に応じて次のフレームまでの時間を変える');
+assert.ok(js.includes('animation.playbackRate=1 / PLAYBACK_SPEED_MULTIPLIERS[playbackSpeed];'), 'フレーム内の演出アニメーションも選んだ速度で再生する');
+assert.ok(js.includes("option.setAttribute('aria-pressed',String(option.dataset.speed === playbackSpeed))"), '選択中の速度を押下状態で示す');
+assert.match(css, /\.speed-option\[aria-pressed="true"\]\s*\{/, '選択中の速度ボタンを強調表示する');
+
 // --- 野球のスコアボード（イニング別得点とR・H・E）（issue #149） ---
 assert.ok(html.includes('id="line-score"'), 'スコアボードの表示領域を用意する');
 assert.ok(

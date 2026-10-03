@@ -2,6 +2,10 @@
     const frameDurationMillis = Number(frameStage.dataset.frameDurationMillis) || 1000;
     const frameDurations = {none:frameDurationMillis, hit:Number(frameStage.dataset.hitFrameDurationMillis) || frameDurationMillis, score:Number(frameStage.dataset.scoreFrameDurationMillis) || frameDurationMillis, 'home-run':Number(frameStage.dataset.homeRunFrameDurationMillis) || frameDurationMillis, bunt:Number(frameStage.dataset.buntFrameDurationMillis) || frameDurationMillis};
     let frameTimer = null;
+    // 再生速度は「普通」を基準に2倍ずつ変える。値はフレーム表示時間に掛ける倍率。
+    const PLAYBACK_SPEED_MULTIPLIERS = {slow:2, normal:1, fast:0.5};
+    let playbackSpeed = 'normal';
+    const speedOptions = [...document.querySelectorAll('.speed-option')];
     const RUNNER_LAYOUT = {
       '走者なし':{first:false,second:false,third:false},
       '一塁':{first:true,second:false,third:false},
@@ -48,11 +52,14 @@
       if (effect.kind === 'home-run') frame.append(element('span','flash'));
       return frame;
     }
+    function applyPlaybackRate(frame) { frame.getAnimations({subtree:true}).forEach(animation=>{ animation.playbackRate=1 / PLAYBACK_SPEED_MULTIPLIERS[playbackSpeed]; }); }
+    function selectPlaybackSpeed(speed) { playbackSpeed=speed; speedOptions.forEach(option=>option.setAttribute('aria-pressed',String(option.dataset.speed === playbackSpeed))); const frame=frameStage.querySelector('.frame'); if (frame) applyPlaybackRate(frame); }
+    speedOptions.forEach(option=>option.addEventListener('click',()=>selectPlaybackSpeed(option.dataset.speed)));
     function stopFramePlayback() { if (frameTimer !== null) { clearTimeout(frameTimer); frameTimer=null; } }
     function playFrames(annotated) {
       stopFramePlayback();
       let index=0;
-      const show=()=>{ const transition=annotated[index]; const {effect}=transition; frameStage.replaceChildren(buildFrame(transition)); renderLineScore(annotated, index + 1); index+=1; if (index >= annotated.length) { frameTimer=null; return; } frameTimer=setTimeout(show, frameDurations[effect.kind]); };
+      const show=()=>{ const transition=annotated[index]; const {effect}=transition; const frame=buildFrame(transition); frameStage.replaceChildren(frame); applyPlaybackRate(frame); renderLineScore(annotated, index + 1); index+=1; if (index >= annotated.length) { frameTimer=null; return; } frameTimer=setTimeout(show, frameDurations[effect.kind] * PLAYBACK_SPEED_MULTIPLIERS[playbackSpeed]); };
       show();
     }
     const REGULATION_INNINGS = 9;
