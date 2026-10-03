@@ -6,3 +6,6 @@ baseball-orders:
   rendering:
     single-game:
       frame-duration-millis: 1000
+      hit-frame-duration-millis: 1800
+      score-frame-duration-millis: 2200
+      home-run-frame-duration-millis: 3600

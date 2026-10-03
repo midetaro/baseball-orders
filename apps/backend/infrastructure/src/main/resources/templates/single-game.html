@@ -47,7 +47,7 @@
                     <button class="all-toggle" id="edit-lineup" type="button">打順を編集する</button>
                 </div>
             </div>
-            <div class="frame-stage" id="frame-stage" th:attr="data-frame-duration-millis=${frameDurationMillis}">
+            <div class="frame-stage" id="frame-stage" th:attr="data-frame-duration-millis=${frameDurationMillis},data-hit-frame-duration-millis=${hitFrameDurationMillis},data-score-frame-duration-millis=${scoreFrameDurationMillis},data-home-run-frame-duration-millis=${homeRunFrameDurationMillis}">
                 <p class="empty-chart-state" id="frame-placeholder">まだ試合を実行していません。</p>
             </div>
             <div class="order-table-wrap">
