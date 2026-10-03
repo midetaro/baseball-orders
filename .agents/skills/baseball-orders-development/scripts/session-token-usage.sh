@@ -64,12 +64,14 @@ codex_usage() {
   sessions_dir="${CODEX_HOME:-${HOME}/.codex}/sessions"
   rollout="${session_file}"
   if [[ -z "${rollout}" ]]; then
+    # Rollout paths embed their start time (YYYY/MM/DD/rollout-YYYY-MM-DDThh-mm-ss-*),
+    # so a reverse path sort lists the newest session first.
     while IFS= read -r file; do
       if [[ "$(head -n 1 "${file}" | jq -r '.payload.cwd // empty')" == "${repo_root}" ]]; then
         rollout="${file}"
         break
       fi
-    done < <(find "${sessions_dir}" -name 'rollout-*.jsonl' -type f -print0 | xargs -0 ls -t 2>/dev/null)
+    done < <(find "${sessions_dir}" -name 'rollout-*.jsonl' -type f | sort -r)
   fi
   if [[ -z "${rollout}" || ! -f "${rollout}" ]]; then
     echo "Codex rollout for ${repo_root} was not found under ${sessions_dir}" >&2
