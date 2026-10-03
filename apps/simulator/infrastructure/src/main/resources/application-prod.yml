@@ -18,6 +18,8 @@ simulation:
       triple-divisor: 8
       home-run-divisor: 2
       single-reduction-divisor: 1
+    high-on-base-batting:
+      walk-probability: 0.1
     standard-steal:
       to-double-attempt-rate: 0.30
       to-triple-attempt-rate: 0.10

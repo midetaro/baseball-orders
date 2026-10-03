@@ -45,6 +45,17 @@ assert.equal(formatPercentage(''), '', '未入力はそのまま残す');
 
 assert.ok(lineupFormJs.includes("key:'hitAverage',label:'打率',min:0.01,max:0.6"), '打率のラベルと既存の範囲を使用する');
 assert.ok(lineupFormJs.includes('打率は0.01〜0.6、長打率は0.1〜0.6の範囲'), '入力エラーを打率として案内する');
-assert.ok(!lineupFormJs.includes('出塁率'), '入力ラベルとエラーに旧名称を残さない');
+assert.ok(!lineupFormJs.includes("label:'出塁率'"), '入力ラベルに旧名称を残さない');
+assert.ok(!lineupFormJs.includes('出塁率は'), '入力エラーに旧名称を残さない');
+
+// --- 性格の選択肢（issue #145） ---
+const personalityLabels = new Function(`${lineupFormJs.match(/const personalityLabels = \{[^}]*\};/)[0]}\nreturn personalityLabels;`)();
+assert.deepEqual(
+  Object.entries(personalityLabels),
+  [['DEFAULT', '単打マン'], ['MIDDLE_DISTANCE', '中距離砲'], ['EAGER_SLUGGISH', '長距離砲'], ['HIGH_ON_BASE', '高出塁率'], ['EAGER_STEAL', '盗塁重視'], ['EAGER_BUNT', 'バント職人']],
+  '性格は単打マン・中距離砲・長距離砲・高出塁率・盗塁重視・バント職人の順に選択できる'
+);
+assert.ok(!Object.values(personalityLabels).includes('標準'), '標準の性格を選択肢に残さない');
+assert.ok(!Object.values(personalityLabels).includes('バント重視'), 'バント重視の旧ラベルを残さない');
 
 console.log('PASS: 打順入力フォームの共通化');

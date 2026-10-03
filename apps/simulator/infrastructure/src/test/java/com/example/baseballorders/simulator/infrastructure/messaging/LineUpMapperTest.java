@@ -47,13 +47,9 @@ class LineUpMapperTest {
         StealResult stealResult;
         BuntResult buntResult;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            // 0.31は長距離戦略では本塁打、中距離戦略では三塁打となり、戦略の選択を識別する。
-            randomGenerator
-                    .when(RandomGenerator::nextFloat)
-                    .thenReturn(
-                            personality == PlayerPersonality.EAGER_SLUGGISH ? 0.31f : 0.8f,
-                            0.9f,
-                            0.9f);
+            // 打率0.3・長打率0.4で0.31は、短距離戦略では二塁打、中距離戦略では三塁打、
+            // 長距離戦略では本塁打、高出塁率戦略では単打となり、打撃戦略の選択を識別する。
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.31f, 0.9f, 0.9f);
             var batter =
                     sut.map(java.util.Collections.nCopies(9, player))
                             .getBatterEntities()
@@ -67,9 +63,13 @@ class LineUpMapperTest {
         assertAll(
                 () ->
                         assertEquals(
-                                personality == PlayerPersonality.EAGER_SLUGGISH
-                                        ? BattingResult.HIT_HOMER
-                                        : BattingResult.BATTED_OUT,
+                                switch (personality) {
+                                    case DEFAULT -> BattingResult.HIT_DOUBLE;
+                                    case MIDDLE_DISTANCE, EAGER_STEAL, EAGER_BUNT ->
+                                            BattingResult.HIT_TRIPLE;
+                                    case EAGER_SLUGGISH -> BattingResult.HIT_HOMER;
+                                    case HIGH_ON_BASE -> BattingResult.HIT_SINGLE;
+                                },
                                 battingResult),
                 () -> assertEquals(StealResult.SUCCESS, stealResult),
                 () ->
@@ -166,7 +166,8 @@ class LineUpMapperTest {
                         .readValue(
                                 """
                                 {"name":"1番","hitAverage":0.3,"sluggish":0.3,
-                                 "buntEnabled":false,"stealEnabled":false}
+                                 "buntEnabled":false,"stealEnabled":false,
+                                 "personality":"MIDDLE_DISTANCE"}
                                 """,
                                 SimulationPlayerMessage.class);
         var sut =
@@ -250,7 +251,7 @@ class LineUpMapperTest {
                         pitcherProperties);
         var player =
                 new SimulationPlayerMessage(
-                        "1番", 0.3f, 0.4f, true, true, PlayerPersonality.DEFAULT);
+                        "1番", 0.3f, 0.4f, true, true, PlayerPersonality.MIDDLE_DISTANCE);
         var battingAverageCaptor = ArgumentCaptor.forClass(Float.class);
         var sluggingCaptor = ArgumentCaptor.forClass(Float.class);
 
