@@ -6,23 +6,13 @@
     <title>打順監督</title>
     <link rel="stylesheet" href="/css/simulation.css">
     <link rel="stylesheet" href="/css/batting-order.css">
+    <link rel="stylesheet" href="/css/site-menu.css">
 </head>
 <body>
-<nav aria-label="画面メニュー" class="site-menu" hidden id="site-menu">
-    <div class="site-menu-head"><span class="site-menu-title">メニュー</span>
-        <button aria-label="メニューを閉じる" class="all-toggle" id="menu-close" type="button">閉じる</button>
-    </div>
-    <ul>
-        <li><a aria-current="page" href="/">打順組み替え</a></li>
-        <li><a href="/large-scale">大規模実行</a></li>
-        <li><a href="/single-game">1試合実行</a></li>
-        <li><a href="/simulation-guide">シミュレーションの仕組み</a></li>
-    </ul>
-</nav>
-<div class="menu-backdrop" hidden id="menu-backdrop"></div>
+<th:block th:replace="~{fragments/site-menu :: siteMenu('/')}"></th:block>
 <main>
     <header>
-        <button aria-controls="site-menu" aria-expanded="false" class="all-toggle menu-toggle" id="menu-toggle" type="button"><span aria-hidden="true" class="menu-icon"></span>メニュー</button>
+        <button th:replace="~{fragments/site-menu :: menuToggle}"></button>
         <h1>打順監督</h1>
         <p class="status">
             ドラッグで打順を組み替え、性格・バント・盗塁を選ぶ。

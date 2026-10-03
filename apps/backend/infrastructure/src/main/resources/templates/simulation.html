@@ -5,12 +5,16 @@
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>打順監督</title>
     <link rel="stylesheet" href="/css/simulation.css">
+    <link rel="stylesheet" href="/css/site-menu.css">
 </head>
 <body>
+<th:block th:replace="~{fragments/site-menu :: siteMenu('/large-scale')}"></th:block>
 <main>
-    <header><h1>打順監督</h1>
+    <header>
+        <button th:replace="~{fragments/site-menu :: menuToggle}"></button>
+        <h1>打順監督</h1>
         <p class="status">
-            打順ごとの成績を入力する。 <a href="/simulation-guide">シミュレーションの仕組み</a> ／ <a href="/single-game">1試合実行はこちら</a> ／ <a href="/">打順組み替えに戻る</a>
+            打順ごとの成績を入力する。
         </p>
     </header>
     <nav aria-label="画面切り替え" class="view-tabs" role="tablist">
@@ -131,5 +135,6 @@
 </main>
 <script src="/js/lineup-form.js"></script>
 <script src="/js/simulation.js"></script>
+<script src="/js/site-menu.js"></script>
 </body>
 </html>
