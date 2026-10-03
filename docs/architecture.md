@@ -111,14 +111,21 @@ sequenceDiagram
     API-->>Browser: synchronous HTTP response
 ```
 
-The pages are served by `SimulationPageController`: `/` and `/large-scale`
-render `templates/simulation.html` (`static/js/simulation.js`, which posts to
+The pages are served by `SimulationPageController`: the default `/` renders
+`templates/batting-order.html`, where batting stats are fixed labels and the
+user reorders batters by drag (or arrow keys) and changes only personality,
+bunt, and steal; it reuses `static/js/simulation.js` for the large-scale run and
+results, and `static/js/site-menu.js` opens the left menu (closed by default)
+that links to the other screens. `/large-scale` renders
+`templates/simulation.html` (`static/js/simulation.js`, which posts to
 `/simulations`), and `/single-game` renders `templates/single-game.html`
 (`static/js/single-game.js`, which posts to `/simulations/single-game` and
 animates the returned `transitions`). Both pages first load
 `static/js/lineup-form.js`, which owns the shared lineup defaults, input
 validation, tab switching, bulk toggles, and the POST request; each page script
 only passes its messages, endpoint, and result renderer to `startLineupForm`.
+`#order[data-lineup-mode="reorder"]` switches the shared form to the
+drag-and-drop reorder mode.
 `SimulationGuidePageController` serves the
 static `/simulation-guide` page. `SimulationMode` in `messaging-contract` selects
 the run mode on the wire; a missing mode means `LARGE_SCALE_RUN`. In
@@ -135,6 +142,7 @@ implementations after the listed entry points identify them.
 | Change intent | Start with production code | Focused tests | Stop boundary |
 | --- | --- | --- | --- |
 | Large-scale simulation page, form, or result rendering | [SimulationPageController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageController.java), [simulation.html](../apps/backend/infrastructure/src/main/resources/templates/simulation.html) | [SimulationPageControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageControllerTest.java), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java), [browser test](../apps/backend/infrastructure/src/test/js/simulation.test.mjs) | Do not inspect Simulator rules unless the displayed contract changes. |
+| Default batting-order reorder page or left menu | [SimulationPageController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageController.java), [batting-order.html](../apps/backend/infrastructure/src/main/resources/templates/batting-order.html), [lineup-form.js](../apps/backend/infrastructure/src/main/resources/static/js/lineup-form.js), [site-menu.js](../apps/backend/infrastructure/src/main/resources/static/js/site-menu.js), [batting-order.css](../apps/backend/infrastructure/src/main/resources/static/css/batting-order.css) | [SimulationPageControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageControllerTest.java), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java), [browser test](../apps/backend/infrastructure/src/test/js/batting-order.test.mjs) | Results reuse the large-scale renderer in `simulation.js`; do not inspect Simulator rules. |
 | Single-game page, animation, or batting-order table | [SimulationPageController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageController.java), [single-game.html](../apps/backend/infrastructure/src/main/resources/templates/single-game.html), [single-game.js](../apps/backend/infrastructure/src/main/resources/static/js/single-game.js), [single-game.css](../apps/backend/infrastructure/src/main/resources/static/css/single-game.css) | [SimulationPageControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageControllerTest.java), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java), [browser test](../apps/backend/infrastructure/src/test/js/single-game.test.mjs) | Frame durations come from `baseball-orders.rendering.single-game.*`; inspect Simulator transitions only when the displayed transition contract changes. |
 | Lineup input shared by both pages (defaults, validation, tabs, bulk toggles, submit) | [lineup-form.js](../apps/backend/infrastructure/src/main/resources/static/js/lineup-form.js) | [browser test](../apps/backend/infrastructure/src/test/js/lineup-form.test.mjs), [simulation.test.mjs](../apps/backend/infrastructure/src/test/js/simulation.test.mjs), [single-game.test.mjs](../apps/backend/infrastructure/src/test/js/single-game.test.mjs), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java) | Keep page-specific messages, endpoints, and result rendering in the page scripts. |
 | HTTP request mapping, validation, or errors | [PlayerInputRequest](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/api/PlayerInputRequest.java), [SimulatorRequestController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/api/SimulatorRequestController.java), [SimulationErrorHandler](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/api/SimulationErrorHandler.java) | [SimulatorRequestControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/api/SimulatorRequestControllerTest.java), [SimulationErrorHandlerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/api/SimulationErrorHandlerTest.java) | Stop at `SimulationCoordinator` after confirming the application input. |
