@@ -59,7 +59,7 @@
     function playFrames(annotated) {
       stopFramePlayback();
       let index=0;
-      const show=()=>{ const transition=annotated[index]; const {effect}=transition; const frame=buildFrame(transition); frameStage.replaceChildren(frame); applyPlaybackRate(frame); renderLineScore(annotated, index + 1); index+=1; if (index >= annotated.length) { frameTimer=null; return; } frameTimer=setTimeout(show, frameDurations[effect.kind] * PLAYBACK_SPEED_MULTIPLIERS[playbackSpeed]); };
+      const show=()=>{ const transition=annotated[index]; const {effect}=transition; const frame=buildFrame(transition); frameStage.replaceChildren(frame); applyPlaybackRate(frame); renderLineScore(annotated, transition.inning); index+=1; const delay=frameDurations[effect.kind] * PLAYBACK_SPEED_MULTIPLIERS[playbackSpeed]; if (index >= annotated.length) { frameTimer=setTimeout(()=>{ frameTimer=null; renderLineScore(annotated, null); }, delay); return; } frameTimer=setTimeout(show, delay); };
       show();
     }
     const REGULATION_INNINGS = 9;
@@ -70,7 +70,7 @@
       const headRow=document.createElement('tr'); const bodyRow=document.createElement('tr');
       headRow.append(element('th','line-score-team')); const team=element('th','line-score-team','自チーム'); team.scope='row'; bodyRow.append(team);
       for (let inning=1; inning <= inningCount; inning+=1) {
-        const th=element('th','',String(inning)); th.scope='col'; headRow.append(th);
+        const th=element('th',inning === currentInning ? 'is-current' : '',String(inning)); th.scope='col'; headRow.append(th);
         const runs=summary.innings.get(inning);
         bodyRow.append(element('td',inning === currentInning ? 'is-current' : '',runs === undefined ? '' : String(runs)));
       }
@@ -80,11 +80,8 @@
       table.append(thead,tbody);
       return table;
     }
-    function renderLineScore(annotated, playedCount) {
-      const played=annotated.slice(0, playedCount);
-      const inningCount=Math.max(REGULATION_INNINGS, annotated[annotated.length - 1].inning);
-      lineScore.replaceChildren(buildLineScore(summarizeLineScore(played), inningCount, played[played.length - 1].inning));
-    }
+    // スコアボードは再生前から試合全体の結果を表示し、再生中のイニングだけを強調する。
+    function renderLineScore(annotated, currentInning) { lineScore.replaceChildren(buildLineScore(summarizeLineScore(annotated), Math.max(REGULATION_INNINGS, annotated[annotated.length - 1].inning), currentInning)); }
     function buildOrderTable(annotated) {
       const plateAppearances = annotated.filter(t=>!t.actionResult.startsWith('盗塁'));
       const innings = [...new Set(plateAppearances.map(t=>t.inning))].sort((a,b)=>a-b);

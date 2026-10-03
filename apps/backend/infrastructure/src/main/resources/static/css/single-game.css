@@ -1103,6 +1103,11 @@
             color: var(--ochre);
         }
 
+        .line-score th.is-current {
+            color: var(--ink);
+            background: var(--ochre);
+        }
+
         .line-score td.is-current {
             color: var(--ink);
             background: var(--ochre);

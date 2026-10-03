@@ -317,7 +317,34 @@ assert.deepEqual(
 assert.ok(js.includes('const REGULATION_INNINGS = 9;'), 'スコアボードは最低9回まで列を用意する');
 assert.ok(js.includes('function buildLineScore('), 'スコアボードの表を生成する関数を用意する');
 assert.ok(js.includes("['R','H','E']"), 'スコアボードにR・H・Eの列を表示する');
-assert.ok(js.includes('renderLineScore(annotated, index + 1)'), 'フレームの再生に合わせてスコアボードを更新する');
+assert.ok(!js.includes('renderLineScore(annotated, index + 1)'), 'スコアボードの得点を再生済みのプレーだけに絞らない');
+// --- スコアボードは最初から試合結果を表示し、再生中のイニングを色で示す（issue #156） ---
+const lineScoreCalls = [];
+const renderLineScore = new Function(
+  'lineScore', 'buildLineScore', 'summarizeLineScore', 'REGULATION_INNINGS',
+  `${extractFunction('renderLineScore')}\nreturn renderLineScore;`
+)(
+  {replaceChildren:table=>lineScoreCalls.push(table)},
+  (summary, inningCount, currentInning)=>({summary, inningCount, currentInning}),
+  summarizeLineScore,
+  9
+);
+const fullGame = [played(1, 2, 4), played(1, 0, 1), played(5, 1, 0), played(10, 0, 2)];
+renderLineScore(fullGame, 1);
+assert.deepEqual(
+  lineScoreCalls.at(-1),
+  {summary:{innings:new Map([[1, 2], [5, 1], [10, 0]]), runs:3, hits:3, errors:0}, inningCount:10, currentInning:1},
+  '1回の再生中でも試合全体のイニング別得点とR・H・Eを表示し、再生中のイニングを渡す'
+);
+renderLineScore(fullGame, null);
+assert.equal(lineScoreCalls.at(-1).currentInning, null, '再生が終わったらどのイニングも強調しない');
+assert.ok(js.includes('renderLineScore(annotated, transition.inning);'), 'フレームの再生に合わせて強調するイニングを進める');
+assert.ok(js.includes('renderLineScore(annotated, null);'), '最後のフレームの表示時間が過ぎたらイニングの強調を外す');
+assert.ok(
+  js.includes("element('th',inning === currentInning ? 'is-current' : '',String(inning))"),
+  '再生中のイニングは見出しの回数も色で示す'
+);
+assert.match(css, /\.line-score th\.is-current\s*\{/, '再生中のイニングの見出しを強調表示する');
 assert.match(css, /\.line-score\s*\{/, 'スコアボードのスタイルを用意する');
 assert.match(css, /#results \.result-head, #results \.line-score-wrap\s*\{\s*grid-column:\s*1 \/ -1;/, 'PC幅ではスコアボードを結果パネルの全幅に表示する');
 assert.match(mobileCss, /\.result-head\s*\{\s*align-items:\s*center;\s*flex-wrap:\s*nowrap;/, 'スマホ幅ではスコアボードの分だけ縦幅を空けるため「打順を編集する」を見出しの横に並べる');
