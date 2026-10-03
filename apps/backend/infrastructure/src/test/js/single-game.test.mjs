@@ -219,9 +219,21 @@ assert.deepEqual(resolvePlayOutcomes(recorded), [
 ], '記録はプレー直前の状況なので、次の推移からプレー直後のアウト・走者・得点を求め、イニングや試合の最後のプレーは3アウトにする');
 assert.ok(js.includes('annotateEffects(annotateBattingOrder(resolvePlayOutcomes(gameTransitions)))'), 'プレー直後の状況で演出と表示を組み立てる');
 assert.ok(js.includes('classifyEffect(transition,transition.scoreBefore)'), 'プレー直前と直後の得点差で得点数を求める');
-for (const result of ['凡打', '三振', '四球', 'バント成功', '盗塁成功(二塁)', '盗塁失敗(三塁)']) {
+for (const result of ['凡打', '三振', '四球', 'バント失敗', 'スクイズ失敗', '盗塁成功(二塁)', '盗塁失敗(三塁)']) {
   assert.deepEqual(classifyEffect(transition(result, 0), 0), {kind:'none', runs:0, bases:0}, `得点のない${result}は通常表示にする`);
 }
+
+// --- バント成功の演出（issue #156） ---
+assert.deepEqual(classifyEffect(transition('バント成功', 0), 0), {kind:'bunt', runs:0, bases:0}, '得点のない進塁バント成功はバント演出にする');
+assert.deepEqual(classifyEffect(transition('スクイズ成功', 1), 0), {kind:'score', runs:1, bases:0}, '得点の入ったスクイズ成功は得点演出を優先する');
+assert.ok(js.includes("bunt:()=>'バント成功!'"), 'バント成功の見出しを表示する');
+assert.ok(js.includes("if (effect.kind === 'bunt') diamond.append(element('span','ball ball-bunt'));"), 'バント成功では本塁前に転がる打球を表示する');
+assert.match(html, /th:attr="[^"]*data-bunt-frame-duration-millis=\$\{buntFrameDurationMillis}/, 'バント成功フレームの表示時間をサーバー設定から渡す');
+assert.ok(js.includes('bunt:Number(frameStage.dataset.buntFrameDurationMillis) || frameDurationMillis'), 'バント成功フレームの表示時間をデータ属性から読み取る');
+assert.ok(css.includes('@keyframes bunt-ball'), 'バントの打球が本塁前に転がる');
+assert.match(css, /\.effect-bunt \.ball\s*\{[^}]*animation:\s*bunt-ball/, 'バント成功フレームの打球にバント用の動きを適用する');
+assert.match(css, /\.effect-bunt \.base\.occupied/, 'バント成功で進塁した走者の塁を点灯させる');
+assert.match(css, /\.headline-bunt\s*\{/, 'バント成功の見出しのスタイルを用意する');
 
 assert.match(html, /th:attr="[^"]*data-hit-frame-duration-millis=\$\{hitFrameDurationMillis}/, '安打フレームの表示時間をサーバー設定から渡す');
 assert.match(html, /th:attr="[^"]*data-score-frame-duration-millis=\$\{scoreFrameDurationMillis}/, '得点フレームの表示時間をサーバー設定から渡す');

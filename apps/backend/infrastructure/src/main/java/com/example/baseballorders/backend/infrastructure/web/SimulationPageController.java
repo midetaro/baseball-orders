@@ -13,6 +13,7 @@ public final class SimulationPageController {
     private final long hitFrameDurationMillis;
     private final long scoreFrameDurationMillis;
     private final long homeRunFrameDurationMillis;
+    private final long buntFrameDurationMillis;
 
     /**
      * 1試合実行結果のアニメーション表示に使う、演出の種類ごとのフレーム表示時間を受け取って構成を作成する。
@@ -21,6 +22,7 @@ public final class SimulationPageController {
      * @param hitFrameDurationMillis 得点のない安打を演出するフレームの表示時間（ミリ秒）
      * @param scoreFrameDurationMillis 本塁打以外の得点を演出するフレームの表示時間（ミリ秒）
      * @param homeRunFrameDurationMillis 本塁打を演出するフレームの表示時間（ミリ秒）
+     * @param buntFrameDurationMillis 得点のない進塁バント成功を演出するフレームの表示時間（ミリ秒）
      */
     public SimulationPageController(
             @Value("${baseball-orders.rendering.single-game.frame-duration-millis}")
@@ -30,15 +32,18 @@ public final class SimulationPageController {
             @Value("${baseball-orders.rendering.single-game.score-frame-duration-millis}")
                     long scoreFrameDurationMillis,
             @Value("${baseball-orders.rendering.single-game.home-run-frame-duration-millis}")
-                    long homeRunFrameDurationMillis) {
+                    long homeRunFrameDurationMillis,
+            @Value("${baseball-orders.rendering.single-game.bunt-frame-duration-millis}")
+                    long buntFrameDurationMillis) {
         this.frameDurationMillis = frameDurationMillis;
         this.hitFrameDurationMillis = hitFrameDurationMillis;
         this.scoreFrameDurationMillis = scoreFrameDurationMillis;
         this.homeRunFrameDurationMillis = homeRunFrameDurationMillis;
+        this.buntFrameDurationMillis = buntFrameDurationMillis;
     }
 
     /**
-     * 空の打順入力欄を含む1試合実行画面を、通常・安打・得点・本塁打の各フレーム表示時間とともに表示する。
+     * 空の打順入力欄を含む1試合実行画面を、通常・安打・得点・本塁打・バント成功の各フレーム表示時間とともに表示する。
      *
      * @return 1試合実行画面
      */
@@ -49,6 +54,7 @@ public final class SimulationPageController {
         modelAndView.addObject("hitFrameDurationMillis", hitFrameDurationMillis);
         modelAndView.addObject("scoreFrameDurationMillis", scoreFrameDurationMillis);
         modelAndView.addObject("homeRunFrameDurationMillis", homeRunFrameDurationMillis);
+        modelAndView.addObject("buntFrameDurationMillis", buntFrameDurationMillis);
         return modelAndView;
     }
 

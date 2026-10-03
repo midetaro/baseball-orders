@@ -1,6 +1,6 @@
     const frameStage = document.querySelector('#frame-stage'), lineScore = document.querySelector('#line-score'), orderTableScroll = document.querySelector('#order-table-scroll');
     const frameDurationMillis = Number(frameStage.dataset.frameDurationMillis) || 1000;
-    const frameDurations = {none:frameDurationMillis, hit:Number(frameStage.dataset.hitFrameDurationMillis) || frameDurationMillis, score:Number(frameStage.dataset.scoreFrameDurationMillis) || frameDurationMillis, 'home-run':Number(frameStage.dataset.homeRunFrameDurationMillis) || frameDurationMillis};
+    const frameDurations = {none:frameDurationMillis, hit:Number(frameStage.dataset.hitFrameDurationMillis) || frameDurationMillis, score:Number(frameStage.dataset.scoreFrameDurationMillis) || frameDurationMillis, 'home-run':Number(frameStage.dataset.homeRunFrameDurationMillis) || frameDurationMillis, bunt:Number(frameStage.dataset.buntFrameDurationMillis) || frameDurationMillis};
     let frameTimer = null;
     const RUNNER_LAYOUT = {
       '走者なし':{first:false,second:false,third:false},
@@ -18,11 +18,11 @@
     const HIT_HEADLINES = {1:'ヒット!',2:'ツーベース!',3:'スリーベース!'};
     const BALL_DIRECTIONS = ['left','center','right'];
     const FIREWORK_BURSTS = 3, FIREWORK_SPARKS = 12;
-    function classifyEffect(transition, previousScore) { const runs=transition.cumulativeScore-previousScore; const bases=HIT_BASES[transition.actionResult] ?? 0; if (bases===4) return {kind:'home-run',runs,bases}; if (runs>0) return {kind:'score',runs,bases}; if (bases>0) return {kind:'hit',runs:0,bases}; return {kind:'none',runs:0,bases:0}; }
+    function classifyEffect(transition, previousScore) { const runs=transition.cumulativeScore-previousScore; const bases=HIT_BASES[transition.actionResult] ?? 0; if (bases===4) return {kind:'home-run',runs,bases}; if (runs>0) return {kind:'score',runs,bases}; if (bases>0) return {kind:'hit',runs:0,bases}; if (transition.actionResult==='バント成功') return {kind:'bunt',runs:0,bases:0}; return {kind:'none',runs:0,bases:0}; }
     // 推移のアウト・走者・得点はプレー直前の状況で記録されるため、次の推移からプレー直後の状況を求める。
     function resolvePlayOutcomes(gameTransitions) { return gameTransitions.map((transition,index)=>{ const next=gameTransitions[index+1]; const sameInning=next !== undefined && next.inning === transition.inning; return {...transition, scoreBefore:transition.cumulativeScore, cumulativeScore:next === undefined ? transition.cumulativeScore : next.cumulativeScore, outCount:sameInning ? next.outCount : 3, runnerState:sameInning ? next.runnerState : transition.runnerState}; }); }
     function annotateEffects(annotated) { return annotated.map((transition,index)=>({...transition,effect:classifyEffect(transition,transition.scoreBefore),direction:BALL_DIRECTIONS[index % BALL_DIRECTIONS.length]})); }
-    const headlines = {'home-run':effect=>effect.runs===4?'GRAND SLAM!':'HOME RUN!', score:effect=>effect.bases>0?'タイムリー!':'得点!', hit:effect=>HIT_HEADLINES[effect.bases], none:()=>''};
+    const headlines = {'home-run':effect=>effect.runs===4?'GRAND SLAM!':'HOME RUN!', score:effect=>effect.bases>0?'タイムリー!':'得点!', hit:effect=>HIT_HEADLINES[effect.bases], bunt:()=>'バント成功!', none:()=>''};
     function element(tag, className, text) { const node=document.createElement(tag); node.className=className; if (text !== undefined) node.textContent=text; return node; }
     function buildFireworks() { return Array.from({length:FIREWORK_BURSTS},(_,burstIndex)=>{ const burst=element('span',`firework firework-${burstIndex}`); for (let sparkIndex=0; sparkIndex < FIREWORK_SPARKS; sparkIndex+=1) { const spark=element('span','spark'); spark.style.setProperty('--angle',`${sparkIndex * 360 / FIREWORK_SPARKS}deg`); burst.append(spark); } return burst; }); }
     function buildFrame(transition) {
@@ -38,6 +38,7 @@
       [['second',layout.second],['first',layout.first],['third',layout.third]].forEach(([base,occupied])=>{ const marker=document.createElement('span'); marker.className=`base base-${base}${occupied?' occupied':''}`; diamond.append(marker); });
       const batter=document.createElement('span'); batter.className='batter-order'; batter.textContent=`${transition.battingOrder}番打者`; diamond.append(batter);
       if (effect.bases > 0) diamond.append(element('span',`ball ball-${transition.direction}`),element('span',`runner runner-${effect.bases}`));
+      if (effect.kind === 'bunt') diamond.append(element('span','ball ball-bunt'));
       if (effect.kind === 'score') diamond.append(element('span','runner runner-home'));
       if (effect.kind === 'home-run') diamond.append(...buildFireworks());
       if (effect.runs > 0) diamond.append(element('span','score-burst',`+${effect.runs}点`));
