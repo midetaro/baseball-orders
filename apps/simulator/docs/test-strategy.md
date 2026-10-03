@@ -20,7 +20,7 @@
 
 | クラス | 引く回数 | 条件 |
 | --- | --- | --- |
-| `ShortDistanceHittingStrategy` / `MiddleDistanceHittingStrategy` / `LongDistanceHittingStrategy` | 1 | 常に |
+| `ShortDistanceHittingStrategy` / `MiddleDistanceHittingStrategy` / `LongDistanceHittingStrategy` / `HighOnBaseHittingStrategy` | 1 | 常に |
 | `StandardBuntStrategy` | 1 | `NO_OUT` のときだけ |
 | `EagerBuntStrategy` | 1 | `NO_OUT` / `ONE_OUT` のときだけ |
 | `NowayBuntStrategy` | 0 | — |
@@ -89,7 +89,7 @@ State を直接操作する経路を使う。
 
 | 具象クラス | テスト |
 | --- | --- |
-| `ShortDistanceHittingStrategy` / `MiddleDistanceHittingStrategy` / `LongDistanceHittingStrategy` | 各 `*Test` |
+| `ShortDistanceHittingStrategy` / `MiddleDistanceHittingStrategy` / `LongDistanceHittingStrategy` / `HighOnBaseHittingStrategy` | 各 `*Test` |
 | `StandardBuntStrategy` / `EagerBuntStrategy` / `NowayBuntStrategy` | 各 `*Test` |
 | `StandardStealStrategy` / `EagerStealStrategy` / `NowayStealStrategy` | 各 `*Test` |
 | `NoBasesState` … `FullBasesState`（8 種） | 各 `*Test` |
