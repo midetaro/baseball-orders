@@ -307,6 +307,17 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(cssResponse.body().contains(".section-head {")),
                 () -> assertFalse(jsResponse.body().contains("hasAtMostTwoDecimalPlaces")),
                 () -> assertTrue(response.body().contains("class=\"simulation-workspace\"")),
+                () -> assertTrue(response.body().contains("id=\"input-view\" role=\"tabpanel\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<section aria-labelledby=\"results-heading\""
+                                                        + " hidden id=\"results\" role=\"tabpanel\">")),
+                () -> assertTrue(response.body().contains("id=\"edit-lineup\"")),
+                () -> assertFalse(response.body().contains("id=\"toggle-lineup\"")),
+                () -> assertTrue(jsResponse.body().contains("function showView(resultsVisible)")),
+                () -> assertTrue(cssResponse.body().contains("--moss: #56704a")),
                 () -> assertTrue(jsResponse.body().contains("'homeRunCount'")),
                 () -> assertTrue(jsResponse.body().contains("scoreDistribution")),
                 () -> assertTrue(response.body().contains("score-histogram")),
