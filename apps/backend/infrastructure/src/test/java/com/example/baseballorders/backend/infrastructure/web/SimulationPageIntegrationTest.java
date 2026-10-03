@@ -103,6 +103,18 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("data-frame-duration-millis=\"1000\"")),
                 () -> assertTrue(response.body().contains("id=\"order-table-scroll\"")),
                 () -> assertTrue(response.body().contains("href=\"/large-scale\"")),
+                () -> assertTrue(response.body().contains("class=\"view-tabs\" role=\"tablist\"")),
+                () -> assertTrue(response.body().contains("id=\"input-view\" role=\"tabpanel\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<section aria-labelledby=\"results-heading\""
+                                                        + " hidden id=\"results\" role=\"tabpanel\">")),
+                () -> assertTrue(response.body().contains("id=\"edit-lineup\"")),
+                () -> assertFalse(response.body().contains("id=\"toggle-lineup\"")),
+                () -> assertFalse(cssResponse.body().contains("BASEBALL ORDER LAB")),
+                () -> assertTrue(jsResponse.body().contains("function showView(resultsVisible)")),
                 () -> assertFalse(response.body().contains("<style>")),
                 () ->
                         assertTrue(

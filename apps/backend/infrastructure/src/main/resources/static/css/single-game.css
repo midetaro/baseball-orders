@@ -1,4 +1,3 @@
-        .out-count { color: #b8432f; }
         :root {
             color-scheme: light;
             --paper: #f3eee2;
@@ -23,7 +22,7 @@
             --space-xl: 24px;
             --space-2xl: 28px;
 
-            --control-height: 36px;
+            --control-height: 34px;
         }
 
         * {
@@ -42,34 +41,27 @@
         main {
             width: min(1180px, calc(100% - 32px));
             margin: auto;
-            padding: 48px 0 64px;
+            padding: 20px 0 32px;
         }
 
         header {
-            position: relative;
-        }
-
-        header::before {
-            display: inline-flex;
-            padding: 6px 10px;
-            border: 1px solid var(--sage);
-            border-radius: 999px;
-            content: "BASEBALL ORDER LAB";
-            color: var(--moss-deep);
-            background: var(--moss-tint);
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: .18em;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--space-xs) var(--space-md);
         }
 
         h1 {
-            width: max-content;
-            max-width: 100%;
-            margin: 12px 0 0;
+            margin: 0;
             color: var(--moss-deep);
-            font-size: clamp(42px, 7vw, 78px);
-            line-height: .9;
-            letter-spacing: 0;
+            font-size: clamp(30px, 4vw, 40px);
+            line-height: 1.1;
+            letter-spacing: .02em;
+        }
+
+        header .status {
+            flex: 1 1 320px;
+            margin: 0;
         }
 
         a {
@@ -82,11 +74,10 @@
             color: var(--clay);
         }
 
-        .eyebrow, .slot-index {
+        .slot-index {
             color: var(--moss-deep);
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 800;
-            letter-spacing: .04em;
         }
 
         .status, .hint {
@@ -94,16 +85,55 @@
             font-size: 13px;
         }
 
+        .view-tabs {
+            display: flex;
+            gap: var(--space-xs);
+            margin-top: var(--space-lg);
+            border-bottom: 2px solid var(--line);
+        }
+
+        .view-tab {
+            gap: var(--space-xs);
+            margin-bottom: -2px;
+            padding: 0 var(--space-md);
+            border-bottom: 3px solid transparent;
+            border-radius: 10px 10px 0 0;
+            background: transparent;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .view-tab-step {
+            display: inline-grid;
+            place-items: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--line);
+            color: var(--ink);
+            font-size: 12px;
+        }
+
+        .view-tab[aria-selected="true"] {
+            border-bottom-color: var(--moss);
+            background: var(--panel);
+            color: var(--moss-deep);
+        }
+
+        .view-tab[aria-selected="true"] .view-tab-step {
+            background: var(--moss);
+            color: var(--panel);
+        }
+
         .simulation-workspace {
             display: grid;
             grid-template-columns: 1fr;
             align-items: start;
-            gap: 28px;
-            margin-top: 28px;
+            margin-top: var(--space-md);
         }
 
         section {
-            position: relative;
+            min-width: 0;
             background: var(--panel);
             border: 1px solid var(--line);
             border-radius: 18px;
@@ -111,11 +141,15 @@
             box-shadow: 0 10px 30px rgba(84, 72, 46, .08);
         }
 
+        section[hidden] {
+            display: none;
+        }
+
         .section-head {
             display: flex;
             align-items: center;
             gap: var(--space-xs);
-            padding: var(--space-lg) var(--space-xl);
+            padding: var(--space-md) var(--space-xl);
             border-bottom: 1px solid var(--line);
             background: var(--panel-sunk);
         }
@@ -134,15 +168,15 @@
 
         .order {
             width: max-content;
-            padding: 0 var(--space-sm) var(--space-sm);
+            padding: 0 var(--space-sm) var(--space-xs);
         }
 
         .columns, .slot {
             display: grid;
-            grid-template-columns:38px repeat(2, 60px) 118px 78px 78px;
+            grid-template-columns:38px repeat(2, 60px) 118px 96px 96px;
             gap: var(--space-xs);
             align-items: center;
-            padding: var(--space-xs);
+            padding: var(--space-2xs) var(--space-xs);
             border-bottom: 1px solid var(--line);
         }
 
@@ -154,7 +188,14 @@
             display: none;
         }
 
+        .eyebrow {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
         .columns {
+            padding-top: var(--space-xs);
             color: var(--muted);
             font-size: 12px;
             font-weight: 700;
@@ -171,14 +212,14 @@
         input, select {
             width: 100%;
             min-height: var(--control-height);
-            padding: var(--space-xs);
+            padding: 0 var(--space-xs);
             color: var(--ink);
             background: #fffdf8;
             border: 1px solid #cfc5ad;
             border-radius: 8px;
             outline: none;
             font-family: inherit;
-            font-size: 13px;
+            font-size: 14px;
             font-variant-numeric: tabular-nums;
             transition: border-color .2s ease, box-shadow .2s ease;
         }
@@ -227,14 +268,11 @@
         }
 
         .bunt-toggle {
-            padding: 2px var(--space-xs);
+            padding: 0 var(--space-xs);
             border: 1px solid #cfc5ad;
-            border-radius: 10px;
-            line-height: 1.3;
-            white-space: normal;
+            border-radius: 999px;
             background: #fffdf8;
             color: var(--muted);
-            flex-wrap: wrap;
             column-gap: .3em;
         }
 
@@ -293,9 +331,9 @@
         }
 
         #feedback {
-            min-height: 48px;
-            margin: var(--space-sm) var(--space-xl) var(--space-lg);
-            padding: var(--space-sm);
+            min-height: 40px;
+            margin: var(--space-sm) var(--space-xl) var(--space-md);
+            padding: var(--space-xs) var(--space-sm);
             border: 1px solid var(--line);
             border-radius: 10px;
             background: var(--panel-sunk);
@@ -303,9 +341,12 @@
             white-space: pre-line;
         }
 
+        #feedback.success, .hint.success {
+            color: var(--moss-deep);
+        }
+
         #feedback.success {
             border-color: var(--sage);
-            color: var(--moss-deep);
         }
 
         #feedback.error {
@@ -313,8 +354,8 @@
             color: #8a4527;
         }
 
-        #results {
-            min-width: 0;
+        .hint.error {
+            color: #8a4527;
         }
 
         .result-head {
@@ -322,6 +363,16 @@
             align-items: center;
             justify-content: space-between;
             gap: 16px;
+        }
+
+        .result-head .hint {
+            margin: 4px 0 0;
+        }
+
+        .result-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-xs);
         }
 
         .frame-stage {
@@ -436,8 +487,10 @@
             background: var(--moss-tint);
         }
 
+        .out-count { color: #b8432f; }
+
         .empty-chart-state {
-            margin: var(--space-sm) 0 0;
+            margin: var(--space-xs) 0 0;
             color: var(--muted);
             font-size: 12px;
         }
@@ -447,8 +500,10 @@
         }
 
         @media (min-width: 761px) {
-            .simulation-workspace {
-                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            #input-view {
+                justify-self: center;
+                width: fit-content;
+                max-width: 100%;
             }
 
             .section-head {
@@ -465,22 +520,81 @@
                 flex-wrap: wrap;
                 gap: var(--space-xs);
             }
+
+            #results:not([hidden]) {
+                display: grid;
+                grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
+                align-items: start;
+            }
+
+            #results .result-head {
+                grid-column: 1 / -1;
+            }
+
+            .order-table-wrap {
+                padding: var(--space-lg) var(--space-xl) var(--space-lg) 0;
+            }
         }
 
         @media (max-width: 760px) {
             main {
                 width: min(100% - 20px, 1180px);
-                padding-top: 28px;
+                padding-top: 20px;
+            }
+
+            .view-tabs {
+                margin-top: var(--space-md);
+            }
+
+            .view-tab {
+                flex: 1;
             }
 
             .section-head {
                 align-items: flex-start;
                 flex-wrap: wrap;
+                padding: var(--space-md);
             }
 
             .result-head {
                 align-items: flex-start;
                 flex-direction: column;
+            }
+
+            .frame-stage {
+                min-height: 0;
+                padding: var(--space-md);
+            }
+
+            .frame-banner {
+                margin-bottom: var(--space-xs);
+            }
+
+            .diamond {
+                width: 120px;
+                height: 120px;
+                margin-bottom: var(--space-xs);
+            }
+
+            .base-second {
+                left: 49px;
+            }
+
+            .base-first {
+                top: 49px;
+                left: 98px;
+            }
+
+            .base-third {
+                top: 49px;
+            }
+
+            .order-table th, .order-table td {
+                padding: 2px var(--space-xs);
+            }
+
+            .order-table-wrap {
+                padding: 0 var(--space-md) var(--space-md);
             }
 
             .order-scroll {
@@ -489,7 +603,7 @@
 
             .order {
                 width: 100%;
-                padding: 0 var(--space-xs) var(--space-sm);
+                padding: var(--space-xs) var(--space-xs) 0;
             }
 
             .columns, .slot {
@@ -518,5 +632,9 @@
 
             .toggle-label {
                 display: none;
+            }
+
+            #feedback {
+                margin: var(--space-sm) var(--space-md) var(--space-md);
             }
         }
