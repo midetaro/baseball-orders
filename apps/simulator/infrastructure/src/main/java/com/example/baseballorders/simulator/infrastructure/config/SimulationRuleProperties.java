@@ -19,6 +19,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param shortDistanceHitting 短距離打者の安打配分
  * @param middleDistanceHitting 中距離打者の長打配分
  * @param longDistanceHitting 長距離打者の長打配分
+ * @param highOnBaseHitting 高出塁率打者の安打配分
  * @param highOnBaseBatting 高出塁率打者の打席確率
  * @param standardSteal 標準盗塁戦略の企図率
  * @param eagerSteal 積極盗塁戦略の企図率
@@ -32,6 +33,7 @@ public record SimulationRuleProperties(
         Hitting shortDistanceHitting,
         Hitting middleDistanceHitting,
         Hitting longDistanceHitting,
+        Hitting highOnBaseHitting,
         HighOnBaseBatting highOnBaseBatting,
         Steal standardSteal,
         Steal eagerSteal,
@@ -109,6 +111,7 @@ public record SimulationRuleProperties(
                 .shortDistanceHitting(hittingDistribution(shortDistanceHitting))
                 .middleDistanceHitting(hittingDistribution(middleDistanceHitting))
                 .longDistanceHitting(hittingDistribution(longDistanceHitting))
+                .highOnBaseHitting(hittingDistribution(highOnBaseHitting))
                 .highOnBaseWalkProbability(highOnBaseBatting.walkProbability())
                 .standardSteal(stealAttemptRates(standardSteal))
                 .eagerSteal(stealAttemptRates(eagerSteal))

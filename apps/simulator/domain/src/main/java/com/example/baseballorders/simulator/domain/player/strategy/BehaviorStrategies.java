@@ -47,7 +47,7 @@ public final class BehaviorStrategies {
     }
 
     /**
-     * 打率は変えず、四球確率だけを高出塁率打者用の設定値にした打撃を生成する。安打の配分は中距離打者と同じ設定を使う。
+     * 打率は変えず、四球確率を高出塁率打者用の設定値にした打撃を生成する。安打の配分も高出塁率打者用の設定を使う。
      *
      * @return 高出塁率打者の打撃
      */
@@ -58,7 +58,7 @@ public final class BehaviorStrategies {
                         .strikeoutProbabilityWhenNotOnBase(
                                 rules.batting().strikeoutProbabilityWhenNotOnBase())
                         .build();
-        return new HighOnBaseHittingStrategy(highOnBaseBatting, rules.middleDistanceHitting());
+        return new HighOnBaseHittingStrategy(highOnBaseBatting, rules.highOnBaseHitting());
     }
 
     /**

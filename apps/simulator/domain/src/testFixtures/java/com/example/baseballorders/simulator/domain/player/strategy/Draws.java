@@ -19,16 +19,16 @@ public final class Draws {
     public static final float WALK = 0.04f;
 
     /** 単打になる乱数。 */
-    public static final float SINGLE = 0.30f;
+    public static final float SINGLE = 0.20f;
 
     /** 二塁打になる乱数。 */
-    public static final float DOUBLE = 0.37f;
+    public static final float DOUBLE = 0.33f;
 
     /** 三塁打になる乱数。 */
-    public static final float TRIPLE = 0.395f;
+    public static final float TRIPLE = 0.36f;
 
     /** 本塁打になる乱数。 */
-    public static final float HOMER = 0.42f;
+    public static final float HOMER = 0.40f;
 
     /** 三振になる乱数。 */
     public static final float STRIKEOUT = 0.45f;

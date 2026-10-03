@@ -25,13 +25,13 @@ class LongDistanceHittingStrategyTest {
                 arguments("乱数0は四球", 0.0f, BattingResult.WALK),
                 arguments("0.05の直前", Math.nextDown(0.05f), BattingResult.WALK),
                 arguments("0.05と等しい境界", 0.05f, BattingResult.HIT_SINGLE),
-                // 安打確率 0.38 を 16:1:1:4 で配分し、単打 0.3264、二塁打 0.3436、三塁打 0.3609 まで。
-                arguments("単打上限の直前", 0.3263f, BattingResult.HIT_SINGLE),
-                arguments("単打上限の直後", 0.3265f, BattingResult.HIT_DOUBLE),
-                arguments("二塁打上限の直前", 0.3435f, BattingResult.HIT_DOUBLE),
-                arguments("二塁打上限の直後", 0.3437f, BattingResult.HIT_TRIPLE),
-                arguments("三塁打上限の直前", 0.3608f, BattingResult.HIT_TRIPLE),
-                arguments("三塁打上限の直後", 0.3610f, BattingResult.HIT_HOMER),
+                // 安打確率 0.38 を 7:6:1:6 で配分し、単打 0.183、二塁打 0.297、三塁打 0.316 まで。
+                arguments("単打上限の直前", 0.1829f, BattingResult.HIT_SINGLE),
+                arguments("単打上限の直後", 0.1831f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直前", 0.2969f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直後", 0.2971f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直前", 0.3159f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直後", 0.3161f, BattingResult.HIT_HOMER),
                 arguments("0.43の直前", Math.nextDown(0.43f), BattingResult.HIT_HOMER),
                 arguments("0.43と等しい境界", 0.43f, BattingResult.STRIKEOUT),
                 arguments("0.5725の直前", Math.nextDown(0.5725f), BattingResult.STRIKEOUT),
@@ -67,18 +67,18 @@ class LongDistanceHittingStrategyTest {
     static Stream<Arguments> distanceComparisons() {
         return Stream.of(
                 arguments(
-                        "0.33は長距離で二塁打・中距離で単打",
-                        0.33f,
+                        "0.25は長距離で二塁打・中距離で単打",
+                        0.25f,
                         BattingResult.HIT_DOUBLE,
                         BattingResult.HIT_SINGLE),
                 arguments(
-                        "0.38は長距離で本塁打・中距離で二塁打",
-                        0.38f,
+                        "0.33は長距離で本塁打・中距離で二塁打",
+                        0.33f,
                         BattingResult.HIT_HOMER,
                         BattingResult.HIT_DOUBLE),
                 arguments(
-                        "0.395は長距離で本塁打・中距離で三塁打",
-                        0.395f,
+                        "0.36は長距離で本塁打・中距離で三塁打",
+                        0.36f,
                         BattingResult.HIT_HOMER,
                         BattingResult.HIT_TRIPLE));
     }
@@ -127,12 +127,12 @@ class LongDistanceHittingStrategyTest {
                         SimulationRulesTestData.standard().longDistanceHitting(),
                         BattingResult.HIT_HOMER),
                 arguments(
-                        "本塁打の重みを1にすると0.3800000は二塁打",
+                        "本塁打の重みを0にすると0.3800000は二塁打",
                         HittingDistributionBuilder.hittingDistribution()
-                                .singleWeight(16)
-                                .doubleWeight(1)
+                                .singleWeight(7)
+                                .doubleWeight(6)
                                 .tripleWeight(1)
-                                .homeRunWeight(1)
+                                .homeRunWeight(0)
                                 .build(),
                         BattingResult.HIT_DOUBLE));
     }

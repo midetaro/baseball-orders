@@ -43,18 +43,18 @@ class LineUpMapperTest {
         var player = new SimulationPlayerMessage("1番", 0.3f, true, true, personality);
 
         // when
-        BattingResult battingResult;
+        List<BattingResult> battingResults;
         StealResult stealResult;
         BuntResult buntResult;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
-            // 打率0.3で0.31は、短距離戦略では二塁打、中距離戦略では三塁打、
-            // 長距離戦略では本塁打、高出塁率戦略では単打となり、打撃戦略の選択を識別する。
-            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.31f, 0.9f, 0.9f);
+            // 打率0.3で0.24と0.32の2打席の結果は、短距離戦略では単打・二塁打、中距離戦略では二塁打・本塁打、
+            // 長距離戦略では三塁打・本塁打、高出塁率戦略では単打・単打となり、打撃戦略の選択を識別する。
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.24f, 0.32f, 0.9f, 0.9f);
             var batter =
                     sut.map(java.util.Collections.nCopies(9, player))
                             .getBatterEntities()
                             .getFirst();
-            battingResult = batter.swing(0);
+            battingResults = List.of(batter.swing(0), batter.swing(0));
             stealResult = batter.stealToDouble();
             buntResult = batter.bunt(OutCount.ONE_OUT, BuntType.ADVANCING);
         }
@@ -64,13 +64,24 @@ class LineUpMapperTest {
                 () ->
                         assertEquals(
                                 switch (personality) {
-                                    case DEFAULT -> BattingResult.HIT_DOUBLE;
+                                    case DEFAULT ->
+                                            List.of(
+                                                    BattingResult.HIT_SINGLE,
+                                                    BattingResult.HIT_DOUBLE);
                                     case MIDDLE_DISTANCE, EAGER_STEAL, EAGER_BUNT ->
-                                            BattingResult.HIT_TRIPLE;
-                                    case EAGER_SLUGGISH -> BattingResult.HIT_HOMER;
-                                    case HIGH_ON_BASE -> BattingResult.HIT_SINGLE;
+                                            List.of(
+                                                    BattingResult.HIT_DOUBLE,
+                                                    BattingResult.HIT_HOMER);
+                                    case EAGER_SLUGGISH ->
+                                            List.of(
+                                                    BattingResult.HIT_TRIPLE,
+                                                    BattingResult.HIT_HOMER);
+                                    case HIGH_ON_BASE ->
+                                            List.of(
+                                                    BattingResult.HIT_SINGLE,
+                                                    BattingResult.HIT_SINGLE);
                                 },
-                                battingResult),
+                                battingResults),
                 () -> assertEquals(StealResult.SUCCESS, stealResult),
                 () ->
                         assertEquals(
