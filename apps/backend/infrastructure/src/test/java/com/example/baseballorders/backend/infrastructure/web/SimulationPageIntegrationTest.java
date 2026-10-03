@@ -101,6 +101,20 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("1試合を実行")),
                 () -> assertTrue(response.body().contains("id=\"frame-stage\"")),
                 () -> assertTrue(response.body().contains("data-frame-duration-millis=\"1000\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("data-hit-frame-duration-millis=\"1800\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("data-score-frame-duration-millis=\"2200\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("data-home-run-frame-duration-millis=\"3600\"")),
+                () -> assertTrue(jsResponse.body().contains("function classifyEffect(")),
+                () -> assertTrue(cssResponse.body().contains("@keyframes home-run-headline")),
                 () -> assertTrue(response.body().contains("id=\"order-table-scroll\"")),
                 () -> assertTrue(response.body().contains("href=\"/large-scale\"")),
                 () -> assertTrue(response.body().contains("class=\"view-tabs\" role=\"tablist\"")),

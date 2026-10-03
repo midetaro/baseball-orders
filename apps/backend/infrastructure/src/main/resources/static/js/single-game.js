@@ -13,6 +13,7 @@
     let hasResults = false;
     const order = document.querySelector('#order'), submit = document.querySelector('#submit'), feedback = document.querySelector('#feedback'), toggleAllBunt = document.querySelector('#toggle-all-bunt'), toggleAllSteal = document.querySelector('#toggle-all-steal'), resetAllPersonalities = document.querySelector('#reset-all-personalities'), inputView = document.querySelector('#input-view'), resultsView = document.querySelector('#results'), tabInput = document.querySelector('#tab-input'), tabResults = document.querySelector('#tab-results'), editLineup = document.querySelector('#edit-lineup'), resultFeedback = document.querySelector('#result-feedback'), frameStage = document.querySelector('#frame-stage'), orderTableScroll = document.querySelector('#order-table-scroll');
     const frameDurationMillis = Number(frameStage.dataset.frameDurationMillis) || 1000;
+    const frameDurations = {none:frameDurationMillis, hit:Number(frameStage.dataset.hitFrameDurationMillis) || frameDurationMillis, score:Number(frameStage.dataset.scoreFrameDurationMillis) || frameDurationMillis, 'home-run':Number(frameStage.dataset.homeRunFrameDurationMillis) || frameDurationMillis};
     let frameTimer = null;
     const ranges = {hitAverage:[0.01,0.6], sluggish:[0.1,0.6]};
     function valid(player) { return Object.values(player).every(value => value !== '') && Object.entries(ranges).every(([key,[min,max]]) => Number(player[key]) >= min && Number(player[key]) <= max); }
@@ -41,30 +42,50 @@
     };
     function placeholder(text) { const p=document.createElement('p'); p.className='empty-chart-state'; p.textContent=text; return p; }
     function annotateBattingOrder(gameTransitions) { let battingOrder=1; return gameTransitions.map(transition=>{ const annotated={...transition,battingOrder}; if (!transition.actionResult.startsWith('盗塁')) { battingOrder = battingOrder === 9 ? 1 : battingOrder + 1; } return annotated; }); }
+    const HIT_BASES = {'単打':1,'二塁打':2,'三塁打':3,'本塁打':4};
+    const HIT_HEADLINES = {1:'ヒット!',2:'ツーベース!',3:'スリーベース!'};
+    const BALL_DIRECTIONS = ['left','center','right'];
+    const FIREWORK_BURSTS = 3, FIREWORK_SPARKS = 12;
+    function classifyEffect(transition, previousScore) { const runs=transition.cumulativeScore-previousScore; const bases=HIT_BASES[transition.actionResult] ?? 0; if (bases===4) return {kind:'home-run',runs,bases}; if (runs>0) return {kind:'score',runs,bases}; if (bases>0) return {kind:'hit',runs:0,bases}; return {kind:'none',runs:0,bases:0}; }
+    // 推移のアウト・走者・得点はプレー直前の状況で記録されるため、次の推移からプレー直後の状況を求める。
+    function resolvePlayOutcomes(gameTransitions) { return gameTransitions.map((transition,index)=>{ const next=gameTransitions[index+1]; const sameInning=next !== undefined && next.inning === transition.inning; return {...transition, scoreBefore:transition.cumulativeScore, cumulativeScore:next === undefined ? transition.cumulativeScore : next.cumulativeScore, outCount:sameInning ? next.outCount : 3, runnerState:sameInning ? next.runnerState : transition.runnerState}; }); }
+    function annotateEffects(annotated) { return annotated.map((transition,index)=>({...transition,effect:classifyEffect(transition,transition.scoreBefore),direction:BALL_DIRECTIONS[index % BALL_DIRECTIONS.length]})); }
+    const headlines = {'home-run':effect=>effect.runs===4?'GRAND SLAM!':'HOME RUN!', score:effect=>effect.bases>0?'タイムリー!':'得点!', hit:effect=>HIT_HEADLINES[effect.bases], none:()=>''};
+    function element(tag, className, text) { const node=document.createElement(tag); node.className=className; if (text !== undefined) node.textContent=text; return node; }
+    function buildFireworks() { return Array.from({length:FIREWORK_BURSTS},(_,burstIndex)=>{ const burst=element('span',`firework firework-${burstIndex}`); for (let sparkIndex=0; sparkIndex < FIREWORK_SPARKS; sparkIndex+=1) { const spark=element('span','spark'); spark.style.setProperty('--angle',`${sparkIndex * 360 / FIREWORK_SPARKS}deg`); burst.append(spark); } return burst; }); }
     function buildFrame(transition) {
       const layout = RUNNER_LAYOUT[transition.runnerState] ?? {first:false,second:false,third:false};
-      const frame=document.createElement('div'); frame.className='frame';
+      const effect = transition.effect;
+      const frame=document.createElement('div'); frame.className=`frame effect-${effect.kind}`;
+      const meta=element('div','frame-meta scoreboard');
+      const outs='●'.repeat(transition.outCount)+'○'.repeat(3-transition.outCount);
+      [`${transition.inning}回`,`アウト ${outs}`,`得点 `].forEach((text,index)=>{ const span=document.createElement('span'); span.textContent=text; if(index===1) span.className='out-count'; if(index===2) span.append(element('strong','score-value',String(transition.cumulativeScore))); meta.append(span); });
       const banner=document.createElement('p'); banner.className='frame-banner'; banner.textContent=transition.actionResult;
-      const diamond=document.createElement('div'); diamond.className='diamond';
+      const diamond=document.createElement('div'); diamond.className='diamond ballpark';
+      diamond.append(element('span','infield'),element('span','home-plate'));
       [['second',layout.second],['first',layout.first],['third',layout.third]].forEach(([base,occupied])=>{ const marker=document.createElement('span'); marker.className=`base base-${base}${occupied?' occupied':''}`; diamond.append(marker); });
       const batter=document.createElement('span'); batter.className='batter-order'; batter.textContent=`${transition.battingOrder}番打者`; diamond.append(batter);
-      const meta=document.createElement('div'); meta.className='frame-meta';
-      const outs='●'.repeat(transition.outCount)+'○'.repeat(3-transition.outCount);
-      [`${transition.inning}回`,`アウト ${outs}`,`得点 ${transition.cumulativeScore}`].forEach((text,index)=>{ const span=document.createElement('span'); span.textContent=text; if(index===1) span.className='out-count'; meta.append(span); });
-      frame.append(banner,diamond,meta);
+      if (effect.bases > 0) diamond.append(element('span',`ball ball-${transition.direction}`),element('span',`runner runner-${effect.bases}`));
+      if (effect.kind === 'score') diamond.append(element('span','runner runner-home'));
+      if (effect.kind === 'home-run') diamond.append(...buildFireworks());
+      if (effect.runs > 0) diamond.append(element('span','score-burst',`+${effect.runs}点`));
+      frame.append(meta,banner,diamond);
+      const headline=headlines[effect.kind](effect);
+      if (headline) frame.append(element('p',`effect-headline headline-${effect.kind}`,headline));
+      if (effect.kind === 'home-run') frame.append(element('span','flash'));
       return frame;
     }
-    function stopFramePlayback() { if (frameTimer !== null) { clearInterval(frameTimer); frameTimer=null; } }
+    function stopFramePlayback() { if (frameTimer !== null) { clearTimeout(frameTimer); frameTimer=null; } }
     function playFrames(annotated) {
       stopFramePlayback();
       let index=0;
-      frameStage.replaceChildren(buildFrame(annotated[index]));
-      frameTimer=setInterval(()=>{ index+=1; if (index >= annotated.length) { stopFramePlayback(); return; } frameStage.replaceChildren(buildFrame(annotated[index])); }, frameDurationMillis);
+      const show=()=>{ const transition=annotated[index]; const {effect}=transition; frameStage.replaceChildren(buildFrame(transition)); index+=1; if (index >= annotated.length) { frameTimer=null; return; } frameTimer=setTimeout(show, frameDurations[effect.kind]); };
+      show();
     }
     function buildOrderTable(annotated) {
       const plateAppearances = annotated.filter(t=>!t.actionResult.startsWith('盗塁'));
       const innings = [...new Set(plateAppearances.map(t=>t.inning))].sort((a,b)=>a-b);
-      const results = new Map(plateAppearances.map(t=>[`${t.battingOrder}-${t.inning}`, t.actionResult]));
+      const results = new Map(plateAppearances.map(t=>[`${t.battingOrder}-${t.inning}`, t]));
       const table=document.createElement('table'); table.className='order-table';
       const thead=document.createElement('thead'); const headRow=document.createElement('tr');
       const corner=document.createElement('th'); corner.textContent='打順'; headRow.append(corner);
@@ -74,7 +95,7 @@
       for (let battingOrder=1; battingOrder <= 9; battingOrder+=1) {
         const row=document.createElement('tr');
         const label=document.createElement('th'); label.scope='row'; label.textContent=`${battingOrder}番`; row.append(label);
-        innings.forEach(inning=>{ const cell=document.createElement('td'); cell.textContent=results.get(`${battingOrder}-${inning}`) ?? ''; row.append(cell); });
+        innings.forEach(inning=>{ const cell=document.createElement('td'); const result=results.get(`${battingOrder}-${inning}`); if (result) { cell.textContent=result.actionResult; cell.className=`cell-${result.effect.kind}`; } row.append(cell); });
         tbody.append(row);
       }
       table.append(thead,tbody);
@@ -87,7 +108,7 @@
         orderTableScroll.replaceChildren(placeholder('試合結果はありません。'));
         return;
       }
-      const annotated = annotateBattingOrder(gameTransitions);
+      const annotated = annotateEffects(annotateBattingOrder(resolvePlayOutcomes(gameTransitions)));
       playFrames(annotated);
       orderTableScroll.replaceChildren(buildOrderTable(annotated));
     }
