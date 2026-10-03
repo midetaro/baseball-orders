@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <title>打順監督</title>
+    <link rel="stylesheet" href="/css/simulation.css">
+    <link rel="stylesheet" href="/css/batting-order.css">
+</head>
+<body>
+<nav aria-label="画面メニュー" class="site-menu" hidden id="site-menu">
+    <div class="site-menu-head"><span class="site-menu-title">メニュー</span>
+        <button aria-label="メニューを閉じる" class="all-toggle" id="menu-close" type="button">閉じる</button>
+    </div>
+    <ul>
+        <li><a aria-current="page" href="/">打順組み替え</a></li>
+        <li><a href="/large-scale">大規模実行</a></li>
+        <li><a href="/single-game">1試合実行</a></li>
+        <li><a href="/simulation-guide">シミュレーションの仕組み</a></li>
+    </ul>
+</nav>
+<div class="menu-backdrop" hidden id="menu-backdrop"></div>
+<main>
+    <header>
+        <button aria-controls="site-menu" aria-expanded="false" class="all-toggle menu-toggle" id="menu-toggle" type="button"><span aria-hidden="true" class="menu-icon"></span>メニュー</button>
+        <h1>打順監督</h1>
+        <p class="status">
+            ドラッグで打順を組み替え、性格・バント・盗塁を選ぶ。
+        </p>
+    </header>
+    <nav aria-label="画面切り替え" class="view-tabs" role="tablist">
+        <button aria-controls="input-view" aria-selected="true" class="view-tab" id="tab-input" role="tab" type="button"><span class="view-tab-step">1</span>打順組み替え</button>
+        <button aria-controls="results" aria-selected="false" class="view-tab" disabled id="tab-results" role="tab" type="button"><span class="view-tab-step">2</span>試合結果</button>
+    </nav>
+    <div class="simulation-workspace">
+        <section aria-labelledby="order-heading" id="input-view" role="tabpanel">
+            <div class="section-head"><h2 id="order-heading">打順組み替え</h2>
+                <button class="submit" id="submit" type="button">SIMULATIONを実行</button>
+                <div class="section-actions">
+                    <button aria-pressed="false" class="all-toggle" id="toggle-all-bunt" type="button">全員バント</button>
+                    <button aria-pressed="false" class="all-toggle" id="toggle-all-steal" type="button">全員盗塁</button>
+                    <button class="all-toggle" id="reset-all-personalities" type="button">性格を初期化</button>
+                </div>
+            </div>
+            <div class="lineup-workspace">
+                <div class="order-scroll">
+                    <div class="order reorder-order">
+                        <div class="columns">
+                            <span aria-hidden="true"></span><span>打順</span><span>打率</span><span>長打率</span><span>性格</span><span>バント</span><span>盗塁</span>
+                        </div>
+                        <div data-lineup-mode="reorder" id="order"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="feedback" role="status">打順をドラッグして組み替えてください。</div>
+        </section>
+        <section aria-labelledby="results-heading" hidden id="results" role="tabpanel">
+            <div class="section-head result-head">
+                <div><h2 id="results-heading">試合結果</h2>
+                    <p class="hint" id="result-feedback" role="status">あなたの打線のシミュレーション結果</p></div>
+                <div class="result-actions">
+                    <button class="all-toggle" id="edit-lineup" type="button">打順を組み替える</button>
+                    <button class="share" id="share-results" type="button">結果を共有</button>
+                </div>
+            </div>
+            <div class="statistics-groups">
+                <div class="statistics-group">
+                    <h3 class="group-heading">得点サマリー<span class="group-total"><span class="group-total-label">最大得点</span><span class="group-total-value" id="maximum-score">—</span></span></h3>
+                    <div class="statistics statistics-summary">
+                        <div class="statistic">
+                            <div class="statistic-label">試合数</div>
+                            <div class="statistic-value" id="game-count">—</div>
+                        </div>
+                        <div class="statistic">
+                            <div class="statistic-label">平均得点</div>
+                            <div class="statistic-value" id="average-score">—</div>
+                        </div>
+                        <div class="statistic">
+                            <div class="statistic-label">中央値得点</div>
+                            <div class="statistic-value" id="median-score">—</div>
+                        </div>
+                        <div class="statistic statistic-desktop-only">
+                            <div class="statistic-label">最大得点</div>
+                            <div class="statistic-value" id="maximum-score-card">—</div>
+                        </div>
+                    </div>
+                    <div class="chart">
+                        <div aria-label="得点分布ヒストグラム" class="histogram" id="score-histogram">
+                            <div aria-label="全試合に対する割合" class="histogram-y-axis" id="score-distribution-axis">
+                                <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+                            <div class="histogram-scroll"><div class="histogram-bars" id="score-histogram-bars"></div></div>
+                        </div>
+                        <p class="empty-chart-state" id="score-empty-state">試合結果なし</p></div>
+                </div>
+                <details class="statistics-group" open>
+                    <summary class="group-heading">安打の内訳<span class="group-total"><span class="group-total-label">総安打</span><span class="group-total-value" id="hit-count">—</span></span></summary>
+                    <div class="chart">
+                        <div aria-label="安打内訳" class="stacked-bar" id="hit-breakdown"></div>
+                        <ul aria-label="安打内訳の凡例" class="home-run-legend" id="hit-legend"></ul>
+                        <p class="empty-chart-state" id="hit-empty-state">安打なし</p></div>
+                </details>
+                <details class="statistics-group" open>
+                    <summary class="group-heading">本塁打の内訳<span class="group-total"><span class="group-total-label">本塁打</span><span class="group-total-value" id="home-run-count">—</span></span></summary>
+                    <div class="chart">
+                        <div aria-label="本塁打内訳" class="stacked-bar" id="home-run-breakdown"></div>
+                        <ul aria-label="本塁打内訳の凡例" class="home-run-legend" id="home-run-legend"></ul>
+                        <p class="empty-chart-state" id="home-run-empty-state">本塁打なし</p></div>
+                </details>
+                <details class="statistics-group" open>
+                    <summary class="group-heading">バントの内訳</summary>
+                    <div class="statistics two-columns">
+                        <div class="statistic">
+                            <div class="statistic-label">成功バント</div>
+                            <div class="statistic-value" id="bunt-count">—</div>
+                        </div>
+                        <div class="statistic">
+                            <div class="statistic-label">失敗バント</div>
+                            <div class="statistic-value" id="bunt-failure-count">—</div>
+                        </div>
+                    </div>
+                    <div class="chart">
+                        <div aria-label="バント内訳" class="stacked-bar" id="bunt-breakdown"></div>
+                        <ul aria-label="バント内訳の凡例" class="home-run-legend" id="bunt-legend"></ul>
+                        <p class="empty-chart-state" id="bunt-empty-state">バントなし</p></div>
+                </details>
+                <details class="statistics-group" open>
+                    <summary class="group-heading">盗塁の内訳</summary>
+                    <div class="statistics two-columns">
+                        <div class="statistic">
+                            <div class="statistic-label">成功盗塁</div>
+                            <div class="statistic-value" id="steal-count">—</div>
+                        </div>
+                        <div class="statistic">
+                            <div class="statistic-label">失敗盗塁</div>
+                            <div class="statistic-value" id="steal-failure-count">—</div>
+                        </div>
+                    </div>
+                    <div class="chart">
+                        <div aria-label="盗塁内訳" class="stacked-bar" id="steal-breakdown"></div>
+                        <ul aria-label="盗塁内訳の凡例" class="home-run-legend" id="steal-legend"></ul>
+                        <p class="empty-chart-state" id="steal-empty-state">盗塁なし</p></div>
+                </details>
+            </div>
+        </section>
+    </div>
+</main>
+<script src="/js/lineup-form.js"></script>
+<script src="/js/simulation.js"></script>
+<script src="/js/site-menu.js"></script>
+</body>
+</html>

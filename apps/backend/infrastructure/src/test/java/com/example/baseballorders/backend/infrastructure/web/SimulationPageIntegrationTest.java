@@ -16,11 +16,13 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * 実物: HTTPサーバー、SimulationPageController、SimulationGuidePageController、Thymeleaf、静的リソース配信。 モック:
- * SqsTemplate。 担保する疎通: ログインなしのHTTP GET / -> SimulationPageController -> Thymeleaf HTML応答。HTTP GET
- * /large-scale および /single-game -> SimulationPageController -> Thymeleaf HTML応答、HTTP GET
- * /simulation-guide -> SimulationGuidePageController -> Thymeleaf HTML応答も担保する。分離したHTTP GET
- * /css/simulation.css、/css/single-game.css、/js/lineup-form.js、/js/simulation.js および
- * /js/single-game.js -> 静的リソース配信 -> CSS・JS応答も担保する。担保しないもの: SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
+ * SqsTemplate。 担保する疎通: ログインなしのHTTP GET / -> SimulationPageController -> 打順組み替え画面のThymeleaf
+ * HTML応答。HTTP GET /large-scale および /single-game -> SimulationPageController -> Thymeleaf
+ * HTML応答、HTTP GET /simulation-guide -> SimulationGuidePageController -> Thymeleaf
+ * HTML応答も担保する。分離したHTTP GET
+ * /css/simulation.css、/css/single-game.css、/css/batting-order.css、/js/lineup-form.js、/js/simulation.js、
+ * /js/single-game.js および /js/site-menu.js -> 静的リソース配信 -> CSS・JS応答も担保する。担保しないもの:
+ * SQSへのシミュレーション要求送信と結果受信、入力値・ドラッグ操作・メニュー開閉のブラウザ操作。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -54,6 +56,68 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertFalse(response.body().contains("ログイン")));
+    }
+
+    @Test
+    @DisplayName("トップ画面へアクセスすると打順組み替え画面と左メニューがHTMLで表示される")
+    void rendersBattingOrderPageAtRoot() throws Exception {
+        // given
+        var request =
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+
+        // when
+        HttpResponse<String> response;
+        HttpResponse<String> cssResponse;
+        HttpResponse<String> menuJsResponse;
+        try (var client = HttpClient.newHttpClient()) {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            cssResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/css/batting-order.css"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+            menuJsResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/js/site-menu.js"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+        }
+
+        // then
+        assertAll(
+                () -> assertEquals(200, response.statusCode()),
+                () -> assertTrue(response.body().contains("<h2 id=\"order-heading\">打順組み替え</h2>")),
+                () -> assertTrue(response.body().contains("data-lineup-mode=\"reorder\"")),
+                () -> assertTrue(response.body().contains("id=\"menu-toggle\"")),
+                () -> assertTrue(response.body().contains("aria-expanded=\"false\"")),
+                () ->
+                        assertContainsPattern(
+                                response.body(),
+                                "<nav[^>]*class=\"site-menu\" hidden id=\"site-menu\">"),
+                () -> assertTrue(response.body().contains("href=\"/large-scale\"")),
+                () -> assertTrue(response.body().contains("href=\"/single-game\"")),
+                () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<script src=\"/js/lineup-form.js\"></script>\n"
+                                                        + "<script src=\"/js/simulation.js\"></script>")),
+                () -> assertTrue(response.body().contains("id=\"score-histogram\"")),
+                () -> assertEquals(200, cssResponse.statusCode()),
+                () -> assertTrue(cssResponse.body().contains(".drag-handle")),
+                () -> assertEquals(200, menuJsResponse.statusCode()),
+                () -> assertTrue(menuJsResponse.body().contains("function setMenuOpen(")));
     }
 
     @Test
@@ -187,7 +251,9 @@ class SimulationPageIntegrationTest {
     void rendersSimulationPage() throws Exception {
         // given
         var request =
-                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/large-scale"))
+                        .GET()
+                        .build();
 
         // when
         HttpResponse<String> response;
