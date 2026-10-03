@@ -8,7 +8,7 @@ JavaとGradleはDocker内で用意されるため、ホストへのインスト�
 docker compose up -d --build --wait --wait-timeout 180
 ```
 
-http://127.0.0.1:8080/ を開くと、打者一覧・打順設定・シミュレーションを利用できます。
+http://127.0.0.1:8080/ を開くと、大規模実行（`/`）・1試合実行（`/single-game`）・シミュレーションの仕組み（`/simulation-guide`）の各画面を利用できます。
 既存のJavaプロセスなどが8080を使っている場合は、`BACKEND_PORT=18080`をコマンドの前に付け、
 http://127.0.0.1:18080/ を開いてください。
 
@@ -24,7 +24,7 @@ Backend -> 要求SQS (Floci) -> Simulator -> 結果SQS (Floci) -> Backend
 Dockerでは明示的に`docker`プロファイルを指定し、Backendの`local`プロファイルによる
 リスナー停止を回避します。Simulatorの試合数は
 `apps/simulator/infrastructure/src/main/resources/application.yml`の
-`simulation.game-count`（現在10）に従います。変更後はSimulatorを再ビルド・再作成してください。
+`simulation.game-count`（既定100、環境変数`SIMULATION_GAME_COUNT`）に従います。変更後はSimulatorを再ビルド・再作成してください。
 ポーリング間隔は1秒で、`SIMULATION_SQS_POLL_FIXED_DELAY`をCompose内で変更できます。
 
 Composeが試合数を上書きしないことは、`python3 infra/docker/test-compose-config.py`で検証できます。
@@ -43,7 +43,7 @@ Flociだけを再起動するとキューが失われるため、環境全体を
 
 ## 疎通確認
 
-Python 3があるホストで実行します。画面のHTTP 200と、9選手の実シミュレーション応答を検証します。
+Python 3があるホストで実行します。画面のHTTP 200と、9選手を`POST /simulations`へ送った実シミュレーション応答（相関ID、試合数、得点分布）を検証します。
 定期ポーリングも本番実装が自動で実行し、テストから`poll()`を直接呼びません。
 
 ```sh
