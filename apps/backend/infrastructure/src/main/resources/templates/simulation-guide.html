@@ -142,10 +142,17 @@
                 margin-bottom: 10px;
             }
         }
+
+        .menu-toggle {
+            margin-bottom: 16px;
+        }
     </style>
+    <link rel="stylesheet" href="/css/site-menu.css">
 </head>
 <body>
+<th:block th:replace="~{fragments/site-menu :: siteMenu('/simulation-guide')}"></th:block>
 <main>
+    <button th:replace="~{fragments/site-menu :: menuToggle}"></button>
     <div class="eyebrow">Baseball Orders / Simulator</div>
     <h1>シミュレーションの仕組み</h1>
     <section>
@@ -203,7 +210,7 @@
         <p>同じ入力で複数試合をシミュレーションし、<strong>平均得点</strong>、中央値得点、最大得点、得点分布、本塁打の内訳、バントと盗塁の成否を集計します。バントは進塁バントとスクイズの成功・失敗をそれぞれ色分けし、盗塁は二盗成功・三盗成功・盗塁失敗を色分けして表示します。各プレーは確率的に決まるため、同じ入力でも実行ごとに結果は変わります。
         </p>
     </section>
-    <p><a href="/">打順を組み立てる</a></p>
 </main>
+<script src="/js/site-menu.js"></script>
 </body>
 </html>

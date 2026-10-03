@@ -27,14 +27,16 @@ class SimulationPageControllerTest {
     }
 
     @Test
-    @DisplayName("トップ画面は大規模実行画面を返す")
-    void showsLargeScaleAtRoot() {
+    @DisplayName("トップ画面は打順組み替え画面を返す")
+    void showsBattingOrderAtRoot() {
         // given
         var sut = new SimulationPageController(1000L, 1800L, 2200L, 3600L);
         // when
         var page = sut.index();
         // then
-        assertAll(() -> assertEquals("simulation", page.getViewName()));
+        assertAll(
+                () -> assertEquals("batting-order", page.getViewName()),
+                () -> assertEquals(true, page.getModel().isEmpty()));
     }
 
     @Test

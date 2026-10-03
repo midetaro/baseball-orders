@@ -53,13 +53,13 @@ public final class SimulationPageController {
     }
 
     /**
-     * トップ画面として大規模実行画面を表示する。
+     * トップ画面として、打率・長打率を固定表示したまま打順をドラッグで組み替える打順組み替え画面を表示する。
      *
-     * @return 大規模実行画面
+     * @return 打順組み替え画面
      */
     @GetMapping("/")
     public ModelAndView index() {
-        return new ModelAndView("simulation");
+        return new ModelAndView("batting-order");
     }
 
     /**

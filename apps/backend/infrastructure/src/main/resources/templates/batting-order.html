@@ -5,25 +5,26 @@
     <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>打順監督</title>
     <link rel="stylesheet" href="/css/simulation.css">
+    <link rel="stylesheet" href="/css/batting-order.css">
     <link rel="stylesheet" href="/css/site-menu.css">
 </head>
 <body>
-<th:block th:replace="~{fragments/site-menu :: siteMenu('/large-scale')}"></th:block>
+<th:block th:replace="~{fragments/site-menu :: siteMenu('/')}"></th:block>
 <main>
     <header>
         <button th:replace="~{fragments/site-menu :: menuToggle}"></button>
         <h1>打順監督</h1>
         <p class="status">
-            打順ごとの成績を入力する。
+            ドラッグで打順を組み替え、性格・バント・盗塁を選ぶ。
         </p>
     </header>
     <nav aria-label="画面切り替え" class="view-tabs" role="tablist">
-        <button aria-controls="input-view" aria-selected="true" class="view-tab" id="tab-input" role="tab" type="button"><span class="view-tab-step">1</span>打順入力</button>
+        <button aria-controls="input-view" aria-selected="true" class="view-tab" id="tab-input" role="tab" type="button"><span class="view-tab-step">1</span>打順組み替え</button>
         <button aria-controls="results" aria-selected="false" class="view-tab" disabled id="tab-results" role="tab" type="button"><span class="view-tab-step">2</span>試合結果</button>
     </nav>
     <div class="simulation-workspace">
         <section aria-labelledby="order-heading" id="input-view" role="tabpanel">
-            <div class="section-head"><h2 id="order-heading">打順入力</h2>
+            <div class="section-head"><h2 id="order-heading">打順組み替え</h2>
                 <button class="submit" id="submit" type="button">SIMULATIONを実行</button>
                 <div class="section-actions">
                     <button aria-pressed="false" class="all-toggle" id="toggle-all-bunt" type="button">全員バント</button>
@@ -33,22 +34,22 @@
             </div>
             <div class="lineup-workspace">
                 <div class="order-scroll">
-                    <div class="order">
+                    <div class="order reorder-order">
                         <div class="columns">
-                            <span>打順</span><span>打率</span><span>長打率</span><span>性格</span><span>バント</span><span>盗塁</span>
+                            <span aria-hidden="true"></span><span>打順</span><span>打率</span><span>長打率</span><span>性格</span><span>バント</span><span>盗塁</span>
                         </div>
-                        <div id="order"></div>
+                        <div data-lineup-mode="reorder" id="order"></div>
                     </div>
                 </div>
             </div>
-            <div id="feedback" role="status">すべての成績を入力してください。</div>
+            <div id="feedback" role="status">打順をドラッグして組み替えてください。</div>
         </section>
         <section aria-labelledby="results-heading" hidden id="results" role="tabpanel">
             <div class="section-head result-head">
                 <div><h2 id="results-heading">試合結果</h2>
                     <p class="hint" id="result-feedback" role="status">あなたの打線のシミュレーション結果</p></div>
                 <div class="result-actions">
-                    <button class="all-toggle" id="edit-lineup" type="button">打順を編集する</button>
+                    <button class="all-toggle" id="edit-lineup" type="button">打順を組み替える</button>
                     <button class="share" id="share-results" type="button">結果を共有</button>
                 </div>
             </div>

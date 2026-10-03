@@ -10,17 +10,22 @@ import java.net.http.HttpResponse;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * 実物: HTTPサーバー、SimulationPageController、SimulationGuidePageController、Thymeleaf、静的リソース配信。 モック:
- * SqsTemplate。 担保する疎通: ログインなしのHTTP GET / -> SimulationPageController -> Thymeleaf HTML応答。HTTP GET
- * /large-scale および /single-game -> SimulationPageController -> Thymeleaf HTML応答、HTTP GET
- * /simulation-guide -> SimulationGuidePageController -> Thymeleaf HTML応答も担保する。分離したHTTP GET
- * /css/simulation.css、/css/single-game.css、/js/lineup-form.js、/js/simulation.js および
- * /js/single-game.js -> 静的リソース配信 -> CSS・JS応答も担保する。担保しないもの: SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
+ * SqsTemplate。 担保する疎通: ログインなしのHTTP GET / -> SimulationPageController -> 打順組み替え画面のThymeleaf
+ * HTML応答。HTTP GET /large-scale および /single-game -> SimulationPageController -> Thymeleaf
+ * HTML応答、HTTP GET /simulation-guide -> SimulationGuidePageController -> Thymeleaf
+ * HTML応答も担保する。4画面すべてで共通の左メニュー断片（fragments/site-menu.html）が描画され、他画面への導線がメニューにだけあることも担保する。分離したHTTP
+ * GET
+ * /css/simulation.css、/css/single-game.css、/css/batting-order.css、/css/site-menu.css、/js/lineup-form.js、/js/simulation.js、
+ * /js/single-game.js および /js/site-menu.js -> 静的リソース配信 -> CSS・JS応答も担保する。担保しないもの:
+ * SQSへのシミュレーション要求送信と結果受信、入力値・ドラッグ操作・メニュー開閉のブラウザ操作。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -54,6 +59,127 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertFalse(response.body().contains("ログイン")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/", "/large-scale", "/single-game", "/simulation-guide"})
+    @DisplayName("どの画面も他画面への導線は閉じた左メニューだけに置き、現在の画面をメニューで示す")
+    void rendersSiteMenuAsOnlyNavigation(String route) throws Exception {
+        // given
+        var request =
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + route))
+                        .GET()
+                        .build();
+
+        // when
+        HttpResponse<String> response;
+        try (var client = HttpClient.newHttpClient()) {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+
+        // then
+        var body = response.body();
+        var menuStart = body.indexOf("<nav aria-label=\"画面メニュー\"");
+        var menuEnd = body.indexOf("</nav>", menuStart);
+        var menu = menuStart < 0 ? "" : body.substring(menuStart, menuEnd);
+        var outsideMenu =
+                menuStart < 0 ? body : body.substring(0, menuStart) + body.substring(menuEnd);
+        assertAll(
+                () -> assertEquals(200, response.statusCode()),
+                () ->
+                        assertContainsPattern(
+                                body, "<nav[^>]*class=\"site-menu\" hidden id=\"site-menu\">"),
+                () ->
+                        assertContainsPattern(
+                                body,
+                                "<button[^>]*aria-controls=\"site-menu\""
+                                        + " aria-expanded=\"false\"[^>]*id=\"menu-toggle\""),
+                () -> assertContainsPattern(menu, "href=\"/\"[^>]*>打順組み替え</a>"),
+                () -> assertContainsPattern(menu, "href=\"/large-scale\"[^>]*>大規模実行</a>"),
+                () -> assertContainsPattern(menu, "href=\"/single-game\"[^>]*>1試合実行</a>"),
+                () ->
+                        assertContainsPattern(
+                                menu, "href=\"/simulation-guide\"[^>]*>シミュレーションの仕組み</a>"),
+                () ->
+                        assertContainsPattern(
+                                menu,
+                                "<a (?=[^>]*aria-current=\"page\")(?=[^>]*href=\""
+                                        + Pattern.quote(route)
+                                        + "\")[^>]*>"),
+                () -> assertEquals(1, menu.split("aria-current=", -1).length - 1),
+                () ->
+                        assertFalse(
+                                Pattern.compile(
+                                                "<a [^>]*href=\"/(large-scale|single-game|simulation-guide)?\"")
+                                        .matcher(outsideMenu)
+                                        .find()),
+                () ->
+                        assertTrue(
+                                body.contains(
+                                        "<link rel=\"stylesheet\" href=\"/css/site-menu.css\">")),
+                () -> assertTrue(body.contains("<script src=\"/js/site-menu.js\"></script>")));
+    }
+
+    @Test
+    @DisplayName("トップ画面へアクセスすると打順組み替え画面と左メニューがHTMLで表示される")
+    void rendersBattingOrderPageAtRoot() throws Exception {
+        // given
+        var request =
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+
+        // when
+        HttpResponse<String> response;
+        HttpResponse<String> cssResponse;
+        HttpResponse<String> menuJsResponse;
+        try (var client = HttpClient.newHttpClient()) {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            cssResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/css/batting-order.css"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+            menuJsResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/js/site-menu.js"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+        }
+
+        // then
+        assertAll(
+                () -> assertEquals(200, response.statusCode()),
+                () -> assertTrue(response.body().contains("<h2 id=\"order-heading\">打順組み替え</h2>")),
+                () -> assertTrue(response.body().contains("data-lineup-mode=\"reorder\"")),
+                () -> assertTrue(response.body().contains("id=\"menu-toggle\"")),
+                () -> assertTrue(response.body().contains("aria-expanded=\"false\"")),
+                () ->
+                        assertContainsPattern(
+                                response.body(),
+                                "<nav[^>]*class=\"site-menu\" hidden id=\"site-menu\">"),
+                () -> assertTrue(response.body().contains("href=\"/large-scale\"")),
+                () -> assertTrue(response.body().contains("href=\"/single-game\"")),
+                () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<script src=\"/js/lineup-form.js\"></script>\n"
+                                                        + "<script src=\"/js/simulation.js\"></script>")),
+                () -> assertTrue(response.body().contains("id=\"score-histogram\"")),
+                () -> assertEquals(200, cssResponse.statusCode()),
+                () -> assertTrue(cssResponse.body().contains(".drag-handle")),
+                () -> assertEquals(200, menuJsResponse.statusCode()),
+                () -> assertTrue(menuJsResponse.body().contains("function setMenuOpen(")));
     }
 
     @Test
@@ -187,7 +313,9 @@ class SimulationPageIntegrationTest {
     void rendersSimulationPage() throws Exception {
         // given
         var request =
-                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/large-scale"))
+                        .GET()
+                        .build();
 
         // when
         HttpResponse<String> response;
@@ -514,7 +642,7 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("満塁で四球になると押し出しで1点入ります")),
                 () -> assertTrue(response.body().contains("進塁バントとスクイズの成功・失敗をそれぞれ色分け")),
                 () -> assertTrue(response.body().contains("二盗成功・三盗成功・盗塁失敗を色分け")),
-                () -> assertTrue(response.body().contains("打順を組み立てる")),
+                () -> assertFalse(response.body().contains("打順を組み立てる")),
                 () -> assertTrue(response.body().contains("color-scheme: light")),
                 () -> assertTrue(response.body().contains("--paper: #f3eee2")),
                 () -> assertTrue(response.body().contains("--moss: #56704a")),
