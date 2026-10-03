@@ -3,14 +3,10 @@ package com.example.baseballorders.backend.infrastructure.web;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.awspring.cloud.sqs.operations.SqsTemplate;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,12 +15,11 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
- * 実物: HTTPサーバー、Spring Security、ローカルフォームログイン、SimulationPageController、SimulationGuidePageController、
- * LoginPageController、Thymeleaf、静的リソース配信。 モック: SqsTemplate。 担保する疎通: HTTP GET /login -> HTTP POST
- * /login -> 認証済みHTTP GET / -> Spring Security -> SimulationPageController -> Thymeleaf
- * HTML応答。認証済みHTTP GET /large-scale および /single-game -> Spring Security -> SimulationPageController
- * -> Thymeleaf HTML応答も担保する。分離したHTTP GET /css/simulation.css、/css/single-game.css、/js/simulation.js
- * および /js/single-game.js -> 静的リソース配信 -> CSS・JS応答も担保する。担保しないもの: SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
+ * 実物: HTTPサーバー、SimulationPageController、SimulationGuidePageController、Thymeleaf、静的リソース配信。 モック:
+ * SqsTemplate。 担保する疎通: ログインなしのHTTP GET / -> SimulationPageController -> Thymeleaf HTML応答。HTTP GET
+ * /large-scale および /single-game -> SimulationPageController -> Thymeleaf HTML応答も担保する。分離したHTTP GET
+ * /css/simulation.css、/css/single-game.css、/js/simulation.js および /js/single-game.js -> 静的リソース配信 ->
+ * CSS・JS応答も担保する。担保しないもの: SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -40,58 +35,24 @@ class SimulationPageIntegrationTest {
         assertTrue(Pattern.compile(pattern).matcher(actual).find());
     }
 
-    private HttpClient authenticatedClient() throws Exception {
-        var client =
-                HttpClient.newBuilder()
-                        .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
-                        .followRedirects(HttpClient.Redirect.NEVER)
-                        .build();
-        var loginPage =
-                client.send(
-                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
-                                .GET()
-                                .build(),
-                        HttpResponse.BodyHandlers.ofString());
-        var csrfMatcher =
-                Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"").matcher(loginPage.body());
-        assertTrue(csrfMatcher.find());
-        var form =
-                "userId=test&password=password&_csrf="
-                        + URLEncoder.encode(csrfMatcher.group(1), StandardCharsets.UTF_8);
-        var login =
-                client.send(
-                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
-                                .header("Content-Type", "application/x-www-form-urlencoded")
-                                .POST(HttpRequest.BodyPublishers.ofString(form))
-                                .build(),
-                        HttpResponse.BodyHandlers.discarding());
-        assertEquals(302, login.statusCode());
-        return client;
-    }
-
     @Test
-    @DisplayName("未認証のトップ画面アクセスはログイン画面へリダイレクトされる")
-    void redirectsUnauthenticatedSimulationPageAccess() throws Exception {
+    @DisplayName("ログインなしでトップ画面へアクセスするとリダイレクトされずに表示される")
+    void rendersSimulationPageWithoutLogin() throws Exception {
         // given
         var request =
                 HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
 
         // when
-        HttpResponse<Void> response;
+        HttpResponse<String> response;
         try (var client =
                 HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build()) {
-            response = client.send(request, HttpResponse.BodyHandlers.discarding());
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
         }
 
         // then
         assertAll(
-                () -> assertEquals(302, response.statusCode()),
-                () ->
-                        assertTrue(
-                                response.headers()
-                                        .firstValue("location")
-                                        .orElseThrow()
-                                        .contains("/login")));
+                () -> assertEquals(200, response.statusCode()),
+                () -> assertFalse(response.body().contains("ログイン")));
     }
 
     @Test
@@ -107,7 +68,7 @@ class SimulationPageIntegrationTest {
         HttpResponse<String> response;
         HttpResponse<String> cssResponse;
         HttpResponse<String> jsResponse;
-        try (var client = authenticatedClient()) {
+        try (var client = HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
             cssResponse =
                     client.send(
@@ -176,7 +137,7 @@ class SimulationPageIntegrationTest {
         HttpResponse<String> response;
         HttpResponse<String> cssResponse;
         HttpResponse<String> jsResponse;
-        try (var client = authenticatedClient()) {
+        try (var client = HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
             cssResponse =
                     client.send(
@@ -206,7 +167,7 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("打順入力")),
                 () -> assertTrue(response.body().contains("<title>打順監督</title>")),
                 () -> assertTrue(response.body().contains("<h1>打順監督</h1>")),
-                () -> assertTrue(response.body().contains("ログイン中（")),
+                () -> assertFalse(response.body().contains("ログイン")),
                 () -> assertFalse(response.body().contains("<style>")),
                 () ->
                         assertTrue(
@@ -360,7 +321,7 @@ class SimulationPageIntegrationTest {
         // when
         HttpResponse<String> response;
         HttpResponse<String> jsResponse;
-        try (var client = authenticatedClient()) {
+        try (var client = HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
             jsResponse =
                     client.send(
@@ -407,10 +368,7 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("シミュレーションの仕組み")),
-                () -> assertTrue(response.body().contains("未ログイン")),
-                () ->
-                        assertFalse(
-                                response.body().contains("href=\"/oauth2/authorization/google\"")),
+                () -> assertFalse(response.body().contains("ログイン")),
                 () -> assertContainsPattern(response.body(), "盗塁判定\\s*→\\s*バント判定\\s*→\\s*通常打撃"),
                 () -> assertTrue(response.body().contains("各選手の入力項目")),
                 () -> assertTrue(response.body().contains("出塁率")),
@@ -443,28 +401,5 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("--cyan: #25d9ff")),
                 () -> assertTrue(response.body().contains("--pink: #ff4da6")),
                 () -> assertTrue(response.body().contains("radial-gradient(circle at 15% 10%,")));
-    }
-
-    @Test
-    @DisplayName("ログイン画面へアクセスするとGoogleログインの画面がHTMLで表示される")
-    void rendersLoginPage() throws Exception {
-        // given
-        var request =
-                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
-                        .GET()
-                        .build();
-
-        // when
-        HttpResponse<String> response;
-        try (var client = HttpClient.newHttpClient()) {
-            response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        }
-
-        // then
-        assertAll(
-                () -> assertEquals(200, response.statusCode()),
-                () -> assertTrue(response.body().contains("ログイン")),
-                () -> assertTrue(response.body().contains("Googleログインは現在利用できません")),
-                () -> assertTrue(response.body().contains("トップへ戻る")));
     }
 }

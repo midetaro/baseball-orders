@@ -39,7 +39,7 @@ Baseball Orders は、打者の能力と打順を設定し、試合シミュレ�
 | 領域 | 採用技術 |
 | --- | --- |
 | 言語・ビルド | Java 25、Gradle composite build（`includeBuild`）、Spotless（google-java-format AOSP） |
-| Backend | Spring Boot 4.0.0、Spring MVC、Thymeleaf、Spring Security（フォームログイン / OAuth2 Client）、Spring Data JPA、Flyway、H2、Spring Cloud AWS SQS |
+| Backend | Spring Boot 4.0.0、Spring MVC、Thymeleaf、Spring Cloud AWS SQS |
 | Simulator | Spring Framework 7.0.1（Spring Boot の Web スタックなし）、AWS SDK for Java v2 (SQS)、Jackson |
 | コード生成 | Lombok（`@Getter` / `@RequiredArgsConstructor` / `@Slf4j`）、Jilt（STAGED Builder） |
 | テスト | JUnit 6.0.1、Mockito、ArchUnit、ElasticMQ、JaCoCo |
@@ -61,7 +61,7 @@ baseball-orders/
 │   ├── backend/                  # 同期HTTP API・Thymeleaf UI・永続化・SQSアダプタ
 │   │   ├── domain/               # 業務データと結果モデル（フレームワーク非依存）
 │   │   ├── application/          # ユースケース調整・ポート定義・結果待機
-│   │   └── infrastructure/       # api / web / messaging / persistence / security
+│   │   └── infrastructure/       # api / web / messaging
 │   └── simulator/                # 非同期の試合計算ワーカー
 │       ├── domain/               # 試合規則（game / player / play / statistics）
 │       ├── application/          # シミュレーションユースケース
@@ -87,7 +87,7 @@ flowchart LR
     contract["libs/messaging-contract<br/>SQS wire契約"]
 
     subgraph backend["apps/backend"]
-        bi["infrastructure<br/>api / web / messaging / persistence / security"] --> ba["application"]
+        bi["infrastructure<br/>api / web / messaging"] --> ba["application"]
         bi --> bd["domain"]
         ba --> bd
         bi --> contract
@@ -188,7 +188,7 @@ local / dev / prod のプロファイルごとに値を定義します（例: `S
 
 ```mermaid
 flowchart LR
-    browser["ブラウザ"] -->|"HTTP"| backend["Backend<br/>UI・HTTP API・H2"]
+    browser["ブラウザ"] -->|"HTTP"| backend["Backend<br/>UI・HTTP API"]
     backend -->|"シミュレーション要求"| requestQueue["Floci<br/>要求 SQS"]
     requestQueue --> simulator["Simulator<br/>試合計算ワーカー"]
     simulator -->|"シミュレーション結果"| resultQueue["Floci<br/>結果 SQS"]

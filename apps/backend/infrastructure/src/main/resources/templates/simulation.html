@@ -11,14 +11,7 @@
     <header><h1>打順監督</h1>
         <p class="status">
             打順ごとの成績を入力する。 <a href="/simulation-guide">シミュレーションの仕組み</a> ／ <a href="/single-game">1試合実行はこちら</a>
-            <span th:if="${#authorization.expression('isAuthenticated()')}">ログイン中（<span th:text="${#authentication.name}">ユーザー</span>）</span>
-            <span th:unless="${#authorization.expression('isAuthenticated()')}">未ログイン</span>
-            <a href="/login" th:if="${!#authorization.expression('isAuthenticated()')}">ログイン</a>
         </p>
-        <form action="/logout" method="post" th:if="${#authorization.expression('isAuthenticated()')}">
-            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-            <button type="submit">ログアウト</button>
-        </form>
     </header>
     <nav aria-label="画面切り替え" class="view-tabs" role="tablist">
         <button aria-controls="input-view" aria-selected="true" class="view-tab" id="tab-input" role="tab" type="button"><span class="view-tab-step">1</span>打順入力</button>

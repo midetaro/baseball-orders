@@ -3,11 +3,8 @@ package com.example.baseballorders.backend;
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.SimulationLimits;
 import com.example.baseballorders.backend.application.SimulationLimitsBuilder;
-import com.example.baseballorders.backend.application.UserAccountRepository;
-import com.example.baseballorders.backend.application.UserAccountService;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
-import java.time.Clock;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -38,27 +35,6 @@ public class InfrastructureConfiguration {
                         .maximumAverageHitAverage(maximumAverageHitAverage)
                         .maximumAverageSluggish(maximumAverageSluggish)
                         .build();
-    }
-
-    /**
-     * UTCの現在時刻を提供する。
-     *
-     * @return UTCクロック
-     */
-    @Bean
-    public Clock clock() {
-        return Clock.systemUTC();
-    }
-
-    /**
-     * Google OIDCアカウントのユースケースを生成する。
-     *
-     * @param repository アカウント永続化ポート
-     * @return 構成済みアカウントサービス
-     */
-    @Bean
-    public UserAccountService userAccountService(UserAccountRepository repository) {
-        return new UserAccountService(repository);
     }
 
     /**
