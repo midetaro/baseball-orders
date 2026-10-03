@@ -357,10 +357,18 @@ checkout and isolate each GitHub Issue's changes on its own branch.
   before creating its branch; never branch off a closed issue.
 - One issue maps to exactly one branch. Do not reuse an issue's branch for a
   second, unrelated issue or mix changes from multiple issues on one branch.
-- Create the issue branch from `develop` in the existing checkout:
-  `git switch -c feature/<date>[-<n>] develop`
+- Create every new branch from the latest `develop`. First switch to
+  `develop` and bring it up to date with the remote, then branch from it in
+  the existing checkout:
+  ```
+  git switch develop
+  git pull --ff-only origin develop
+  git switch -c feature/<date>[-<n>] develop
+  ```
   (see `git branch` for this repository's existing `feature/YYYYMMDD[-n]`
-  naming).
+  naming). Never create a new branch from another feature branch or from a
+  stale local `develop`. If `git pull --ff-only` fails because local
+  `develop` has diverged, report the blocker instead of resetting it.
 - Work on only one issue at a time in this checkout. Finish, review, and merge
   its pull request before starting another issue from the updated `develop`.
   Independent worker nodes within the same issue may still run concurrently
@@ -373,6 +381,28 @@ checkout and isolate each GitHub Issue's changes on its own branch.
   the now-merged local branch with `git branch -d <branch>`.
 - Do not remove pre-existing worktrees as part of this workflow change. Any
   cleanup must preserve uncommitted and unpushed work and be explicitly scoped.
+
+## Commit granularity
+
+Split an issue's work into small, reviewable commits on its branch instead of
+one commit for the whole issue.
+
+- Create one commit each time an implementation unit and its tests pass:
+  after a focused change is implemented and its focused tests (and any
+  affected module verification) are green, commit that unit before starting
+  the next one. Do not commit code whose tests are known to fail.
+- Put documentation changes in their own dedicated commits. Do not mix
+  documentation (`*.md`, `docs/**`, `AGENTS.md`, `CLAUDE.md`, skill
+  `SKILL.md`/reference files, feature specifications, README files) with
+  production code or test changes in the same commit. Javadoc and code
+  comments that accompany a code change belong to that code commit.
+- Review findings and CI fixes are additional commits on the same branch,
+  following the same split between code and documentation.
+- Stage only the files that belong to the commit (`git add <path>`); do not
+  use `git add -A` to sweep unrelated changes into it.
+- Write each commit message as a single purpose, using this repository's
+  existing `feat:` / `fix:` / `refactor:` / `test:` / `chore:` / `docs:`
+  prefix style. Documentation-only commits use `docs:`.
 
 ## Screen screenshots in pull requests
 
