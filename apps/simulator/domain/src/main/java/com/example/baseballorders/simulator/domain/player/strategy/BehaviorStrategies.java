@@ -1,8 +1,10 @@
 package com.example.baseballorders.simulator.domain.player.strategy;
 
+import com.example.baseballorders.simulator.domain.player.strategy.batting.HighOnBaseHittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.LongDistanceHittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.MiddleDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.batting.ShortDistanceHittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.EagerBuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.NowayBuntStrategy;
@@ -11,6 +13,8 @@ import com.example.baseballorders.simulator.domain.player.strategy.steal.EagerSt
 import com.example.baseballorders.simulator.domain.player.strategy.steal.NowayStealStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StandardStealStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
+import com.example.baseballorders.simulator.domain.rule.BattingProbabilities;
+import com.example.baseballorders.simulator.domain.rule.BattingProbabilitiesBuilder;
 import com.example.baseballorders.simulator.domain.rule.SimulationRules;
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +35,30 @@ public final class BehaviorStrategies {
      */
     public HittingStrategy middleDistanceHittingStrategy() {
         return new MiddleDistanceHittingStrategy(rules.batting(), rules.middleDistanceHitting());
+    }
+
+    /**
+     * 単打中心の短距離打者の打撃を生成する。
+     *
+     * @return 短距離打者の打撃
+     */
+    public HittingStrategy shortDistanceHittingStrategy() {
+        return new ShortDistanceHittingStrategy(rules.batting());
+    }
+
+    /**
+     * 打率は変えず、四球確率だけを高出塁率打者用の設定値にした打撃を生成する。安打の配分は中距離打者と同じ設定を使う。
+     *
+     * @return 高出塁率打者の打撃
+     */
+    public HittingStrategy highOnBaseHittingStrategy() {
+        BattingProbabilities highOnBaseBatting =
+                BattingProbabilitiesBuilder.battingProbabilities()
+                        .walkProbability(rules.highOnBaseWalkProbability())
+                        .strikeoutProbabilityWhenNotOnBase(
+                                rules.batting().strikeoutProbabilityWhenNotOnBase())
+                        .build();
+        return new HighOnBaseHittingStrategy(highOnBaseBatting, rules.middleDistanceHitting());
     }
 
     /**

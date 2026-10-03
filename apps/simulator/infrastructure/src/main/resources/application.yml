@@ -20,6 +20,8 @@ simulation:
       triple-divisor: ${SIMULATION_RULE_LONG_TRIPLE_DIVISOR:8}
       home-run-divisor: ${SIMULATION_RULE_LONG_HOME_RUN_DIVISOR:2}
       single-reduction-divisor: ${SIMULATION_RULE_LONG_SINGLE_REDUCTION_DIVISOR:1}
+    high-on-base-batting:
+      walk-probability: ${SIMULATION_RULE_HIGH_ON_BASE_WALK_PROBABILITY:0.1}
     standard-steal:
       to-double-attempt-rate: ${SIMULATION_RULE_STANDARD_STEAL_TO_DOUBLE_RATE:0.30}
       to-triple-attempt-rate: ${SIMULATION_RULE_STANDARD_STEAL_TO_TRIPLE_RATE:0.10}

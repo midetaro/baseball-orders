@@ -18,6 +18,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param batting 打席結果の判定に使う確率
  * @param middleDistanceHitting 中距離打者の長打配分
  * @param longDistanceHitting 長距離打者の長打配分
+ * @param highOnBaseBatting 高出塁率打者の打席確率
  * @param standardSteal 標準盗塁戦略の企図率
  * @param eagerSteal 積極盗塁戦略の企図率
  * @param runnerAdvance 凡退時の走者進塁確率
@@ -29,6 +30,7 @@ public record SimulationRuleProperties(
         Batting batting,
         Hitting middleDistanceHitting,
         Hitting longDistanceHitting,
+        HighOnBaseBatting highOnBaseBatting,
         Steal standardSteal,
         Steal eagerSteal,
         RunnerAdvance runnerAdvance,
@@ -42,6 +44,13 @@ public record SimulationRuleProperties(
      * @param strikeoutProbabilityWhenNotOnBase 出塁しなかった打席のうち三振になる割合
      */
     public record Batting(float walkProbability, float strikeoutProbabilityWhenNotOnBase) {}
+
+    /**
+     * 高出塁率打者の打席確率。打率は変えず、四球確率だけを標準と別の値にする。
+     *
+     * @param walkProbability 高出塁率打者が四球となる確率
+     */
+    public record HighOnBaseBatting(float walkProbability) {}
 
     /**
      * 長打によって増えた塁数を安打種別へ配分する除数。
@@ -100,6 +109,7 @@ public record SimulationRuleProperties(
                                 .build())
                 .middleDistanceHitting(hittingDistribution(middleDistanceHitting))
                 .longDistanceHitting(hittingDistribution(longDistanceHitting))
+                .highOnBaseWalkProbability(highOnBaseBatting.walkProbability())
                 .standardSteal(stealAttemptRates(standardSteal))
                 .eagerSteal(stealAttemptRates(eagerSteal))
                 .runnerAdvance(

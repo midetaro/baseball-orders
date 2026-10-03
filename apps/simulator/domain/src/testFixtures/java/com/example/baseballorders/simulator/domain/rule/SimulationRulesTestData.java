@@ -38,6 +38,7 @@ public final class SimulationRulesTestData {
                                 .homeRunDivisor(2)
                                 .singleReductionDivisor(1)
                                 .build())
+                .highOnBaseWalkProbability(0.1f)
                 .standardSteal(
                         StealAttemptRatesBuilder.stealAttemptRates()
                                 .toDoubleAttemptRate(0.30f)

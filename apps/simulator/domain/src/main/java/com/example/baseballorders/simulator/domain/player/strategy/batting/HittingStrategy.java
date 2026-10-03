@@ -3,7 +3,8 @@ package com.example.baseballorders.simulator.domain.player.strategy.batting;
 import com.example.baseballorders.simulator.domain.play.BattingResult;
 
 public sealed interface HittingStrategy
-        permits LongDistanceHittingStrategy,
+        permits HighOnBaseHittingStrategy,
+                LongDistanceHittingStrategy,
                 MiddleDistanceHittingStrategy,
                 ShortDistanceHittingStrategy {
 
