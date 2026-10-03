@@ -14,18 +14,19 @@ assert.ok(html.includes('<link rel="stylesheet" href="/css/simulation.css">'), '
 assert.ok(!html.includes('<script>'), 'シミュレーション画面のJSをインラインで保持しない');
 assert.ok(html.includes('<script src="/js/simulation.js"></script>'), 'シミュレーション画面から分離したJSファイルを読み込む');
 
+const singleGameHtml = readFileSync(new URL('../../main/resources/templates/single-game.html', import.meta.url), 'utf8');
+
 for (const [page, template] of [
   ['シミュレーション画面', html],
+  ['1試合実行画面', singleGameHtml],
   ['シミュレーションガイド画面', guideHtml]
 ]) {
-  assert.ok(template.includes('xmlns:th="http://www.thymeleaf.org"'), `${page}でThymeleafの認証表示を有効にする`);
-  assert.ok(template.includes('ログイン中'), `${page}でログイン状態を表示する`);
-  assert.ok(template.includes('未ログイン'), `${page}で未ログイン状態を表示する`);
-  assert.ok(template.includes('href="/login"'), `${page}にログイン画面への導線を用意する`);
-  assert.ok(template.includes("!#authorization.expression('isAuthenticated()')"), `${page}では未認証時にログイン導線を表示する`);
-  assert.ok(template.includes('<form action="/logout" method="post"'), `${page}にPOSTログアウトを用意する`);
-  assert.ok(template.includes('th:name="${_csrf.parameterName}"'), `${page}のログアウトにCSRFパラメータを含める`);
-  assert.ok(template.includes('th:value="${_csrf.token}"'), `${page}のログアウトにCSRFトークンを含める`);
+  assert.ok(!template.includes('ログイン'), `${page}にログイン状態・ログイン導線を表示しない`);
+  assert.ok(!template.includes('href="/login"'), `${page}にログイン画面への導線を用意しない`);
+  assert.ok(!template.includes('#authorization'), `${page}で認証状態を参照しない`);
+  assert.ok(!template.includes('#authentication'), `${page}でログインユーザーを参照しない`);
+  assert.ok(!template.includes('action="/logout"'), `${page}にログアウトを用意しない`);
+  assert.ok(!template.includes('_csrf'), `${page}でCSRFトークンを参照しない`);
 }
 
 assert.ok(js.includes('const lineup = ['), '9人分の固定打順を作成する');

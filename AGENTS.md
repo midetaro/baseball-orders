@@ -383,7 +383,7 @@ checkout and isolate each GitHub Issue's changes on its own branch.
   `baseball-orders-screen-review` skill, and paste them into the pull request
   description before opening or updating it.
 - Capture screenshots against the real rendered screen (through its actual
-  route, controller, and authentication), not a static file opened directly.
+  route and controller), not a static file opened directly.
 - A change that only affects non-visual behavior (backend logic, SQS
   messaging, Terraform, tests) with no template/CSS/view-model diff does not
   require screenshots.

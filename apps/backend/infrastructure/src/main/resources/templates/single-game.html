@@ -11,14 +11,7 @@
     <header><h1>打順監督</h1>
         <p class="status">
             打順ごとの成績を入力して1試合の推移を確認する。 <a href="/simulation-guide">シミュレーションの仕組み</a> ／ <a href="/large-scale">大規模実行はこちら</a>
-            <span th:if="${#authorization.expression('isAuthenticated()')}">ログイン中（<span th:text="${#authentication.name}">ユーザー</span>）</span>
-            <span th:unless="${#authorization.expression('isAuthenticated()')}">未ログイン</span>
-            <a href="/login" th:if="${!#authorization.expression('isAuthenticated()')}">ログイン</a>
         </p>
-        <form action="/logout" method="post" th:if="${#authorization.expression('isAuthenticated()')}">
-            <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden">
-            <button type="submit">ログアウト</button>
-        </form>
     </header>
     <div class="simulation-workspace">
         <section aria-labelledby="order-heading">

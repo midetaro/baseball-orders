@@ -8,6 +8,3 @@ baseball-orders:
   rendering:
     single-game:
       frame-duration-millis: 1000
-  security:
-    local-account:
-      minimum-password-length: 12

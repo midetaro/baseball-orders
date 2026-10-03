@@ -62,7 +62,7 @@ resource "aws_lb_target_group" "backend" {
   deregistration_delay = 35
 
   health_check {
-    path                = "/login"
+    path                = "/"
     matcher             = "200"
     interval            = 30
     timeout             = 5

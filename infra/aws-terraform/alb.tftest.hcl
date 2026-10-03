@@ -162,8 +162,8 @@ run "alb_and_certificate" {
   }
 
   assert {
-    condition     = aws_lb_target_group.backend.health_check[0].path == "/login"
-    error_message = "The health check must use GET /login: the one path permitAll's in SecurityConfiguration (docs/aws-deployment.md)."
+    condition     = aws_lb_target_group.backend.health_check[0].path == "/"
+    error_message = "The health check must use GET /: the top page served without login (docs/aws-deployment.md)."
   }
 
   assert {
