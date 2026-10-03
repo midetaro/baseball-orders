@@ -89,17 +89,21 @@ assert.ok(html.includes('id="bunt-failure-count"'), '既存の失敗バント総
 assert.ok(html.includes('id="steal-count"'), '既存の成功盗塁総数を表示する');
 assert.ok(html.includes('id="steal-failure-count"'), '既存の失敗盗塁総数を表示する');
 for (const [kind, color] of [
-  ['single-hit', 'var(--lime)'],
-  ['double-hit', 'var(--cyan)'],
-  ['triple-hit', 'var(--orange)'],
-  ['home-run', 'var(--pink)'],
-  ['advancing-bunt', 'var(--cyan)'],
-  ['squeeze-bunt', 'var(--lime)'],
-  ['advancing-bunt-failure', 'var(--orange)'],
-  ['squeeze-bunt-failure', 'var(--amber)'],
-  ['steal-second', 'var(--cyan)'],
-  ['steal-third', 'var(--violet)'],
-  ['steal-failure', 'var(--orange)']
+  ['single-hit', 'var(--sage)'],
+  ['double-hit', 'var(--sky)'],
+  ['triple-hit', 'var(--ochre)'],
+  ['home-run', 'var(--clay)'],
+  ['solo', 'var(--sage)'],
+  ['two-run', 'var(--sky)'],
+  ['three-run', 'var(--ochre)'],
+  ['grand-slam', 'var(--clay)'],
+  ['advancing-bunt', 'var(--moss)'],
+  ['squeeze-bunt', 'var(--sage)'],
+  ['advancing-bunt-failure', 'var(--clay)'],
+  ['squeeze-bunt-failure', 'var(--ochre)'],
+  ['steal-second', 'var(--moss)'],
+  ['steal-third', 'var(--sky)'],
+  ['steal-failure', 'var(--clay)']
 ]) {
   assert.match(css, new RegExp(`\\.${kind}\\s*\\{\\s*background:\\s*${color.replace(/[()]/g, '\\$&')};\\s*\\}`), `${kind}を固有の色で表示する`);
 }
@@ -107,7 +111,7 @@ assert.ok(html.includes('id="share-results"'), '結果をSNS共有できる操�
 assert.ok(js.includes('navigator.share'), '対応ブラウザではネイティブ共有を使う');
 assert.ok(js.includes('clipboard.writeText'), 'ネイティブ共有非対応時は共有文をコピーする');
 assert.match(css, /\.order\s*\{\s*width:\s*max-content;\s*padding:/, '入力欄を親幅いっぱいに広げずコンパクトにする');
-assert.match(css, /grid-template-columns:\s*38px\s+repeat\(2,\s*60px\)\s+118px\s+78px\s+78px/, '数値入力列の余白を詰めて幅を最小限にする');
+assert.match(css, /grid-template-columns:\s*38px\s+repeat\(2,\s*60px\)\s+118px\s+96px\s+96px/, '数値入力列は詰めつつ、バント・盗塁の切り替えは1行で読める幅にする');
 assert.ok(css.includes('input[type="number"]::-webkit-inner-spin-button'), '数値入力のスピンボタンを除去して余白を詰める');
 assert.ok(html.includes('class="lineup-workspace"'), '打順入力とシミュレーション操作を横並びに配置する');
 assert.match(css, /\.section-head\s*\{\s*display:\s*flex;/, '打順入力の見出しと実行操作を横並びにする');
@@ -116,14 +120,13 @@ assert.ok(html.includes('id="toggle-all-bunt"'), '全員バントを切り替え
 assert.ok(html.includes('id="toggle-all-steal"'), '全員盗塁を切り替える操作を表示する');
 assert.ok(js.includes('lineup.every(player=>player.buntEnabled)'), '全員バントが有効なら次の操作で全員無効にする');
 assert.ok(js.includes('lineup.every(player=>player.stealEnabled)'), '全員盗塁が有効なら次の操作で全員無効にする');
-assert.ok(html.includes('class="simulation-workspace"'), '打順入力と結果を同一のワークスペースに配置する');
+assert.ok(html.includes('class="simulation-workspace"'), '打順入力画面と結果画面を同一のワークスペース内で切り替える');
 assert.ok(html.includes('<title>打順監督</title>'), 'ブラウザのタブにサービス名を表示する');
 assert.ok(html.includes('<h1>打順監督</h1>'), '画面左上にサービス名を表示する');
 assert.ok(!html.includes('Baseball Orders / Simulator'), '旧サービス名を画面から除去する');
 assert.ok(!html.includes('LINEUP<br>BUILDER'), '旧見出しを画面から除去する');
-assert.ok(!html.includes('id="results" aria-labelledby="results-heading" hidden'), '初期表示から結果の表示ラベルを隠さない');
 assert.ok(!html.includes('id="home-run-empty-state" hidden'), '初期表示から本塁打なしの表示ラベルを隠さない');
-assert.match(css, /\.simulation-workspace\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*1fr;/, 'スマホ幅では打順入力と結果を縦に並べる');
+assert.match(css, /\.simulation-workspace\s*\{\s*display:\s*grid;\s*grid-template-columns:\s*1fr;/, '入力画面と結果画面は横並びにせず1画面ずつ表示する');
 assert.ok(js.includes('function fieldWrapper('), '各入力欄をキャプション付きのフィールドとして構成する');
 assert.match(css, /\.field-caption\s*\{\s*display:\s*none;\s*\}/, '通常幅では列見出しと入力キャプションを重複表示しない');
 assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.field-caption\s*\{\s*display:\s*block;\s*\}/, 'スマホ幅では列見出しの代わりに入力キャプションを表示する');
@@ -144,10 +147,24 @@ assert.ok(js.includes("toggle('バント',player.buntEnabled"), 'バントを使
 assert.ok(js.includes("toggle('盗塁',player.stealEnabled"), '盗塁を使うかどうかの切り替えボタンは残す');
 assert.ok(js.includes("fetch('/simulations'"), '直接入力をシミュレーションAPIへ送る');
 assert.ok(!js.includes('name:'), '固定表示の打者名をAPIへ送らない');
-assert.match(css, /--cyan:\s*#25d9ff/, 'ビビットなシアンを画面全体の強調色に使う');
-assert.match(css, /--pink:\s*#ff4da6/, 'ビビットなピンクを画面全体の強調色に使う');
-assert.ok(css.includes('radial-gradient(circle at 15% 10%'), '複数の差し色でページ背景に奥行きを作る');
-assert.match(css, /linear-gradient\(135deg,\s*var\(--cyan\),\s*var\(--lime\)\)/, '主要アクションを鮮やかなグラデーションで強調する');
+// --- オーガニックな配色（issue #124: 見づらいネオン配色をアースカラーへ置き換える） ---
+assert.match(css, /color-scheme:\s*light;/, '暗いネオン調ではなく明るい紙の地色を基調にする');
+for (const [name, color] of [
+  ['paper', '#f3eee2'],
+  ['ink', '#2f3327'],
+  ['moss', '#56704a'],
+  ['sage', '#9fb08a'],
+  ['clay', '#bf6b45'],
+  ['ochre', '#d1a046'],
+  ['sky', '#6e97a0']
+]) {
+  assert.match(css, new RegExp(`--${name}:\\s*${color}`), `アースカラーの${name}を配色トークンとして定義する`);
+}
+for (const neon of ['#25d9ff', '#ff4da6', '#d9ff43', '#875cff', '#070b18']) {
+  assert.ok(!css.toLowerCase().includes(neon), `ネオン調の色${neon}をシミュレーション画面に残さない`);
+}
+assert.ok(!css.includes('background-clip: text'), '見出しをグラデーション文字にせず読みやすい単色にする');
+assert.match(css, /\.submit\s*\{[^}]*background:\s*var\(--moss\);/, '主要アクションは落ち着いたモスグリーンの単色で強調する');
 
 // --- 結果画面の可読性改善（Phase1: 空状態・単一指標の見出し統合・横幅・横スクロール） ---
 for (const [id, label] of [
@@ -171,11 +188,57 @@ assert.ok(html.includes('class="histogram-scroll"'), '得点分布のバー本�
 assert.match(css, /\.histogram-scroll\s*\{\s*overflow-x:\s*auto;/, '得点分布ヒストグラムを横スクロール可能にする');
 assert.match(css, /\.histogram-bar\s*\{[^}]*flex:\s*0 0 40px;/, '得点分布の棒を固定幅にして詰まりすぎを防ぐ');
 
-// --- PC入力欄の画面デザイン変更（issue #124: Figmaデザインに合わせたPC専用の2カラム配置） ---
+// --- PC入力欄の画面デザイン変更（issue #124: 入力画面と結果画面を分離する） ---
+assert.ok(
+  !/\.simulation-workspace\s*\{[^}]*minmax\(0,\s*1fr\)\s*minmax\(0,\s*1fr\)/.test(css),
+  '入力と結果を2カラムで同時に表示しない'
+);
 assert.match(
-  css,
-  /@media \(min-width: 761px\)\s*\{\s*\.simulation-workspace\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(0,\s*1fr\);/,
-  'PC幅（761px以上）では打順入力と結果を2カラムで横並びにする'
+  html,
+  /<nav aria-label="画面切り替え" class="view-tabs" role="tablist">/,
+  '入力画面と結果画面を切り替えるタブを用意する'
+);
+assert.match(
+  html,
+  /<button aria-controls="input-view" aria-selected="true" class="view-tab" id="tab-input" role="tab" type="button">/,
+  '初期表示では打順入力画面のタブを選択状態にする'
+);
+assert.match(
+  html,
+  /<button aria-controls="results" aria-selected="false" class="view-tab" disabled id="tab-results" role="tab" type="button">/,
+  '結果がまだ無い間は試合結果タブを選べなくする'
+);
+assert.match(
+  html,
+  /<section aria-labelledby="order-heading" id="input-view" role="tabpanel">/,
+  '打順入力を独立した画面パネルにする'
+);
+assert.match(
+  html,
+  /<section aria-labelledby="results-heading" hidden id="results" role="tabpanel">/,
+  '初期表示では結果画面を隠し、入力画面だけを表示する'
+);
+assert.ok(html.includes('id="edit-lineup"'), '結果画面から打順入力画面へ戻る操作を用意する');
+assert.ok(html.includes('id="result-feedback" role="status"'), '結果画面に実行結果と共有結果を通知する領域を用意する');
+assert.ok(js.includes('function showView(resultsVisible)'), '入力画面と結果画面を排他的に切り替える関数を用意する');
+assert.ok(
+  js.includes('inputView.hidden=resultsVisible; resultsView.hidden=!resultsVisible;'),
+  '入力画面と結果画面は常にどちらか一方だけを表示する'
+);
+assert.ok(
+  js.includes('renderResults(data.statistics);hasResults=true;showView(true);'),
+  'シミュレーションが成功したら結果画面へ切り替える'
+);
+assert.ok(js.includes("editLineup.addEventListener('click',()=>showView(false))"), '結果画面から打順入力画面へ戻れる');
+assert.ok(js.includes("tabResults.addEventListener('click',()=>showView(true))"), '入力画面から前回の結果画面へ戻れる');
+assert.ok(js.includes('tabResults.disabled=inFlight || !hasResults;'), '結果が無い間と実行中は結果タブを押せなくする');
+assert.ok(js.includes("resultFeedback.textContent=gameCount===0?'試合結果はありません。':`試合終了：${gameCount}試合`"), '実行結果の件数を結果画面に表示する');
+assert.ok(js.includes("resultFeedback.textContent='共有用テキストをコピーしました。'"), '共有結果を結果画面に表示する');
+assert.ok(!html.includes('id="toggle-lineup"'), '入力欄の折りたたみトグルは画面切り替えに置き換える');
+assert.ok(!js.includes('setLineupCollapsed'), '入力欄を折りたたむ中途半端な表示を除去する');
+assert.ok(
+  js.includes('submit.disabled=inFlight || !complete;'),
+  '入力画面では入力が有効ならいつでも実行できる'
 );
 assert.ok(
   html.includes('<div class="section-actions">'),
@@ -211,38 +274,11 @@ assert.ok(
 );
 
 // --- 結果画面の可読性改善（Phase2: 内訳グループの折りたたみ・失敗色の統一） ---
-assert.match(css, /--amber:\s*#ffb12b/, 'バント失敗系統の識別用にアンバーの変数を追加する');
 for (const heading of ['安打の内訳', '本塁打の内訳', 'バントの内訳', '盗塁の内訳']) {
   assert.ok(html.includes(`<summary class="group-heading">${heading}`), `${heading}グループを折りたたみ可能にする`);
 }
 assert.ok((html.match(/<details class="statistics-group" open>/g) ?? []).length === 4, '内訳4グループを初期状態では展開したまま折りたたみ可能にする');
 assert.ok(html.includes('<h3 class="group-heading">得点サマリー'), '得点サマリーは折りたたまず常に見出しをh3で表示する');
 assert.ok(!html.includes('<summary class="group-heading">得点サマリー'), '得点サマリーはdetails/summaryに変更しない');
-
-// --- 実行後に打順入力欄を自動で折りたたみ、結果を見やすくする ---
-assert.ok(
-  html.includes('id="lineup-body"'),
-  '打順入力欄を折りたたみ可能な領域にする'
-);
-assert.ok(
-  html.includes('id="toggle-lineup"'),
-  '打順入力欄の開閉トグルボタンを用意する'
-);
-assert.ok(
-  js.includes('function setLineupCollapsed('),
-  '折りたたみ状態を切り替える関数を用意する'
-);
-assert.ok(
-  js.includes("toggleLineup.addEventListener('click',()=>setLineupCollapsed(!lineupBody.hidden))"),
-  'トグルボタンで開閉を手動切り替えできる'
-);
-assert.ok(
-  js.includes('renderResults(data.statistics);setLineupCollapsed(true);'),
-  'シミュレーションが成功したら打順入力欄を自動で折りたたむ'
-);
-assert.ok(
-  js.includes('submit.disabled=inFlight || !complete || lineupBody.hidden;'),
-  '打順入力欄が閉じている間はシミュレーション実行ボタンを押せなくする'
-);
 
 console.log('PASS: 直接入力、必須値・率の範囲制御、バント選択の送信');
