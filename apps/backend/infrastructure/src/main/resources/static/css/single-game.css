@@ -1202,12 +1202,12 @@
             }
 
             .playback-speed {
-                padding: var(--space-xs) var(--space-md) 0;
+                padding: var(--space-2xs) var(--space-md) 0;
             }
 
             .frame-stage {
                 min-height: 0;
-                padding: var(--space-sm) var(--space-md);
+                padding: var(--space-2xs) var(--space-md) var(--space-sm);
             }
 
             .frame {
