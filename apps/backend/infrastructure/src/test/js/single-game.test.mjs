@@ -13,7 +13,9 @@ assert.ok(html.includes('<link rel="stylesheet" href="/css/single-game.css">'), 
 assert.ok(!html.includes('<script th:inline="none">'), '1試合実行画面のJSをインラインで保持しない');
 assert.ok(html.includes('<script src="/js/single-game.js"></script>'), '1試合実行画面から分離したJSファイルを読み込む');
 
-assert.match(css, /\.out-count\s*\{\s*color:\s*#ff4d4d;/, 'アウト数を赤色で表示する');
+assert.match(css, /\.out-count\s*\{\s*color:\s*#b8432f;/, 'アウト数をアースカラーの赤（レンガ色）で表示する');
+assert.ok(css.includes('color-scheme: light') && css.includes('--moss: #56704a'), '1試合実行画面は / と同じアースカラー配色にする');
+assert.ok(!/--(cyan|lime|pink|violet)\b/.test(css), '1試合実行画面にネオン調の配色を残さない');
 assert.ok(js.includes("span.className='out-count'"), 'アウト表示に専用スタイルを適用する');
 for (const name of ['single-game', 'simulation', 'simulation-guide']) {
   const template = readFileSync(new URL(`../../main/resources/templates/${name}.html`, import.meta.url), 'utf8');
