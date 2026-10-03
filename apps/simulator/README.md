@@ -210,7 +210,7 @@ classDiagram
         <<abstract>>
     }
     class BatterEntity {
-        -float onBasePercentage
+        -float battingAverage
         -float sluggish
         -HittingStrategy hittingStrategy
         -StealStrategy stealStrategy
@@ -228,7 +228,7 @@ classDiagram
 
     class HittingStrategy {
         <<sealed interface>>
-        +batting(float onBasePercentage, float sluggish) BattingResult
+        +batting(float battingAverage, float sluggish) BattingResult
     }
     class MiddleDistanceHittingStrategy
     class OtherHittingStrategies {
@@ -293,7 +293,7 @@ classDiagram
 
 Strategy パターンの `Context` は `BatterEntity`、Strategy は `HittingStrategy`、`StealStrategy`、`BuntStrategy` の三つです。各インターフェースは sealed で実装候補を限定しています。
 
-- 打撃 Strategy は、出塁率と長打率を四球と4種類の安打へ配分します。四球の割合（既定5%）と、非出塁のうち三振になる割合（既定25%、残りは凡退）は `simulation.rule.batting` の設定値です。
+- 打撃 Strategy は、四球を打数に含めず、四球以外の打席で入力された打率を安打確率として使います。長打率と打率から4種類の安打の配分を決めます。四球の割合（既定5%）と、非出塁のうち三振になる割合（既定25%、残りは凡退）は `simulation.rule.batting` の設定値です。
 - 盗塁 Strategy は、二塁・三塁への挑戦頻度を変えます。成功率（既定70%）は全選手共通の設定値です。
 - バント Strategy は、アウト数とバント種別（進塁バント／スクイズ）に応じて試みるかどうかを変えます。成功率（進塁81%・スクイズ45%）とスクイズを試みる確率（25%）は全選手共通の設定値です。
 
@@ -446,7 +446,7 @@ classDiagram
 
 四球・三振の割合、長打の配分、盗塁を試みる頻度、盗塁・バントの成功率、走者の進塁確率は、`SimulationRules` にまとめた値オブジェクト（`BattingProbabilities`、`HittingDistribution`、`StealAttemptRates`、`BuntProbabilities`、`RunnerAdvanceProbabilities`）として domain へ渡します。domain は既定値を持たず、infrastructure の `SimulationRuleProperties` が `simulation.rule.*` を読み込んで変換し、コンストラクタ経由で `BehaviorStrategies` と `BaseStateFactory` に注入します。
 
-投手の性格ごとの補正倍率は `simulation.pitcher.*` を `SimulationPitcherProperties` が読み込みます。`LineUpMapper` は要求に含まれる投手の性格を使わず、全打者の出塁率・長打率に標準（`standard`、既定1.0）の倍率を掛けてから `BatterEntity` を生成します。
+投手の性格ごとの補正倍率は `simulation.pitcher.*` を `SimulationPitcherProperties` が読み込みます。`LineUpMapper` は要求に含まれる投手の性格を使わず、全打者の打率・長打率に標準（`standard`、既定1.0）の倍率を掛けてから `BatterEntity` を生成します。既存設定キー `on-base-multiplier` は打率の補正に使用します。
 
 ## パッケージ間の処理フロー
 
