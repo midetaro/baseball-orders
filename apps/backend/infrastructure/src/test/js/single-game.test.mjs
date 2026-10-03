@@ -219,9 +219,21 @@ assert.deepEqual(resolvePlayOutcomes(recorded), [
 ], '記録はプレー直前の状況なので、次の推移からプレー直後のアウト・走者・得点を求め、イニングや試合の最後のプレーは3アウトにする');
 assert.ok(js.includes('annotateEffects(annotateBattingOrder(resolvePlayOutcomes(gameTransitions)))'), 'プレー直後の状況で演出と表示を組み立てる');
 assert.ok(js.includes('classifyEffect(transition,transition.scoreBefore)'), 'プレー直前と直後の得点差で得点数を求める');
-for (const result of ['凡打', '三振', '四球', 'バント成功', '盗塁成功(二塁)', '盗塁失敗(三塁)']) {
+for (const result of ['凡打', '三振', '四球', 'バント失敗', 'スクイズ失敗', '盗塁成功(二塁)', '盗塁失敗(三塁)']) {
   assert.deepEqual(classifyEffect(transition(result, 0), 0), {kind:'none', runs:0, bases:0}, `得点のない${result}は通常表示にする`);
 }
+
+// --- バント成功の演出（issue #156） ---
+assert.deepEqual(classifyEffect(transition('バント成功', 0), 0), {kind:'bunt', runs:0, bases:0}, '得点のない進塁バント成功はバント演出にする');
+assert.deepEqual(classifyEffect(transition('スクイズ成功', 1), 0), {kind:'score', runs:1, bases:0}, '得点の入ったスクイズ成功は得点演出を優先する');
+assert.ok(js.includes("bunt:()=>'バント成功!'"), 'バント成功の見出しを表示する');
+assert.ok(js.includes("if (effect.kind === 'bunt') diamond.append(element('span','ball ball-bunt'));"), 'バント成功では本塁前に転がる打球を表示する');
+assert.match(html, /th:attr="[^"]*data-bunt-frame-duration-millis=\$\{buntFrameDurationMillis}/, 'バント成功フレームの表示時間をサーバー設定から渡す');
+assert.ok(js.includes('bunt:Number(frameStage.dataset.buntFrameDurationMillis) || frameDurationMillis'), 'バント成功フレームの表示時間をデータ属性から読み取る');
+assert.ok(css.includes('@keyframes bunt-ball'), 'バントの打球が本塁前に転がる');
+assert.match(css, /\.effect-bunt \.ball\s*\{[^}]*animation:\s*bunt-ball/, 'バント成功フレームの打球にバント用の動きを適用する');
+assert.match(css, /\.effect-bunt \.base\.occupied/, 'バント成功で進塁した走者の塁を点灯させる');
+assert.match(css, /\.headline-bunt\s*\{/, 'バント成功の見出しのスタイルを用意する');
 
 assert.match(html, /th:attr="[^"]*data-hit-frame-duration-millis=\$\{hitFrameDurationMillis}/, '安打フレームの表示時間をサーバー設定から渡す');
 assert.match(html, /th:attr="[^"]*data-score-frame-duration-millis=\$\{scoreFrameDurationMillis}/, '得点フレームの表示時間をサーバー設定から渡す');
@@ -252,6 +264,31 @@ assert.ok(js.includes("{1:'ヒット!',2:'ツーベース!',3:'スリーベー�
 assert.ok(js.includes('`+${effect.runs}点`'), '得点数を「+N点」で表示する');
 assert.ok(!js.includes('Math.random'), '演出は乱数を使わず同じ結果なら同じ表示にする');
 
+// --- アニメーションの再生速度（issue #156） ---
+assert.ok(
+  html.includes('<div aria-label="再生速度" class="playback-speed" role="group">'),
+  '試合結果に再生速度の切り替えを用意する'
+);
+for (const [speed, label, pressed] of [['slow', '遅い', 'false'], ['normal', '普通', 'true'], ['fast', '速い', 'false']]) {
+  assert.ok(
+    html.includes(`<button aria-pressed="${pressed}" class="speed-option" data-speed="${speed}" type="button">${label}</button>`),
+    `再生速度「${label}」を選べ、初期値は「普通」にする`
+  );
+}
+assert.ok(
+  html.indexOf('class="playback-speed"') < html.indexOf('id="frame-stage"'),
+  '再生速度の切り替えはアニメーションの直上に置く'
+);
+const speedMultipliers = new Function(`${js.match(/const PLAYBACK_SPEED_MULTIPLIERS = \{[^}]*\};/)[0]}\nreturn PLAYBACK_SPEED_MULTIPLIERS;`)();
+assert.deepEqual(Object.keys(speedMultipliers), ['slow', 'normal', 'fast'], '再生速度は遅い・普通・速いの3択にする');
+assert.equal(speedMultipliers.normal, 1, '「普通」はサーバー設定どおりの表示時間で再生する');
+assert.equal(speedMultipliers.slow / speedMultipliers.normal, 2, '「遅い」は「普通」の2倍の時間をかけて再生する');
+assert.equal(speedMultipliers.normal / speedMultipliers.fast, 2, '「速い」は「普通」の半分の時間で再生する');
+assert.ok(js.includes('frameDurations[effect.kind] * PLAYBACK_SPEED_MULTIPLIERS[playbackSpeed]'), '選んだ速度に応じて次のフレームまでの時間を変える');
+assert.ok(js.includes('animation.playbackRate=1 / PLAYBACK_SPEED_MULTIPLIERS[playbackSpeed];'), 'フレーム内の演出アニメーションも選んだ速度で再生する');
+assert.ok(js.includes("option.setAttribute('aria-pressed',String(option.dataset.speed === playbackSpeed))"), '選択中の速度を押下状態で示す');
+assert.match(css, /\.speed-option\[aria-pressed="true"\]\s*\{/, '選択中の速度ボタンを強調表示する');
+
 // --- 野球のスコアボード（イニング別得点とR・H・E）（issue #149） ---
 assert.ok(html.includes('id="line-score"'), 'スコアボードの表示領域を用意する');
 assert.ok(
@@ -280,7 +317,34 @@ assert.deepEqual(
 assert.ok(js.includes('const REGULATION_INNINGS = 9;'), 'スコアボードは最低9回まで列を用意する');
 assert.ok(js.includes('function buildLineScore('), 'スコアボードの表を生成する関数を用意する');
 assert.ok(js.includes("['R','H','E']"), 'スコアボードにR・H・Eの列を表示する');
-assert.ok(js.includes('renderLineScore(annotated, index + 1)'), 'フレームの再生に合わせてスコアボードを更新する');
+assert.ok(!js.includes('renderLineScore(annotated, index + 1)'), 'スコアボードの得点を再生済みのプレーだけに絞らない');
+// --- スコアボードは最初から試合結果を表示し、再生中のイニングを色で示す（issue #156） ---
+const lineScoreCalls = [];
+const renderLineScore = new Function(
+  'lineScore', 'buildLineScore', 'summarizeLineScore', 'REGULATION_INNINGS',
+  `${extractFunction('renderLineScore')}\nreturn renderLineScore;`
+)(
+  {replaceChildren:table=>lineScoreCalls.push(table)},
+  (summary, inningCount, currentInning)=>({summary, inningCount, currentInning}),
+  summarizeLineScore,
+  9
+);
+const fullGame = [played(1, 2, 4), played(1, 0, 1), played(5, 1, 0), played(10, 0, 2)];
+renderLineScore(fullGame, 1);
+assert.deepEqual(
+  lineScoreCalls.at(-1),
+  {summary:{innings:new Map([[1, 2], [5, 1], [10, 0]]), runs:3, hits:3, errors:0}, inningCount:10, currentInning:1},
+  '1回の再生中でも試合全体のイニング別得点とR・H・Eを表示し、再生中のイニングを渡す'
+);
+renderLineScore(fullGame, null);
+assert.equal(lineScoreCalls.at(-1).currentInning, null, '再生が終わったらどのイニングも強調しない');
+assert.ok(js.includes('renderLineScore(annotated, transition.inning);'), 'フレームの再生に合わせて強調するイニングを進める');
+assert.ok(js.includes('renderLineScore(annotated, null);'), '最後のフレームの表示時間が過ぎたらイニングの強調を外す');
+assert.ok(
+  js.includes("element('th',inning === currentInning ? 'is-current' : '',String(inning))"),
+  '再生中のイニングは見出しの回数も色で示す'
+);
+assert.match(css, /\.line-score th\.is-current\s*\{/, '再生中のイニングの見出しを強調表示する');
 assert.match(css, /\.line-score\s*\{/, 'スコアボードのスタイルを用意する');
 assert.match(css, /#results \.result-head, #results \.line-score-wrap\s*\{\s*grid-column:\s*1 \/ -1;/, 'PC幅ではスコアボードを結果パネルの全幅に表示する');
 assert.match(mobileCss, /\.result-head\s*\{\s*align-items:\s*center;\s*flex-wrap:\s*nowrap;/, 'スマホ幅ではスコアボードの分だけ縦幅を空けるため「打順を編集する」を見出しの横に並べる');

@@ -54,8 +54,16 @@
             <div class="line-score-wrap" id="line-score">
                 <p class="empty-chart-state">まだ試合を実行していません。</p>
             </div>
-            <div class="frame-stage" id="frame-stage" th:attr="data-frame-duration-millis=${frameDurationMillis},data-hit-frame-duration-millis=${hitFrameDurationMillis},data-score-frame-duration-millis=${scoreFrameDurationMillis},data-home-run-frame-duration-millis=${homeRunFrameDurationMillis}">
+            <div class="playback-panel">
+            <div aria-label="再生速度" class="playback-speed" role="group">
+                <span class="playback-speed-label">再生速度</span>
+                <button aria-pressed="false" class="speed-option" data-speed="slow" type="button">遅い</button>
+                <button aria-pressed="true" class="speed-option" data-speed="normal" type="button">普通</button>
+                <button aria-pressed="false" class="speed-option" data-speed="fast" type="button">速い</button>
+            </div>
+            <div class="frame-stage" id="frame-stage" th:attr="data-frame-duration-millis=${frameDurationMillis},data-hit-frame-duration-millis=${hitFrameDurationMillis},data-score-frame-duration-millis=${scoreFrameDurationMillis},data-home-run-frame-duration-millis=${homeRunFrameDurationMillis},data-bunt-frame-duration-millis=${buntFrameDurationMillis}">
                 <p class="empty-chart-state" id="frame-placeholder">まだ試合を実行していません。</p>
+            </div>
             </div>
             <div class="order-table-wrap">
                 <h3 class="order-table-heading">打順成績表</h3>

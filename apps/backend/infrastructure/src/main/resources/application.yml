@@ -14,6 +14,7 @@ baseball-orders:
       hit-frame-duration-millis: ${SINGLE_GAME_HIT_FRAME_DURATION_MILLIS:1800}
       score-frame-duration-millis: ${SINGLE_GAME_SCORE_FRAME_DURATION_MILLIS:2200}
       home-run-frame-duration-millis: ${SINGLE_GAME_HOME_RUN_FRAME_DURATION_MILLIS:3600}
+      bunt-frame-duration-millis: ${SINGLE_GAME_BUNT_FRAME_DURATION_MILLIS:1600}
 spring.cloud.aws:
   region:
     static: ap-northeast-1

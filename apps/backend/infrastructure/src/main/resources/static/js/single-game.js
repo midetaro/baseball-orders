@@ -1,7 +1,11 @@
     const frameStage = document.querySelector('#frame-stage'), lineScore = document.querySelector('#line-score'), orderTableScroll = document.querySelector('#order-table-scroll');
     const frameDurationMillis = Number(frameStage.dataset.frameDurationMillis) || 1000;
-    const frameDurations = {none:frameDurationMillis, hit:Number(frameStage.dataset.hitFrameDurationMillis) || frameDurationMillis, score:Number(frameStage.dataset.scoreFrameDurationMillis) || frameDurationMillis, 'home-run':Number(frameStage.dataset.homeRunFrameDurationMillis) || frameDurationMillis};
+    const frameDurations = {none:frameDurationMillis, hit:Number(frameStage.dataset.hitFrameDurationMillis) || frameDurationMillis, score:Number(frameStage.dataset.scoreFrameDurationMillis) || frameDurationMillis, 'home-run':Number(frameStage.dataset.homeRunFrameDurationMillis) || frameDurationMillis, bunt:Number(frameStage.dataset.buntFrameDurationMillis) || frameDurationMillis};
     let frameTimer = null;
+    // 再生速度は「普通」を基準に2倍ずつ変える。値はフレーム表示時間に掛ける倍率。
+    const PLAYBACK_SPEED_MULTIPLIERS = {slow:2, normal:1, fast:0.5};
+    let playbackSpeed = 'normal';
+    const speedOptions = [...document.querySelectorAll('.speed-option')];
     const RUNNER_LAYOUT = {
       '走者なし':{first:false,second:false,third:false},
       '一塁':{first:true,second:false,third:false},
@@ -18,11 +22,11 @@
     const HIT_HEADLINES = {1:'ヒット!',2:'ツーベース!',3:'スリーベース!'};
     const BALL_DIRECTIONS = ['left','center','right'];
     const FIREWORK_BURSTS = 3, FIREWORK_SPARKS = 12;
-    function classifyEffect(transition, previousScore) { const runs=transition.cumulativeScore-previousScore; const bases=HIT_BASES[transition.actionResult] ?? 0; if (bases===4) return {kind:'home-run',runs,bases}; if (runs>0) return {kind:'score',runs,bases}; if (bases>0) return {kind:'hit',runs:0,bases}; return {kind:'none',runs:0,bases:0}; }
+    function classifyEffect(transition, previousScore) { const runs=transition.cumulativeScore-previousScore; const bases=HIT_BASES[transition.actionResult] ?? 0; if (bases===4) return {kind:'home-run',runs,bases}; if (runs>0) return {kind:'score',runs,bases}; if (bases>0) return {kind:'hit',runs:0,bases}; if (transition.actionResult==='バント成功') return {kind:'bunt',runs:0,bases:0}; return {kind:'none',runs:0,bases:0}; }
     // 推移のアウト・走者・得点はプレー直前の状況で記録されるため、次の推移からプレー直後の状況を求める。
     function resolvePlayOutcomes(gameTransitions) { return gameTransitions.map((transition,index)=>{ const next=gameTransitions[index+1]; const sameInning=next !== undefined && next.inning === transition.inning; return {...transition, scoreBefore:transition.cumulativeScore, cumulativeScore:next === undefined ? transition.cumulativeScore : next.cumulativeScore, outCount:sameInning ? next.outCount : 3, runnerState:sameInning ? next.runnerState : transition.runnerState}; }); }
     function annotateEffects(annotated) { return annotated.map((transition,index)=>({...transition,effect:classifyEffect(transition,transition.scoreBefore),direction:BALL_DIRECTIONS[index % BALL_DIRECTIONS.length]})); }
-    const headlines = {'home-run':effect=>effect.runs===4?'GRAND SLAM!':'HOME RUN!', score:effect=>effect.bases>0?'タイムリー!':'得点!', hit:effect=>HIT_HEADLINES[effect.bases], none:()=>''};
+    const headlines = {'home-run':effect=>effect.runs===4?'GRAND SLAM!':'HOME RUN!', score:effect=>effect.bases>0?'タイムリー!':'得点!', hit:effect=>HIT_HEADLINES[effect.bases], bunt:()=>'バント成功!', none:()=>''};
     function element(tag, className, text) { const node=document.createElement(tag); node.className=className; if (text !== undefined) node.textContent=text; return node; }
     function buildFireworks() { return Array.from({length:FIREWORK_BURSTS},(_,burstIndex)=>{ const burst=element('span',`firework firework-${burstIndex}`); for (let sparkIndex=0; sparkIndex < FIREWORK_SPARKS; sparkIndex+=1) { const spark=element('span','spark'); spark.style.setProperty('--angle',`${sparkIndex * 360 / FIREWORK_SPARKS}deg`); burst.append(spark); } return burst; }); }
     function buildFrame(transition) {
@@ -38,6 +42,7 @@
       [['second',layout.second],['first',layout.first],['third',layout.third]].forEach(([base,occupied])=>{ const marker=document.createElement('span'); marker.className=`base base-${base}${occupied?' occupied':''}`; diamond.append(marker); });
       const batter=document.createElement('span'); batter.className='batter-order'; batter.textContent=`${transition.battingOrder}番打者`; diamond.append(batter);
       if (effect.bases > 0) diamond.append(element('span',`ball ball-${transition.direction}`),element('span',`runner runner-${effect.bases}`));
+      if (effect.kind === 'bunt') diamond.append(element('span','ball ball-bunt'));
       if (effect.kind === 'score') diamond.append(element('span','runner runner-home'));
       if (effect.kind === 'home-run') diamond.append(...buildFireworks());
       if (effect.runs > 0) diamond.append(element('span','score-burst',`+${effect.runs}点`));
@@ -47,11 +52,14 @@
       if (effect.kind === 'home-run') frame.append(element('span','flash'));
       return frame;
     }
+    function applyPlaybackRate(frame) { frame.getAnimations({subtree:true}).forEach(animation=>{ animation.playbackRate=1 / PLAYBACK_SPEED_MULTIPLIERS[playbackSpeed]; }); }
+    function selectPlaybackSpeed(speed) { playbackSpeed=speed; speedOptions.forEach(option=>option.setAttribute('aria-pressed',String(option.dataset.speed === playbackSpeed))); const frame=frameStage.querySelector('.frame'); if (frame) applyPlaybackRate(frame); }
+    speedOptions.forEach(option=>option.addEventListener('click',()=>selectPlaybackSpeed(option.dataset.speed)));
     function stopFramePlayback() { if (frameTimer !== null) { clearTimeout(frameTimer); frameTimer=null; } }
     function playFrames(annotated) {
       stopFramePlayback();
       let index=0;
-      const show=()=>{ const transition=annotated[index]; const {effect}=transition; frameStage.replaceChildren(buildFrame(transition)); renderLineScore(annotated, index + 1); index+=1; if (index >= annotated.length) { frameTimer=null; return; } frameTimer=setTimeout(show, frameDurations[effect.kind]); };
+      const show=()=>{ const transition=annotated[index]; const {effect}=transition; const frame=buildFrame(transition); frameStage.replaceChildren(frame); applyPlaybackRate(frame); renderLineScore(annotated, transition.inning); index+=1; const delay=frameDurations[effect.kind] * PLAYBACK_SPEED_MULTIPLIERS[playbackSpeed]; if (index >= annotated.length) { frameTimer=setTimeout(()=>{ frameTimer=null; renderLineScore(annotated, null); }, delay); return; } frameTimer=setTimeout(show, delay); };
       show();
     }
     const REGULATION_INNINGS = 9;
@@ -62,7 +70,7 @@
       const headRow=document.createElement('tr'); const bodyRow=document.createElement('tr');
       headRow.append(element('th','line-score-team')); const team=element('th','line-score-team','自チーム'); team.scope='row'; bodyRow.append(team);
       for (let inning=1; inning <= inningCount; inning+=1) {
-        const th=element('th','',String(inning)); th.scope='col'; headRow.append(th);
+        const th=element('th',inning === currentInning ? 'is-current' : '',String(inning)); th.scope='col'; headRow.append(th);
         const runs=summary.innings.get(inning);
         bodyRow.append(element('td',inning === currentInning ? 'is-current' : '',runs === undefined ? '' : String(runs)));
       }
@@ -72,11 +80,8 @@
       table.append(thead,tbody);
       return table;
     }
-    function renderLineScore(annotated, playedCount) {
-      const played=annotated.slice(0, playedCount);
-      const inningCount=Math.max(REGULATION_INNINGS, annotated[annotated.length - 1].inning);
-      lineScore.replaceChildren(buildLineScore(summarizeLineScore(played), inningCount, played[played.length - 1].inning));
-    }
+    // スコアボードは再生前から試合全体の結果を表示し、再生中のイニングだけを強調する。
+    function renderLineScore(annotated, currentInning) { lineScore.replaceChildren(buildLineScore(summarizeLineScore(annotated), Math.max(REGULATION_INNINGS, annotated[annotated.length - 1].inning), currentInning)); }
     function buildOrderTable(annotated) {
       const plateAppearances = annotated.filter(t=>!t.actionResult.startsWith('盗塁'));
       const innings = [...new Set(plateAppearances.map(t=>t.inning))].sort((a,b)=>a-b);

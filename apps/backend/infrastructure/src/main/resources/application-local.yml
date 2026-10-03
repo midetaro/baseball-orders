@@ -10,3 +10,4 @@ baseball-orders:
       hit-frame-duration-millis: 1800
       score-frame-duration-millis: 2200
       home-run-frame-duration-millis: 3600
+      bunt-frame-duration-millis: 1600
