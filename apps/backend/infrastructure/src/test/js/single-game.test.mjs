@@ -78,12 +78,6 @@ assert.match(
   'スマホ幅では打順入力と結果を縦に並べる'
 );
 
-// --- PC入力欄の画面デザイン変更（issue #124: Figmaデザインに合わせたPC専用の2カラム配置） ---
-assert.match(
-  css,
-  /@media \(min-width: 761px\)\s*\{\s*\.simulation-workspace\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(0,\s*1fr\);/,
-  'PC幅（761px以上）では打順入力と結果を2カラムで横並びにする'
-);
 assert.ok(
   html.includes('<div class="section-actions">'),
   '打順入力の実行ボタンとトグル操作群を分離してPCで折り返せるようにする'
@@ -94,35 +88,65 @@ assert.match(
   'PC幅では操作トグル群を見出し行の下に折り返して配置する'
 );
 
-// --- 実行後に打順入力欄を自動で折りたたみ、結果を見やすくする ---
+// --- / と機能的に共通する表示をそろえる（issue #139） ---
+const simulationHtml = readFileSync(new URL('../../main/resources/templates/simulation.html', import.meta.url), 'utf8');
+const simulationCss = readFileSync(new URL('../../main/resources/static/css/simulation.css', import.meta.url), 'utf8');
+function cssRule(source, selector) {
+  const start = source.indexOf(`\n        ${selector} {`);
+  assert.ok(start >= 0, `${selector} のスタイルが存在する`);
+  return source.slice(start, source.indexOf('}', start) + 1);
+}
+assert.ok(!css.includes('header::before') && !css.includes('BASEBALL ORDER LAB'), 'ヘッダーに / にない装飾ラベルを表示しない');
+for (const selector of ['main', 'header', 'h1', 'header .status', '.view-tabs', '.view-tab', '.view-tab-step', '.view-tab[aria-selected="true"]', '.view-tab[aria-selected="true"] .view-tab-step', 'section[hidden]', '.section-head', '.order', '.columns, .slot', 'input, select', '.bunt-toggle', '#feedback', '.result-head .hint', '.result-actions']) {
+  assert.equal(cssRule(css, selector), cssRule(simulationCss, selector), `${selector} の表示を / とそろえる`);
+}
 assert.ok(
-  html.includes('id="lineup-body"'),
-  '打順入力欄を折りたたみ可能な領域にする'
+  html.includes('<nav aria-label="画面切り替え" class="view-tabs" role="tablist">'),
+  '/ と同じく打順入力と試合結果を切り替えるタブを用意する'
 );
 assert.ok(
-  html.includes('id="toggle-lineup"'),
-  '打順入力欄の開閉トグルボタンを用意する'
+  html.includes('<button aria-controls="input-view" aria-selected="true" class="view-tab" id="tab-input" role="tab" type="button"><span class="view-tab-step">1</span>打順入力</button>'),
+  '初期表示では打順入力タブを選択する'
 );
 assert.ok(
-  js.includes('function setLineupCollapsed('),
-  '折りたたみ状態を切り替える関数を用意する'
+  html.includes('<button aria-controls="results" aria-selected="false" class="view-tab" disabled id="tab-results" role="tab" type="button"><span class="view-tab-step">2</span>試合結果</button>'),
+  '結果が得られるまで試合結果タブを選択できない'
+);
+assert.ok(html.includes('<section aria-labelledby="order-heading" id="input-view" role="tabpanel">'), '打順入力をタブパネルにする');
+assert.ok(
+  html.includes('<section aria-labelledby="results-heading" hidden id="results" role="tabpanel">'),
+  '初期表示では試合結果タブパネルを隠す'
+);
+assert.ok(html.includes('<h2 id="results-heading">試合結果</h2>'), '結果パネルの見出しを / と同じ「試合結果」にする');
+assert.ok(html.includes('id="result-feedback" role="status"'), '結果パネルの見出し下に実行結果の状態を表示する');
+assert.ok(html.includes('<button class="all-toggle" id="edit-lineup" type="button">打順を編集する</button>'), '結果パネルから打順入力へ戻れる');
+assert.ok(!html.includes('id="toggle-lineup"') && !html.includes('入力欄を閉じる'), '「入力欄を閉じる」ボタンを表示しない');
+assert.ok(!html.includes('id="lineup-body"'), '打順入力欄を折りたたみ領域にしない');
+assert.ok(!js.includes('setLineupCollapsed') && !js.includes('lineupBody'), '打順入力欄の折りたたみ処理を持たない');
+assert.ok(js.includes('function showView(resultsVisible)'), '/ と同じくタブの表示を切り替える関数を用意する');
+assert.ok(
+  js.includes("tabInput.addEventListener('click',()=>showView(false));") &&
+    js.includes("tabResults.addEventListener('click',()=>showView(true));") &&
+    js.includes("editLineup.addEventListener('click',()=>showView(false));"),
+  'タブと「打順を編集する」で表示を切り替える'
 );
 assert.ok(
-  js.includes("toggleLineup.addEventListener('click',()=>setLineupCollapsed(!lineupBody.hidden))"),
-  'トグルボタンで開閉を手動切り替えできる'
+  js.includes('renderGame(data.transitions);hasResults=true;showView(true);'),
+  '1試合実行が成功したら試合結果タブへ切り替える'
 );
 assert.ok(
-  js.includes('renderGame(data.transitions);setLineupCollapsed(true);'),
-  '1試合実行が成功したら打順入力欄を自動で折りたたむ'
+  js.includes('submit.disabled=inFlight || !complete;') &&
+    js.includes('tabInput.disabled=inFlight; tabResults.disabled=inFlight || !hasResults; editLineup.disabled=inFlight;'),
+  '実行中はタブと「打順を編集する」を無効にし、結果が得られるまで試合結果タブを無効にする'
 );
 assert.ok(
-  js.includes('submit.disabled=inFlight || !complete || lineupBody.hidden;'),
-  '打順入力欄が閉じている間は1試合実行ボタンを押せなくする'
+  js.includes("resultFeedback.className='hint success';resultFeedback.textContent='試合が終了しました。';"),
+  '実行成功の状態を試合結果パネルの見出し下に表示する'
 );
+assert.ok(simulationHtml.includes('<nav aria-label="画面切り替え" class="view-tabs" role="tablist">'), '/ も同じタブ構成である');
 
 // --- 打順入力欄の横スクロール解消（数値入力の余白削減とスマホ表示の一行化） ---
 assert.match(css, /\.order\s*\{\s*width:\s*max-content;\s*padding:/, '入力欄を親幅いっぱいに広げずコンパクトにする');
-assert.match(css, /grid-template-columns:\s*38px\s+repeat\(2,\s*60px\)\s+118px\s+78px\s+78px/, '数値入力列の余白を詰めて幅を最小限にする');
 assert.ok(css.includes('input[type="number"]::-webkit-inner-spin-button'), '数値入力のスピンボタンを除去して余白を詰める');
 assert.ok(js.includes('function fieldWrapper('), '各入力欄をキャプション付きのフィールドとして構成する');
 assert.match(css, /\.field-caption\s*\{\s*display:\s*none;\s*\}/, '通常幅では列見出しと入力キャプションを重複表示しない');
@@ -135,7 +159,7 @@ assert.ok(js.includes("caption.className='toggle-label'"), 'バント・盗塁�
 assert.ok(js.includes("button.setAttribute('aria-label',`${label}: ${enabled?'する':'しない'}`)"), '項目名を省略しても読み上げではトグルの項目名と状態を伝える');
 assert.ok(js.includes("state.className='toggle-state'"), 'トグルの状態を項目名と別要素にして語の途中で折り返さないようにする');
 assert.match(css, /\.toggle-label, \.toggle-state\s*\{\s*white-space:\s*nowrap;\s*\}/, 'トグルの項目名と状態はそれぞれ語の途中で折り返さない');
-assert.match(css, /\.bunt-toggle\s*\{[^}]*flex-wrap:\s*wrap;\s*column-gap:\s*\.3em;/, '幅が足りない場合は項目名と状態の間で折り返し、横並びでは間に余白を空ける');
+assert.match(css, /\.bunt-toggle\s*\{[^}]*column-gap:\s*\.3em;/, 'トグルの項目名と状態の間に余白を空ける');
 assert.match(mobileCss, /\.toggle-label\s*\{\s*display:\s*none;\s*\}/, 'スマホ幅では列見出しと重複するトグルの項目名を省略して1行で収める');
 
 // --- バント成功率・盗塁成功率の入力欄を削除する（1試合実行画面） ---
