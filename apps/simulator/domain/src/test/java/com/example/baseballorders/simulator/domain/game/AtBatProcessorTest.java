@@ -96,7 +96,11 @@ class AtBatProcessorTest {
         var context = GameStateTestFixture.game(new LineUpEntity(List.of(batter)));
 
         // when
-        var completed = new AtBatProcessor().process(context.inningStateContext(), batter);
+        boolean completed;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.8f);
+            completed = new AtBatProcessor().process(context.inningStateContext(), batter);
+        }
 
         // then
         assertAll(
