@@ -35,12 +35,16 @@ function extractFunction(name) {
 const ranges = lineupFormJs.match(/const ranges = \{[^}]*\};/)[0];
 const valid = new Function(`${ranges}\n${extractFunction('valid')}\nreturn valid;`)();
 const player = (hitAverage, sluggish) => ({hitAverage, sluggish, buntEnabled:true, stealEnabled:false, personality:'DEFAULT'});
-assert.equal(valid(player('0.35', '0.40')), true, '範囲内の出塁率・長打率は有効にする');
-assert.equal(valid(player('0.61', '0.40')), false, '出塁率が上限を超えたら無効にする');
+assert.equal(valid(player('0.35', '0.40')), true, '範囲内の打率・長打率は有効にする');
+assert.equal(valid(player('0.61', '0.40')), false, '打率が上限を超えたら無効にする');
 assert.equal(valid(player('0.35', '0.09')), false, '長打率が下限を下回ったら無効にする');
 assert.equal(valid(player('', '0.40')), false, '未入力の項目があれば無効にする');
 const formatPercentage = new Function(`${extractFunction('formatPercentage')}\nreturn formatPercentage;`)();
 assert.equal(formatPercentage('0.3'), '0.30', '入力値を小数第2位に整形する');
 assert.equal(formatPercentage(''), '', '未入力はそのまま残す');
+
+assert.ok(lineupFormJs.includes("key:'hitAverage',label:'打率',min:0.01,max:0.6"), '打率のラベルと既存の範囲を使用する');
+assert.ok(lineupFormJs.includes('打率は0.01〜0.6、長打率は0.1〜0.6の範囲'), '入力エラーを打率として案内する');
+assert.ok(!lineupFormJs.includes('出塁率'), '入力ラベルとエラーに旧名称を残さない');
 
 console.log('PASS: 打順入力フォームの共通化');

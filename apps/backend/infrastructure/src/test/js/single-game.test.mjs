@@ -8,6 +8,9 @@ const lineupFormJs = readFileSync(new URL('../../main/resources/static/js/lineup
 // 画面で実行されるのは共通の打順入力フォームと画面固有スクリプトを合わせたコードである。
 const js = `${lineupFormJs}\n${pageJs}`;
 
+assert.ok(html.includes('<span>打率</span>'), '1試合画面に打率の列見出しを表示する');
+assert.ok(!html.includes('出塁率'), '1試合画面に旧入力名を残さない');
+
 // --- HTMLとCSSのファイル分離 ---
 assert.ok(!html.includes('<style>'), '1試合実行画面のCSSをインラインで保持しない');
 assert.ok(html.includes('<link rel="stylesheet" href="/css/single-game.css">'), '1試合実行画面から分離したCSSファイルを読み込む');

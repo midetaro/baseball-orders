@@ -8,11 +8,11 @@ public sealed interface HittingStrategy
                 ShortDistanceHittingStrategy {
 
     /**
-     * 打者の打撃成績と戦略に基づいて、一打席の打撃結果を決定する。
+     * 打者の打撃成績と戦略に基づいて、一打席の打撃結果を決定する。四球確率は打率とは独立した設定値を使う。
      *
-     * @param onBasePercentage 打者の出塁率
+     * @param battingAverage 四球を除く打数に対する安打の割合（打率）
      * @param sluggish 打者の長打率
      * @return 一打席の打撃結果
      */
-    BattingResult batting(float onBasePercentage, float sluggish);
+    BattingResult batting(float battingAverage, float sluggish);
 }

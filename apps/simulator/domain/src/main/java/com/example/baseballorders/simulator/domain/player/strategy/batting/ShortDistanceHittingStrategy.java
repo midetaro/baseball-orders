@@ -19,13 +19,12 @@ public final class ShortDistanceHittingStrategy implements HittingStrategy {
     }
 
     @Override
-    public BattingResult batting(float onBasePercentage, float sluggish) {
+    public BattingResult batting(float battingAverage, float sluggish) {
 
         float random = RandomGenerator.nextFloat();
-        float singleProbability = onBasePercentage * (1 - sluggish);
-        float doubleProbability = onBasePercentage * sluggish;
+        float singleProbability = battingAverage * (1 - sluggish);
+        float doubleProbability = battingAverage * sluggish;
 
-        return selector.select(
-                random, onBasePercentage, singleProbability, doubleProbability, 0, 0);
+        return selector.select(random, battingAverage, singleProbability, doubleProbability, 0, 0);
     }
 }

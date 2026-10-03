@@ -137,22 +137,23 @@ static Stream<Arguments> battingTestCases() {
 **1 区間 1 ケースでは不十分**。各区間について
 「下端（含む）」と「直前（排他）」の 2 点を必ず置く。そうしないと閾値の移動を検出できない。
 
-### 3.2 確率表（`obp=0.400 / slg=0.550` の基準打者、`MiddleDistanceHittingStrategy`）
+### 3.2 確率表（`打率=0.400 / 長打率=0.550` の基準打者、`MiddleDistanceHittingStrategy`）
 
 ```
-extraBase = slg - obp = 0.150
-double = triple = homer = 0.025, single = 0.325, walk = min(0.05, obp) = 0.050
+extraBase = 長打率 - 打率 = 0.150
+double = triple = homer = 0.025, single = 0.325, walk = 0.050
+hit = (1 - walk) × 打率 = 0.380, onBase = walk + hit = 0.430
 ```
 
 | 乱数区間 | 結果 |
 | --- | --- |
 | `[0.000, 0.050)` | `WALK` |
-| `[0.050, 0.334375)` | `HIT_SINGLE` |
-| `[0.334375, 0.35625)` | `HIT_DOUBLE` |
-| `[0.35625, 0.378125)` | `HIT_TRIPLE` |
-| `[0.378125, 0.400)` | `HIT_HOMER` |
-| `[0.400, 0.550)` | `STRIKEOUT` |
-| `[0.550, 1.000]` | `BATTED_OUT` |
+| `[0.050, 0.35875)` | `HIT_SINGLE` |
+| `[0.35875, 0.3825)` | `HIT_DOUBLE` |
+| `[0.3825, 0.40625)` | `HIT_TRIPLE` |
+| `[0.40625, 0.430)` | `HIT_HOMER` |
+| `[0.430, 0.5725)` | `STRIKEOUT` |
+| `[0.5725, 1.000]` | `BATTED_OUT` |
 
 このような表を **`HittingStrategy` 3 種 × 代表成績、`BuntStrategy` 3 種 × `OutCount` 4 値、
 `StealStrategy` 3 種 × 二塁/三塁** について作り、テストの `@DisplayName` に閾値を書く。
@@ -165,8 +166,8 @@ double = triple = homer = 0.025, single = 0.325, walk = min(0.05, obp) = 0.050
 - `StandardStealStrategy` / `EagerStealStrategy` は
   `if (r < NOT_TRY) ... else if (NOT_TRY < r && r < successProbability) ... else FAILURE`
   という構造のため、**`r` がちょうど `NOT_TRY` と等しいときは `FAILURE`** になる。
-- `BattingResultSelector` は最終の正重みで `cumulative = onBasePercentage` を使うため、
-  **`r == onBasePercentage` は安打にならず `STRIKEOUT` 側へ落ちる**。
+- `BattingResultSelector` は最終の正重みで `cumulative = walk + (1 - walk) × 打率` を使うため、
+  **`r` がこの出塁境界と等しいと安打にならず `STRIKEOUT` 側へ落ちる**。
 - `ShortDistanceHittingStrategy` は triple / homer の重みが 0 なので、
   **`HIT_TRIPLE` / `HIT_HOMER` は到達不能**。これを「到達しないこと」のテストとして書く。
 - 盗塁の成功率は**走者本人**の `stealSuccessRate` と戦略を使う（打者ではない）。
@@ -215,16 +216,16 @@ try (ScriptedRandom random = ScriptedRandom.of(Draws.SINGLE, Draws.BUNT_SUCCESS,
 
 ### 4.2 `Draws`：名前付き乱数定数
 
-基準打者（`obp=0.400, slg=0.550, bunt=0.700, steal=0.800`、
+基準打者（`打率=0.400, 長打率=0.550, bunt=0.700, steal=0.800`、
 `MiddleDistance` / `StandardBunt` / `StandardSteal`）に対する値。
 
 | 定数 | 値 | 意味 |
 | --- | --- | --- |
 | `WALK` | `0.04f` | 四球 |
 | `SINGLE` | `0.30f` | 単打 |
-| `DOUBLE` | `0.34f` | 二塁打 |
-| `TRIPLE` | `0.36f` | 三塁打 |
-| `HOMER` | `0.39f` | 本塁打 |
+| `DOUBLE` | `0.37f` | 二塁打 |
+| `TRIPLE` | `0.395f` | 三塁打 |
+| `HOMER` | `0.42f` | 本塁打 |
 | `STRIKEOUT` | `0.45f` | 三振 |
 | `BATTED_OUT` | `0.60f` | 凡退 |
 | `ADVANCE` | `0.05f` | 凡退時に先頭走者が進む（1・2 塁 20% / 3 塁 10% すべて満たす） |
@@ -527,8 +528,8 @@ application/src/test/java/.../application/
 
 1. 盗塁戦略の `r == NOT_TRY` がちょうどの場合に `FAILURE` になる件（§3.3）。
    → `StandardStealStrategyTest` / `EagerStealStrategyTest` の「試行境界と等しく失敗になる」ケース。
-2. `BattingResultSelector` の `r == onBasePercentage` が `STRIKEOUT` になる件（§3.3）。
-   → 各 `*HittingStrategyTest` の「三振区間の下端で出塁率と等しい」ケース。
+2. `BattingResultSelector` の `r == walk + (1 - walk) × 打率` が `STRIKEOUT` になる件（§3.3）。
+   → 各 `*HittingStrategyTest` の「出塁境界と等しい」ケース。
 3. `ShortDistanceHittingStrategy` で三塁打・本塁打が到達不能な件。
    → `ShortDistanceHittingStrategyTest#neverProducesTripleOrHomer`。
 4. 盗塁でイニングが変わった打席は未完了扱い（`false`）となり、

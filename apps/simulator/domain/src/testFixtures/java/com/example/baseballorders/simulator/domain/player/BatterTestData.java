@@ -29,7 +29,7 @@ public final class BatterTestData {
      *
      * <p>1 番打者は本塁打、2 番以降は三振になるので、この乱数だけで打順の位置が判別できる。
      */
-    public static final float DISTINCT_LINE_UP_DRAW = 0.35f;
+    public static final float DISTINCT_LINE_UP_DRAW = 0.36f;
 
     private BatterTestData() {}
 

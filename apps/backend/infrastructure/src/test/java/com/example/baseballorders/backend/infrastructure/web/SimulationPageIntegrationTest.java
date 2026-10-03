@@ -17,7 +17,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 /**
  * 実物: HTTPサーバー、SimulationPageController、SimulationGuidePageController、Thymeleaf、静的リソース配信。 モック:
  * SqsTemplate。 担保する疎通: ログインなしのHTTP GET / -> SimulationPageController -> Thymeleaf HTML応答。HTTP GET
- * /large-scale および /single-game -> SimulationPageController -> Thymeleaf HTML応答も担保する。分離したHTTP GET
+ * /large-scale および /single-game -> SimulationPageController -> Thymeleaf HTML応答、HTTP GET
+ * /simulation-guide -> SimulationGuidePageController -> Thymeleaf HTML応答も担保する。分離したHTTP GET
  * /css/simulation.css、/css/single-game.css、/js/lineup-form.js、/js/simulation.js および
  * /js/single-game.js -> 静的リソース配信 -> CSS・JS応答も担保する。担保しないもの: SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
  */
@@ -107,6 +108,8 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("打順入力")),
+                () -> assertTrue(response.body().contains("<span>打率</span>")),
+                () -> assertFalse(response.body().contains("出塁率")),
                 () -> assertTrue(response.body().contains("<title>打順監督</title>")),
                 () -> assertTrue(response.body().contains("<h1>打順監督</h1>")),
                 () -> assertTrue(response.body().contains("1試合を実行")),
@@ -256,7 +259,7 @@ class SimulationPageIntegrationTest {
                                                 "<script src=\"/js/lineup-form.js\"></script>\n"
                                                         + "<script src=\"/js/simulation.js\"></script>")),
                 () -> assertTrue(jsResponse.body().contains("endpoint:'/simulations'")),
-                () -> assertTrue(response.body().contains("出塁率")),
+                () -> assertTrue(response.body().contains("打率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () ->
                         assertContainsPattern(
@@ -271,7 +274,7 @@ class SimulationPageIntegrationTest {
                                 lineupFormResponse
                                         .body()
                                         .matches(
-                                                "(?s).*key:'hitAverage',label:'出塁率',min:\\d+\\.\\d+,max:\\d+\\.\\d+.*")),
+                                                "(?s).*key:'hitAverage',label:'打率',min:\\d+\\.\\d+,max:\\d+\\.\\d+.*")),
                 () ->
                         assertTrue(
                                 lineupFormResponse
@@ -468,7 +471,11 @@ class SimulationPageIntegrationTest {
                 () -> assertFalse(response.body().contains("ログイン")),
                 () -> assertContainsPattern(response.body(), "盗塁判定\\s*→\\s*バント判定\\s*→\\s*通常打撃"),
                 () -> assertTrue(response.body().contains("各選手の入力項目")),
-                () -> assertTrue(response.body().contains("出塁率")),
+                () -> assertTrue(response.body().contains("安打数を打数で割った割合")),
+                () -> assertTrue(response.body().contains("四球は打数に含めず、別に判定します")),
+                () -> assertTrue(response.body().contains("本塁打・四球・三振・凡打のいずれか")),
+                () -> assertFalse(response.body().contains("出塁率")),
+                () -> assertTrue(response.body().contains("打率")),
                 () -> assertTrue(response.body().contains("長打率")),
                 () -> assertFalse(response.body().contains("バント成功率")),
                 () -> assertFalse(response.body().contains("<strong>0.00〜0.95</strong>")),
@@ -479,6 +486,8 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("盗塁は通常の頻度、バントは無死のときに試みます")),
                 () -> assertTrue(response.body().contains("長距離砲")),
                 () -> assertTrue(response.body().contains("標準より本塁打の割合が増える")),
+                () -> assertTrue(response.body().contains("安打全体の確率は変わりません")),
+                () -> assertFalse(response.body().contains("アウトも増えます")),
                 () -> assertTrue(response.body().contains("盗塁重視")),
                 () -> assertTrue(response.body().contains("標準より二塁走者の盗塁を試みやすくなります")),
                 () -> assertTrue(response.body().contains("バント重視")),
