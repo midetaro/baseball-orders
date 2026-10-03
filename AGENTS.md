@@ -336,9 +336,12 @@ A feature is not complete until all of the following are done:
   pull request's CI has succeeded. Do not report completion, mark a feature
   specification `status: done`, or close the tracking issue while CI is still
   running, unknown, or failing.
-- Check CI status with `gh pr checks <pr-number>` (add `--watch` to block until
-  checks finish, since this is monitoring your own PR's automated checks, not
-  an unrelated interactive command). Re-check after pushing new commits.
+- Check CI status with `gh pr checks <pr-number> --watch --interval 60`, which
+  blocks until checks finish while polling once per minute (this is monitoring
+  your own PR's automated checks, not an unrelated interactive command). To
+  avoid needless API traffic, do not poll more often than once a minute: do not
+  use `--watch` without `--interval 60`, and do not loop `gh pr checks` in
+  shorter intervals. Re-check the same way after pushing new commits.
 - If CI fails, continue the same task: inspect the failure with `gh run view
   --log-failed` (or the equivalent check output), fix the root cause, push a
   new commit to the same branch, and re-check CI. Do not amend or force-push to
