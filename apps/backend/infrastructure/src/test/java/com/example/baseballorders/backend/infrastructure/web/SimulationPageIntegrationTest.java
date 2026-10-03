@@ -388,7 +388,8 @@ class SimulationPageIntegrationTest {
                                                         + "<script src=\"/js/simulation.js\"></script>")),
                 () -> assertTrue(jsResponse.body().contains("endpoint:'/simulations'")),
                 () -> assertTrue(response.body().contains("打率")),
-                () -> assertTrue(response.body().contains("長打率")),
+                () -> assertFalse(response.body().contains("長打率")),
+                () -> assertFalse(lineupFormResponse.body().contains("sluggish")),
                 () ->
                         assertContainsPattern(
                                 lineupFormResponse.body(),
@@ -396,19 +397,13 @@ class SimulationPageIntegrationTest {
                 () ->
                         assertContainsPattern(
                                 lineupFormResponse.body(),
-                                "hitAverage:'\\d+\\.\\d{2}',sluggish:'\\d+\\.\\d{2}'"),
+                                "hitAverage:'\\d+\\.\\d{2}',buntEnabled"),
                 () ->
                         assertTrue(
                                 lineupFormResponse
                                         .body()
                                         .matches(
                                                 "(?s).*key:'hitAverage',label:'打率',min:\\d+\\.\\d+,max:\\d+\\.\\d+.*")),
-                () ->
-                        assertTrue(
-                                lineupFormResponse
-                                        .body()
-                                        .matches(
-                                                "(?s).*key:'sluggish',label:'長打率',min:\\d+\\.\\d+,max:\\d+\\.\\d+.*")),
                 () -> assertFalse(jsResponse.body().contains("盗塁成功率")),
                 () -> assertFalse(jsResponse.body().contains("バント成功率")),
                 () -> assertFalse(jsResponse.body().contains("stealSuccessRate")),
@@ -456,7 +451,7 @@ class SimulationPageIntegrationTest {
                 () ->
                         assertContainsPattern(
                                 cssResponse.body(),
-                                "grid-template-columns:\\d+px\\s+repeat\\(\\d+,\\s*\\d+px\\)\\s+\\d+px\\s+\\d+px"),
+                                "grid-template-columns:\\d+px\\s+\\d+px\\s+\\d+px\\s+\\d+px\\s+\\d+px"),
                 () -> assertTrue(lineupFormResponse.body().contains("function fieldWrapper(")),
                 () ->
                         assertTrue(
@@ -608,7 +603,8 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("本塁打・四球・三振・凡打のいずれか")),
                 () -> assertFalse(response.body().contains("<dt>出塁率</dt>")),
                 () -> assertTrue(response.body().contains("打率")),
-                () -> assertTrue(response.body().contains("長打率")),
+                () -> assertFalse(response.body().contains("長打率")),
+                () -> assertTrue(response.body().contains("単打3:二塁打2")),
                 () -> assertFalse(response.body().contains("バント成功率")),
                 () -> assertFalse(response.body().contains("<strong>0.00〜0.95</strong>")),
                 () -> assertFalse(response.body().contains("盗塁成功率")),
@@ -616,15 +612,15 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("性格による違い")),
                 () -> assertFalse(response.body().contains("<dt>標準</dt>")),
                 () -> assertTrue(response.body().contains("<dt>単打マン</dt>")),
-                () -> assertTrue(response.body().contains("長打は二塁打までに限られます")),
+                () -> assertTrue(response.body().contains("三塁打・本塁打は打ちません")),
                 () -> assertTrue(response.body().contains("<dt>中距離砲</dt>")),
-                () -> assertTrue(response.body().contains("二塁打・三塁打・本塁打へ均等に配分します")),
+                () -> assertTrue(response.body().contains("単打15:二塁打1:三塁打1:本塁打1")),
                 () -> assertTrue(response.body().contains("長距離砲")),
                 () -> assertTrue(response.body().contains("中距離砲より本塁打の割合が増える")),
                 () -> assertTrue(response.body().contains("<dt>高出塁率</dt>")),
                 () -> assertTrue(response.body().contains("四球の確率が<strong>10%</strong>")),
                 () -> assertTrue(response.body().contains("盗塁は通常の頻度、バントは無死のときに試みます")),
-                () -> assertTrue(response.body().contains("安打全体の確率は変わりません")),
+                () -> assertTrue(response.body().contains("安打全体の確率は打率で決まり、変わりません")),
                 () -> assertFalse(response.body().contains("アウトも増えます")),
                 () -> assertTrue(response.body().contains("盗塁重視")),
                 () -> assertTrue(response.body().contains("他の性格より二塁走者の盗塁を試みやすくなります")),

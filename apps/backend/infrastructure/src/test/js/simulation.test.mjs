@@ -43,21 +43,20 @@ assert.ok(!html.includes('一番〜九番として送信します。'), '不要�
 assert.ok(js.includes("const lineup = ["), '打順ごとの役割に応じた初期値を用意する');
 assert.ok(js.includes('position.textContent=`${index+1}番`'), '打順は「{数字}番」の固定表示にする');
 assert.ok(!js.includes('番打者'), '打順表示に「打者」を付けない');
-assert.ok(js.includes("hitAverage:'0.35',sluggish:'0.35'"), '一、二番に制約内の打率・長打率を設定する');
-assert.ok(js.includes("hitAverage:'0.35',sluggish:'0.50'"), '中軸に制約内の打率・高長打率を設定する');
-assert.ok(js.includes("hitAverage:'0.28',sluggish:'0.40'"), '六〜九番に低打率・標準長打率を設定する');
+assert.ok(js.includes("hitAverage:'0.35',buntEnabled"), '一〜五番に制約内の打率を設定する');
+assert.ok(js.includes("hitAverage:'0.28',buntEnabled"), '六〜九番に低打率を設定する');
 assert.ok(html.includes('得点サマリー'), '得点統計を独立したグループとして表示する');
 assert.ok(html.includes('<span>打率</span>'), '打率を入力項目として表示する');
 assert.ok(!html.includes('出塁率'), '旧入力名を表示しない');
 assert.ok(js.includes("label:'打率'"), '入力項目に打率を表示する');
-assert.ok(js.includes("hitAverage:'0.28',sluggish:'0.40'"), '下位打線に制約内の打率・長打率を設定する');
+assert.ok(!js.includes('sluggish'), 'シミュレーション画面のスクリプトに長打率の項目を残さない');
+assert.ok(!html.includes('長打率'), 'シミュレーション画面に長打率を表示しない');
 assert.ok(!js.includes('buntSuccessRate'), 'バント成功率の入力欄・初期値を保持しない');
 assert.ok(!js.includes('stealSuccessRate'), '盗塁成功率の入力欄・初期値を保持しない');
 assert.ok(!html.includes('バント成功率'), 'バント成功率のラベル・列見出しを表示しない');
 assert.ok(!html.includes('盗塁成功率'), '盗塁成功率のラベル・列見出しを表示しない');
 assert.ok(js.includes("function validLineup()"), '打順全体の入力制約を検証する');
 assert.ok(!js.includes("lineup.length<=0.35"), '打率の平均に上限を設けない');
-assert.ok(!js.includes("lineup.length<=0.4"), '長打率の平均に上限を設けない');
 assert.ok(js.includes("input.step='0.01'"), '数値入力は小数第2位刻みにする');
 assert.ok(js.includes("key:'hitAverage',label:'打率',min:0.01,max:0.6"), '打率の上限を60%にする');
 assert.ok(js.includes('function formatPercentage(value)'), '入力値を小数第2位に整形する');
@@ -121,7 +120,7 @@ assert.ok(html.includes('id="share-results"'), '結果をSNS共有できる操�
 assert.ok(js.includes('navigator.share'), '対応ブラウザではネイティブ共有を使う');
 assert.ok(js.includes('clipboard.writeText'), 'ネイティブ共有非対応時は共有文をコピーする');
 assert.match(css, /\.order\s*\{\s*width:\s*max-content;\s*padding:/, '入力欄を親幅いっぱいに広げずコンパクトにする');
-assert.match(css, /grid-template-columns:\s*38px\s+repeat\(2,\s*60px\)\s+118px\s+96px\s+96px/, '数値入力列は詰めつつ、バント・盗塁の切り替えは1行で読める幅にする');
+assert.match(css, /grid-template-columns:\s*38px\s+60px\s+118px\s+96px\s+96px/, '数値入力列は詰めつつ、バント・盗塁の切り替えは1行で読める幅にする');
 assert.ok(css.includes('input[type="number"]::-webkit-inner-spin-button'), '数値入力のスピンボタンを除去して余白を詰める');
 assert.ok(html.includes('class="lineup-workspace"'), '打順入力とシミュレーション操作を横並びに配置する');
 assert.match(css, /\.section-head\s*\{\s*display:\s*flex;/, '打順入力の見出しと実行操作を横並びにする');
@@ -143,7 +142,7 @@ const mobileCss = css.slice(css.indexOf('@media (max-width: 760px)'));
 assert.ok(!/\.field-caption\s*\{\s*display:\s*block;\s*\}/.test(mobileCss), 'スマホ幅でもPC幅と同じく入力キャプションを重複表示しない');
 assert.ok(!/\.columns\s*\{\s*display:\s*none;\s*\}/.test(mobileCss), 'スマホ幅でもPC幅と同じく列見出し行を表示する');
 assert.match(mobileCss, /\.order-scroll\s*\{\s*overflow-x:\s*visible;\s*\}/, 'スマホ幅では打順入力欄の横スクロールを不要にする');
-assert.match(mobileCss, /\.columns, \.slot\s*\{\s*grid-template-columns:\s*24px\s+repeat\(2,\s*minmax\(0,\s*\.8fr\)\)\s+minmax\(0,\s*1\.4fr\)\s+repeat\(2,\s*minmax\(0,\s*\.8fr\)\);/, 'スマホ幅でもPC幅と同じく打者ごとに一行で入力欄を横に並べる');
+assert.match(mobileCss, /\.columns, \.slot\s*\{\s*grid-template-columns:\s*24px\s+minmax\(0,\s*\.8fr\)\s+minmax\(0,\s*1\.4fr\)\s+repeat\(2,\s*minmax\(0,\s*\.8fr\)\);/, 'スマホ幅でもPC幅と同じく打者ごとに一行で入力欄を横に並べる');
 assert.ok(js.includes("caption.className='toggle-label'"), 'バント・盗塁トグルの項目名を別要素にして幅に応じて省略できるようにする');
 assert.ok(js.includes("button.setAttribute('aria-label',`${label}: ${enabled?'する':'しない'}`)"), '項目名を省略しても読み上げではトグルの項目名と状態を伝える');
 assert.ok(js.includes("state.className='toggle-state'"), 'トグルの状態を項目名と別要素にして語の途中で折り返さないようにする');
@@ -151,8 +150,7 @@ assert.match(css, /\.toggle-label, \.toggle-state\s*\{\s*white-space:\s*nowrap;\
 assert.match(css, /\.bunt-toggle\s*\{[^}]*column-gap:\s*\.3em;/, 'トグルの項目名と状態の間に余白を空けて1行で表示する');
 assert.match(mobileCss, /\.toggle-label\s*\{\s*display:\s*none;\s*\}/, 'スマホ幅では列見出しと重複するトグルの項目名を省略して1行で収める');
 for (const [field, minimum, maximum] of [
-  ["key:'hitAverage'", 'min:0.01', 'max:0.6'],
-  ["key:'sluggish'", 'min:0.1', 'max:0.6']
+  ["key:'hitAverage'", 'min:0.01', 'max:0.6']
 ]) {
   assert.ok(js.includes(field) && js.includes(minimum) && js.includes(maximum), `${field}の入力範囲を画面で制御する`);
 }
