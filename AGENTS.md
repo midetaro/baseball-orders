@@ -325,6 +325,18 @@ A feature is not complete until all of the following are done:
   create` and link it to the issue by including `Closes #<issue-number>` (or
   `Refs #<issue-number>` when the PR does not fully close the issue) in the PR
   body.
+- Record the tokens consumed by the working session in both the pull request
+  title and description. Immediately before `gh pr create`, run
+  `./.agents/skills/baseball-orders-development/scripts/session-token-usage.sh codex`
+  (Claude Code uses `claude` instead of `codex`). Append
+  `(tokens: <total_tokens>)` to the title, for example
+  `feat: add scoreboard (tokens: 1045549)`, and add a `## Token usage` section
+  to the description containing the script's full output. The figure includes
+  the session's subagents. When the same session later updates the pull
+  request (review or CI fixes), rerun the script and update both the title and
+  the section with `gh pr edit`, so the recorded value is the session's final
+  consumption. If the script cannot find the session, write `tokens: unknown`
+  and state the reason in the section rather than estimating a value.
 - If a `docs/features` specification document is also used for a feature that
   has a tracking issue, keep the two in sync: mark the specification
   `status: done` and close the issue together, in the same session that merges

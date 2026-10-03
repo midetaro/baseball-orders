@@ -41,6 +41,15 @@ personally want that exact behavior, opt in yourself, either by launching with
 `{"permissions": {"defaultMode": "bypassPermissions"}}` to your own
 `.claude/settings.local.json` (already git-ignored).
 
+### Pull request token usage
+
+Where `AGENTS.md` requires the consumed tokens in the pull request title and
+description, run
+`./.agents/skills/baseball-orders-development/scripts/session-token-usage.sh claude`.
+It reads this session's transcript under `~/.claude/projects/` together with its
+subagent transcripts, counting input, output, cache-creation, and cache-read
+tokens once per API response.
+
 ### Session boundary
 
 Where `AGENTS.md` recommends `/exit && codex` for a fresh session between
