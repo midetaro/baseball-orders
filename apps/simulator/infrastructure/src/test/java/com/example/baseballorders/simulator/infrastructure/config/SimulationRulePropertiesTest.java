@@ -64,6 +64,7 @@ class SimulationRulePropertiesTest {
                 () -> assertEquals(8f, rules.longDistanceHitting().tripleDivisor()),
                 () -> assertEquals(2f, rules.longDistanceHitting().homeRunDivisor()),
                 () -> assertEquals(1f, rules.longDistanceHitting().singleReductionDivisor()),
+                () -> assertEquals(0.1f, rules.highOnBaseWalkProbability()),
                 () -> assertEquals(0.30f, rules.standardSteal().toDoubleAttemptRate()),
                 () -> assertEquals(0.10f, rules.standardSteal().toTripleAttemptRate()),
                 () -> assertEquals(0.3f, rules.eagerSteal().toDoubleAttemptRate()),
