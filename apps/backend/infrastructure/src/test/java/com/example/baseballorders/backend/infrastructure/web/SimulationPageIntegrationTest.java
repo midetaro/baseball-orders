@@ -112,6 +112,11 @@ class SimulationPageIntegrationTest {
                                                         + " href=\"/css/single-game.css\">")),
                 () -> assertEquals(200, cssResponse.statusCode()),
                 () -> assertTrue(cssResponse.body().contains(".out-count {")),
+                () -> assertTrue(cssResponse.body().contains("color-scheme: light")),
+                () -> assertTrue(cssResponse.body().contains("--paper: #f3eee2")),
+                () -> assertTrue(cssResponse.body().contains("--moss: #56704a")),
+                () -> assertFalse(cssResponse.body().contains("--cyan")),
+                () -> assertFalse(cssResponse.body().contains("--lime")),
                 () -> assertFalse(response.body().contains("<script th:inline=\"none\">")),
                 () ->
                         assertTrue(
@@ -398,8 +403,11 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("進塁バントとスクイズの成功・失敗をそれぞれ色分け")),
                 () -> assertTrue(response.body().contains("二盗成功・三盗成功・盗塁失敗を色分け")),
                 () -> assertTrue(response.body().contains("打順を組み立てる")),
-                () -> assertTrue(response.body().contains("--cyan: #25d9ff")),
-                () -> assertTrue(response.body().contains("--pink: #ff4da6")),
-                () -> assertTrue(response.body().contains("radial-gradient(circle at 15% 10%,")));
+                () -> assertTrue(response.body().contains("color-scheme: light")),
+                () -> assertTrue(response.body().contains("--paper: #f3eee2")),
+                () -> assertTrue(response.body().contains("--moss: #56704a")),
+                () -> assertTrue(response.body().contains("--clay: #bf6b45")),
+                () -> assertFalse(response.body().contains("--cyan")),
+                () -> assertFalse(response.body().contains("--pink")));
     }
 }
