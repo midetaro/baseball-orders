@@ -4,7 +4,10 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync(new URL('../../main/resources/templates/simulation.html', import.meta.url), 'utf8');
 const guideHtml = readFileSync(new URL('../../main/resources/templates/simulation-guide.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../../main/resources/static/css/simulation.css', import.meta.url), 'utf8');
-const js = readFileSync(new URL('../../main/resources/static/js/simulation.js', import.meta.url), 'utf8');
+const pageJs = readFileSync(new URL('../../main/resources/static/js/simulation.js', import.meta.url), 'utf8');
+const lineupFormJs = readFileSync(new URL('../../main/resources/static/js/lineup-form.js', import.meta.url), 'utf8');
+// 画面で実行されるのは共通の打順入力フォームと画面固有スクリプトを合わせたコードである。
+const js = `${lineupFormJs}\n${pageJs}`;
 
 // --- HTMLとCSSのファイル分離 ---
 assert.ok(!html.includes('<style>'), 'シミュレーション画面のCSSをインラインで保持しない');
@@ -13,6 +16,11 @@ assert.ok(html.includes('<link rel="stylesheet" href="/css/simulation.css">'), '
 // --- HTMLとJSのファイル分離 ---
 assert.ok(!html.includes('<script>'), 'シミュレーション画面のJSをインラインで保持しない');
 assert.ok(html.includes('<script src="/js/simulation.js"></script>'), 'シミュレーション画面から分離したJSファイルを読み込む');
+assert.ok(
+  html.includes('<script src="/js/lineup-form.js"></script>\n<script src="/js/simulation.js"></script>'),
+  '共通の打順入力フォームを画面固有スクリプトより先に読み込む'
+);
+assert.ok(pageJs.includes("startLineupForm({readyMessage:'準備完了。シミュレーションを実行できます。',runningMessage:'シミュレーション中…',endpoint:'/simulations',"), 'シミュレーション画面の文言と送信先で共通の打順入力フォームを開始する');
 
 const singleGameHtml = readFileSync(new URL('../../main/resources/templates/single-game.html', import.meta.url), 'utf8');
 
@@ -153,7 +161,7 @@ assert.ok(!js.includes('bunt_success_rate'), 'バント成功率をAPIへ送ら�
 assert.ok(!js.includes('steal_success_rate'), '盗塁成功率をAPIへ送らない');
 assert.ok(js.includes("toggle('バント',player.buntEnabled"), 'バントを使うかどうかの切り替えボタンは残す');
 assert.ok(js.includes("toggle('盗塁',player.stealEnabled"), '盗塁を使うかどうかの切り替えボタンは残す');
-assert.ok(js.includes("fetch('/simulations'"), '直接入力をシミュレーションAPIへ送る');
+assert.ok(js.includes("fetch(lineupFormConfig.endpoint,") && pageJs.includes("endpoint:'/simulations',"), '直接入力をシミュレーションAPIへ送る');
 assert.ok(!js.includes('name:'), '固定表示の打者名をAPIへ送らない');
 // --- オーガニックな配色（issue #124: 見づらいネオン配色をアースカラーへ置き換える） ---
 assert.match(css, /color-scheme:\s*light;/, '暗いネオン調ではなく明るい紙の地色を基調にする');
@@ -234,7 +242,7 @@ assert.ok(
   '入力画面と結果画面は常にどちらか一方だけを表示する'
 );
 assert.ok(
-  js.includes('renderResults(data.statistics);hasResults=true;showView(true);'),
+  pageJs.includes('onSuccess:data=>{renderResults(data.statistics);}') && lineupFormJs.includes('lineupFormConfig.onSuccess(data);hasResults=true;showView(true);'),
   'シミュレーションが成功したら結果画面へ切り替える'
 );
 assert.ok(js.includes("editLineup.addEventListener('click',()=>showView(false))"), '結果画面から打順入力画面へ戻れる');

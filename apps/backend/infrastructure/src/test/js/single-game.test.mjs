@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../../main/resources/templates/single-game.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../../main/resources/static/css/single-game.css', import.meta.url), 'utf8');
-const js = readFileSync(new URL('../../main/resources/static/js/single-game.js', import.meta.url), 'utf8');
+const pageJs = readFileSync(new URL('../../main/resources/static/js/single-game.js', import.meta.url), 'utf8');
+const lineupFormJs = readFileSync(new URL('../../main/resources/static/js/lineup-form.js', import.meta.url), 'utf8');
+// 画面で実行されるのは共通の打順入力フォームと画面固有スクリプトを合わせたコードである。
+const js = `${lineupFormJs}\n${pageJs}`;
 
 // --- HTMLとCSSのファイル分離 ---
 assert.ok(!html.includes('<style>'), '1試合実行画面のCSSをインラインで保持しない');
@@ -12,6 +15,11 @@ assert.ok(html.includes('<link rel="stylesheet" href="/css/single-game.css">'), 
 // --- HTMLとJSのファイル分離 ---
 assert.ok(!html.includes('<script th:inline="none">'), '1試合実行画面のJSをインラインで保持しない');
 assert.ok(html.includes('<script src="/js/single-game.js"></script>'), '1試合実行画面から分離したJSファイルを読み込む');
+assert.ok(
+  html.includes('<script src="/js/lineup-form.js"></script>\n<script src="/js/single-game.js"></script>'),
+  '共通の打順入力フォームを画面固有スクリプトより先に読み込む'
+);
+assert.ok(pageJs.includes("startLineupForm({readyMessage:'準備完了。1試合を実行できます。',runningMessage:'試合を実行中…',endpoint:'/simulations/single-game',"), '1試合実行画面の文言と送信先で共通の打順入力フォームを開始する');
 
 assert.match(css, /\.out-count\s*\{\s*color:\s*#b8432f;/, 'アウト数をアースカラーの赤（レンガ色）で表示する');
 assert.ok(css.includes('color-scheme: light') && css.includes('--moss: #56704a'), '1試合実行画面は / と同じアースカラー配色にする');
@@ -20,7 +28,7 @@ assert.ok(js.includes("span.className='out-count'"), 'アウト表示に専用�
 for (const name of ['single-game', 'simulation', 'simulation-guide']) {
   const template = readFileSync(new URL(`../../main/resources/templates/${name}.html`, import.meta.url), 'utf8');
   const script = ['single-game', 'simulation'].includes(name)
-    ? readFileSync(new URL(`../../main/resources/static/js/${name}.js`, import.meta.url), 'utf8')
+    ? `${lineupFormJs}\n${readFileSync(new URL(`../../main/resources/static/js/${name}.js`, import.meta.url), 'utf8')}`
     : '';
   assert.ok(template.includes('長距離砲') || script.includes('長距離砲'), `${name}の性格名は長距離砲`);
   assert.ok(!template.includes('ブンブン丸') && !script.includes('ブンブン丸'), `${name}に旧名称を残さない`);
@@ -131,7 +139,7 @@ assert.ok(
   'タブと「打順を編集する」で表示を切り替える'
 );
 assert.ok(
-  js.includes('renderGame(data.transitions);hasResults=true;showView(true);'),
+  pageJs.includes('renderGame(data.transitions);}});') && lineupFormJs.includes('lineupFormConfig.onSuccess(data);hasResults=true;showView(true);'),
   '1試合実行が成功したら試合結果タブへ切り替える'
 );
 assert.ok(
