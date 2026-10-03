@@ -113,6 +113,8 @@ class SimulationPageIntegrationTest {
                         assertTrue(
                                 response.body()
                                         .contains("data-home-run-frame-duration-millis=\"3600\"")),
+                () -> assertTrue(jsResponse.body().contains("function classifyEffect(")),
+                () -> assertTrue(cssResponse.body().contains("@keyframes home-run-headline")),
                 () -> assertTrue(response.body().contains("id=\"order-table-scroll\"")),
                 () -> assertTrue(response.body().contains("href=\"/large-scale\"")),
                 () -> assertTrue(response.body().contains("class=\"view-tabs\" role=\"tablist\"")),

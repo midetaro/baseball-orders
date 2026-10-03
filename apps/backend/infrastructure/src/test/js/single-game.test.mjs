@@ -31,7 +31,7 @@ assert.ok(!html.includes('id="transitions"'), '推移のプレーンテキスト
 assert.ok(html.includes('id="frame-stage"'), 'アニメーションフレームの表示領域を用意する');
 assert.match(
   html,
-  /th:attr="data-frame-duration-millis=\$\{frameDurationMillis}"/,
+  /th:attr="data-frame-duration-millis=\$\{frameDurationMillis}[,"]/,
   'サーバー設定のフレーム間隔をデータ属性で渡す'
 );
 assert.ok(
@@ -57,7 +57,7 @@ assert.ok(js.includes("class='diamond'") || js.includes('diamond.className'), '�
 assert.ok(js.includes("'●'.repeat"), 'アウトカウントを記号で表現する');
 
 assert.ok(js.includes('function playFrames('), 'フレームを一定間隔で再生する関数を用意する');
-assert.ok(js.includes('setInterval('), 'フレームをコマ送りで自動再生する');
+assert.ok(js.includes('frameTimer=setTimeout('), 'フレームごとの表示時間でコマ送りに自動再生する');
 assert.ok(js.includes('function stopFramePlayback('), '再実行時に前回の再生を止める');
 
 assert.ok(js.includes('function buildOrderTable('), 'イニング×打順の結果表を生成する関数を用意する');
@@ -173,5 +173,71 @@ assert.ok(!js.includes('bunt_success_rate'), 'バント成功率をAPIへ送信�
 assert.ok(!js.includes('steal_success_rate'), '盗塁成功率をAPIへ送信しない');
 assert.ok(js.includes("toggle('バント',player.buntEnabled"), 'バントを使うかどうかの切り替えボタンは残す');
 assert.ok(js.includes("toggle('盗塁',player.stealEnabled"), '盗塁を使うかどうかの切り替えボタンは残す');
+
+// --- 本塁打・得点・安打の専用アニメーション（issue #141） ---
+function extractFunction(name) {
+  const start = js.indexOf(`function ${name}(`);
+  assert.ok(start >= 0, `${name} を定義する`);
+  return js.slice(start, js.indexOf('\n', start));
+}
+const classifyEffect = new Function(`${js.match(/const HIT_BASES = \{[^}]*\};/)[0]}\n${extractFunction('classifyEffect')}\nreturn classifyEffect;`)();
+const transition = (actionResult, cumulativeScore) => ({actionResult, cumulativeScore});
+assert.deepEqual(classifyEffect(transition('本塁打', 1), 0), {kind:'home-run', runs:1, bases:4}, 'ソロ本塁打は本塁打演出にする');
+assert.deepEqual(classifyEffect(transition('本塁打', 6), 2), {kind:'home-run', runs:4, bases:4}, '満塁本塁打は4点の本塁打演出にする');
+assert.deepEqual(classifyEffect(transition('二塁打', 3), 1), {kind:'score', runs:2, bases:2}, '得点が入った安打は得点演出にし、打者走者の進塁数を保つ');
+assert.deepEqual(classifyEffect(transition('スクイズ成功', 1), 0), {kind:'score', runs:1, bases:0}, '安打以外でも得点が入れば得点演出にする');
+assert.deepEqual(classifyEffect(transition('四球', 2), 1), {kind:'score', runs:1, bases:0}, '押し出しも得点演出にする');
+assert.deepEqual(classifyEffect(transition('単打', 0), 0), {kind:'hit', runs:0, bases:1}, '得点のない単打は安打演出にする');
+assert.deepEqual(classifyEffect(transition('二塁打', 0), 0), {kind:'hit', runs:0, bases:2}, '得点のない二塁打は安打演出にする');
+assert.deepEqual(classifyEffect(transition('三塁打', 2), 2), {kind:'hit', runs:0, bases:3}, '得点のない三塁打は安打演出にする');
+const resolvePlayOutcomes = new Function(`${extractFunction('resolvePlayOutcomes')}\nreturn resolvePlayOutcomes;`)();
+const recorded = [
+  {inning:1, actionResult:'三塁打', outCount:1, cumulativeScore:0, runnerState:'一・二塁'},
+  {inning:1, actionResult:'本塁打', outCount:1, cumulativeScore:2, runnerState:'三塁'},
+  {inning:1, actionResult:'凡打', outCount:1, cumulativeScore:4, runnerState:'走者なし'},
+  {inning:1, actionResult:'三振', outCount:2, cumulativeScore:4, runnerState:'走者なし'},
+  {inning:2, actionResult:'単打', outCount:0, cumulativeScore:4, runnerState:'走者なし'},
+];
+assert.deepEqual(resolvePlayOutcomes(recorded), [
+  {inning:1, actionResult:'三塁打', outCount:1, cumulativeScore:2, runnerState:'三塁', scoreBefore:0},
+  {inning:1, actionResult:'本塁打', outCount:1, cumulativeScore:4, runnerState:'走者なし', scoreBefore:2},
+  {inning:1, actionResult:'凡打', outCount:2, cumulativeScore:4, runnerState:'走者なし', scoreBefore:4},
+  {inning:1, actionResult:'三振', outCount:3, cumulativeScore:4, runnerState:'走者なし', scoreBefore:4},
+  {inning:2, actionResult:'単打', outCount:3, cumulativeScore:4, runnerState:'走者なし', scoreBefore:4},
+], '記録はプレー直前の状況なので、次の推移からプレー直後のアウト・走者・得点を求め、イニングや試合の最後のプレーは3アウトにする');
+assert.ok(js.includes('annotateEffects(annotateBattingOrder(resolvePlayOutcomes(gameTransitions)))'), 'プレー直後の状況で演出と表示を組み立てる');
+assert.ok(js.includes('classifyEffect(transition,transition.scoreBefore)'), 'プレー直前と直後の得点差で得点数を求める');
+for (const result of ['凡打', '三振', '四球', 'バント成功', '盗塁成功(二塁)', '盗塁失敗(三塁)']) {
+  assert.deepEqual(classifyEffect(transition(result, 0), 0), {kind:'none', runs:0, bases:0}, `得点のない${result}は通常表示にする`);
+}
+
+assert.match(html, /th:attr="[^"]*data-hit-frame-duration-millis=\$\{hitFrameDurationMillis}/, '安打フレームの表示時間をサーバー設定から渡す');
+assert.match(html, /th:attr="[^"]*data-score-frame-duration-millis=\$\{scoreFrameDurationMillis}/, '得点フレームの表示時間をサーバー設定から渡す');
+assert.match(html, /th:attr="[^"]*data-home-run-frame-duration-millis=\$\{homeRunFrameDurationMillis}/, '本塁打フレームの表示時間をサーバー設定から渡す');
+assert.ok(js.includes('frameStage.dataset.hitFrameDurationMillis') && js.includes('frameStage.dataset.scoreFrameDurationMillis') && js.includes('frameStage.dataset.homeRunFrameDurationMillis'), '演出ごとのフレーム表示時間をデータ属性から読み取る');
+assert.ok(js.includes('frameDurations[effect.kind]'), '演出の種類に応じて次のフレームまでの時間を変える');
+assert.ok(js.includes("frame.className=`frame effect-${effect.kind}`"), 'フレームに演出の種類を示すクラスを付ける');
+for (const [name, message] of [
+  ['home-run-headline', '本塁打の見出しを大きく表示する'],
+  ['home-run-flash', '本塁打で画面を光らせる'],
+  ['home-run-ball', '本塁打の打球が場外へ飛ぶ'],
+  ['firework-spark', '本塁打で花火を打ち上げる'],
+  ['runner-circuit', '本塁打の打者走者がダイヤモンドを一周する'],
+  ['score-burst', '得点を「+N点」で弾けるように表示する'],
+  ['home-plate-glow', '得点で本塁を光らせる'],
+  ['scoreboard-pulse', '得点でスコアボードの得点を強調する'],
+  ['hit-headline', '安打の種類を見出しで表示する'],
+  ['hit-ball', '安打の打球が外野へ飛ぶ'],
+  ['runner-to-first', '単打の打者走者が一塁へ走る'],
+  ['runner-to-second', '二塁打の打者走者が二塁へ走る'],
+  ['runner-to-third', '三塁打の打者走者が三塁へ走る'],
+]) {
+  assert.ok(css.includes(`@keyframes ${name}`), message);
+}
+assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*animation:\s*none/, '動きを減らす設定では演出アニメーションを止める');
+assert.ok(js.includes("'GRAND SLAM!'") && js.includes("'HOME RUN!'"), '満塁本塁打とそれ以外の本塁打で見出しを変える');
+assert.ok(js.includes("{1:'ヒット!',2:'ツーベース!',3:'スリーベース!'}"), '安打の種類ごとに見出しを変える');
+assert.ok(js.includes('`+${effect.runs}点`'), '得点数を「+N点」で表示する');
+assert.ok(!js.includes('Math.random'), '演出は乱数を使わず同じ結果なら同じ表示にする');
 
 console.log('PASS: 1試合実行結果のアニメーションフレームと打順成績表の描画');
