@@ -3,11 +3,8 @@ package com.example.baseballorders.backend;
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.SimulationLimits;
 import com.example.baseballorders.backend.application.SimulationLimitsBuilder;
-import com.example.baseballorders.backend.application.UserAccountRepository;
-import com.example.baseballorders.backend.application.UserAccountService;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
-import java.time.Clock;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,44 +21,16 @@ public class InfrastructureConfiguration {
      *
      * @param resultTimeout SQS結果を待機する時間
      * @param maximumAverageHitAverage 打順9人の打率平均の上限
-     * @param maximumAverageSluggish 打順9人の長打率平均の上限
-     * @param maximumSuccessRate バント成功率と盗塁成功率の受付上限
      */
     public InfrastructureConfiguration(
             @Value("${baseball-orders.simulation.result-timeout}") Duration resultTimeout,
             @Value("${baseball-orders.simulation.maximum-average-hit-average}")
-                    float maximumAverageHitAverage,
-            @Value("${baseball-orders.simulation.maximum-average-sluggish}")
-                    float maximumAverageSluggish,
-            @Value("${baseball-orders.simulation.maximum-success-rate}") float maximumSuccessRate) {
+                    float maximumAverageHitAverage) {
         simulationLimits =
                 SimulationLimitsBuilder.simulationLimits()
                         .resultTimeout(resultTimeout)
                         .maximumAverageHitAverage(maximumAverageHitAverage)
-                        .maximumAverageSluggish(maximumAverageSluggish)
-                        .maximumSuccessRate(maximumSuccessRate)
                         .build();
-    }
-
-    /**
-     * UTCの現在時刻を提供する。
-     *
-     * @return UTCクロック
-     */
-    @Bean
-    public Clock clock() {
-        return Clock.systemUTC();
-    }
-
-    /**
-     * Google OIDCアカウントのユースケースを生成する。
-     *
-     * @param repository アカウント永続化ポート
-     * @return 構成済みアカウントサービス
-     */
-    @Bean
-    public UserAccountService userAccountService(UserAccountRepository repository) {
-        return new UserAccountService(repository);
     }
 
     /**

@@ -24,19 +24,11 @@ import org.junit.jupiter.api.Test;
 
 class SimulationCoordinatorTest {
 
-    private static final float CONFIGURED_MAXIMUM_SUCCESS_RATE = 0.700f;
-
     /** application.ymlの既定値と同じ上限を組み立てる。 */
     private static SimulationLimits limits(Duration resultTimeout) {
-        return limits(resultTimeout, CONFIGURED_MAXIMUM_SUCCESS_RATE);
-    }
-
-    private static SimulationLimits limits(Duration resultTimeout, float maximumSuccessRate) {
         return SimulationLimitsBuilder.simulationLimits()
                 .resultTimeout(resultTimeout)
                 .maximumAverageHitAverage(0.350f)
-                .maximumAverageSluggish(0.400f)
-                .maximumSuccessRate(maximumSuccessRate)
                 .build();
     }
 
@@ -47,10 +39,7 @@ class SimulationCoordinatorTest {
                                 PlayerDataBuilder.playerData()
                                         .name("山田")
                                         .hitAverage(0.301f)
-                                        .sluggish(0.351f)
-                                        .buntSuccessRate(0.700f)
                                         .buntEnabled(true)
-                                        .stealSuccessRate(0.700f)
                                         .stealEnabled(true)
                                         .personality(PlayerPersonality.DEFAULT)
                                         .build())
@@ -85,12 +74,8 @@ class SimulationCoordinatorTest {
                 () -> assertEquals("1", published.getFirst().version()),
                 () -> assertEquals("山田", published.getFirst().players().getFirst().name()),
                 () -> assertEquals(0.301f, published.getFirst().players().getFirst().hitAverage()),
-                () -> assertEquals(0.351f, published.getFirst().players().getFirst().sluggish()),
                 () -> assertEquals(true, published.getFirst().players().getFirst().buntEnabled()),
-                () ->
-                        assertEquals(
-                                0.700f,
-                                published.getFirst().players().getFirst().stealSuccessRate()),
+                () -> assertEquals(true, published.getFirst().players().getFirst().stealEnabled()),
                 () -> assertEquals(5, result.statistics().maximumScore()),
                 () -> assertEquals(SimulationMode.LARGE_SCALE_RUN, published.getFirst().mode()),
                 () -> assertEquals(0, registry.pendingCount()));
@@ -259,10 +244,7 @@ class SimulationCoordinatorTest {
                                         PlayerDataBuilder.playerData()
                                                 .name("山田")
                                                 .hitAverage(0.351f)
-                                                .sluggish(0.400f)
-                                                .buntSuccessRate(0.700f)
                                                 .buntEnabled(true)
-                                                .stealSuccessRate(0.700f)
                                                 .stealEnabled(true)
                                                 .personality(PlayerPersonality.DEFAULT)
                                                 .build())
@@ -279,129 +261,6 @@ class SimulationCoordinatorTest {
                 () ->
                         assertEquals(
                                 "the average hitAverage must not exceed 0.35",
-                                exception.getMessage()));
-    }
-
-    @Test
-    @DisplayName("9人の長打率平均が上限を超える場合はSQS送信をせず拒否する")
-    void rejectsLineupWithExcessiveSluggish() {
-        // given
-        var coordinator =
-                new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
-        var excessivePlayers =
-                java.util.stream.IntStream.range(0, 9)
-                        .mapToObj(
-                                _ ->
-                                        PlayerDataBuilder.playerData()
-                                                .name("山田")
-                                                .hitAverage(0.350f)
-                                                .sluggish(0.401f)
-                                                .buntSuccessRate(0.700f)
-                                                .buntEnabled(true)
-                                                .stealSuccessRate(0.700f)
-                                                .stealEnabled(true)
-                                                .personality(PlayerPersonality.DEFAULT)
-                                                .build())
-                        .toList();
-
-        // when
-        var exception =
-                assertThrows(
-                        IllegalArgumentException.class,
-                        () -> coordinator.simulate(excessivePlayers));
-
-        // then
-        assertAll(
-                () ->
-                        assertEquals(
-                                "the average sluggish must not exceed 0.4",
-                                exception.getMessage()));
-    }
-
-    @Test
-    @DisplayName("確率範囲内でも既定の成功率上限を超えるバント成功率はCoordinatorが拒否する")
-    void rejectsBuntSuccessRateAboveConfiguredMaximum() {
-        // given
-        var sut =
-                new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
-        var lineup = new ArrayList<>(players(9));
-        lineup.set(
-                0,
-                PlayerDataBuilder.playerData()
-                        .name("山田")
-                        .hitAverage(0.301f)
-                        .sluggish(0.351f)
-                        .buntSuccessRate(0.710f)
-                        .buntEnabled(true)
-                        .stealSuccessRate(0.700f)
-                        .stealEnabled(true)
-                        .personality(PlayerPersonality.DEFAULT)
-                        .build());
-
-        // when
-        var exception = assertThrows(IllegalArgumentException.class, () -> sut.simulate(lineup));
-
-        // then
-        assertAll(
-                () ->
-                        assertEquals(
-                                "buntSuccessRate must be between 0.0 and 0.7",
-                                exception.getMessage()));
-    }
-
-    @Test
-    @DisplayName("成功率上限を設定で下げると既定では通る打順を拒否する")
-    void rejectsSuccessRateAboveLoweredConfiguredMaximum() {
-        // given
-        var sut =
-                new SimulationCoordinator(
-                        request -> {},
-                        new WaitingResultRegistry(),
-                        limits(Duration.ofMillis(1), 0.500f));
-        var lineup = players(9);
-
-        // when
-        var exception = assertThrows(IllegalArgumentException.class, () -> sut.simulate(lineup));
-
-        // then
-        assertAll(
-                () ->
-                        assertEquals(
-                                "buntSuccessRate must be between 0.0 and 0.5",
-                                exception.getMessage()));
-    }
-
-    @Test
-    @DisplayName("盗塁成功率だけが設定上限を超える打順も拒否する")
-    void rejectsStealSuccessRateAboveConfiguredMaximum() {
-        // given
-        var sut =
-                new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
-        var lineup = new ArrayList<>(players(9));
-        lineup.set(
-                0,
-                PlayerDataBuilder.playerData()
-                        .name("山田")
-                        .hitAverage(0.301f)
-                        .sluggish(0.351f)
-                        .buntSuccessRate(0.700f)
-                        .buntEnabled(true)
-                        .stealSuccessRate(0.900f)
-                        .stealEnabled(true)
-                        .personality(PlayerPersonality.DEFAULT)
-                        .build());
-
-        // when
-        var exception = assertThrows(IllegalArgumentException.class, () -> sut.simulate(lineup));
-
-        // then
-        assertAll(
-                () ->
-                        assertEquals(
-                                "stealSuccessRate must be between 0.0 and 0.7",
                                 exception.getMessage()));
     }
 }

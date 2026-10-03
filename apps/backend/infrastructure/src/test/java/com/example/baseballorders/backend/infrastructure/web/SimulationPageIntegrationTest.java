@@ -3,27 +3,29 @@ package com.example.baseballorders.backend.infrastructure.web;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.awspring.cloud.sqs.operations.SqsTemplate;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
- * 実物: HTTPサーバー、Spring Security、ローカルフォームログイン、SimulationPageController、SimulationGuidePageController、
- * LoginPageController、Thymeleaf。 モック: SqsTemplate。 担保する疎通: HTTP GET /login -> HTTP POST /login ->
- * 認証済みHTTP GET / -> Spring Security -> SimulationPageController -> Thymeleaf HTML応答。認証済みHTTP GET
- * /large-scale および /single-game -> Spring Security -> SimulationPageController -> Thymeleaf
- * HTML応答も担保する。担保しないもの: SQSへのシミュレーション要求送信と結果受信、入力値のブラウザ操作。
+ * 実物: HTTPサーバー、SimulationPageController、SimulationGuidePageController、Thymeleaf、静的リソース配信。 モック:
+ * SqsTemplate。 担保する疎通: ログインなしのHTTP GET / -> SimulationPageController -> 打順組み替え画面のThymeleaf
+ * HTML応答。HTTP GET /large-scale および /single-game -> SimulationPageController -> Thymeleaf
+ * HTML応答、HTTP GET /simulation-guide -> SimulationGuidePageController -> Thymeleaf
+ * HTML応答も担保する。4画面すべてで共通の左メニュー断片（fragments/site-menu.html）が描画され、他画面への導線がメニューにだけあることも担保する。分離したHTTP
+ * GET
+ * /css/simulation.css、/css/single-game.css、/css/batting-order.css、/css/site-menu.css、/js/lineup-form.js、/js/simulation.js、
+ * /js/single-game.js および /js/site-menu.js -> 静的リソース配信 -> CSS・JS応答も担保する。担保しないもの:
+ * SQSへのシミュレーション要求送信と結果受信、入力値・ドラッグ操作・メニュー開閉のブラウザ操作。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -39,58 +41,145 @@ class SimulationPageIntegrationTest {
         assertTrue(Pattern.compile(pattern).matcher(actual).find());
     }
 
-    private HttpClient authenticatedClient() throws Exception {
-        var client =
-                HttpClient.newBuilder()
-                        .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
-                        .followRedirects(HttpClient.Redirect.NEVER)
-                        .build();
-        var loginPage =
-                client.send(
-                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
-                                .GET()
-                                .build(),
-                        HttpResponse.BodyHandlers.ofString());
-        var csrfMatcher =
-                Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"").matcher(loginPage.body());
-        assertTrue(csrfMatcher.find());
-        var form =
-                "userId=test&password=password&_csrf="
-                        + URLEncoder.encode(csrfMatcher.group(1), StandardCharsets.UTF_8);
-        var login =
-                client.send(
-                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
-                                .header("Content-Type", "application/x-www-form-urlencoded")
-                                .POST(HttpRequest.BodyPublishers.ofString(form))
-                                .build(),
-                        HttpResponse.BodyHandlers.discarding());
-        assertEquals(302, login.statusCode());
-        return client;
-    }
-
     @Test
-    @DisplayName("未認証のトップ画面アクセスはログイン画面へリダイレクトされる")
-    void redirectsUnauthenticatedSimulationPageAccess() throws Exception {
+    @DisplayName("ログインなしでトップ画面へアクセスするとリダイレクトされずに表示される")
+    void rendersSimulationPageWithoutLogin() throws Exception {
         // given
         var request =
                 HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
 
         // when
-        HttpResponse<Void> response;
+        HttpResponse<String> response;
         try (var client =
                 HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build()) {
-            response = client.send(request, HttpResponse.BodyHandlers.discarding());
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
         }
 
         // then
         assertAll(
-                () -> assertEquals(302, response.statusCode()),
+                () -> assertEquals(200, response.statusCode()),
+                () -> assertFalse(response.body().contains("ログイン")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/", "/large-scale", "/single-game", "/simulation-guide"})
+    @DisplayName("どの画面も他画面への導線は閉じた左メニューだけに置き、現在の画面をメニューで示す")
+    void rendersSiteMenuAsOnlyNavigation(String route) throws Exception {
+        // given
+        var request =
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + route))
+                        .GET()
+                        .build();
+
+        // when
+        HttpResponse<String> response;
+        try (var client = HttpClient.newHttpClient()) {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+
+        // then
+        var body = response.body();
+        var menuStart = body.indexOf("<nav aria-label=\"画面メニュー\"");
+        var menuEnd = body.indexOf("</nav>", menuStart);
+        var menu = menuStart < 0 ? "" : body.substring(menuStart, menuEnd);
+        var outsideMenu =
+                menuStart < 0 ? body : body.substring(0, menuStart) + body.substring(menuEnd);
+        assertAll(
+                () -> assertEquals(200, response.statusCode()),
+                () ->
+                        assertContainsPattern(
+                                body, "<nav[^>]*class=\"site-menu\" hidden id=\"site-menu\">"),
+                () ->
+                        assertContainsPattern(
+                                body,
+                                "<button[^>]*aria-controls=\"site-menu\""
+                                        + " aria-expanded=\"false\"[^>]*id=\"menu-toggle\""),
+                () -> assertContainsPattern(menu, "href=\"/\"[^>]*>打順組み替え</a>"),
+                () -> assertContainsPattern(menu, "href=\"/large-scale\"[^>]*>大規模実行</a>"),
+                () -> assertContainsPattern(menu, "href=\"/single-game\"[^>]*>1試合実行</a>"),
+                () ->
+                        assertContainsPattern(
+                                menu, "href=\"/simulation-guide\"[^>]*>シミュレーションの仕組み</a>"),
+                () ->
+                        assertContainsPattern(
+                                menu,
+                                "<a (?=[^>]*aria-current=\"page\")(?=[^>]*href=\""
+                                        + Pattern.quote(route)
+                                        + "\")[^>]*>"),
+                () -> assertEquals(1, menu.split("aria-current=", -1).length - 1),
+                () ->
+                        assertFalse(
+                                Pattern.compile(
+                                                "<a [^>]*href=\"/(large-scale|single-game|simulation-guide)?\"")
+                                        .matcher(outsideMenu)
+                                        .find()),
                 () ->
                         assertTrue(
-                                response.headers()
-                                        .firstValue("location")
-                                        .orElseThrow()
-                                        .contains("/login")));
+                                body.contains(
+                                        "<link rel=\"stylesheet\" href=\"/css/site-menu.css\">")),
+                () -> assertTrue(body.contains("<script src=\"/js/site-menu.js\"></script>")));
+    }
+
+    @Test
+    @DisplayName("トップ画面へアクセスすると打順組み替え画面と左メニューがHTMLで表示される")
+    void rendersBattingOrderPageAtRoot() throws Exception {
+        // given
+        var request =
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+
+        // when
+        HttpResponse<String> response;
+        HttpResponse<String> cssResponse;
+        HttpResponse<String> menuJsResponse;
+        try (var client = HttpClient.newHttpClient()) {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            cssResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/css/batting-order.css"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+            menuJsResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/js/site-menu.js"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+        }
+
+        // then
+        assertAll(
+                () -> assertEquals(200, response.statusCode()),
+                () -> assertTrue(response.body().contains("<h2 id=\"order-heading\">打順組み替え</h2>")),
+                () -> assertTrue(response.body().contains("data-lineup-mode=\"reorder\"")),
+                () -> assertTrue(response.body().contains("id=\"menu-toggle\"")),
+                () -> assertTrue(response.body().contains("aria-expanded=\"false\"")),
+                () ->
+                        assertContainsPattern(
+                                response.body(),
+                                "<nav[^>]*class=\"site-menu\" hidden id=\"site-menu\">"),
+                () -> assertTrue(response.body().contains("href=\"/large-scale\"")),
+                () -> assertTrue(response.body().contains("href=\"/single-game\"")),
+                () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<script src=\"/js/lineup-form.js\"></script>\n"
+                                                        + "<script src=\"/js/simulation.js\"></script>")),
+                () -> assertTrue(response.body().contains("id=\"score-histogram\"")),
+                () -> assertEquals(200, cssResponse.statusCode()),
+                () -> assertTrue(cssResponse.body().contains(".drag-handle")),
+                () -> assertEquals(200, menuJsResponse.statusCode()),
+                () -> assertTrue(menuJsResponse.body().contains("function setMenuOpen(")));
     }
 
     @Test
@@ -104,25 +193,123 @@ class SimulationPageIntegrationTest {
 
         // when
         HttpResponse<String> response;
-        try (var client = authenticatedClient()) {
+        HttpResponse<String> cssResponse;
+        HttpResponse<String> jsResponse;
+        HttpResponse<String> lineupFormResponse;
+        try (var client = HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            cssResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/css/single-game.css"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+            jsResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/js/single-game.js"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+            lineupFormResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/js/lineup-form.js"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
         }
 
         // then
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("打順入力")),
+                () -> assertTrue(response.body().contains("<span>打率</span>")),
+                () -> assertFalse(response.body().contains("<dt>出塁率</dt>")),
                 () -> assertTrue(response.body().contains("<title>打順監督</title>")),
                 () -> assertTrue(response.body().contains("<h1>打順監督</h1>")),
                 () -> assertTrue(response.body().contains("1試合を実行")),
                 () -> assertTrue(response.body().contains("id=\"frame-stage\"")),
                 () -> assertTrue(response.body().contains("data-frame-duration-millis=\"1000\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("data-hit-frame-duration-millis=\"1800\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("data-score-frame-duration-millis=\"2200\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("data-home-run-frame-duration-millis=\"3600\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("data-bunt-frame-duration-millis=\"1600\"")),
+                () -> assertTrue(jsResponse.body().contains("function classifyEffect(")),
+                () -> assertTrue(cssResponse.body().contains("@keyframes home-run-headline")),
                 () -> assertTrue(response.body().contains("id=\"order-table-scroll\"")),
-                () -> assertTrue(response.body().contains("fetch('/simulations/single-game'")),
-                () -> assertTrue(response.body().contains("data.transitions")),
-                () -> assertTrue(response.body().contains("renderGame(data.transitions)")),
                 () -> assertTrue(response.body().contains("href=\"/large-scale\"")),
-                () -> assertFalse(response.body().contains("data.statistics")));
+                () -> assertTrue(response.body().contains("class=\"view-tabs\" role=\"tablist\"")),
+                () -> assertTrue(response.body().contains("id=\"input-view\" role=\"tabpanel\"")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<section aria-labelledby=\"results-heading\""
+                                                        + " hidden id=\"results\" role=\"tabpanel\">")),
+                () -> assertTrue(response.body().contains("id=\"edit-lineup\"")),
+                () -> assertFalse(response.body().contains("id=\"toggle-lineup\"")),
+                () -> assertFalse(cssResponse.body().contains("BASEBALL ORDER LAB")),
+                () ->
+                        assertTrue(
+                                lineupFormResponse
+                                        .body()
+                                        .contains("function showView(resultsVisible)")),
+                () -> assertFalse(response.body().contains("<style>")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<link rel=\"stylesheet\""
+                                                        + " href=\"/css/single-game.css\">")),
+                () -> assertEquals(200, cssResponse.statusCode()),
+                () -> assertTrue(cssResponse.body().contains(".out-count {")),
+                () -> assertTrue(cssResponse.body().contains("color-scheme: light")),
+                () -> assertTrue(cssResponse.body().contains("--paper: #f3eee2")),
+                () -> assertTrue(cssResponse.body().contains("--moss: #56704a")),
+                () -> assertFalse(cssResponse.body().contains("--cyan")),
+                () -> assertFalse(cssResponse.body().contains("--lime")),
+                () -> assertFalse(response.body().contains("<script th:inline=\"none\">")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<script"
+                                                        + " src=\"/js/single-game.js\"></script>")),
+                () -> assertEquals(200, jsResponse.statusCode()),
+                () -> assertEquals(200, lineupFormResponse.statusCode()),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<script src=\"/js/lineup-form.js\"></script>\n"
+                                                        + "<script src=\"/js/single-game.js\"></script>")),
+                () -> assertTrue(jsResponse.body().contains("endpoint:'/simulations/single-game'")),
+                () -> assertTrue(jsResponse.body().contains("data.transitions")),
+                () -> assertTrue(jsResponse.body().contains("renderGame(data.transitions)")),
+                () -> assertFalse(jsResponse.body().contains("data.statistics")));
     }
 
     @Test
@@ -130,12 +317,47 @@ class SimulationPageIntegrationTest {
     void rendersSimulationPage() throws Exception {
         // given
         var request =
-                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/")).GET().build();
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/large-scale"))
+                        .GET()
+                        .build();
 
         // when
         HttpResponse<String> response;
-        try (var client = authenticatedClient()) {
+        HttpResponse<String> cssResponse;
+        HttpResponse<String> jsResponse;
+        HttpResponse<String> lineupFormResponse;
+        try (var client = HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            cssResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/css/simulation.css"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+            jsResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/js/simulation.js"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+            lineupFormResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/js/lineup-form.js"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
         }
 
         // then
@@ -144,123 +366,157 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("打順入力")),
                 () -> assertTrue(response.body().contains("<title>打順監督</title>")),
                 () -> assertTrue(response.body().contains("<h1>打順監督</h1>")),
-                () -> assertTrue(response.body().contains("ログイン中（")),
-                () -> assertTrue(response.body().contains("出塁率")),
-                () -> assertTrue(response.body().contains("長打率")),
-                () -> assertTrue(response.body().contains("盗塁成功率")),
-                () ->
-                        assertContainsPattern(
-                                response.body(), "position\\.textContent=`\\$\\{index\\+\\d+}番`"),
-                () ->
-                        assertContainsPattern(
-                                response.body(),
-                                "hitAverage:'\\d+\\.\\d{2}',sluggish:'\\d+\\.\\d{2}'"),
-                () ->
-                        assertTrue(
-                                response.body()
-                                        .matches(
-                                                "(?s).*key:'hitAverage',label:'出塁率',min:\\d+\\.\\d+,max:\\d+\\.\\d+.*")),
-                () ->
-                        assertTrue(
-                                response.body()
-                                        .matches(
-                                                "(?s).*key:'sluggish',label:'長打率',min:\\d+\\.\\d+,max:\\d+\\.\\d+.*")),
-                () ->
-                        assertContainsPattern(
-                                response.body(),
-                                "key:'stealSuccessRate',label:'盗塁成功率',min:\\d+\\.\\d+,enabledKey"),
-                () -> assertTrue(response.body().contains("buntSuccessRate:[0,Infinity]")),
+                () -> assertFalse(response.body().contains("ログイン")),
+                () -> assertFalse(response.body().contains("<style>")),
                 () ->
                         assertTrue(
                                 response.body()
                                         .contains(
-                                                "key:'buntSuccessRate',label:'バント成功率',min:0,enabledKey:'buntEnabled'")),
+                                                "<link rel=\"stylesheet\""
+                                                        + " href=\"/css/simulation.css\">")),
+                () -> assertEquals(200, cssResponse.statusCode()),
+                () -> assertFalse(response.body().contains("<script>")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<script"
+                                                        + " src=\"/js/simulation.js\"></script>")),
+                () -> assertEquals(200, jsResponse.statusCode()),
+                () -> assertEquals(200, lineupFormResponse.statusCode()),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains(
+                                                "<script src=\"/js/lineup-form.js\"></script>\n"
+                                                        + "<script src=\"/js/simulation.js\"></script>")),
+                () -> assertTrue(jsResponse.body().contains("endpoint:'/simulations'")),
+                () -> assertTrue(response.body().contains("打率")),
+                () -> assertFalse(response.body().contains("長打率")),
+                () -> assertFalse(lineupFormResponse.body().contains("sluggish")),
+                () ->
+                        assertContainsPattern(
+                                lineupFormResponse.body(),
+                                "position\\.textContent=`\\$\\{index\\+\\d+}番`"),
+                () ->
+                        assertContainsPattern(
+                                lineupFormResponse.body(),
+                                "hitAverage:'\\d+\\.\\d{2}',buntEnabled"),
+                () ->
+                        assertTrue(
+                                lineupFormResponse
+                                        .body()
+                                        .matches(
+                                                "(?s).*key:'hitAverage',label:'打率',min:\\d+\\.\\d+,max:\\d+\\.\\d+.*")),
+                () -> assertFalse(jsResponse.body().contains("盗塁成功率")),
+                () -> assertFalse(jsResponse.body().contains("バント成功率")),
+                () -> assertFalse(jsResponse.body().contains("stealSuccessRate")),
+                () -> assertFalse(jsResponse.body().contains("buntSuccessRate")),
+                () -> assertFalse(lineupFormResponse.body().contains("stealSuccessRate")),
+                () -> assertFalse(lineupFormResponse.body().contains("buntSuccessRate")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
                 () -> assertTrue(response.body().contains("<h2 id=\"order-heading\">打順入力</h2>")),
                 () -> assertTrue(response.body().contains("id=\"toggle-all-bunt\"")),
                 () -> assertTrue(response.body().contains("id=\"toggle-all-steal\"")),
                 () ->
                         assertTrue(
-                                response.body()
+                                lineupFormResponse
+                                        .body()
                                         .contains("lineup.every(player=>player.buntEnabled)")),
                 () ->
                         assertTrue(
-                                response.body()
+                                lineupFormResponse
+                                        .body()
                                         .contains("lineup.every(player=>player.stealEnabled)")),
                 () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
                 () -> assertFalse(response.body().toLowerCase().contains("pitcher")),
-                () -> assertTrue(response.body().contains("function validLineup()")),
-                () -> assertFalse(response.body().contains("lineup.length<=0.35")),
-                () -> assertFalse(response.body().contains("lineup.length<=0.4")),
+                () -> assertFalse(jsResponse.body().toLowerCase().contains("pitcher")),
+                () -> assertTrue(lineupFormResponse.body().contains("function validLineup()")),
+                () -> assertFalse(jsResponse.body().contains("lineup.length<=0.35")),
+                () -> assertFalse(jsResponse.body().contains("lineup.length<=0.4")),
                 () -> assertTrue(response.body().contains("本塁打")),
-                () -> assertTrue(response.body().contains("ソロ")),
-                () -> assertTrue(response.body().contains("ツーラン")),
-                () -> assertTrue(response.body().contains("スリーラン")),
-                () -> assertTrue(response.body().contains("満塁")),
+                () -> assertTrue(jsResponse.body().contains("ソロ")),
+                () -> assertTrue(jsResponse.body().contains("ツーラン")),
+                () -> assertTrue(jsResponse.body().contains("スリーラン")),
+                () -> assertTrue(jsResponse.body().contains("満塁")),
                 () -> assertTrue(response.body().contains("バント")),
                 () -> assertTrue(response.body().contains("盗塁")),
                 () -> assertTrue(response.body().contains("得点サマリー")),
                 () -> assertTrue(response.body().contains("本塁打の内訳")),
                 () -> assertTrue(!response.body().contains("戦術の成否")),
                 () -> assertTrue(response.body().contains("id=\"share-results\"")),
-                () -> assertTrue(response.body().contains("navigator.share")),
-                () -> assertTrue(response.body().contains("clipboard.writeText")),
+                () -> assertTrue(jsResponse.body().contains("navigator.share")),
+                () -> assertTrue(jsResponse.body().contains("clipboard.writeText")),
                 () ->
                         assertTrue(
-                                response.body()
+                                cssResponse
+                                        .body()
                                         .matches("(?s).*\\.order \\{.*width:\\s*max-content;.*")),
                 () ->
                         assertContainsPattern(
-                                response.body(),
-                                "grid-template-columns:\\d+px\\s+repeat\\(\\d+,\\s*\\d+px\\)\\s+\\d+px\\s+\\d+px"),
-                () -> assertTrue(response.body().contains("function fieldWrapper(")),
-                () -> assertTrue(response.body().contains("enabledKey:'buntEnabled'")),
-                () -> assertTrue(response.body().contains("enabledKey:'stealEnabled'")),
+                                cssResponse.body(),
+                                "grid-template-columns:\\d+px\\s+\\d+px\\s+\\d+px\\s+\\d+px\\s+\\d+px"),
+                () -> assertTrue(lineupFormResponse.body().contains("function fieldWrapper(")),
                 () ->
                         assertTrue(
-                                response.body()
+                                lineupFormResponse
+                                        .body()
                                         .contains(
                                                 "input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]);")),
                 () ->
                         assertContainsPattern(
-                                response.body(),
-                                "buntSuccessRate:'\\d+\\.\\d{2}',stealSuccessRate:'\\d+\\.\\d{2}'"),
-                () -> assertContainsPattern(response.body(), "input\\.step='\\d+\\.\\d+'"),
+                                lineupFormResponse.body(), "input\\.step='\\d+\\.\\d+'"),
+                () ->
+                        assertTrue(
+                                lineupFormResponse
+                                        .body()
+                                        .contains(
+                                                "input.value.startsWith('.') ? `0${input.value}` : input.value")),
+                () -> assertTrue(cssResponse.body().contains(".section-head {")),
+                () -> assertFalse(jsResponse.body().contains("hasAtMostTwoDecimalPlaces")),
+                () -> assertTrue(response.body().contains("class=\"simulation-workspace\"")),
+                () -> assertTrue(response.body().contains("id=\"input-view\" role=\"tabpanel\"")),
                 () ->
                         assertTrue(
                                 response.body()
                                         .contains(
-                                                "input.value.startsWith('.') ? `0${input.value}` : input.value")),
-                () -> assertTrue(response.body().contains(".section-head {")),
-                () -> assertFalse(response.body().contains("hasAtMostTwoDecimalPlaces")),
-                () -> assertTrue(response.body().contains("class=\"simulation-workspace\"")),
-                () -> assertTrue(response.body().contains("'homeRunCount'")),
-                () -> assertTrue(response.body().contains("scoreDistribution")),
+                                                "<section aria-labelledby=\"results-heading\""
+                                                        + " hidden id=\"results\" role=\"tabpanel\">")),
+                () -> assertTrue(response.body().contains("id=\"edit-lineup\"")),
+                () -> assertFalse(response.body().contains("id=\"toggle-lineup\"")),
+                () ->
+                        assertTrue(
+                                lineupFormResponse
+                                        .body()
+                                        .contains("function showView(resultsVisible)")),
+                () -> assertTrue(cssResponse.body().contains("--moss: #56704a")),
+                () -> assertTrue(jsResponse.body().contains("'homeRunCount'")),
+                () -> assertTrue(jsResponse.body().contains("scoreDistribution")),
                 () -> assertTrue(response.body().contains("score-histogram")),
                 () -> assertTrue(response.body().contains("score-distribution-axis")),
                 () -> assertTrue(response.body().contains("全試合に対する割合")),
                 () ->
                         assertContainsPattern(
-                                response.body(), "Math\\.ceil\\(maximumRate / \\d+\\) \\* \\d+"),
-                () -> assertContainsPattern(response.body(), "rate / histogramMaximum \\* \\d+"),
-                () -> assertContainsPattern(response.body(), "histogramMaximum - index \\* \\d+"),
+                                jsResponse.body(), "Math\\.ceil\\(maximumRate / \\d+\\) \\* \\d+"),
+                () -> assertContainsPattern(jsResponse.body(), "rate / histogramMaximum \\* \\d+"),
+                () -> assertContainsPattern(jsResponse.body(), "histogramMaximum - index \\* \\d+"),
                 () -> assertTrue(response.body().contains("home-run-breakdown")),
                 () -> assertTrue(response.body().contains("home-run-legend")),
                 () -> assertTrue(response.body().contains("本塁打なし")),
                 () -> assertTrue(response.body().contains("バントの内訳")),
-                () -> assertTrue(response.body().contains("進塁成功")),
-                () -> assertTrue(response.body().contains("スクイズ成功")),
-                () -> assertTrue(response.body().contains("進塁失敗")),
-                () -> assertTrue(response.body().contains("スクイズ失敗")),
+                () -> assertTrue(jsResponse.body().contains("進塁成功")),
+                () -> assertTrue(jsResponse.body().contains("スクイズ成功")),
+                () -> assertTrue(jsResponse.body().contains("進塁失敗")),
+                () -> assertTrue(jsResponse.body().contains("スクイズ失敗")),
                 () -> assertTrue(response.body().contains("盗塁の内訳")),
-                () -> assertTrue(response.body().contains("二盗成功")),
-                () -> assertTrue(response.body().contains("三盗成功")),
+                () -> assertTrue(jsResponse.body().contains("二盗成功")),
+                () -> assertTrue(jsResponse.body().contains("三盗成功")),
                 () -> assertTrue(response.body().contains("id=\"bunt-count\"")),
                 () -> assertTrue(response.body().contains("id=\"bunt-failure-count\"")),
                 () -> assertTrue(response.body().contains("id=\"steal-count\"")),
                 () -> assertTrue(response.body().contains("id=\"steal-failure-count\"")),
-                () -> assertTrue(response.body().contains("const detailTotal=details.reduce")),
-                () -> assertTrue(response.body().contains("Number(count)/detailTotal*100")),
+                () -> assertTrue(jsResponse.body().contains("const detailTotal=details.reduce")),
+                () -> assertTrue(jsResponse.body().contains("Number(count)/detailTotal*100")),
                 () -> assertTrue(!response.body().contains("tactics-comparison")));
     }
 
@@ -275,8 +531,30 @@ class SimulationPageIntegrationTest {
 
         // when
         HttpResponse<String> response;
-        try (var client = authenticatedClient()) {
+        HttpResponse<String> jsResponse;
+        HttpResponse<String> lineupFormResponse;
+        try (var client = HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            jsResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/js/simulation.js"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
+            lineupFormResponse =
+                    client.send(
+                            HttpRequest.newBuilder(
+                                            URI.create(
+                                                    "http://localhost:"
+                                                            + port
+                                                            + "/js/lineup-form.js"))
+                                    .GET()
+                                    .build(),
+                            HttpResponse.BodyHandlers.ofString());
         }
 
         // then
@@ -284,12 +562,22 @@ class SimulationPageIntegrationTest {
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("id=\"reset-all-personalities\"")),
                 () -> assertTrue(response.body().contains("性格")),
-                () -> assertTrue(response.body().contains("DEFAULT:'標準'")),
-                () -> assertTrue(response.body().contains("EAGER_SLUGGISH:'長距離砲'")),
-                () -> assertFalse(response.body().contains("EAGER_SLUGGISH:'長打重視'")),
-                () -> assertTrue(response.body().contains("EAGER_STEAL:'盗塁重視'")),
-                () -> assertTrue(response.body().contains("EAGER_BUNT:'バント重視'")),
-                () -> assertTrue(response.body().contains("personality:player.personality")));
+                () -> assertEquals(200, jsResponse.statusCode()),
+                () -> assertEquals(200, lineupFormResponse.statusCode()),
+                () -> assertTrue(lineupFormResponse.body().contains("DEFAULT:'単打マン'")),
+                () -> assertFalse(lineupFormResponse.body().contains("'標準'")),
+                () -> assertTrue(lineupFormResponse.body().contains("MIDDLE_DISTANCE:'中距離砲'")),
+                () -> assertTrue(lineupFormResponse.body().contains("EAGER_SLUGGISH:'長距離砲'")),
+                () -> assertFalse(lineupFormResponse.body().contains("EAGER_SLUGGISH:'長打重視'")),
+                () -> assertTrue(lineupFormResponse.body().contains("HIGH_ON_BASE:'高出塁率'")),
+                () -> assertTrue(lineupFormResponse.body().contains("EAGER_STEAL:'盗塁重視'")),
+                () -> assertTrue(lineupFormResponse.body().contains("EAGER_BUNT:'バント職人'")),
+                () -> assertFalse(lineupFormResponse.body().contains("バント重視")),
+                () ->
+                        assertTrue(
+                                lineupFormResponse
+                                        .body()
+                                        .contains("personality:player.personality")));
     }
 
     @Test
@@ -311,58 +599,62 @@ class SimulationPageIntegrationTest {
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("シミュレーションの仕組み")),
-                () -> assertTrue(response.body().contains("未ログイン")),
-                () ->
-                        assertFalse(
-                                response.body().contains("href=\"/oauth2/authorization/google\"")),
+                () -> assertFalse(response.body().contains("ログイン")),
                 () -> assertContainsPattern(response.body(), "盗塁判定\\s*→\\s*バント判定\\s*→\\s*通常打撃"),
                 () -> assertTrue(response.body().contains("各選手の入力項目")),
-                () -> assertTrue(response.body().contains("出塁率")),
-                () -> assertTrue(response.body().contains("長打率")),
-                () -> assertTrue(response.body().contains("バント成功率")),
-                () -> assertTrue(response.body().contains("<strong>0.00〜0.95</strong>")),
-                () -> assertTrue(response.body().contains("盗塁成功率")),
+                () -> assertTrue(response.body().contains("安打数を打数で割った割合")),
+                () -> assertTrue(response.body().contains("四球は打数に含めず、別に判定します")),
+                () -> assertTrue(response.body().contains("本塁打・四球・三振・凡打のいずれか")),
+                () -> assertFalse(response.body().contains("<dt>出塁率</dt>")),
+                () -> assertTrue(response.body().contains("打率")),
+                () -> assertFalse(response.body().contains("長打率")),
+                () -> assertTrue(response.body().contains("単打18:二塁打2</strong>の固定比率で配分し、三塁打")),
+                () -> assertFalse(response.body().contains("単打3:二塁打2")),
+                () -> assertFalse(response.body().contains("バント成功率")),
+                () -> assertFalse(response.body().contains("<strong>0.00〜0.95</strong>")),
+                () -> assertFalse(response.body().contains("盗塁成功率")),
                 () -> assertTrue(response.body().contains("バント・盗塁のオン／オフ")),
                 () -> assertTrue(response.body().contains("性格による違い")),
-                () -> assertTrue(response.body().contains("標準")),
-                () -> assertTrue(response.body().contains("盗塁は通常の頻度、バントは無死のときに試みます")),
+                () -> assertFalse(response.body().contains("<dt>標準</dt>")),
+                () -> assertTrue(response.body().contains("<dt>単打マン</dt>")),
+                () -> assertTrue(response.body().contains("三塁打・本塁打は打ちません")),
+                () -> assertTrue(response.body().contains("<dt>中距離砲</dt>")),
+                () -> assertTrue(response.body().contains("単打13:二塁打3:三塁打1:本塁打3")),
+                () -> assertTrue(response.body().contains("単打7:二塁打6:三塁打1:本塁打6")),
                 () -> assertTrue(response.body().contains("長距離砲")),
-                () -> assertTrue(response.body().contains("標準より本塁打の割合が増える")),
+                () -> assertTrue(response.body().contains("中距離砲より本塁打と二塁打の割合が増える一方、単打が減ります")),
+                () -> assertTrue(response.body().contains("<dt>高出塁率</dt>")),
+                () -> assertTrue(response.body().contains("四球の確率が<strong>10%</strong>")),
+                () ->
+                        assertTrue(
+                                response.body()
+                                        .contains("安打の配分は単打マンと同じ<strong>単打18:二塁打2</strong>")),
+                () -> assertFalse(response.body().contains("安打の配分は中距離砲と同じ比率です")),
+                () -> assertTrue(response.body().contains("盗塁は通常の頻度、バントは無死のときに試みます")),
+                () -> assertTrue(response.body().contains("安打全体の確率は打率で決まり、変わりません")),
+                () -> assertFalse(response.body().contains("アウトも増えます")),
                 () -> assertTrue(response.body().contains("盗塁重視")),
-                () -> assertTrue(response.body().contains("標準より一塁・二塁走者の盗塁を試みやすくなります")),
-                () -> assertTrue(response.body().contains("バント重視")),
+                () -> assertTrue(response.body().contains("他の性格より二塁走者の盗塁を試みやすくなります")),
+                () -> assertTrue(response.body().contains("<dt>バント職人</dt>")),
+                () -> assertFalse(response.body().contains("バント重視")),
                 () -> assertTrue(response.body().contains("一死でもバントを試みます")),
                 () -> assertTrue(response.body().contains("平均得点")),
+                () -> assertTrue(response.body().contains("盗塁の成功率は<strong>70%</strong>")),
                 () -> assertTrue(response.body().contains("盗塁死となり、アウトが一つ増えます")),
+                () -> assertTrue(response.body().contains("進塁バント")),
+                () -> assertTrue(response.body().contains("成功率は<strong>81%</strong>")),
+                () -> assertTrue(response.body().contains("<strong>25%</strong>の確率で試み")),
+                () -> assertTrue(response.body().contains("試みた場合の成功率は<strong>45%</strong>")),
+                () -> assertTrue(response.body().contains("挑戦しなかった場合は通常の打撃を行います")),
                 () -> assertTrue(response.body().contains("満塁で四球になると押し出しで1点入ります")),
                 () -> assertTrue(response.body().contains("進塁バントとスクイズの成功・失敗をそれぞれ色分け")),
                 () -> assertTrue(response.body().contains("二盗成功・三盗成功・盗塁失敗を色分け")),
-                () -> assertTrue(response.body().contains("打順を組み立てる")),
-                () -> assertTrue(response.body().contains("--cyan: #25d9ff")),
-                () -> assertTrue(response.body().contains("--pink: #ff4da6")),
-                () -> assertTrue(response.body().contains("radial-gradient(circle at 15% 10%,")));
-    }
-
-    @Test
-    @DisplayName("ログイン画面へアクセスするとGoogleログインの画面がHTMLで表示される")
-    void rendersLoginPage() throws Exception {
-        // given
-        var request =
-                HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
-                        .GET()
-                        .build();
-
-        // when
-        HttpResponse<String> response;
-        try (var client = HttpClient.newHttpClient()) {
-            response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        }
-
-        // then
-        assertAll(
-                () -> assertEquals(200, response.statusCode()),
-                () -> assertTrue(response.body().contains("ログイン")),
-                () -> assertTrue(response.body().contains("Googleログインは現在利用できません")),
-                () -> assertTrue(response.body().contains("トップへ戻る")));
+                () -> assertFalse(response.body().contains("打順を組み立てる")),
+                () -> assertTrue(response.body().contains("color-scheme: light")),
+                () -> assertTrue(response.body().contains("--paper: #f3eee2")),
+                () -> assertTrue(response.body().contains("--moss: #56704a")),
+                () -> assertTrue(response.body().contains("--clay: #bf6b45")),
+                () -> assertFalse(response.body().contains("--cyan")),
+                () -> assertFalse(response.body().contains("--pink")));
     }
 }

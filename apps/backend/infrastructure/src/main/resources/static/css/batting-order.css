@@ -1,0 +1,58 @@
+        /* 打順組み替え画面。共通のsimulation.cssの後に読み込み、ドラッグによる打順組み替えだけを追加する。 */
+        .reorder-order .columns, .reorder-order .slot {
+            grid-template-columns: 28px 38px 60px 118px 96px 96px;
+        }
+
+        .drag-handle {
+            width: 28px;
+            min-height: var(--control-height);
+            padding: 0;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--muted);
+            font-size: 18px;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .drag-handle:hover:not(:disabled) {
+            border-color: var(--line);
+            background: var(--panel-sunk);
+        }
+
+        .slot.dragging {
+            opacity: .5;
+        }
+
+        .slot.dragging .drag-handle {
+            cursor: grabbing;
+        }
+
+        .slot.drop-target {
+            background: var(--moss-tint);
+            box-shadow: inset 0 0 0 2px var(--moss);
+        }
+
+        .stat-value {
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+        }
+
+        @media (max-width: 760px) {
+            .reorder-order .columns, .reorder-order .slot {
+                grid-template-columns: 24px 24px minmax(0, .8fr) minmax(0, 1.4fr) repeat(2, minmax(0, .8fr));
+            }
+
+            .drag-handle {
+                width: 24px;
+                font-size: 16px;
+            }
+
+            .stat-value {
+                font-size: 13px;
+            }
+        }

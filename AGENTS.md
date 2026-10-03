@@ -325,6 +325,18 @@ A feature is not complete until all of the following are done:
   create` and link it to the issue by including `Closes #<issue-number>` (or
   `Refs #<issue-number>` when the PR does not fully close the issue) in the PR
   body.
+- Record the tokens consumed by the working session in both the pull request
+  title and description. Immediately before `gh pr create`, run
+  `./.agents/skills/baseball-orders-development/scripts/session-token-usage.sh codex`
+  (Claude Code uses `claude` instead of `codex`). Append
+  `(tokens: <total_tokens>)` to the title, for example
+  `feat: add scoreboard (tokens: 1045K)`, and add a `## Token usage` section
+  to the description containing the script's full output. The figure includes
+  the session's subagents. When the same session later updates the pull
+  request (review or CI fixes), rerun the script and update both the title and
+  the section with `gh pr edit`, so the recorded value is the session's final
+  consumption. If the script cannot find the session, write `tokens: unknown`
+  and state the reason in the section rather than estimating a value.
 - If a `docs/features` specification document is also used for a feature that
   has a tracking issue, keep the two in sync: mark the specification
   `status: done` and close the issue together, in the same session that merges
@@ -336,9 +348,12 @@ A feature is not complete until all of the following are done:
   pull request's CI has succeeded. Do not report completion, mark a feature
   specification `status: done`, or close the tracking issue while CI is still
   running, unknown, or failing.
-- Check CI status with `gh pr checks <pr-number>` (add `--watch` to block until
-  checks finish, since this is monitoring your own PR's automated checks, not
-  an unrelated interactive command). Re-check after pushing new commits.
+- Check CI status with `gh pr checks <pr-number> --watch --interval 60`, which
+  blocks until checks finish while polling once per minute (this is monitoring
+  your own PR's automated checks, not an unrelated interactive command). To
+  avoid needless API traffic, do not poll more often than once a minute: do not
+  use `--watch` without `--interval 60`, and do not loop `gh pr checks` in
+  shorter intervals. Re-check the same way after pushing new commits.
 - If CI fails, continue the same task: inspect the failure with `gh run view
   --log-failed` (or the equivalent check output), fix the root cause, push a
   new commit to the same branch, and re-check CI. Do not amend or force-push to
@@ -357,10 +372,18 @@ checkout and isolate each GitHub Issue's changes on its own branch.
   before creating its branch; never branch off a closed issue.
 - One issue maps to exactly one branch. Do not reuse an issue's branch for a
   second, unrelated issue or mix changes from multiple issues on one branch.
-- Create the issue branch from `develop` in the existing checkout:
-  `git switch -c feature/<date>[-<n>] develop`
+- Create every new branch from the latest `develop`. First switch to
+  `develop` and bring it up to date with the remote, then branch from it in
+  the existing checkout:
+  ```
+  git switch develop
+  git pull --ff-only origin develop
+  git switch -c feature/<date>[-<n>] develop
+  ```
   (see `git branch` for this repository's existing `feature/YYYYMMDD[-n]`
-  naming).
+  naming). Never create a new branch from another feature branch or from a
+  stale local `develop`. If `git pull --ff-only` fails because local
+  `develop` has diverged, report the blocker instead of resetting it.
 - Work on only one issue at a time in this checkout. Finish, review, and merge
   its pull request before starting another issue from the updated `develop`.
   Independent worker nodes within the same issue may still run concurrently
@@ -374,6 +397,28 @@ checkout and isolate each GitHub Issue's changes on its own branch.
 - Do not remove pre-existing worktrees as part of this workflow change. Any
   cleanup must preserve uncommitted and unpushed work and be explicitly scoped.
 
+## Commit granularity
+
+Split an issue's work into small, reviewable commits on its branch instead of
+one commit for the whole issue.
+
+- Create one commit each time an implementation unit and its tests pass:
+  after a focused change is implemented and its focused tests (and any
+  affected module verification) are green, commit that unit before starting
+  the next one. Do not commit code whose tests are known to fail.
+- Put documentation changes in their own dedicated commits. Do not mix
+  documentation (`*.md`, `docs/**`, `AGENTS.md`, `CLAUDE.md`, skill
+  `SKILL.md`/reference files, feature specifications, README files) with
+  production code or test changes in the same commit. Javadoc and code
+  comments that accompany a code change belong to that code commit.
+- Review findings and CI fixes are additional commits on the same branch,
+  following the same split between code and documentation.
+- Stage only the files that belong to the commit (`git add <path>`); do not
+  use `git add -A` to sweep unrelated changes into it.
+- Write each commit message as a single purpose, using this repository's
+  existing `feat:` / `fix:` / `refactor:` / `test:` / `chore:` / `docs:`
+  prefix style. Documentation-only commits use `docs:`.
+
 ## Screen screenshots in pull requests
 
 - When a change alters what a backend Thymeleaf screen (`apps/backend/infrastructure/src/main/resources/templates/*.html`)
@@ -383,7 +428,7 @@ checkout and isolate each GitHub Issue's changes on its own branch.
   `baseball-orders-screen-review` skill, and paste them into the pull request
   description before opening or updating it.
 - Capture screenshots against the real rendered screen (through its actual
-  route, controller, and authentication), not a static file opened directly.
+  route and controller), not a static file opened directly.
 - A change that only affects non-visual behavior (backend logic, SQS
   messaging, Terraform, tests) with no template/CSS/view-model diff does not
   require screenshots.

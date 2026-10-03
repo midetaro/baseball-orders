@@ -12,17 +12,19 @@ final class BattingResultSelector {
 
     BattingResult select(
             float random,
-            float onBasePercentage,
+            float battingAverage,
             float singleWeight,
             float doubleWeight,
             float tripleWeight,
             float homeRunWeight) {
-        float walkProbability = Math.min(probabilities.walkProbability(), onBasePercentage);
+        float walkProbability = probabilities.walkProbability();
         if (random < walkProbability) {
             return BattingResult.WALK;
         }
 
-        float remainingOnBaseProbability = onBasePercentage - walkProbability;
+        // 四球は打数に含まれないため、安打確率は四球以外の打席に打率を掛ける。
+        float hitProbability = (1 - walkProbability) * battingAverage;
+        float onBaseProbability = walkProbability + hitProbability;
         float totalHitWeight = singleWeight + doubleWeight + tripleWeight + homeRunWeight;
         float cumulative = walkProbability;
         float[] weights = {singleWeight, doubleWeight, tripleWeight, homeRunWeight};
@@ -39,17 +41,16 @@ final class BattingResultSelector {
             }
             cumulative =
                     index == lastPositiveWeight
-                            ? onBasePercentage
-                            : cumulative
-                                    + remainingOnBaseProbability * weights[index] / totalHitWeight;
+                            ? onBaseProbability
+                            : cumulative + hitProbability * weights[index] / totalHitWeight;
             if (random < cumulative) {
                 return results[index];
             }
         }
 
         float strikeoutThreshold =
-                onBasePercentage
-                        + (1 - onBasePercentage)
+                onBaseProbability
+                        + (1 - onBaseProbability)
                                 * probabilities.strikeoutProbabilityWhenNotOnBase();
         return random < strikeoutThreshold ? BattingResult.STRIKEOUT : BattingResult.BATTED_OUT;
     }

@@ -17,24 +17,18 @@ class BatterEntityTest {
     private static BatterEntity homeRunBatter() {
         return new BatterEntity(
                 0.3f,
-                0.4f,
-                0.75f,
-                0.85f,
                 SimulationRulesTestData.strategies().longDistanceAtBat(),
                 SimulationRulesTestData.strategies().noSteal(),
                 SimulationRulesTestData.strategies().noBunt());
     }
 
     @Test
-    @DisplayName("バントすると打者のバント成功率を戦略に渡して結果を返す")
+    @DisplayName("バントするとバント戦略へ委譲して結果を返す")
     void delegatesBuntWithBatterSuccessRate() {
         // given
         var batter =
                 new BatterEntity(
                         0.3f,
-                        0.4f,
-                        0.75f,
-                        0.85f,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().noSteal(),
                         SimulationRulesTestData.strategies().standardBunt());
@@ -59,15 +53,12 @@ class BatterEntityTest {
     }
 
     @Test
-    @DisplayName("盗塁すると打者の盗塁成功率を戦略に渡して結果を返す")
+    @DisplayName("盗塁すると盗塁戦略へ委譲して結果を返す")
     void delegatesStealWithBatterSuccessRate() {
         // given
         var batter =
                 new BatterEntity(
                         0.3f,
-                        0.4f,
-                        0.75f,
-                        0.85f,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().eagerSteal(),
                         SimulationRulesTestData.strategies().standardBunt());
@@ -116,9 +107,6 @@ class BatterEntityTest {
         var batter =
                 new BatterEntity(
                         0.3f,
-                        0.4f,
-                        0.75f,
-                        0.85f,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().noSteal(),
                         SimulationRulesTestData.strategies().standardBunt());

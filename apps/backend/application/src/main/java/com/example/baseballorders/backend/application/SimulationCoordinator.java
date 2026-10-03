@@ -23,9 +23,6 @@ public final class SimulationCoordinator {
     /** 共有メッセージのスキーマ版数であり設定値ではない。 */
     private static final String MESSAGE_VERSION = "1";
 
-    /** 確率の定義そのものを表す下限であり設定値ではない。 */
-    private static final float MINIMUM_SUCCESS_RATE = 0.000f;
-
     private final SimulatorMessagePublisher publisher;
     private final WaitingResultRegistry registry;
     private final SimulationLimits limits;
@@ -113,31 +110,12 @@ public final class SimulationCoordinator {
 
     private void validateLineup(List<PlayerData> players) {
         double totalHitAverage = 0;
-        double totalSluggish = 0;
         for (PlayerData player : players) {
             totalHitAverage += player.hitAverage();
-            totalSluggish += player.sluggish();
-            requireSuccessRate(player.buntSuccessRate(), "buntSuccessRate");
-            requireSuccessRate(player.stealSuccessRate(), "stealSuccessRate");
         }
         if (totalHitAverage / LINEUP_SIZE > limits.maximumAverageHitAverage()) {
             throw new IllegalArgumentException(
                     "the average hitAverage must not exceed " + limits.maximumAverageHitAverage());
-        }
-        if (totalSluggish / LINEUP_SIZE > limits.maximumAverageSluggish()) {
-            throw new IllegalArgumentException(
-                    "the average sluggish must not exceed " + limits.maximumAverageSluggish());
-        }
-    }
-
-    private void requireSuccessRate(float value, String name) {
-        if (value > limits.maximumSuccessRate()) {
-            throw new IllegalArgumentException(
-                    name
-                            + " must be between "
-                            + MINIMUM_SUCCESS_RATE
-                            + " and "
-                            + limits.maximumSuccessRate());
         }
     }
 }

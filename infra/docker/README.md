@@ -8,38 +8,23 @@ JavaとGradleはDocker内で用意されるため、ホストへのインスト�
 docker compose up -d --build --wait --wait-timeout 180
 ```
 
-http://127.0.0.1:8080/ を開くと、打者一覧・打順設定・シミュレーションを利用できます。
+http://127.0.0.1:8080/ を開くと、大規模実行（`/`）・1試合実行（`/single-game`）・シミュレーションの仕組み（`/simulation-guide`）の各画面を利用できます。
 既存のJavaプロセスなどが8080を使っている場合は、`BACKEND_PORT=18080`をコマンドの前に付け、
 http://127.0.0.1:18080/ を開いてください。
-
-## Googleログインを有効にする
-
-Google Cloud ConsoleでOAuth 2.0クライアントを作成し、認可済みのリダイレクトURIとして
-`http://127.0.0.1:8080/login/oauth2/code/google` を登録します。起動時に発行済みの値を渡すと、
-Backendコンテナへ自動的に引き継がれ、Googleログインを検証できます。
-
-```sh
-GOOGLE_CLIENT_ID='発行したClient ID' \
-GOOGLE_CLIENT_SECRET='発行したClient Secret' \
-docker compose up -d --build --wait --wait-timeout 180
-```
-
-公開ポートを変更する場合は、Google Cloud ConsoleのリダイレクトURIも
-`http://127.0.0.1:変更後ポート/login/oauth2/code/google` に合わせて登録してください。
 
 ## 構成
 
 - `floci`: Floci 2.0.1。AWS SQSをローカルで代替します。
 - `queues`: Flociの正常起動後に要求・結果キューを作成し、正常終了する初期化コンテナ。
 - `simulator`: 本番の試合計算を行う独立したJavaプロセス。SQSを自動ポーリングします。
-- `backend`: HTTP/UIとH2。要求をSQSへ送信し、結果リスナーが受信した結果をHTTPで返します。
+- `backend`: HTTP/UI。要求をSQSへ送信し、結果リスナーが受信した結果をHTTPで返します。
 
 Backend -> 要求SQS (Floci) -> Simulator -> 結果SQS (Floci) -> Backend
 
 Dockerでは明示的に`docker`プロファイルを指定し、Backendの`local`プロファイルによる
 リスナー停止を回避します。Simulatorの試合数は
 `apps/simulator/infrastructure/src/main/resources/application.yml`の
-`simulation.game-count`（現在10）に従います。変更後はSimulatorを再ビルド・再作成してください。
+`simulation.game-count`（既定100、環境変数`SIMULATION_GAME_COUNT`）に従います。変更後はSimulatorを再ビルド・再作成してください。
 ポーリング間隔は1秒で、`SIMULATION_SQS_POLL_FIXED_DELAY`をCompose内で変更できます。
 
 Composeが試合数を上書きしないことは、`python3 infra/docker/test-compose-config.py`で検証できます。
@@ -52,13 +37,13 @@ FlociはDocker内部の`http://floci:4566`に配置し、ホストにはBackend�
 キュー名を変更する場合は、起動時に`SIMULATION_REQUEST_QUEUE_NAME`と
 `SIMULATION_RESULT_QUEUE_NAME`を設定します。初期化と両アプリに同じ値が渡ります。
 
-データは開発用の一時データです。BackendのH2はプロセス終了で、Flociのキューとメッセージは
-Flociプロセス終了で失われます。起動時にH2の初期データとキューを再作成します。
+データは開発用の一時データです。Flociのキューとメッセージは
+Flociプロセス終了で失われます。起動時にキューを再作成します。
 Flociだけを再起動するとキューが失われるため、環境全体を`down`してから`up`してください。
 
 ## 疎通確認
 
-Python 3があるホストで実行します。画面のHTTP 200と、9選手の実シミュレーション応答を検証します。
+Python 3があるホストで実行します。画面のHTTP 200と、9選手を`POST /simulations`へ送った実シミュレーション応答（相関ID、試合数、得点分布）を検証します。
 定期ポーリングも本番実装が自動で実行し、テストから`poll()`を直接呼びません。
 
 ```sh

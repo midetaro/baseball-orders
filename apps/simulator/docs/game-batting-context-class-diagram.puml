@@ -45,7 +45,7 @@ package "model.player" {
   abstract class Player
 
   class BatterEntity {
-    - onBasePercentage: float
+    - battingAverage: float
     - sluggish: float
     - buntSuccessRate: float
     - stealSuccessRate: float
@@ -68,7 +68,7 @@ package "model.player" {
 
 package "model.behavior" {
   interface HittingStrategy <<sealed>> {
-    + batting(onBasePercentage: float, sluggish: float): BattingResult
+    + batting(battingAverage: float, sluggish: float): BattingResult
   }
 
   interface BuntStrategy <<sealed>> {

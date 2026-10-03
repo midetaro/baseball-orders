@@ -1,0 +1,118 @@
+        /* 全画面共通の左メニュー。画面ごとにCSS変数の定義が異なるため、色と寸法はこのファイル内で完結させる。 */
+        .menu-toggle, .menu-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 34px;
+            padding: 0 12px;
+            border: 1px solid #ddd4bf;
+            border-radius: 999px;
+            background: #fbf8f0;
+            color: #405636;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .menu-toggle:hover, .menu-close:hover {
+            border-color: #9fb08a;
+        }
+
+        .menu-toggle:focus-visible, .menu-close:focus-visible, .site-menu a:focus-visible {
+            outline: 2px solid #56704a;
+            outline-offset: 2px;
+        }
+
+        .menu-icon, .menu-icon::before, .menu-icon::after {
+            display: block;
+            width: 14px;
+            height: 2px;
+            border-radius: 1px;
+            background: currentColor;
+        }
+
+        .menu-icon {
+            position: relative;
+        }
+
+        .menu-icon::before, .menu-icon::after {
+            content: "";
+            position: absolute;
+            left: 0;
+        }
+
+        .menu-icon::before {
+            top: -5px;
+        }
+
+        .menu-icon::after {
+            top: 5px;
+        }
+
+        .site-menu {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 20;
+            width: min(260px, 80vw);
+            padding: 20px 16px;
+            overflow-y: auto;
+            background: #fbf8f0;
+            border-right: 1px solid #ddd4bf;
+            box-shadow: 4px 0 24px rgba(47, 51, 39, .18);
+        }
+
+        .site-menu[hidden], .menu-backdrop[hidden] {
+            display: none;
+        }
+
+        .site-menu-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .site-menu-title {
+            color: #405636;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .site-menu ul {
+            display: grid;
+            gap: 4px;
+            margin: 16px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .site-menu a {
+            display: block;
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #56704a;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .site-menu a:hover {
+            color: #bf6b45;
+            background: #f1ebdc;
+        }
+
+        .site-menu a[aria-current="page"] {
+            color: #405636;
+            background: #e3e9d6;
+        }
+
+        .menu-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 19;
+            background: rgba(47, 51, 39, .3);
+        }

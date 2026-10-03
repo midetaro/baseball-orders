@@ -23,11 +23,14 @@ public class LineUpMapper {
     private final SimulationPitcherProperties pitcherProperties;
     private final StealStrategy noStealStrategy;
     private final BuntStrategy noBuntStrategy;
+    private final HittingStrategy shortDistanceHittingStrategy;
+    private final HittingStrategy highOnBaseHittingStrategy;
 
     /**
      * Creates a mapper using the default batting and stealing strategies.
      *
-     * @param hittingStrategy middle-distance batting behavior assigned to each batter
+     * @param hittingStrategy middle-distance batting behavior assigned to middle-distance, eager
+     *     steal, and eager bunt batters
      * @param stealStrategy stealing strategy assigned to each batter
      * @param buntStrategy bunt strategy assigned to each batter
      * @param behaviorStrategies 設定された確率を保持する行動戦略ファクトリ
@@ -46,14 +49,19 @@ public class LineUpMapper {
         this.pitcherProperties = pitcherProperties;
         noStealStrategy = behaviorStrategies.noSteal();
         noBuntStrategy = behaviorStrategies.noBunt();
+        shortDistanceHittingStrategy = behaviorStrategies.shortDistanceHittingStrategy();
+        highOnBaseHittingStrategy = behaviorStrategies.highOnBaseHittingStrategy();
     }
 
     /**
      * Converts SQS player data to a domain lineup, disabling steals and bunts according to each
-     * player's selection. The legacy {@code hitAverage} wire field is interpreted as the domain
-     * on-base percentage to retain the existing message contract. The opposing pitcher's
-     * personality carried by a request is ignored; every batter receives the same standard
-     * probability adjustment.
+     * player's selection. The {@code DEFAULT} personality (single hitter) uses short-distance
+     * batting, and the high on-base personality uses its dedicated walk probability. The legacy
+     * {@code hitAverage} wire field is interpreted as the domain batting average excluding walks to
+     * retain the existing message contract. The opposing pitcher's personality carried by a request
+     * is ignored; every batter receives the same standard probability adjustment. Bunt and steal
+     * success rates are fixed simulation constants supplied through configuration rather than
+     * per-player wire data.
      *
      * @param players players contained in a simulation request
      * @return lineup containing mapped batter entities in request order
@@ -64,10 +72,7 @@ public class LineUpMapper {
                         .map(
                                 player ->
                                         new BatterEntity(
-                                                player.hitAverage() * onBaseMultiplier(),
-                                                player.sluggish() * sluggingMultiplier(),
-                                                player.buntSuccessRate() * runningMultiplier(),
-                                                player.stealSuccessRate() * runningMultiplier(),
+                                                player.hitAverage() * battingAverageMultiplier(),
                                                 battingBehaviorFor(player.personality()),
                                                 player.stealEnabled()
                                                         ? stealStrategyFor(player.personality())
@@ -79,35 +84,31 @@ public class LineUpMapper {
         return new LineUpEntity(batters);
     }
 
-    private float onBaseMultiplier() {
+    private float battingAverageMultiplier() {
         return pitcherProperties.standard().onBaseMultiplier();
-    }
-
-    private float sluggingMultiplier() {
-        return pitcherProperties.standard().sluggingMultiplier();
-    }
-
-    private float runningMultiplier() {
-        return pitcherProperties.standard().runningMultiplier();
     }
 
     private HittingStrategy battingBehaviorFor(PlayerPersonality personality) {
         return switch (personality) {
-            case DEFAULT, EAGER_STEAL, EAGER_BUNT -> hittingStrategy;
+            case DEFAULT -> shortDistanceHittingStrategy;
+            case MIDDLE_DISTANCE, EAGER_STEAL, EAGER_BUNT -> hittingStrategy;
             case EAGER_SLUGGISH -> behaviorStrategies.longDistanceAtBat();
+            case HIGH_ON_BASE -> highOnBaseHittingStrategy;
         };
     }
 
     private StealStrategy stealStrategyFor(PlayerPersonality personality) {
         return switch (personality) {
-            case DEFAULT, EAGER_SLUGGISH, EAGER_BUNT -> stealStrategy;
+            case DEFAULT, MIDDLE_DISTANCE, EAGER_SLUGGISH, HIGH_ON_BASE, EAGER_BUNT ->
+                    stealStrategy;
             case EAGER_STEAL -> behaviorStrategies.eagerSteal();
         };
     }
 
     private BuntStrategy buntStrategyFor(PlayerPersonality personality) {
         return switch (personality) {
-            case DEFAULT, EAGER_SLUGGISH, EAGER_STEAL -> buntStrategy;
+            case DEFAULT, MIDDLE_DISTANCE, EAGER_SLUGGISH, HIGH_ON_BASE, EAGER_STEAL ->
+                    buntStrategy;
             case EAGER_BUNT -> behaviorStrategies.eagerBunt();
         };
     }
