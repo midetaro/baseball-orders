@@ -36,6 +36,10 @@ const header = html.slice(html.indexOf('<header'), html.indexOf('</header>'));
 for (const href of ['/large-scale', '/single-game', '/simulation-guide']) {
   assert.ok(!header.includes(`href="${href}"`), `ヘッダーに${href}への導線を直接表示しない`);
 }
+for (const name of ['simulation', 'single-game']) {
+  const otherHtml = readFileSync(new URL(`../../main/resources/templates/${name}.html`, import.meta.url), 'utf8');
+  assert.ok(otherHtml.includes('<a href="/">打順組み替えに戻る</a>'), `${name}画面から既定の打順組み替え画面へ戻れる`);
+}
 assert.ok(css.includes('.site-menu {') && css.includes('left: 0'), 'メニューは画面左に表示する');
 assert.ok(css.includes('touch-action: none'), 'ドラッグハンドルの操作で画面をスクロールさせない');
 
