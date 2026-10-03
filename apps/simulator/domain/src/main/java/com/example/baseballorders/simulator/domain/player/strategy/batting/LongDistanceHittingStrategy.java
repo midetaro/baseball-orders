@@ -24,23 +24,23 @@ public final class LongDistanceHittingStrategy implements HittingStrategy {
     }
 
     @Override
-    public BattingResult batting(float onBasePercentage, float slugging) {
+    public BattingResult batting(float battingAverage, float slugging) {
         float random = RandomGenerator.nextFloat();
 
         // 長打によって増えた塁数
-        float extraBaseProbability = slugging - onBasePercentage;
+        float extraBaseProbability = slugging - battingAverage;
 
-        // 中距離バッターより本塁打へ配分を寄せ、単打を減らしてアウト率も上げる設定を使う
+        // 中距離バッターより本塁打へ配分を寄せ、単打を減らす設定を使う
         float doubleProbability = extraBaseProbability / distribution.doubleDivisor();
         float tripleProbability = extraBaseProbability / distribution.tripleDivisor();
         float homeRunProbability = extraBaseProbability / distribution.homeRunDivisor();
 
         float singleProbability =
-                onBasePercentage - extraBaseProbability / distribution.singleReductionDivisor();
+                battingAverage - extraBaseProbability / distribution.singleReductionDivisor();
 
         return selector.select(
                 random,
-                onBasePercentage,
+                battingAverage,
                 singleProbability,
                 doubleProbability,
                 tripleProbability,

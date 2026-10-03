@@ -3,7 +3,7 @@ package com.example.baseballorders.simulator.domain.player.strategy;
 /**
  * 基準打者に対する名前付き乱数定数。
  *
- * <p>基準打者は出塁率 0.400・長打率 0.550 で、固定された盗塁成功率 0.70・進塁バント成功率 0.81・スクイズ企図率 0.25・スクイズ成功率 0.45 の設定を用いる
+ * <p>基準打者は打率 0.400・長打率 0.550 で、固定された盗塁成功率 0.70・進塁バント成功率 0.81・スクイズ企図率 0.25・スクイズ成功率 0.45 の設定を用いる
  * {@code MiddleDistanceHittingStrategy} / {@code StandardBuntStrategy} / {@code
  * StandardStealStrategy} を持つ（{@code BatterTestData#referenceBatter()}）。
  *
@@ -22,13 +22,13 @@ public final class Draws {
     public static final float SINGLE = 0.30f;
 
     /** 二塁打になる乱数。 */
-    public static final float DOUBLE = 0.34f;
+    public static final float DOUBLE = 0.37f;
 
     /** 三塁打になる乱数。 */
-    public static final float TRIPLE = 0.36f;
+    public static final float TRIPLE = 0.395f;
 
     /** 本塁打になる乱数。 */
-    public static final float HOMER = 0.39f;
+    public static final float HOMER = 0.42f;
 
     /** 三振になる乱数。 */
     public static final float STRIKEOUT = 0.45f;

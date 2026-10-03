@@ -19,37 +19,25 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-/**
- * 短距離打者の確率仕様。
- *
- * <p>出塁率 0.400 / 長打率 0.250 での乱数区間は次のとおり。三塁打と本塁打の重みが 0 なので到達不能である。
- *
- * <pre>
- * [0.0000000, 0.0500000) 四球
- * [0.0500000, 0.3125000] 単打（0.3125000 を含む）
- * [0.3125000, 0.4000000) 二塁打（下端は0.3125000の次のfloat）
- * [0.4000000, 0.5500000) 三振
- * [0.5500000, 1.0000000] 凡退
- * </pre>
- */
+/** 四球を除いた打席に対する打率と、設定された長打配分の確率仕様。 */
 class ShortDistanceHittingStrategyTest {
 
-    private static final float ON_BASE_PERCENTAGE = 0.400f;
+    private static final float BATTING_AVERAGE = 0.400f;
     private static final float SLUGGING = 0.250f;
     private static final int UNREACHABLE_SCAN_STEPS = 1000;
 
     static Stream<Arguments> battingBoundaries() {
         return Stream.of(
-                arguments("0.0000000は四球区間の下端", 0.0f, BattingResult.WALK),
-                arguments("0.049999997は四球区間の直前", 0.049999997f, BattingResult.WALK),
-                arguments("0.0500000は単打区間の下端", 0.05f, BattingResult.HIT_SINGLE),
-                arguments("0.3125000は単打区間の直前", 0.3125f, BattingResult.HIT_SINGLE),
-                arguments("0.31250003は二塁打区間の下端", 0.31250003f, BattingResult.HIT_DOUBLE),
-                arguments("0.39999998は二塁打区間の直前", 0.39999998f, BattingResult.HIT_DOUBLE),
-                arguments("0.4000000は三振区間の下端で出塁率と等しい", 0.4f, BattingResult.STRIKEOUT),
-                arguments("0.54999995は三振区間の直前", 0.54999995f, BattingResult.STRIKEOUT),
-                arguments("0.5500000は凡退区間の下端", 0.55f, BattingResult.BATTED_OUT),
-                arguments("1.0000000は凡退区間の上端", 1.0f, BattingResult.BATTED_OUT));
+                arguments("乱数0は四球", 0.0f, BattingResult.WALK),
+                arguments("0.05の直前", Math.nextDown(0.05f), BattingResult.WALK),
+                arguments("0.05と等しい境界", 0.05f, BattingResult.HIT_SINGLE),
+                arguments("0.335の直前", Math.nextDown(0.335f), BattingResult.HIT_SINGLE),
+                arguments("0.335と等しい境界", 0.335f, BattingResult.HIT_DOUBLE),
+                arguments("0.43の直前", Math.nextDown(0.43f), BattingResult.HIT_DOUBLE),
+                arguments("0.43と等しい境界", 0.43f, BattingResult.STRIKEOUT),
+                arguments("0.5725の直前", Math.nextDown(0.5725f), BattingResult.STRIKEOUT),
+                arguments("0.5725と等しい境界", 0.5725f, BattingResult.BATTED_OUT),
+                arguments("乱数1は凡退", 1.0f, BattingResult.BATTED_OUT));
     }
 
     @DisplayName("短距離打者は乱数区間の境界どおりに打席結果を決定し、乱数を1個だけ消費する")
@@ -63,7 +51,7 @@ class ShortDistanceHittingStrategyTest {
         // when
         BattingResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            result = sut.batting(ON_BASE_PERCENTAGE, SLUGGING);
+            result = sut.batting(BATTING_AVERAGE, SLUGGING);
 
             // then
             assertAll(
@@ -88,7 +76,7 @@ class ShortDistanceHittingStrategyTest {
         // when
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(script)) {
             for (int step = 0; step <= UNREACHABLE_SCAN_STEPS; step++) {
-                observed.add(sut.batting(ON_BASE_PERCENTAGE, SLUGGING));
+                observed.add(sut.batting(BATTING_AVERAGE, SLUGGING));
             }
 
             // then
@@ -153,7 +141,7 @@ class ShortDistanceHittingStrategyTest {
         // when
         BattingResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            result = sut.batting(ON_BASE_PERCENTAGE, SLUGGING);
+            result = sut.batting(BATTING_AVERAGE, SLUGGING);
 
             // then
             assertAll(

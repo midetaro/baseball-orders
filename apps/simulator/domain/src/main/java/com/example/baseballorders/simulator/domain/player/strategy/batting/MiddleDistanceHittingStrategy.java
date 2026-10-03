@@ -24,11 +24,11 @@ public final class MiddleDistanceHittingStrategy implements HittingStrategy {
     }
 
     @Override
-    public BattingResult batting(float onBasePercentage, float slugging) {
+    public BattingResult batting(float battingAverage, float slugging) {
         float random = RandomGenerator.nextFloat();
 
         // 長打によって増えた塁数
-        float extraBaseProbability = slugging - onBasePercentage;
+        float extraBaseProbability = slugging - battingAverage;
 
         // 二塁打・三塁打・本塁打の配分は設定された除数に従う
         float doubleProbability = extraBaseProbability / distribution.doubleDivisor();
@@ -36,11 +36,11 @@ public final class MiddleDistanceHittingStrategy implements HittingStrategy {
         float homeRunProbability = extraBaseProbability / distribution.homeRunDivisor();
 
         float singleProbability =
-                onBasePercentage - extraBaseProbability / distribution.singleReductionDivisor();
+                battingAverage - extraBaseProbability / distribution.singleReductionDivisor();
 
         return selector.select(
                 random,
-                onBasePercentage,
+                battingAverage,
                 singleProbability,
                 doubleProbability,
                 tripleProbability,
