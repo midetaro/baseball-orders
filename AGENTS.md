@@ -330,7 +330,7 @@ A feature is not complete until all of the following are done:
   `./.agents/skills/baseball-orders-development/scripts/session-token-usage.sh codex`
   (Claude Code uses `claude` instead of `codex`). Append
   `(tokens: <total_tokens>)` to the title, for example
-  `feat: add scoreboard (tokens: 1045549)`, and add a `## Token usage` section
+  `feat: add scoreboard (tokens: 1045K)`, and add a `## Token usage` section
   to the description containing the script's full output. The figure includes
   the session's subagents. When the same session later updates the pull
   request (review or CI fixes), rerun the script and update both the title and
