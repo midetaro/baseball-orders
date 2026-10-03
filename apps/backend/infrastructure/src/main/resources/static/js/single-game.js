@@ -11,7 +11,7 @@
     ];
     let inFlight = false;
     let hasResults = false;
-    const order = document.querySelector('#order'), submit = document.querySelector('#submit'), feedback = document.querySelector('#feedback'), toggleAllBunt = document.querySelector('#toggle-all-bunt'), toggleAllSteal = document.querySelector('#toggle-all-steal'), resetAllPersonalities = document.querySelector('#reset-all-personalities'), inputView = document.querySelector('#input-view'), resultsView = document.querySelector('#results'), tabInput = document.querySelector('#tab-input'), tabResults = document.querySelector('#tab-results'), editLineup = document.querySelector('#edit-lineup'), resultFeedback = document.querySelector('#result-feedback'), frameStage = document.querySelector('#frame-stage'), orderTableScroll = document.querySelector('#order-table-scroll');
+    const order = document.querySelector('#order'), submit = document.querySelector('#submit'), feedback = document.querySelector('#feedback'), toggleAllBunt = document.querySelector('#toggle-all-bunt'), toggleAllSteal = document.querySelector('#toggle-all-steal'), resetAllPersonalities = document.querySelector('#reset-all-personalities'), inputView = document.querySelector('#input-view'), resultsView = document.querySelector('#results'), tabInput = document.querySelector('#tab-input'), tabResults = document.querySelector('#tab-results'), editLineup = document.querySelector('#edit-lineup'), resultFeedback = document.querySelector('#result-feedback'), frameStage = document.querySelector('#frame-stage'), lineScore = document.querySelector('#line-score'), orderTableScroll = document.querySelector('#order-table-scroll');
     const frameDurationMillis = Number(frameStage.dataset.frameDurationMillis) || 1000;
     const frameDurations = {none:frameDurationMillis, hit:Number(frameStage.dataset.hitFrameDurationMillis) || frameDurationMillis, score:Number(frameStage.dataset.scoreFrameDurationMillis) || frameDurationMillis, 'home-run':Number(frameStage.dataset.homeRunFrameDurationMillis) || frameDurationMillis};
     let frameTimer = null;
@@ -79,8 +79,31 @@
     function playFrames(annotated) {
       stopFramePlayback();
       let index=0;
-      const show=()=>{ const transition=annotated[index]; const {effect}=transition; frameStage.replaceChildren(buildFrame(transition)); index+=1; if (index >= annotated.length) { frameTimer=null; return; } frameTimer=setTimeout(show, frameDurations[effect.kind]); };
+      const show=()=>{ const transition=annotated[index]; const {effect}=transition; frameStage.replaceChildren(buildFrame(transition)); renderLineScore(annotated, index + 1); index+=1; if (index >= annotated.length) { frameTimer=null; return; } frameTimer=setTimeout(show, frameDurations[effect.kind]); };
       show();
+    }
+    const REGULATION_INNINGS = 9;
+    // シミュレーターは失策を扱わないため、失策数(E)は常に0になる。
+    function summarizeLineScore(played) { const innings=new Map(); let runs=0, hits=0; for (const transition of played) { innings.set(transition.inning,(innings.get(transition.inning) ?? 0)+transition.effect.runs); runs+=transition.effect.runs; if (transition.effect.bases > 0) hits+=1; } return {innings,runs,hits,errors:0}; }
+    function buildLineScore(summary, inningCount, currentInning) {
+      const table=element('table','line-score'); table.setAttribute('aria-label','スコアボード');
+      const headRow=document.createElement('tr'); const bodyRow=document.createElement('tr');
+      headRow.append(element('th','line-score-team')); const team=element('th','line-score-team','自チーム'); team.scope='row'; bodyRow.append(team);
+      for (let inning=1; inning <= inningCount; inning+=1) {
+        const th=element('th','',String(inning)); th.scope='col'; headRow.append(th);
+        const runs=summary.innings.get(inning);
+        bodyRow.append(element('td',inning === currentInning ? 'is-current' : '',runs === undefined ? '' : String(runs)));
+      }
+      const totals=[summary.runs,summary.hits,summary.errors];
+      ['R','H','E'].forEach((label,index)=>{ const th=element('th','line-score-total',label); th.scope='col'; headRow.append(th); bodyRow.append(element('td','line-score-total',String(totals[index]))); });
+      const thead=document.createElement('thead'); thead.append(headRow); const tbody=document.createElement('tbody'); tbody.append(bodyRow);
+      table.append(thead,tbody);
+      return table;
+    }
+    function renderLineScore(annotated, playedCount) {
+      const played=annotated.slice(0, playedCount);
+      const inningCount=Math.max(REGULATION_INNINGS, annotated[annotated.length - 1].inning);
+      lineScore.replaceChildren(buildLineScore(summarizeLineScore(played), inningCount, played[played.length - 1].inning));
     }
     function buildOrderTable(annotated) {
       const plateAppearances = annotated.filter(t=>!t.actionResult.startsWith('盗塁'));
@@ -105,6 +128,7 @@
       stopFramePlayback();
       if (!Array.isArray(gameTransitions) || gameTransitions.length === 0) {
         frameStage.replaceChildren(placeholder('試合結果はありません。'));
+        lineScore.replaceChildren(placeholder('試合結果はありません。'));
         orderTableScroll.replaceChildren(placeholder('試合結果はありません。'));
         return;
       }

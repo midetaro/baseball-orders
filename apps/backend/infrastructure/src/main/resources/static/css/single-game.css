@@ -1002,6 +1002,52 @@
             font-weight: 800;
         }
 
+        .line-score-wrap {
+            padding: var(--space-md) var(--space-xl) 0;
+        }
+
+        .line-score {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            color: var(--panel);
+            background: var(--moss-deep);
+            font-size: 13px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+        }
+
+        .line-score th, .line-score td {
+            padding: var(--space-2xs) 0;
+            border: 1px solid var(--moss);
+        }
+
+        .line-score thead th {
+            color: var(--moss-tint);
+            font-size: 11px;
+        }
+
+        .line-score .line-score-team {
+            width: 5.5em;
+            padding: var(--space-2xs) var(--space-xs);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .line-score .line-score-total {
+            background: var(--moss);
+        }
+
+        .line-score td.line-score-total {
+            color: var(--ochre);
+        }
+
+        .line-score td.is-current {
+            color: var(--ink);
+            background: var(--ochre);
+        }
+
         .out-count { color: #b8432f; }
 
         @media (prefers-reduced-motion: reduce) {
@@ -1056,7 +1102,7 @@
                 align-items: start;
             }
 
-            #results .result-head {
+            #results .result-head, #results .line-score-wrap {
                 grid-column: 1 / -1;
             }
 
@@ -1086,8 +1132,8 @@
             }
 
             .result-head {
-                align-items: flex-start;
-                flex-direction: column;
+                align-items: center;
+                flex-wrap: nowrap;
             }
 
             .frame-stage {
@@ -1096,7 +1142,7 @@
             }
 
             .frame {
-                --field-size: 140px;
+                --field-size: 112px;
                 gap: var(--space-2xs);
             }
 
@@ -1114,6 +1160,19 @@
 
             .order-table th, .order-table td {
                 padding: 2px var(--space-xs);
+            }
+
+            .line-score-wrap {
+                padding: var(--space-sm) var(--space-md) 0;
+            }
+
+            .line-score {
+                font-size: 12px;
+            }
+
+            .line-score .line-score-team {
+                width: 4.5em;
+                padding: 2px var(--space-2xs);
             }
 
             .order-table-wrap {

@@ -240,4 +240,38 @@ assert.ok(js.includes("{1:'ヒット!',2:'ツーベース!',3:'スリーベー�
 assert.ok(js.includes('`+${effect.runs}点`'), '得点数を「+N点」で表示する');
 assert.ok(!js.includes('Math.random'), '演出は乱数を使わず同じ結果なら同じ表示にする');
 
+// --- 野球のスコアボード（イニング別得点とR・H・E）（issue #149） ---
+assert.ok(html.includes('id="line-score"'), 'スコアボードの表示領域を用意する');
+assert.ok(
+  html.indexOf('id="line-score"') < html.indexOf('id="frame-stage"'),
+  'スコアボードはアニメーションフレームより上に表示する'
+);
+const summarizeLineScore = new Function(`${extractFunction('summarizeLineScore')}\nreturn summarizeLineScore;`)();
+const played = (inning, runs, bases) => ({inning, effect:{runs, bases}});
+assert.deepEqual(
+  summarizeLineScore([
+    played(1, 0, 1),
+    played(1, 2, 4),
+    played(1, 0, 0),
+    played(2, 1, 0),
+    played(2, 0, 2),
+    played(3, 0, 0),
+  ]),
+  {innings:new Map([[1, 2], [2, 1], [3, 0]]), runs:3, hits:3, errors:0},
+  'プレー済みの推移からイニング別得点・合計得点(R)・安打数(H)・失策数(E)を集計する'
+);
+assert.deepEqual(
+  summarizeLineScore([]),
+  {innings:new Map(), runs:0, hits:0, errors:0},
+  'プレー前はすべて0のスコアボードにする'
+);
+assert.ok(js.includes('const REGULATION_INNINGS = 9;'), 'スコアボードは最低9回まで列を用意する');
+assert.ok(js.includes('function buildLineScore('), 'スコアボードの表を生成する関数を用意する');
+assert.ok(js.includes("['R','H','E']"), 'スコアボードにR・H・Eの列を表示する');
+assert.ok(js.includes('renderLineScore(annotated, index + 1)'), 'フレームの再生に合わせてスコアボードを更新する');
+assert.match(css, /\.line-score\s*\{/, 'スコアボードのスタイルを用意する');
+assert.match(css, /#results \.result-head, #results \.line-score-wrap\s*\{\s*grid-column:\s*1 \/ -1;/, 'PC幅ではスコアボードを結果パネルの全幅に表示する');
+assert.match(mobileCss, /\.result-head\s*\{\s*align-items:\s*center;\s*flex-wrap:\s*nowrap;/, 'スマホ幅ではスコアボードの分だけ縦幅を空けるため「打順を編集する」を見出しの横に並べる');
+assert.match(mobileCss, /--field-size:\s*112px;/, 'スマホ幅ではスコアボードの分だけダイヤモンドを小さくしてページをスクロールさせない');
+
 console.log('PASS: 1試合実行結果のアニメーションフレームと打順成績表の描画');
