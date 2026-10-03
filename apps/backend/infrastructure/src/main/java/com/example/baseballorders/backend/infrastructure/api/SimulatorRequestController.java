@@ -51,7 +51,6 @@ public final class SimulatorRequestController {
                             return PlayerDataBuilder.playerData()
                                     .name((index + 1) + "番")
                                     .hitAverage(player.hitAverage())
-                                    .sluggish(player.sluggish())
                                     .buntEnabled(player.buntEnabled())
                                     .stealEnabled(player.stealEnabled())
                                     .personality(player.personality())

@@ -10,7 +10,6 @@ import org.jilt.BuilderStyle;
 @Builder(style = BuilderStyle.STAGED)
 public record PlayerInputRequest(
         @JsonProperty("hit_average") Float hitAverage,
-        Float sluggish,
         @JsonProperty("bunt_enabled") Boolean buntEnabled,
         @JsonProperty("steal_enabled") Boolean stealEnabled,
         PlayerPersonality personality) {
@@ -18,7 +17,6 @@ public record PlayerInputRequest(
     /** 必須の画面入力が欠けていないことを検証する。 */
     public PlayerInputRequest {
         Objects.requireNonNull(hitAverage, "hit_average must not be null");
-        Objects.requireNonNull(sluggish, "sluggish must not be null");
         Objects.requireNonNull(buntEnabled, "bunt_enabled must not be null");
         Objects.requireNonNull(stealEnabled, "steal_enabled must not be null");
         personality = personality == null ? PlayerPersonality.DEFAULT : personality;
@@ -28,12 +26,10 @@ public record PlayerInputRequest(
      * Creates an input request with the default personality for existing API callers.
      *
      * @param hitAverage 出塁率
-     * @param sluggish 長打率
      * @param buntEnabled バントを試みるかどうか
      * @param stealEnabled 盗塁を試みるかどうか
      */
-    public PlayerInputRequest(
-            Float hitAverage, Float sluggish, Boolean buntEnabled, Boolean stealEnabled) {
-        this(hitAverage, sluggish, buntEnabled, stealEnabled, PlayerPersonality.DEFAULT);
+    public PlayerInputRequest(Float hitAverage, Boolean buntEnabled, Boolean stealEnabled) {
+        this(hitAverage, buntEnabled, stealEnabled, PlayerPersonality.DEFAULT);
     }
 }

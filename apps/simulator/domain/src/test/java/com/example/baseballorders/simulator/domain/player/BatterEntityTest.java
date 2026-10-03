@@ -17,7 +17,6 @@ class BatterEntityTest {
     private static BatterEntity homeRunBatter() {
         return new BatterEntity(
                 0.3f,
-                0.4f,
                 SimulationRulesTestData.strategies().longDistanceAtBat(),
                 SimulationRulesTestData.strategies().noSteal(),
                 SimulationRulesTestData.strategies().noBunt());
@@ -30,7 +29,6 @@ class BatterEntityTest {
         var batter =
                 new BatterEntity(
                         0.3f,
-                        0.4f,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().noSteal(),
                         SimulationRulesTestData.strategies().standardBunt());
@@ -61,7 +59,6 @@ class BatterEntityTest {
         var batter =
                 new BatterEntity(
                         0.3f,
-                        0.4f,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().eagerSteal(),
                         SimulationRulesTestData.strategies().standardBunt());
@@ -110,7 +107,6 @@ class BatterEntityTest {
         var batter =
                 new BatterEntity(
                         0.3f,
-                        0.4f,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().noSteal(),
                         SimulationRulesTestData.strategies().standardBunt());

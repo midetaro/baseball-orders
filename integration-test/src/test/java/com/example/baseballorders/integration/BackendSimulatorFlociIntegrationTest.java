@@ -65,18 +65,25 @@ class BackendSimulatorFlociIntegrationTest {
                     .walkProbability(0.05f)
                     .strikeoutProbabilityWhenNotOnBase(0.25f)
                     .build())
+            .shortDistanceHitting(HittingDistributionBuilder.hittingDistribution()
+                    .singleWeight(3)
+                    .doubleWeight(2)
+                    .tripleWeight(0)
+                    .homeRunWeight(0)
+                    .build())
             .middleDistanceHitting(HittingDistributionBuilder.hittingDistribution()
-                    .doubleDivisor(6)
-                    .tripleDivisor(6)
-                    .homeRunDivisor(6)
-                    .singleReductionDivisor(2)
+                    .singleWeight(15)
+                    .doubleWeight(1)
+                    .tripleWeight(1)
+                    .homeRunWeight(1)
                     .build())
             .longDistanceHitting(HittingDistributionBuilder.hittingDistribution()
-                    .doubleDivisor(8)
-                    .tripleDivisor(8)
-                    .homeRunDivisor(2)
-                    .singleReductionDivisor(1)
+                    .singleWeight(16)
+                    .doubleWeight(1)
+                    .tripleWeight(1)
+                    .homeRunWeight(4)
                     .build())
+            .highOnBaseWalkProbability(0.1f)
             .standardSteal(StealAttemptRatesBuilder.stealAttemptRates()
                     .toDoubleAttemptRate(0.30f)
                     .toTripleAttemptRate(0.10f)
@@ -101,7 +108,7 @@ class BackendSimulatorFlociIntegrationTest {
     private static final BehaviorStrategies STRATEGIES = new BehaviorStrategies(SIMULATION_RULES);
 
     private static final SimulationPitcherProperties PITCHER_PROPERTIES =
-            new SimulationPitcherProperties(new Multipliers(1.0f, 1.0f));
+            new SimulationPitcherProperties(new Multipliers(1.0f));
 
     /**
      * 実物: backend HTTPサーバー・Controller・Coordinator・SQS Publisher/Listener、
@@ -206,15 +213,15 @@ class BackendSimulatorFlociIntegrationTest {
                             .timeout(Duration.ofSeconds(30))
                             .header("Content-Type", "application/json")
                             .POST(HttpRequest.BodyPublishers.ofString("""
-                                    [{"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_enabled":false,"steal_enabled":false}]
+                                    [{"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false}]
                                     """))
                             .build();
 

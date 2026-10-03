@@ -8,16 +8,21 @@ simulation:
     batting:
       walk-probability: 0.05
       strikeout-probability-when-not-on-base: 0.25
+    short-distance-hitting:
+      single-weight: 3
+      double-weight: 2
+      triple-weight: 0
+      home-run-weight: 0
     middle-distance-hitting:
-      double-divisor: 6
-      triple-divisor: 6
-      home-run-divisor: 6
-      single-reduction-divisor: 2
+      single-weight: 15
+      double-weight: 1
+      triple-weight: 1
+      home-run-weight: 1
     long-distance-hitting:
-      double-divisor: 8
-      triple-divisor: 8
-      home-run-divisor: 2
-      single-reduction-divisor: 1
+      single-weight: 16
+      double-weight: 1
+      triple-weight: 1
+      home-run-weight: 4
     high-on-base-batting:
       walk-probability: 0.1
     standard-steal:
@@ -38,4 +43,3 @@ simulation:
   pitcher:
     standard:
       on-base-multiplier: 1.0
-      slugging-multiplier: 1.0

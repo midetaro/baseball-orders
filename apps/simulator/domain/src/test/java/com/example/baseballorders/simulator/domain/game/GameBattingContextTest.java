@@ -22,7 +22,6 @@ class GameBattingContextTest {
     private static BatterEntity battingOutBatter() {
         return new BatterEntity(
                 0.3f,
-                0.4f,
                 SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                 SimulationRulesTestData.strategies().noSteal(),
                 SimulationRulesTestData.strategies().noBunt());
@@ -74,7 +73,6 @@ class GameBattingContextTest {
         var batter =
                 new BatterEntity(
                         0.3f,
-                        0.4f,
                         SimulationRulesTestData.strategies().longDistanceAtBat(),
                         SimulationRulesTestData.strategies().noSteal(),
                         SimulationRulesTestData.strategies().noBunt());

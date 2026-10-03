@@ -21,19 +21,15 @@ public class InfrastructureConfiguration {
      *
      * @param resultTimeout SQS結果を待機する時間
      * @param maximumAverageHitAverage 打順9人の打率平均の上限
-     * @param maximumAverageSluggish 打順9人の長打率平均の上限
      */
     public InfrastructureConfiguration(
             @Value("${baseball-orders.simulation.result-timeout}") Duration resultTimeout,
             @Value("${baseball-orders.simulation.maximum-average-hit-average}")
-                    float maximumAverageHitAverage,
-            @Value("${baseball-orders.simulation.maximum-average-sluggish}")
-                    float maximumAverageSluggish) {
+                    float maximumAverageHitAverage) {
         simulationLimits =
                 SimulationLimitsBuilder.simulationLimits()
                         .resultTimeout(resultTimeout)
                         .maximumAverageHitAverage(maximumAverageHitAverage)
-                        .maximumAverageSluggish(maximumAverageSluggish)
                         .build();
     }
 

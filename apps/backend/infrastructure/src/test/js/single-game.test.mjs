@@ -10,6 +10,7 @@ const js = `${lineupFormJs}\n${pageJs}`;
 
 assert.ok(html.includes('<span>打率</span>'), '1試合画面に打率の列見出しを表示する');
 assert.ok(!html.includes('出塁率'), '1試合画面に旧入力名を残さない');
+assert.ok(!html.includes('長打率'), '1試合画面に長打率を表示しない');
 
 // --- HTMLとCSSのファイル分離 ---
 assert.ok(!html.includes('<style>'), '1試合実行画面のCSSをインラインで保持しない');
@@ -165,7 +166,7 @@ const mobileCss = css.slice(css.indexOf('@media (max-width: 760px)'));
 assert.ok(!/\.field-caption\s*\{\s*display:\s*block;\s*\}/.test(mobileCss), 'スマホ幅でもPC幅と同じく入力キャプションを重複表示しない');
 assert.ok(!/\.columns\s*\{\s*display:\s*none;\s*\}/.test(mobileCss), 'スマホ幅でもPC幅と同じく列見出し行を表示する');
 assert.match(mobileCss, /\.order-scroll\s*\{\s*overflow-x:\s*visible;\s*\}/, 'スマホ幅では打順入力欄の横スクロールを不要にする');
-assert.match(mobileCss, /\.columns, \.slot\s*\{\s*grid-template-columns:\s*24px\s+repeat\(2,\s*minmax\(0,\s*\.8fr\)\)\s+minmax\(0,\s*1\.4fr\)\s+repeat\(2,\s*minmax\(0,\s*\.8fr\)\);/, 'スマホ幅でもPC幅と同じく打者ごとに一行で入力欄を横に並べる');
+assert.match(mobileCss, /\.columns, \.slot\s*\{\s*grid-template-columns:\s*24px\s+minmax\(0,\s*\.8fr\)\s+minmax\(0,\s*1\.4fr\)\s+repeat\(2,\s*minmax\(0,\s*\.8fr\)\);/, 'スマホ幅でもPC幅と同じく打者ごとに一行で入力欄を横に並べる');
 assert.ok(js.includes("caption.className='toggle-label'"), 'バント・盗塁トグルの項目名を別要素にして幅に応じて省略できるようにする');
 assert.ok(js.includes("button.setAttribute('aria-label',`${label}: ${enabled?'する':'しない'}`)"), '項目名を省略しても読み上げではトグルの項目名と状態を伝える');
 assert.ok(js.includes("state.className='toggle-state'"), 'トグルの状態を項目名と別要素にして語の途中で折り返さないようにする');

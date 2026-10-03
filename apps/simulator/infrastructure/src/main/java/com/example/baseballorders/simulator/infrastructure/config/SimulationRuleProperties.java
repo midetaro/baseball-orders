@@ -16,6 +16,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * {@code simulation.rule} 配下の確率設定を束縛し、ドメインの設定値オブジェクトへ変換する。
  *
  * @param batting 打席結果の判定に使う確率
+ * @param shortDistanceHitting 短距離打者の安打配分
  * @param middleDistanceHitting 中距離打者の長打配分
  * @param longDistanceHitting 長距離打者の長打配分
  * @param highOnBaseBatting 高出塁率打者の打席確率
@@ -28,6 +29,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "simulation.rule")
 public record SimulationRuleProperties(
         Batting batting,
+        Hitting shortDistanceHitting,
         Hitting middleDistanceHitting,
         Hitting longDistanceHitting,
         HighOnBaseBatting highOnBaseBatting,
@@ -53,18 +55,15 @@ public record SimulationRuleProperties(
     public record HighOnBaseBatting(float walkProbability) {}
 
     /**
-     * 長打によって増えた塁数を安打種別へ配分する除数。
+     * 安打を各安打種別へ配分する相対的な重み。合計が1である必要はなく、0の種別は発生しない。
      *
-     * @param doubleDivisor 二塁打の重みを求める除数
-     * @param tripleDivisor 三塁打の重みを求める除数
-     * @param homeRunDivisor 本塁打の重みを求める除数
-     * @param singleReductionDivisor 単打の重みから差し引く量を求める除数
+     * @param singleWeight 単打の重み
+     * @param doubleWeight 二塁打の重み
+     * @param tripleWeight 三塁打の重み
+     * @param homeRunWeight 本塁打の重み
      */
     public record Hitting(
-            float doubleDivisor,
-            float tripleDivisor,
-            float homeRunDivisor,
-            float singleReductionDivisor) {}
+            float singleWeight, float doubleWeight, float tripleWeight, float homeRunWeight) {}
 
     /**
      * 盗塁を企図する割合。
@@ -107,6 +106,7 @@ public record SimulationRuleProperties(
                                 .strikeoutProbabilityWhenNotOnBase(
                                         batting.strikeoutProbabilityWhenNotOnBase())
                                 .build())
+                .shortDistanceHitting(hittingDistribution(shortDistanceHitting))
                 .middleDistanceHitting(hittingDistribution(middleDistanceHitting))
                 .longDistanceHitting(hittingDistribution(longDistanceHitting))
                 .highOnBaseWalkProbability(highOnBaseBatting.walkProbability())
@@ -125,10 +125,10 @@ public record SimulationRuleProperties(
 
     private static HittingDistribution hittingDistribution(Hitting hitting) {
         return HittingDistributionBuilder.hittingDistribution()
-                .doubleDivisor(hitting.doubleDivisor())
-                .tripleDivisor(hitting.tripleDivisor())
-                .homeRunDivisor(hitting.homeRunDivisor())
-                .singleReductionDivisor(hitting.singleReductionDivisor())
+                .singleWeight(hitting.singleWeight())
+                .doubleWeight(hitting.doubleWeight())
+                .tripleWeight(hitting.tripleWeight())
+                .homeRunWeight(hitting.homeRunWeight())
                 .build();
     }
 

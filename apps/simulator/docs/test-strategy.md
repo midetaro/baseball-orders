@@ -137,21 +137,21 @@ static Stream<Arguments> battingTestCases() {
 **1 区間 1 ケースでは不十分**。各区間について
 「下端（含む）」と「直前（排他）」の 2 点を必ず置く。そうしないと閾値の移動を検出できない。
 
-### 3.2 確率表（`打率=0.400 / 長打率=0.550` の基準打者、`MiddleDistanceHittingStrategy`）
+### 3.2 確率表（`打率=0.400` の基準打者、`MiddleDistanceHittingStrategy`、重み 単打15:二塁打1:三塁打1:本塁打1）
 
 ```
-extraBase = 長打率 - 打率 = 0.150
-double = triple = homer = 0.025, single = 0.325, walk = 0.050
+walk = 0.050
 hit = (1 - walk) × 打率 = 0.380, onBase = walk + hit = 0.430
+single = hit × 15/18 ≈ 0.31667, double = triple = homer = hit × 1/18 ≈ 0.02111
 ```
 
 | 乱数区間 | 結果 |
 | --- | --- |
 | `[0.000, 0.050)` | `WALK` |
-| `[0.050, 0.35875)` | `HIT_SINGLE` |
-| `[0.35875, 0.3825)` | `HIT_DOUBLE` |
-| `[0.3825, 0.40625)` | `HIT_TRIPLE` |
-| `[0.40625, 0.430)` | `HIT_HOMER` |
+| `[0.050, 0.36667)` | `HIT_SINGLE` |
+| `[0.36667, 0.38778)` | `HIT_DOUBLE` |
+| `[0.38778, 0.40889)` | `HIT_TRIPLE` |
+| `[0.40889, 0.430)` | `HIT_HOMER` |
 | `[0.430, 0.5725)` | `STRIKEOUT` |
 | `[0.5725, 1.000]` | `BATTED_OUT` |
 
@@ -216,7 +216,7 @@ try (ScriptedRandom random = ScriptedRandom.of(Draws.SINGLE, Draws.BUNT_SUCCESS,
 
 ### 4.2 `Draws`：名前付き乱数定数
 
-基準打者（`打率=0.400, 長打率=0.550, bunt=0.700, steal=0.800`、
+基準打者（`打率=0.400, bunt=0.700, steal=0.800`、
 `MiddleDistance` / `StandardBunt` / `StandardSteal`）に対する値。
 
 | 定数 | 値 | 意味 |

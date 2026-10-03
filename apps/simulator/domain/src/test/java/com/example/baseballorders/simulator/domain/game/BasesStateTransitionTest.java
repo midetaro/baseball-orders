@@ -346,7 +346,6 @@ class BasesStateTransitionTest {
         var batter =
                 new BatterEntity(
                         0.0f,
-                        0.0f,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().noSteal(),
                         SimulationRulesTestData.strategies().standardBunt());

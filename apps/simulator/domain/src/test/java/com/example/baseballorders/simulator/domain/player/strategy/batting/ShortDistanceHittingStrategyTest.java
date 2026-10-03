@@ -23,7 +23,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ShortDistanceHittingStrategyTest {
 
     private static final float BATTING_AVERAGE = 0.400f;
-    private static final float SLUGGING = 0.250f;
     private static final int UNREACHABLE_SCAN_STEPS = 1000;
 
     static Stream<Arguments> battingBoundaries() {
@@ -31,8 +30,9 @@ class ShortDistanceHittingStrategyTest {
                 arguments("乱数0は四球", 0.0f, BattingResult.WALK),
                 arguments("0.05の直前", Math.nextDown(0.05f), BattingResult.WALK),
                 arguments("0.05と等しい境界", 0.05f, BattingResult.HIT_SINGLE),
-                arguments("0.335の直前", Math.nextDown(0.335f), BattingResult.HIT_SINGLE),
-                arguments("0.335と等しい境界", 0.335f, BattingResult.HIT_DOUBLE),
+                // 安打確率 0.95 * 0.4 = 0.38 を 3:2 で配分し、単打区間は 0.05 + 0.228 = 0.278 まで。
+                arguments("0.278の直前", 0.2779f, BattingResult.HIT_SINGLE),
+                arguments("0.278を超えた直後", 0.2781f, BattingResult.HIT_DOUBLE),
                 arguments("0.43の直前", Math.nextDown(0.43f), BattingResult.HIT_DOUBLE),
                 arguments("0.43と等しい境界", 0.43f, BattingResult.STRIKEOUT),
                 arguments("0.5725の直前", Math.nextDown(0.5725f), BattingResult.STRIKEOUT),
@@ -46,12 +46,15 @@ class ShortDistanceHittingStrategyTest {
     void determinesBattingResultAtBoundary(
             String description, float random, BattingResult expectedResult) {
         // given
-        var sut = new ShortDistanceHittingStrategy(SimulationRulesTestData.standard().batting());
+        var sut =
+                new ShortDistanceHittingStrategy(
+                        SimulationRulesTestData.standard().batting(),
+                        SimulationRulesTestData.standard().shortDistanceHitting());
 
         // when
         BattingResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            result = sut.batting(BATTING_AVERAGE, SLUGGING);
+            result = sut.batting(BATTING_AVERAGE);
 
             // then
             assertAll(
@@ -66,7 +69,10 @@ class ShortDistanceHittingStrategyTest {
     @DisplayName("短距離打者は三塁打と本塁打の重みが0のためどの乱数でも到達しない")
     void neverProducesTripleOrHomer() {
         // given
-        var sut = new ShortDistanceHittingStrategy(SimulationRulesTestData.standard().batting());
+        var sut =
+                new ShortDistanceHittingStrategy(
+                        SimulationRulesTestData.standard().batting(),
+                        SimulationRulesTestData.standard().shortDistanceHitting());
         Set<BattingResult> observed = EnumSet.noneOf(BattingResult.class);
         float[] script = new float[UNREACHABLE_SCAN_STEPS + 1];
         for (int step = 0; step <= UNREACHABLE_SCAN_STEPS; step++) {
@@ -76,7 +82,7 @@ class ShortDistanceHittingStrategyTest {
         // when
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(script)) {
             for (int step = 0; step <= UNREACHABLE_SCAN_STEPS; step++) {
-                observed.add(sut.batting(BATTING_AVERAGE, SLUGGING));
+                observed.add(sut.batting(BATTING_AVERAGE));
             }
 
             // then
@@ -136,12 +142,14 @@ class ShortDistanceHittingStrategyTest {
             float random,
             BattingResult expectedResult) {
         // given
-        var sut = new ShortDistanceHittingStrategy(probabilities);
+        var sut =
+                new ShortDistanceHittingStrategy(
+                        probabilities, SimulationRulesTestData.standard().shortDistanceHitting());
 
         // when
         BattingResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            result = sut.batting(BATTING_AVERAGE, SLUGGING);
+            result = sut.batting(BATTING_AVERAGE);
 
             // then
             assertAll(

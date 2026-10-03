@@ -19,10 +19,12 @@ assert.ok(
 assert.ok(html.includes('<h2 id="order-heading">打順組み替え</h2>'), '入力欄の見出しを打順組み替えにする');
 assert.ok(html.includes('<div data-lineup-mode="reorder" id="order"></div>'), '打順フォームを組み替えモードで表示する');
 assert.ok(html.includes('id="score-histogram"'), '大規模実行と同じ試合結果を表示する');
-for (const label of ['打順', '打率', '長打率', '性格', 'バント', '盗塁']) {
+for (const label of ['打順', '打率', '性格', 'バント', '盗塁']) {
   assert.ok(html.includes(`<span>${label}</span>`), `列見出しに${label}を表示する`);
 }
 
+assert.ok(!html.includes('長打率'), '打順組み替え画面に長打率を表示しない');
+assert.match(css, /grid-template-columns: 28px 38px 60px 118px 96px 96px;/, '打順組み替え画面の列から長打率の列を除く');
 assert.ok(css.includes('touch-action: none'), 'ドラッグハンドルの操作で画面をスクロールさせない');
 
 // --- 打順の組み替え ---
@@ -46,7 +48,7 @@ for (const [from, to] of [[1, 1], [0, -1], [3, 4]]) {
 }
 
 assert.ok(lineupFormJs.includes("const reorderMode = order.dataset.lineupMode === 'reorder';"), '打順フォームの組み替えモードを画面のHTMLで選ぶ');
-assert.ok(lineupFormJs.includes('if (reorderMode) { row.append(fieldWrapper(field.label, statLabel(player[field.key]))); return; }'), '組み替えモードでは打率・長打率を入力させずラベルで表示する');
+assert.ok(lineupFormJs.includes('if (reorderMode) { row.append(fieldWrapper(field.label, statLabel(player[field.key]))); return; }'), '組み替えモードでは打率を入力させずラベルで表示する');
 assert.ok(lineupFormJs.includes("handle.addEventListener('pointerdown'"), 'マウス・タッチ共通のポインター操作でドラッグを開始する');
 assert.ok(lineupFormJs.includes("handle.addEventListener('pointerup'"), 'ドロップした打順へ打者を移動する');
 assert.ok(lineupFormJs.includes('{ArrowUp:-1,ArrowDown:1}'), 'キーボードの上下キーでも打順を入れ替えられる');

@@ -1,6 +1,6 @@
         /* 打順組み替え画面。共通のsimulation.cssの後に読み込み、ドラッグによる打順組み替えだけを追加する。 */
         .reorder-order .columns, .reorder-order .slot {
-            grid-template-columns: 28px 38px repeat(2, 60px) 118px 96px 96px;
+            grid-template-columns: 28px 38px 60px 118px 96px 96px;
         }
 
         .drag-handle {
@@ -44,7 +44,7 @@
 
         @media (max-width: 760px) {
             .reorder-order .columns, .reorder-order .slot {
-                grid-template-columns: 24px 24px repeat(2, minmax(0, .8fr)) minmax(0, 1.4fr) repeat(2, minmax(0, .8fr));
+                grid-template-columns: 24px 24px minmax(0, .8fr) minmax(0, 1.4fr) repeat(2, minmax(0, .8fr));
             }
 
             .drag-handle {

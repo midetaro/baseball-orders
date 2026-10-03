@@ -154,7 +154,6 @@ class SqsSimulationSchedulerIntegrationTest {
                                         new SimulationPlayerMessage(
                                                 "player-" + number,
                                                 0.3f,
-                                                0.4f,
                                                 number % 2 == 0,
                                                 number % 3 == 0))
                         .toList();

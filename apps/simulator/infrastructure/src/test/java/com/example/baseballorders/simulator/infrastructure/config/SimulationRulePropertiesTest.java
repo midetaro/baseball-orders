@@ -56,14 +56,18 @@ class SimulationRulePropertiesTest {
                 resourceName,
                 () -> assertEquals(0.05f, rules.batting().walkProbability()),
                 () -> assertEquals(0.25f, rules.batting().strikeoutProbabilityWhenNotOnBase()),
-                () -> assertEquals(6f, rules.middleDistanceHitting().doubleDivisor()),
-                () -> assertEquals(6f, rules.middleDistanceHitting().tripleDivisor()),
-                () -> assertEquals(6f, rules.middleDistanceHitting().homeRunDivisor()),
-                () -> assertEquals(2f, rules.middleDistanceHitting().singleReductionDivisor()),
-                () -> assertEquals(8f, rules.longDistanceHitting().doubleDivisor()),
-                () -> assertEquals(8f, rules.longDistanceHitting().tripleDivisor()),
-                () -> assertEquals(2f, rules.longDistanceHitting().homeRunDivisor()),
-                () -> assertEquals(1f, rules.longDistanceHitting().singleReductionDivisor()),
+                () -> assertEquals(3f, rules.shortDistanceHitting().singleWeight()),
+                () -> assertEquals(2f, rules.shortDistanceHitting().doubleWeight()),
+                () -> assertEquals(0f, rules.shortDistanceHitting().tripleWeight()),
+                () -> assertEquals(0f, rules.shortDistanceHitting().homeRunWeight()),
+                () -> assertEquals(15f, rules.middleDistanceHitting().singleWeight()),
+                () -> assertEquals(1f, rules.middleDistanceHitting().doubleWeight()),
+                () -> assertEquals(1f, rules.middleDistanceHitting().tripleWeight()),
+                () -> assertEquals(1f, rules.middleDistanceHitting().homeRunWeight()),
+                () -> assertEquals(16f, rules.longDistanceHitting().singleWeight()),
+                () -> assertEquals(1f, rules.longDistanceHitting().doubleWeight()),
+                () -> assertEquals(1f, rules.longDistanceHitting().tripleWeight()),
+                () -> assertEquals(4f, rules.longDistanceHitting().homeRunWeight()),
                 () -> assertEquals(0.1f, rules.highOnBaseWalkProbability()),
                 () -> assertEquals(0.30f, rules.standardSteal().toDoubleAttemptRate()),
                 () -> assertEquals(0.10f, rules.standardSteal().toTripleAttemptRate()),
@@ -95,10 +99,7 @@ class SimulationRulePropertiesTest {
         var pitcher = binder.bind("simulation.pitcher", SimulationPitcherProperties.class).get();
 
         // then
-        assertAll(
-                resourceName,
-                () -> assertEquals(1.0f, pitcher.standard().onBaseMultiplier()),
-                () -> assertEquals(1.0f, pitcher.standard().sluggingMultiplier()));
+        assertAll(resourceName, () -> assertEquals(1.0f, pitcher.standard().onBaseMultiplier()));
     }
 
     private static Binder binderFor(String resourceName) throws IOException {

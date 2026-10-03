@@ -27,7 +27,7 @@ class ExpandedBattingResultTest {
                         "非出塁の25%未満なら三振になる", 0.4f, Math.nextDown(0.5725f), BattingResult.STRIKEOUT),
                 Arguments.of("非出塁の25%と等しければ凡退になる", 0.4f, 0.5725f, BattingResult.BATTED_OUT),
                 Arguments.of("低打率でも四球確率は5%のまま", 0.03f, 0.04f, BattingResult.WALK),
-                Arguments.of("低打率でも四球の後に安打区間がある", 0.03f, 0.06f, BattingResult.HIT_DOUBLE));
+                Arguments.of("低打率でも四球の後に安打区間がある", 0.03f, 0.06f, BattingResult.HIT_SINGLE));
     }
 
     @DisplayName("四球・三振・凡退の確率境界を一つの乱数で判定する")
@@ -44,7 +44,7 @@ class ExpandedBattingResultTest {
             randomGenerator.when(RandomGenerator::nextFloat).thenReturn(random);
 
             // when
-            BattingResult result = sut.batting(battingAverage, 0.55f);
+            BattingResult result = sut.batting(battingAverage);
 
             // then
             assertAll(
