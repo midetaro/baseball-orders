@@ -33,7 +33,7 @@ class LineUpMapperTest {
     @DisplayName("選手の性格に対応する既存の行動戦略を適用する")
     void mapsPersonalityToBehavior(PlayerPersonality personality) {
         // given
-        var mapper =
+        var sut =
                 new LineUpMapper(
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().eagerSteal(),
@@ -47,14 +47,15 @@ class LineUpMapperTest {
         StealResult stealResult;
         BuntResult buntResult;
         try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            // 0.31は長距離戦略では本塁打、中距離戦略では三塁打となり、戦略の選択を識別する。
             randomGenerator
                     .when(RandomGenerator::nextFloat)
                     .thenReturn(
-                            personality == PlayerPersonality.EAGER_SLUGGISH ? 0.27f : 0.8f,
+                            personality == PlayerPersonality.EAGER_SLUGGISH ? 0.31f : 0.8f,
                             0.9f,
                             0.9f);
             var batter =
-                    mapper.map(java.util.Collections.nCopies(9, player))
+                    sut.map(java.util.Collections.nCopies(9, player))
                             .getBatterEntities()
                             .getFirst();
             battingResult = batter.swing(0);
@@ -98,7 +99,7 @@ class LineUpMapperTest {
                                         """
                                         .formatted(buntEnabled, stealEnabled),
                                 SimulationPlayerMessage.class);
-        var mapper =
+        var sut =
                 new LineUpMapper(
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().eagerSteal(),
@@ -118,7 +119,7 @@ class LineUpMapperTest {
                 randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.1f);
             }
             var batter =
-                    mapper.map(java.util.Collections.nCopies(9, player))
+                    sut.map(java.util.Collections.nCopies(9, player))
                             .getBatterEntities()
                             .getFirst();
             var observedBatter = batter.observedBy(statisticsRecorder);
@@ -145,13 +146,59 @@ class LineUpMapperTest {
                                 stealEnabled ? 2 : 0, statisticsRecorder.snapshot().stealCount()));
     }
 
+    /**
+     * 実物: Jackson、SimulationPlayerMessage、LineUpMapper、BatterEntity、中距離打撃戦略。 モック: RandomGenerator
+     * の乱数だけを固定する。 担保する疎通: SQS選手JSON -> SimulationPlayerMessage -> LineUpMapper -> BatterEntity ->
+     * 打撃戦略。 担保しないもの: SQSの送受信、試合全体の進行、乱数生成器自体の分布。
+     */
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+        "0.01,WALK",
+        "0.32,HIT_SINGLE",
+        "0.34,STRIKEOUT",
+        "0.8,BATTED_OUT"
+    })
+    @DisplayName("既存のhitAverage JSONを四球を含めない打率として打撃戦略へ渡す")
+    void mapsLegacyWireFieldAsBattingAverage(float draw, BattingResult expected) throws Exception {
+        // given
+        var player =
+                new com.fasterxml.jackson.databind.ObjectMapper()
+                        .readValue(
+                                """
+                                {"name":"1番","hitAverage":0.3,"sluggish":0.3,
+                                 "buntEnabled":false,"stealEnabled":false}
+                                """,
+                                SimulationPlayerMessage.class);
+        var sut =
+                new LineUpMapper(
+                        SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
+                        SimulationRulesTestData.strategies().eagerSteal(),
+                        SimulationRulesTestData.strategies().standardBunt(),
+                        SimulationRulesTestData.strategies(),
+                        SimulationPropertiesTestData.standardPitcherProperties());
+
+        // when
+        BattingResult result;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(draw);
+            result =
+                    sut.map(java.util.Collections.nCopies(9, player))
+                            .getBatterEntities()
+                            .getFirst()
+                            .swing(0);
+        }
+
+        // then
+        assertAll(() -> assertEquals(expected, result));
+    }
+
     @Test
     @DisplayName("SQSの選手情報を打順へ変換すると全選手の能力と振る舞いが保持される")
     void mapsSqsPlayersToLineUpEntity() {
         // given
         HittingStrategy hittingStrategy =
                 SimulationRulesTestData.strategies().middleDistanceHittingStrategy();
-        LineUpMapper mapper =
+        LineUpMapper sut =
                 new LineUpMapper(
                         hittingStrategy,
                         SimulationRulesTestData.strategies().eagerSteal(),
@@ -167,7 +214,7 @@ class LineUpMapperTest {
                         .toList();
 
         // when
-        var result = mapper.map(players);
+        var result = sut.map(players);
         var statisticsRecorder = new GameStatisticsRecorder();
         BattingResult battingResult;
         StealResult stealResult;
@@ -187,14 +234,14 @@ class LineUpMapperTest {
     }
 
     @Test
-    @DisplayName("設定された既定の投手補正倍率で出塁率・長打率を補正する")
+    @DisplayName("設定された既定の投手補正倍率で打率・長打率を補正する")
     void usesConfiguredPitcherMultipliers() {
         // given
         var hitting = mock(MiddleDistanceHittingStrategy.class);
         var stealing = mock(StandardStealStrategy.class);
         var bunting = mock(StandardBuntStrategy.class);
         var pitcherProperties = new SimulationPitcherProperties(new Multipliers(2.0f, 0.5f));
-        var mapper =
+        var sut =
                 new LineUpMapper(
                         hitting,
                         stealing,
@@ -204,22 +251,22 @@ class LineUpMapperTest {
         var player =
                 new SimulationPlayerMessage(
                         "1番", 0.3f, 0.4f, true, true, PlayerPersonality.DEFAULT);
-        var onBaseCaptor = ArgumentCaptor.forClass(Float.class);
+        var battingAverageCaptor = ArgumentCaptor.forClass(Float.class);
         var sluggingCaptor = ArgumentCaptor.forClass(Float.class);
 
         // when
         var batter =
-                mapper.map(java.util.Collections.nCopies(9, player)).getBatterEntities().getFirst();
+                sut.map(java.util.Collections.nCopies(9, player)).getBatterEntities().getFirst();
         batter.swing(0);
         batter.bunt(OutCount.NO_OUT, BuntType.ADVANCING);
         batter.stealToDouble();
-        verify(hitting).batting(onBaseCaptor.capture(), sluggingCaptor.capture());
+        verify(hitting).batting(battingAverageCaptor.capture(), sluggingCaptor.capture());
         verify(bunting).bunt(OutCount.NO_OUT, BuntType.ADVANCING);
         verify(stealing).runToDouble();
 
         // then
         assertAll(
-                () -> assertEquals(0.6f, onBaseCaptor.getValue(), 0.00001f),
+                () -> assertEquals(0.6f, battingAverageCaptor.getValue(), 0.00001f),
                 () -> assertEquals(0.2f, sluggingCaptor.getValue(), 0.00001f));
     }
 }

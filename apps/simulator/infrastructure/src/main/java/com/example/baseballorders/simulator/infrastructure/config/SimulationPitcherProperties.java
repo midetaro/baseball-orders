@@ -15,7 +15,7 @@ public record SimulationPitcherProperties(Multipliers standard) {
     /**
      * 1つの投手性格に対する補正倍率。
      *
-     * @param onBaseMultiplier 出塁率へ掛ける倍率
+     * @param onBaseMultiplier 打率へ掛ける倍率。設定互換性のため、旧名 {@code on-base-multiplier} を維持する
      * @param sluggingMultiplier 長打率へ掛ける倍率
      */
     public record Multipliers(float onBaseMultiplier, float sluggingMultiplier) {}

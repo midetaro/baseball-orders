@@ -51,10 +51,10 @@ public class LineUpMapper {
     /**
      * Converts SQS player data to a domain lineup, disabling steals and bunts according to each
      * player's selection. The legacy {@code hitAverage} wire field is interpreted as the domain
-     * on-base percentage to retain the existing message contract. The opposing pitcher's
-     * personality carried by a request is ignored; every batter receives the same standard
-     * probability adjustment. Bunt and steal success rates are fixed simulation constants supplied
-     * through configuration rather than per-player wire data.
+     * batting average excluding walks to retain the existing message contract. The opposing
+     * pitcher's personality carried by a request is ignored; every batter receives the same
+     * standard probability adjustment. Bunt and steal success rates are fixed simulation constants
+     * supplied through configuration rather than per-player wire data.
      *
      * @param players players contained in a simulation request
      * @return lineup containing mapped batter entities in request order
@@ -65,7 +65,7 @@ public class LineUpMapper {
                         .map(
                                 player ->
                                         new BatterEntity(
-                                                player.hitAverage() * onBaseMultiplier(),
+                                                player.hitAverage() * battingAverageMultiplier(),
                                                 player.sluggish() * sluggingMultiplier(),
                                                 battingBehaviorFor(player.personality()),
                                                 player.stealEnabled()
@@ -78,7 +78,7 @@ public class LineUpMapper {
         return new LineUpEntity(batters);
     }
 
-    private float onBaseMultiplier() {
+    private float battingAverageMultiplier() {
         return pitcherProperties.standard().onBaseMultiplier();
     }
 
