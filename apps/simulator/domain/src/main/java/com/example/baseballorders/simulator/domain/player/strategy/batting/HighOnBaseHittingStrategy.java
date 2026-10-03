@@ -5,7 +5,7 @@ import com.example.baseballorders.simulator.domain.player.strategy.RandomGenerat
 import com.example.baseballorders.simulator.domain.rule.BattingProbabilities;
 import com.example.baseballorders.simulator.domain.rule.HittingDistribution;
 
-/** 高出塁率バッター。打率は変えず、四球確率だけを専用の設定値にする。 */
+/** 高出塁率バッター。打率は変えず、四球確率と安打配分を専用の設定値にする。 */
 public final class HighOnBaseHittingStrategy implements HittingStrategy {
 
     private final BattingResultSelector selector;

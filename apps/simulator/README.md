@@ -295,7 +295,7 @@ classDiagram
 
 Strategy パターンの `Context` は `BatterEntity`、Strategy は `HittingStrategy`、`StealStrategy`、`BuntStrategy` の三つです。各インターフェースは sealed で実装候補を限定しています。
 
-- 打撃 Strategy は、四球を打数に含めず、四球以外の打席で入力された打率を安打確率として使います。安打の4種類（単打・二塁打・三塁打・本塁打）への配分は、打撃 Strategy ごとの重み `simulation.rule.{short,middle,long}-distance-hitting.*-weight`（既定は単打マン 3:2:0:0、中距離 15:1:1:1、長距離 16:1:1:4）の比率で決めます。四球の割合（既定5%）と、非出塁のうち三振になる割合（既定25%、残りは凡退）は `simulation.rule.batting` の設定値です。高出塁率打者（`HighOnBaseHittingStrategy`）だけは打率を変えず、四球の割合に `simulation.rule.high-on-base-batting.walk-probability`（既定10%）を使います。
+- 打撃 Strategy は、四球を打数に含めず、四球以外の打席で入力された打率を安打確率として使います。安打の4種類（単打・二塁打・三塁打・本塁打）への配分は、打撃 Strategy ごとの重み `simulation.rule.{short,middle,long}-distance-hitting.*-weight` と `simulation.rule.high-on-base-hitting.*-weight`（既定は単打マン 18:2:0:0、中距離 13:3:1:3、長距離 7:6:1:6、高出塁率 18:2:0:0）の比率で決めます。四球の割合（既定5%）と、非出塁のうち三振になる割合（既定25%、残りは凡退）は `simulation.rule.batting` の設定値です。高出塁率打者（`HighOnBaseHittingStrategy`）だけは打率を変えず、専用の安打配分を使い、四球の割合に `simulation.rule.high-on-base-batting.walk-probability`（既定10%）を使います。
 - 選手の性格と打撃 Strategy の対応は、`DEFAULT`（単打マン）→ `ShortDistanceHittingStrategy`、`MIDDLE_DISTANCE`（中距離砲）・`EAGER_STEAL`（盗塁重視）・`EAGER_BUNT`（バント職人）→ `MiddleDistanceHittingStrategy`、`EAGER_SLUGGISH`（長距離砲）→ `LongDistanceHittingStrategy`、`HIGH_ON_BASE`（高出塁率）→ `HighOnBaseHittingStrategy` です。画面で性格を追加する場合は、対応する `XxxStrategy` クラスを必ず作成します。
 - 盗塁 Strategy は、二塁・三塁への挑戦頻度を変えます。成功率（既定70%）は全選手共通の設定値です。
 - バント Strategy は、アウト数とバント種別（進塁バント／スクイズ）に応じて試みるかどうかを変えます。成功率（進塁81%・スクイズ45%）とスクイズを試みる確率（25%）は全選手共通の設定値です。

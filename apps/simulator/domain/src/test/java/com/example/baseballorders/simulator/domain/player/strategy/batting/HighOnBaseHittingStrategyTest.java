@@ -21,24 +21,20 @@ class HighOnBaseHittingStrategyTest {
 
     static Stream<Arguments> battingResults() {
         // 四球0.1、安打確率は(1 - 0.1) * 0.4 = 0.36、出塁確率は0.46。
-        // 中距離の重み15:1:1:1で単打0.40、二塁打0.42、三塁打0.44、本塁打0.46、三振0.595までが各区間。
+        // 高出塁率打者の重み18:2:0:0で単打0.424、二塁打0.46、三振0.595までが各区間。
         return Stream.of(
                 arguments("乱数0は四球", 0.0f, BattingResult.WALK),
                 arguments("0.1の直前は四球", Math.nextDown(0.1f), BattingResult.WALK),
                 arguments("0.1と等しい境界は単打", 0.1f, BattingResult.HIT_SINGLE),
-                arguments("単打上限の直前", 0.3999f, BattingResult.HIT_SINGLE),
-                arguments("単打上限の直後", 0.4001f, BattingResult.HIT_DOUBLE),
-                arguments("二塁打上限の直前", 0.4199f, BattingResult.HIT_DOUBLE),
-                arguments("二塁打上限の直後", 0.4201f, BattingResult.HIT_TRIPLE),
-                arguments("三塁打上限の直前", 0.4399f, BattingResult.HIT_TRIPLE),
-                arguments("三塁打上限の直後", 0.4401f, BattingResult.HIT_HOMER),
-                arguments("本塁打上限の直前", 0.4599f, BattingResult.HIT_HOMER),
-                arguments("本塁打上限の直後は三振", 0.4601f, BattingResult.STRIKEOUT),
+                arguments("単打上限の直前", 0.4239f, BattingResult.HIT_SINGLE),
+                arguments("単打上限の直後", 0.4241f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直前", 0.4599f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直後は三振", 0.4601f, BattingResult.STRIKEOUT),
                 arguments("三振区間の内側", 0.50f, BattingResult.STRIKEOUT),
                 arguments("乱数1は凡退", 1.0f, BattingResult.BATTED_OUT));
     }
 
-    @DisplayName("高出塁率打者は四球確率0.1と中距離の安打配分で打席結果を決定し、乱数を1個だけ消費する")
+    @DisplayName("高出塁率打者は四球確率0.1と専用の安打配分で打席結果を決定し、乱数を1個だけ消費する")
     @ParameterizedTest(name = "{0} -> {2}")
     @MethodSource("battingResults")
     void determinesBattingResult(String description, float random, BattingResult expectedResult) {

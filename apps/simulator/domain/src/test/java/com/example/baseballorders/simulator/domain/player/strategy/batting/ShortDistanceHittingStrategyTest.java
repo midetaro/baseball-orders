@@ -30,9 +30,9 @@ class ShortDistanceHittingStrategyTest {
                 arguments("乱数0は四球", 0.0f, BattingResult.WALK),
                 arguments("0.05の直前", Math.nextDown(0.05f), BattingResult.WALK),
                 arguments("0.05と等しい境界", 0.05f, BattingResult.HIT_SINGLE),
-                // 安打確率 0.95 * 0.4 = 0.38 を 3:2 で配分し、単打区間は 0.05 + 0.228 = 0.278 まで。
-                arguments("0.278の直前", 0.2779f, BattingResult.HIT_SINGLE),
-                arguments("0.278を超えた直後", 0.2781f, BattingResult.HIT_DOUBLE),
+                // 安打確率 0.95 * 0.4 = 0.38 を 18:2 で配分し、単打区間は 0.05 + 0.342 = 0.392 まで。
+                arguments("0.392の直前", 0.3919f, BattingResult.HIT_SINGLE),
+                arguments("0.392を超えた直後", 0.3921f, BattingResult.HIT_DOUBLE),
                 arguments("0.43の直前", Math.nextDown(0.43f), BattingResult.HIT_DOUBLE),
                 arguments("0.43と等しい境界", 0.43f, BattingResult.STRIKEOUT),
                 arguments("0.5725の直前", Math.nextDown(0.5725f), BattingResult.STRIKEOUT),

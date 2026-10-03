@@ -25,13 +25,13 @@ class MiddleDistanceHittingStrategyTest {
                 arguments("乱数0は四球", 0.0f, BattingResult.WALK),
                 arguments("0.05の直前", Math.nextDown(0.05f), BattingResult.WALK),
                 arguments("0.05と等しい境界", 0.05f, BattingResult.HIT_SINGLE),
-                // 安打確率 0.38 を 15:1:1:1 で配分し、単打 0.3667、二塁打 0.3878、三塁打 0.4089 まで。
-                arguments("単打上限の直前", 0.3666f, BattingResult.HIT_SINGLE),
-                arguments("単打上限の直後", 0.3668f, BattingResult.HIT_DOUBLE),
-                arguments("二塁打上限の直前", 0.3877f, BattingResult.HIT_DOUBLE),
-                arguments("二塁打上限の直後", 0.3879f, BattingResult.HIT_TRIPLE),
-                arguments("三塁打上限の直前", 0.4088f, BattingResult.HIT_TRIPLE),
-                arguments("三塁打上限の直後", 0.4090f, BattingResult.HIT_HOMER),
+                // 安打確率 0.38 を 13:3:1:3 で配分し、単打 0.297、二塁打 0.354、三塁打 0.373 まで。
+                arguments("単打上限の直前", 0.2969f, BattingResult.HIT_SINGLE),
+                arguments("単打上限の直後", 0.2971f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直前", 0.3539f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直後", 0.3541f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直前", 0.3729f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直後", 0.3731f, BattingResult.HIT_HOMER),
                 arguments("0.43の直前", Math.nextDown(0.43f), BattingResult.HIT_HOMER),
                 arguments("0.43と等しい境界", 0.43f, BattingResult.STRIKEOUT),
                 arguments("0.5725の直前", Math.nextDown(0.5725f), BattingResult.STRIKEOUT),
@@ -67,27 +67,27 @@ class MiddleDistanceHittingStrategyTest {
     static Stream<Arguments> configuredDistributions() {
         return Stream.of(
                 arguments(
-                        "既定の配分では0.3950000は三塁打",
+                        "既定の配分では0.3950000は本塁打",
                         SimulationRulesTestData.standard().middleDistanceHitting(),
-                        BattingResult.HIT_TRIPLE),
-                arguments(
-                        "本塁打の重みを15にすると0.3950000は本塁打",
-                        HittingDistributionBuilder.hittingDistribution()
-                                .singleWeight(15)
-                                .doubleWeight(1)
-                                .tripleWeight(1)
-                                .homeRunWeight(15)
-                                .build(),
                         BattingResult.HIT_HOMER),
                 arguments(
-                        "二塁打と三塁打の重みが0なら0.3950000は本塁打",
+                        "本塁打の重みを0にすると0.3950000は二塁打",
                         HittingDistributionBuilder.hittingDistribution()
-                                .singleWeight(15)
+                                .singleWeight(13)
+                                .doubleWeight(3)
+                                .tripleWeight(1)
+                                .homeRunWeight(0)
+                                .build(),
+                        BattingResult.HIT_DOUBLE),
+                arguments(
+                        "単打以外の重みが0なら0.3950000は単打",
+                        HittingDistributionBuilder.hittingDistribution()
+                                .singleWeight(13)
                                 .doubleWeight(0)
                                 .tripleWeight(0)
-                                .homeRunWeight(15)
+                                .homeRunWeight(0)
                                 .build(),
-                        BattingResult.HIT_HOMER));
+                        BattingResult.HIT_SINGLE));
     }
 
     @DisplayName("中距離打者の長打配分は設定された重みで決まる")

@@ -9,20 +9,25 @@ simulation:
       walk-probability: 0.05
       strikeout-probability-when-not-on-base: 0.25
     short-distance-hitting:
-      single-weight: 3
+      single-weight: 18
       double-weight: 2
       triple-weight: 0
       home-run-weight: 0
     middle-distance-hitting:
-      single-weight: 15
-      double-weight: 1
+      single-weight: 13
+      double-weight: 3
       triple-weight: 1
-      home-run-weight: 1
+      home-run-weight: 3
     long-distance-hitting:
-      single-weight: 16
-      double-weight: 1
+      single-weight: 7
+      double-weight: 6
       triple-weight: 1
-      home-run-weight: 4
+      home-run-weight: 6
+    high-on-base-hitting:
+      single-weight: 18
+      double-weight: 2
+      triple-weight: 0
+      home-run-weight: 0
     high-on-base-batting:
       walk-probability: 0.1
     standard-steal:

@@ -21,7 +21,7 @@ class ExpandedBattingResultTest {
         return Stream.of(
                 Arguments.of("5%未満なら四球になる", 0.4f, 0.049999f, BattingResult.WALK),
                 Arguments.of("5%と等しければ安打になる", 0.4f, 0.05f, BattingResult.HIT_SINGLE),
-                Arguments.of("打率と等しい乱数でも安打になる", 0.4f, 0.4f, BattingResult.HIT_TRIPLE),
+                Arguments.of("打率と等しい乱数でも安打になる", 0.4f, 0.4f, BattingResult.HIT_HOMER),
                 Arguments.of("四球と安打の合計と等しければ三振になる", 0.4f, 0.43f, BattingResult.STRIKEOUT),
                 Arguments.of(
                         "非出塁の25%未満なら三振になる", 0.4f, Math.nextDown(0.5725f), BattingResult.STRIKEOUT),

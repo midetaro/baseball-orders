@@ -12,6 +12,7 @@ import org.jilt.BuilderStyle;
  * @param shortDistanceHitting 短距離打者の安打配分
  * @param middleDistanceHitting 中距離打者の安打配分
  * @param longDistanceHitting 長距離打者の安打配分
+ * @param highOnBaseHitting 高出塁率打者の安打配分
  * @param highOnBaseWalkProbability 高出塁率打者が四球となる確率。打率とは独立した設定値
  * @param standardSteal 標準盗塁戦略の企図率
  * @param eagerSteal 積極盗塁戦略の企図率
@@ -25,6 +26,7 @@ public record SimulationRules(
         HittingDistribution shortDistanceHitting,
         HittingDistribution middleDistanceHitting,
         HittingDistribution longDistanceHitting,
+        HittingDistribution highOnBaseHitting,
         float highOnBaseWalkProbability,
         StealAttemptRates standardSteal,
         StealAttemptRates eagerSteal,
