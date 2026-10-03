@@ -19,19 +19,17 @@ class BehaviorStrategiesTest {
         // given
         var sut = SimulationRulesTestData.strategies();
 
-        // when / then
+        // when
+        var shortDistance = sut.shortDistanceHittingStrategy();
+        var middleDistance = sut.middleDistanceHittingStrategy();
+        var longDistance = sut.longDistanceAtBat();
+        var highOnBase = sut.highOnBaseHittingStrategy();
+
+        // then
         assertAll(
-                () ->
-                        assertInstanceOf(
-                                ShortDistanceHittingStrategy.class,
-                                sut.shortDistanceHittingStrategy()),
-                () ->
-                        assertInstanceOf(
-                                MiddleDistanceHittingStrategy.class,
-                                sut.middleDistanceHittingStrategy()),
-                () -> assertInstanceOf(LongDistanceHittingStrategy.class, sut.longDistanceAtBat()),
-                () ->
-                        assertInstanceOf(
-                                HighOnBaseHittingStrategy.class, sut.highOnBaseHittingStrategy()));
+                () -> assertInstanceOf(ShortDistanceHittingStrategy.class, shortDistance),
+                () -> assertInstanceOf(MiddleDistanceHittingStrategy.class, middleDistance),
+                () -> assertInstanceOf(LongDistanceHittingStrategy.class, longDistance),
+                () -> assertInstanceOf(HighOnBaseHittingStrategy.class, highOnBase));
     }
 }
