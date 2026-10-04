@@ -15,7 +15,7 @@
         <button th:replace="~{fragments/site-menu :: menuToggle}"></button>
         <h1>打順監督</h1>
         <p class="status">
-            ドラッグで打順を組み替え、性格・バント・盗塁を選ぶ。
+            チームを選び、ドラッグで打順を組み替える。
         </p>
     </header>
     <nav aria-label="画面切り替え" class="view-tabs" role="tablist">
@@ -25,18 +25,28 @@
     <div class="simulation-workspace">
         <section aria-labelledby="order-heading" id="input-view" role="tabpanel">
             <div class="section-head"><h2 id="order-heading">打順組み替え</h2>
+                <label class="team-picker">チーム
+                    <select id="team-select">
+                        <option th:each="team, stat : ${teams}" th:value="${team.key}" th:text="${team.label}" th:selected="${stat.first}"></option>
+                    </select>
+                </label>
+                <span class="average-hit-average"><span class="average-caption">平均打率</span> <span id="average-hit-average">—</span></span>
+                <div hidden id="team-defaults">
+                    <div th:each="team : ${teams}" th:attr="data-team=${team.key}">
+                        <span data-batter th:each="batter : ${team.batters}" th:attr="data-batting-order=${batter.battingOrder},data-hit-average=${batter.hitAverage},data-personality=${batter.personality},data-steal-forced=${batter.stealForced},data-bunt-forced=${batter.buntForced}"></span>
+                    </div>
+                </div>
                 <button class="submit" id="submit" type="button">SIMULATIONを実行</button>
                 <div class="section-actions">
                     <button aria-pressed="false" class="all-toggle" id="toggle-all-bunt" type="button">全員バント</button>
                     <button aria-pressed="false" class="all-toggle" id="toggle-all-steal" type="button">全員盗塁</button>
-                    <button class="all-toggle" id="reset-all-personalities" type="button">性格を初期化</button>
                 </div>
             </div>
             <div class="lineup-workspace">
                 <div class="order-scroll">
                     <div class="order reorder-order">
                         <div class="columns">
-                            <span aria-hidden="true"></span><span>打順</span><span>打率</span><span>性格</span><span>バント</span><span>盗塁</span>
+                            <span>打順</span><span aria-hidden="true"></span><span>打率</span><span>性格</span><span>バント</span><span>盗塁</span><span>メモ</span>
                         </div>
                         <div data-lineup-mode="reorder" id="order"></div>
                     </div>

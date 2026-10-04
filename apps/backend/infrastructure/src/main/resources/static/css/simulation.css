@@ -730,6 +730,7 @@
             .section-head {
                 align-items: flex-start;
                 flex-wrap: wrap;
+                row-gap: var(--space-2xs);
                 padding: var(--space-md);
             }
 
@@ -795,4 +796,15 @@
             #feedback {
                 margin: var(--space-sm) var(--space-md) var(--space-md);
             }
+        }
+
+        .average-hit-average {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .average-hit-average #average-hit-average {
+            color: var(--ink);
+            font-variant-numeric: tabular-nums;
         }

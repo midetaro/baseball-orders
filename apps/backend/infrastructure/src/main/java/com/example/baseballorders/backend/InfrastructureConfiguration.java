@@ -1,9 +1,11 @@
 package com.example.baseballorders.backend;
 
+import com.example.baseballorders.backend.application.DefaultLineupQuery;
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.SimulationLimits;
 import com.example.baseballorders.backend.application.SimulationLimitsBuilder;
 import com.example.baseballorders.backend.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.application.adapter.DefaultLineupRepository;
 import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,5 +56,16 @@ public class InfrastructureConfiguration {
     public SimulationCoordinator simulationCoordinator(
             SimulatorMessagePublisher publisher, WaitingResultRegistry registry) {
         return new SimulationCoordinator(publisher, registry, simulationLimits);
+    }
+
+    /**
+     * チーム別の既定オーダー取得ユースケースを生成する。
+     *
+     * @param repository 既定オーダー取得ポートの実装
+     * @return 構成済みユースケース
+     */
+    @Bean
+    public DefaultLineupQuery defaultLineupQuery(DefaultLineupRepository repository) {
+        return new DefaultLineupQuery(repository);
     }
 }
