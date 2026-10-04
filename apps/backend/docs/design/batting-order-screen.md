@@ -11,7 +11,7 @@
 | 既定オーダーの保持 | backend の H2（`team_default_batter` テーブル、`schema.sql`・`data.sql` で起動時に投入） |
 | 関連画面 | 左メニューから `GET /large-scale`、`GET /single-game`、`GET /simulation-guide` へ遷移 |
 
-試合結果の表示、実行、共有、フィードバックは [シミュレーション画面](./simulation-screen.md) の大規模実行と同じとする（`/simulations` へ送信し、`simulation.ts`（配信時は `/js/simulation.js`）で描画する）。
+試合結果の表示、実行、共有、フィードバックは [シミュレーション画面](./simulation-screen.md) の大規模実行と同じとする（`/simulations` へ送信し、`typescript/simulation/`（入口は `pages/batting-order.ts`、配信時は `/js/pages/batting-order.js`）で描画する）。
 
 ## チーム選択
 
