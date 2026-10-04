@@ -45,5 +45,16 @@ Inherit the repository rules from `../../AGENTS.md`.
 - Run `../../.agents/skills/baseball-orders-development/scripts/verify.sh backend` before completion.
 - Focused commands may use `./gradlew :domain:test`, `./gradlew
   :application:test`, or `./gradlew :infrastructure:test` from `apps/backend`.
+- Write Thymeleaf page scripts in TypeScript under
+  `infrastructure/src/main/typescript`; do not add hand-written JavaScript under
+  `static/js`. Organize them as ES modules by feature (`lineup/`, `simulation/`,
+  `single-game/`, `site-menu/`, `shared/`) that do not touch the page on import,
+  and load one entry module `pages/<template>.ts` per template with
+  `<script src="/js/pages/<template>.js" type="module">`. Import other modules by
+  relative `.ts` paths. `./gradlew :infrastructure:compileTypeScript` type-checks
+  and emits them under `/js/`, and `./gradlew :infrastructure:testTypeScript` runs
+  the Node tests in `infrastructure/src/test/js` (both run as part of `build`).
+  Test module behavior under `src/test/js/scripts` by importing the `.ts` source
+  and using jsdom, not by matching source text.
 
 ElasticMQ integration tests run only when `SQS_ENDPOINT` is set.

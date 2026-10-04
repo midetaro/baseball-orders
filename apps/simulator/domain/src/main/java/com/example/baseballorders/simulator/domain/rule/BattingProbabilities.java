@@ -6,7 +6,7 @@ import org.jilt.BuilderStyle;
 /**
  * 打席結果の判定に使う、打者の成績に依存しない確率設定。
  *
- * @param walkProbability 四球となる確率の上限。出塁率がこれを下回る打者では出塁率が上限になる
+ * @param walkProbability 一打席が四球となる確率。打率とは独立した設定値
  * @param strikeoutProbabilityWhenNotOnBase 出塁しなかった打席のうち三振になる割合
  */
 @Builder(style = BuilderStyle.STAGED)

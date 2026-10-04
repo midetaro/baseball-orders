@@ -6,31 +6,52 @@ Baseball Orders は、打者の能力と打順を設定し、試合シミュレ�
 ブラウザから受け付けたシミュレーション要求を SQS 互換のメッセージキューへ送り、独立した Simulator が
 試合を計算します。計算結果は同じメッセージキューを経由して Backend に戻り、画面へ同期的に返されます。
 
-9人分の打者能力（出塁率・長打率・バント成功率・盗塁成功率）、各打者の性格、バント・盗塁の可否、
-対戦する投手の性格を入力すると、既定で100試合を試行し、得点分布・安打内訳・本塁打内訳・バント/盗塁の
-成否を集計して返します。
+9人分の打者能力（出塁率）、各打者の性格、バント・盗塁の可否を入力して、次の2つのモードで実行できます。
+バント・盗塁の成功率と対戦投手の補正は、利用者が入力する値ではなく Simulator の設定値です。
+
+- **大規模実行**（`/`、`/large-scale`）: 既定で100試合を試行し、得点分布・安打内訳・本塁打内訳・バント/盗塁の
+  成否を集計して表示します。
+- **1試合実行**（`/single-game`）: 1試合だけを試行し、1プレーごとの推移をアニメーションで再生しながら、
+  打順ごとの打席結果を成績表に並べます。
 
 [Simulatorの詳細](apps/simulator/README.md)を参照してください。
 
 ## 画面イメージ
 
-### 打順入力
+ログイン機能はなく、すべての画面とAPIはログインなしで利用できます。画面の詳細な仕様は
+[backend 画面仕様](apps/backend/docs/design/README.md)にまとめています。
 
-1番から9番までの能力値・性格・戦術を1画面で設定します。入力値は画面側で範囲と桁数を検証し、
-打線全体の平均出塁率・平均長打率の上限を満たすまで実行ボタンを無効にします。
+### 大規模実行：打順入力
+
+1番から9番までの能力値・性格・戦術を1画面で設定します。「全員バント」「全員盗塁」「性格を初期化」で一括変更でき、
+入力値は画面側で範囲と小数第2位までの桁数を検証して、条件を満たすまで実行ボタンを無効にします。
+打線全体の平均出塁率の上限（既定は0.35）は Backend が検証します。
 
 ![打順入力画面](docs/images/lineup.png)
 
-### 試合結果
+### 大規模実行：試合結果
 
 100試合の集計を、得点サマリー・得点分布ヒストグラム・安打内訳・本塁打内訳・バント内訳・盗塁内訳として
-表示します。内訳は積み上げバーと凡例で構成比を示します。
+表示します。内訳は積み上げバーと凡例で構成比を示し、「結果を共有」で平均・中央値・最大得点を共有できます。
 
 ![試合結果画面](docs/images/results.png)
 
+### 1試合実行：打順入力
+
+大規模実行と同じ入力欄で打順を設定し、「1試合を実行」で1試合だけをシミュレーションします。
+
+![1試合実行の打順入力画面](docs/images/single-game-lineup.png)
+
+### 1試合実行：試合結果
+
+左側でイニング・アウト・得点と走者の推移を1プレーずつ自動再生し、右側の打順成績表に各打席の結果を表示します。
+安打・得点・本塁打（満塁本塁打は `GRAND SLAM!`）の場面では専用の演出を表示します。
+
+![1試合実行の試合結果画面](docs/images/single-game-home-run.png)
+
 ### シミュレーションの仕組み
 
-利用者向けにシミュレーションの進行規則と入力項目の意味を説明する静的ページです。
+利用者向けにシミュレーションの進行規則・入力項目・性格の違い・バントと盗塁の結果を説明するページです。
 
 ![シミュレーションの仕組み画面](docs/images/simulation-guide.png)
 
@@ -39,11 +60,11 @@ Baseball Orders は、打者の能力と打順を設定し、試合シミュレ�
 | 領域 | 採用技術 |
 | --- | --- |
 | 言語・ビルド | Java 25、Gradle composite build（`includeBuild`）、Spotless（google-java-format AOSP） |
-| Backend | Spring Boot 4.0.0、Spring MVC、Thymeleaf、Spring Security（フォームログイン / OAuth2 Client）、Spring Data JPA、Flyway、H2、Spring Cloud AWS SQS |
+| Backend | Spring Boot 4.0.0、Spring MVC、Thymeleaf、Spring Cloud AWS SQS、素の JavaScript / CSS（画面スクリプトとアニメーション） |
 | Simulator | Spring Framework 7.0.1（Spring Boot の Web スタックなし）、AWS SDK for Java v2 (SQS)、Jackson |
 | コード生成 | Lombok（`@Getter` / `@RequiredArgsConstructor` / `@Slf4j`）、Jilt（STAGED Builder） |
 | テスト | JUnit 6.0.1、Mockito、ArchUnit、ElasticMQ、JaCoCo |
-| 実行基盤 | Docker Compose（Floci を SQS 互換として使用）、Terraform（Amazon SQS）、GitHub Actions（テスト / ECR push / デプロイ） |
+| 実行基盤 | Docker Compose（Floci を SQS 互換として使用）、Terraform（SQS・ECS Fargate・ALB・ECR など）、GitHub Actions（テスト / ECR push / デプロイ） |
 
 ## 実装方針
 
@@ -58,20 +79,20 @@ UI を持つ Backend と、試合規則だけを持つ Simulator を独立した
 ```text
 baseball-orders/
 ├── apps/
-│   ├── backend/                  # 同期HTTP API・Thymeleaf UI・永続化・SQSアダプタ
+│   ├── backend/                  # 同期HTTP API・Thymeleaf UI・SQSアダプタ
 │   │   ├── domain/               # 業務データと結果モデル（フレームワーク非依存）
 │   │   ├── application/          # ユースケース調整・ポート定義・結果待機
-│   │   └── infrastructure/       # api / web / messaging / persistence / security
+│   │   └── infrastructure/       # api / web / messaging
 │   └── simulator/                # 非同期の試合計算ワーカー
-│       ├── domain/               # 試合規則（game / player / play / statistics）
+│       ├── domain/               # 試合規則（game / player / play / rule / statistics）
 │       ├── application/          # シミュレーションユースケース
 │       └── infrastructure/       # SQSポーリング・シリアライズ・wireマッピング
 ├── libs/messaging-contract/      # SQSのwire契約（両アプリが物理的に共有）
 ├── integration-test/             # backend -> SQS -> simulator -> SQS -> backend の疎通検証
 ├── infra/
 │   ├── docker/                   # ローカル実行環境
-│   └── aws-terraform/            # AWSメッセージングリソース
-└── docs/                         # アーキテクチャマップ・機能仕様
+│   └── aws-terraform/            # AWSリソース（SQS・ECS・ALB など）
+└── docs/                         # アーキテクチャマップ・デプロイ手順・機能仕様・画像
 ```
 
 ルートは composite build です。`apps/backend` と `apps/simulator` はそれぞれ独立した Gradle ビルドで、
@@ -87,7 +108,7 @@ flowchart LR
     contract["libs/messaging-contract<br/>SQS wire契約"]
 
     subgraph backend["apps/backend"]
-        bi["infrastructure<br/>api / web / messaging / persistence / security"] --> ba["application"]
+        bi["infrastructure<br/>api / web / messaging"] --> ba["application"]
         bi --> bd["domain"]
         ba --> bd
         bi --> contract
@@ -100,7 +121,7 @@ flowchart LR
     end
 ```
 
-Backend の `infrastructure` では、`api` / `web` / `messaging` / `persistence` の各アダプタが互いを直接参照することを
+Backend の `infrastructure` では、`api` / `web` / `messaging` の各アダプタが互いを直接参照することを
 禁じ、必ず `application` のユースケースかポートを経由させます。この制約は ArchUnit テストで機械的に検証しています。
 
 ### 同期HTTP と非同期SQS の橋渡し
@@ -108,8 +129,10 @@ Backend の `infrastructure` では、`api` / `web` / `messaging` / `persistence
 画面は「実行して結果が返る」同期操作ですが、計算は別プロセスで非同期に走ります。両者は相関IDで対応付けます。
 
 1. `SimulatorRequestController` が9人分の入力を受け取り、`SimulationCoordinator` に委譲する。
+   大規模実行は `POST /simulations`、1試合実行は `POST /simulations/single-game` で、後者は要求メッセージの
+   `mode` に `SINGLE_GAME_RUN` を指定する。
 2. Coordinator が `simulationId`（UUID）を採番し、`WaitingResultRegistry` に待機を登録してから要求をキューへ送る。
-3. Simulator が要求を取り出し、試合を計算して結果キューへ送る。**結果の送信に成功してから要求メッセージを削除する**ため、
+3. Simulator が要求を取り出し、モードに応じて設定試合数の集計または1試合分の推移を計算して結果キューへ送る。**結果の送信に成功してから要求メッセージを削除する**ため、
    途中で落ちた要求は再配信される。
 4. `SimulationResultListener` が結果を受け取り、`simulationId` が一致する待機を解放する。
 5. Coordinator が最大30秒まで待機し、HTTP レスポンスとして返す。相関しない結果や時間切れ後の結果は破棄する。
@@ -148,7 +171,7 @@ Simulator の domain 層は、条件分岐の塊になりがちな野球の規�
 - **能力インターフェース**: 「この塁状況では盗塁できる／スクイズできる」といった可否を `Stealable`、`Buntable`、
   `SqueezeBuntable` などの sealed インターフェースで表現し、状態と作戦の組み合わせを型で絞り込みます。
 - **打者の行動**: 打撃・バント・盗塁の判断を sealed な `HittingStrategy` / `BuntStrategy` / `StealStrategy` の
-  3系統に分け、`BatterEntity` は判断を Strategy に委譲します。性格（標準・ブンブン丸・盗塁重視・バント重視）は
+  3系統に分け、`BatterEntity` は判断を Strategy に委譲します。性格（標準・長距離砲・盗塁重視・バント重視）は
   Strategy の組み合わせとして表現します。
 - **統計**: `GameStatisticsRecorder` が1試合内のプレーを観測し、`ScoreAccumulator` が完了した試合を1回の走査で
   すべてのカウンタに集約します。集計項目ごとに Stream を張り直して同じコレクションを何度も走査することは避けています。
@@ -181,14 +204,19 @@ enum の分岐は `switch` 式で全定数を明示し、`default` を置かな�
 ### 設定方針
 
 試合数やポーリング間隔などの調整可能な数値は、コード内のリテラルではなく名前付きプロパティとして持ち、
-local / dev / prod のプロファイルごとに値を定義します（例: `SIMULATION_GAME_COUNT`、既定100試合）。
-一方、9回・3アウトのような固定規則を表す数値はコード側に残します。
+プロファイルごとに値を定義します。一方、9回・3アウトのような固定規則を表す数値はコード側に残します。
+
+- Simulator（local / dev / prod）: 試合数 `simulation.game-count`（`SIMULATION_GAME_COUNT`、既定100試合）、
+  四球・三振率や盗塁・バントの成功率などの確率 `simulation.rule.*`、投手の性格ごとの補正倍率 `simulation.pitcher.*`。
+- Backend（local / prod）: 結果待ちのタイムアウト `baseball-orders.simulation.result-timeout`（既定30秒）、
+  打線の平均出塁率の上限、1試合実行の通常・安打・得点・本塁打フレームの表示時間
+  `baseball-orders.rendering.single-game.*`。
 
 ## 構成図
 
 ```mermaid
 flowchart LR
-    browser["ブラウザ"] -->|"HTTP"| backend["Backend<br/>UI・HTTP API・H2"]
+    browser["ブラウザ"] -->|"HTTP"| backend["Backend<br/>UI・HTTP API"]
     backend -->|"シミュレーション要求"| requestQueue["Floci<br/>要求 SQS"]
     requestQueue --> simulator["Simulator<br/>試合計算ワーカー"]
     simulator -->|"シミュレーション結果"| resultQueue["Floci<br/>結果 SQS"]
@@ -210,7 +238,7 @@ Docker Desktop または Docker Engine と Docker Compose を起動し、リポ�
 docker compose up -d --build --wait --wait-timeout 180
 ```
 
-起動後、ブラウザで http://127.0.0.1:8080/ を開くと、打者一覧・打順設定・シミュレーションを利用できます。
+起動後、ブラウザで http://127.0.0.1:8080/ を開くと、大規模実行・1試合実行・シミュレーションの仕組みの各画面を利用できます。
 
 8080 番ポートが使用中の場合は、公開ポートを変更します。
 
@@ -250,3 +278,11 @@ GitHub Environment `aws-production`に、次のVariablesを設定してくださ
 - `ECR_SIMULATOR_REPOSITORY`: 作成済みのSimulator用ECRリポジトリ名
 
 リリースタグはDockerイメージタグとして利用できる形式（例: `v1.2.3`）にしてください。
+## AWSへのデプロイ
+
+AWS 上の構成は `infra/aws-terraform` で管理します。`develop` へのTerraform変更のpushで本番設定に対する
+plan を検証し、`main` へのpushで `apply` します。構成の根拠と手順は次を参照してください。
+
+- [AWS デプロイ構成](docs/aws-deployment.md): 標準構成と、その構成を選んだ根拠
+- [AWS デプロイ構成（低コスト版）](docs/aws-deployment-low-cost.md): NAT Gateway を使わない、Terraform が実際に管理する構成
+- [AWS Terraform](infra/aws-terraform/README.md): 管理対象リソースと変数

@@ -1,14 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:baseball-orders;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: always
+
 spring.cloud.aws.sqs.listener.auto-startup: false
 
 baseball-orders:
   simulation:
     result-timeout: 30s
     maximum-average-hit-average: 0.35
-    maximum-average-sluggish: 0.4
-    maximum-success-rate: 0.7
   rendering:
     single-game:
       frame-duration-millis: 1000
-  security:
-    local-account:
-      minimum-password-length: 12
+      hit-frame-duration-millis: 1800
+      score-frame-duration-millis: 2200
+      home-run-frame-duration-millis: 3600
+      bunt-frame-duration-millis: 1600

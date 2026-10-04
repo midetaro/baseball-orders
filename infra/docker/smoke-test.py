@@ -17,9 +17,16 @@ def main():
     with urllib.request.urlopen(base_url + "/", timeout=10) as response:
         assert response.status == 200
 
+    player = {
+        "hit_average": 0.33,
+        "sluggish": 0.40,
+        "bunt_enabled": True,
+        "steal_enabled": True,
+        "personality": "DEFAULT",
+    }
     request = urllib.request.Request(
         base_url + "/simulations",
-        data=json.dumps([{"player_id": i} for i in range(1, 10)]).encode(),
+        data=json.dumps([player] * 9).encode(),
         headers={"Content-Type": "application/json"},
         method="POST",
     )
@@ -27,10 +34,11 @@ def main():
         assert response.status == 200
         result = json.load(response)
     uuid.UUID(result["simulationId"])
-    assert isinstance(result["score"], int) and result["score"] >= 0, result
-    assert isinstance(result["runs"], int) and result["runs"] >= 0, result
+    statistics = result["statistics"]
+    assert isinstance(statistics["gameCount"], int) and statistics["gameCount"] > 0, result
+    assert sum(statistics["scoreDistribution"].values()) == statistics["gameCount"], result
     print("PASS: Backend -> Floci -> Simulator -> Floci -> Backend")
-    print(json.dumps(result, ensure_ascii=False))
+    print(json.dumps(statistics, ensure_ascii=False))
 
 
 if __name__ == "__main__":

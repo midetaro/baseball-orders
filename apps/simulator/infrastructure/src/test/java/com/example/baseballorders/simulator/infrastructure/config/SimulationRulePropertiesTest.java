@@ -56,21 +56,34 @@ class SimulationRulePropertiesTest {
                 resourceName,
                 () -> assertEquals(0.05f, rules.batting().walkProbability()),
                 () -> assertEquals(0.25f, rules.batting().strikeoutProbabilityWhenNotOnBase()),
-                () -> assertEquals(6f, rules.middleDistanceHitting().doubleDivisor()),
-                () -> assertEquals(6f, rules.middleDistanceHitting().tripleDivisor()),
-                () -> assertEquals(6f, rules.middleDistanceHitting().homeRunDivisor()),
-                () -> assertEquals(2f, rules.middleDistanceHitting().singleReductionDivisor()),
-                () -> assertEquals(8f, rules.longDistanceHitting().doubleDivisor()),
-                () -> assertEquals(8f, rules.longDistanceHitting().tripleDivisor()),
-                () -> assertEquals(2f, rules.longDistanceHitting().homeRunDivisor()),
-                () -> assertEquals(1f, rules.longDistanceHitting().singleReductionDivisor()),
-                () -> assertEquals(0.2f, rules.standardSteal().toDoubleAttemptRate()),
-                () -> assertEquals(0.05f, rules.standardSteal().toTripleAttemptRate()),
+                () -> assertEquals(18f, rules.shortDistanceHitting().singleWeight()),
+                () -> assertEquals(2f, rules.shortDistanceHitting().doubleWeight()),
+                () -> assertEquals(0f, rules.shortDistanceHitting().tripleWeight()),
+                () -> assertEquals(0f, rules.shortDistanceHitting().homeRunWeight()),
+                () -> assertEquals(13f, rules.middleDistanceHitting().singleWeight()),
+                () -> assertEquals(3f, rules.middleDistanceHitting().doubleWeight()),
+                () -> assertEquals(1f, rules.middleDistanceHitting().tripleWeight()),
+                () -> assertEquals(3f, rules.middleDistanceHitting().homeRunWeight()),
+                () -> assertEquals(7f, rules.longDistanceHitting().singleWeight()),
+                () -> assertEquals(6f, rules.longDistanceHitting().doubleWeight()),
+                () -> assertEquals(1f, rules.longDistanceHitting().tripleWeight()),
+                () -> assertEquals(6f, rules.longDistanceHitting().homeRunWeight()),
+                () -> assertEquals(18f, rules.highOnBaseHitting().singleWeight()),
+                () -> assertEquals(2f, rules.highOnBaseHitting().doubleWeight()),
+                () -> assertEquals(0f, rules.highOnBaseHitting().tripleWeight()),
+                () -> assertEquals(0f, rules.highOnBaseHitting().homeRunWeight()),
+                () -> assertEquals(0.1f, rules.highOnBaseWalkProbability()),
+                () -> assertEquals(0.30f, rules.standardSteal().toDoubleAttemptRate()),
+                () -> assertEquals(0.10f, rules.standardSteal().toTripleAttemptRate()),
                 () -> assertEquals(0.3f, rules.eagerSteal().toDoubleAttemptRate()),
                 () -> assertEquals(0.15f, rules.eagerSteal().toTripleAttemptRate()),
                 () -> assertEquals(0.2f, rules.runnerAdvance().fromFirstProbability()),
                 () -> assertEquals(0.2f, rules.runnerAdvance().fromSecondProbability()),
-                () -> assertEquals(0.1f, rules.runnerAdvance().fromThirdProbability()));
+                () -> assertEquals(0.1f, rules.runnerAdvance().fromThirdProbability()),
+                () -> assertEquals(0.70f, rules.stealSuccessRate()),
+                () -> assertEquals(0.81f, rules.buntProbabilities().advancingSuccessRate()),
+                () -> assertEquals(0.45f, rules.buntProbabilities().squeezeSuccessRate()),
+                () -> assertEquals(0.25f, rules.buntProbabilities().squeezeChallengeRate()));
     }
 
     @DisplayName("全プロファイルの設定ファイルが同じ投手補正倍率を渡す")
@@ -90,11 +103,7 @@ class SimulationRulePropertiesTest {
         var pitcher = binder.bind("simulation.pitcher", SimulationPitcherProperties.class).get();
 
         // then
-        assertAll(
-                resourceName,
-                () -> assertEquals(1.0f, pitcher.standard().onBaseMultiplier()),
-                () -> assertEquals(1.0f, pitcher.standard().sluggingMultiplier()),
-                () -> assertEquals(1.0f, pitcher.standard().runningMultiplier()));
+        assertAll(resourceName, () -> assertEquals(1.0f, pitcher.standard().onBaseMultiplier()));
     }
 
     private static Binder binderFor(String resourceName) throws IOException {

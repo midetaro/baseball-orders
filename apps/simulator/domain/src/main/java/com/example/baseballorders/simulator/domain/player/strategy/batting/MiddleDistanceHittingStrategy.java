@@ -15,7 +15,7 @@ public final class MiddleDistanceHittingStrategy implements HittingStrategy {
      * 設定された打席確率と長打配分で中距離打者の打撃を作成する。
      *
      * @param battingProbabilities 打席結果の判定に使う確率
-     * @param distribution 長打によって増えた塁数の配分
+     * @param distribution 安打種別の配分
      */
     public MiddleDistanceHittingStrategy(
             BattingProbabilities battingProbabilities, HittingDistribution distribution) {
@@ -24,26 +24,16 @@ public final class MiddleDistanceHittingStrategy implements HittingStrategy {
     }
 
     @Override
-    public BattingResult batting(float onBasePercentage, float slugging) {
+    public BattingResult batting(float battingAverage) {
         float random = RandomGenerator.nextFloat();
 
-        // 長打によって増えた塁数
-        float extraBaseProbability = slugging - onBasePercentage;
-
-        // 二塁打・三塁打・本塁打の配分は設定された除数に従う
-        float doubleProbability = extraBaseProbability / distribution.doubleDivisor();
-        float tripleProbability = extraBaseProbability / distribution.tripleDivisor();
-        float homeRunProbability = extraBaseProbability / distribution.homeRunDivisor();
-
-        float singleProbability =
-                onBasePercentage - extraBaseProbability / distribution.singleReductionDivisor();
-
+        // 安打確率は打率で決まり、安打種別は設定された重みの比率で配分する
         return selector.select(
                 random,
-                onBasePercentage,
-                singleProbability,
-                doubleProbability,
-                tripleProbability,
-                homeRunProbability);
+                battingAverage,
+                distribution.singleWeight(),
+                distribution.doubleWeight(),
+                distribution.tripleWeight(),
+                distribution.homeRunWeight());
     }
 }

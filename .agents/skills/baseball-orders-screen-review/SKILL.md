@@ -9,7 +9,7 @@ Review only the screens whose template (`apps/backend/infrastructure/src/main/re
 
 ## Launch the real screen
 
-Use the `run` skill to bring the backend up (`compose.yaml`, or `./gradlew :apps:backend:infrastructure:bootRun` with the `local` profile, per the nearest `AGENTS.md`) so the template renders through its real controller, security, and static assets rather than a static file opened directly. A screen gated behind login (`/login`, registration) must be exercised through the actual authenticated route the user reaches it from; do not fabricate a session. When a screen's layout depends on a submitted result (for example `single-game.html`'s `#transitions` panel), drive the real action once through `claude-in-chrome` to reach that populated state before checking it — checking only the empty initial state does not cover the populated layout.
+Use the `run` skill to bring the backend up (`compose.yaml`, or `./gradlew :apps:backend:infrastructure:bootRun` with the `local` profile, per the nearest `AGENTS.md`) so the template renders through its real controller and static assets rather than a static file opened directly. When a screen's layout depends on a submitted result (for example `single-game.html`'s `#transitions` panel), drive the real action once through `claude-in-chrome` to reach that populated state before checking it — checking only the empty initial state does not cover the populated layout.
 
 Use `claude-in-chrome` to navigate, resize the viewport, screenshot, and evaluate layout on the live page.
 
@@ -28,7 +28,7 @@ The target is the outer page — the viewport's own scrollbar, measured against 
 
 - The page requires vertical or horizontal scrolling to reach content that is not inside an intentionally scrollable region.
 - An element is clipped by the viewport edge, clipped by an ancestor's `overflow: hidden`, or covered by another element (a fixed/absolute-positioned overlay, a `z-index` conflict) so part of it is unreadable or unclickable.
-- A primary control (submit/login/register button, required input, navigation link) exists in the DOM but is not reachable without scrolling the page.
+- A primary control (submit button, required input, navigation link) exists in the DOM but is not reachable without scrolling the page.
 
 ## Deterministic check first, screenshot second
 

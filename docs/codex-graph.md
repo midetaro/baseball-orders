@@ -278,4 +278,7 @@ AGENTS.mdに従い、最初にexplorerで影響範囲を調査してください
 The parent also preserves uncommitted changes, avoids unrelated files, does not
 add/remove/move modules, does not change dependency direction or add external
 libraries, and does not commit, push, or create branches unless the user makes a
-separate explicit request.
+separate explicit request. Worker nodes never commit. When the parent commits,
+it follows `AGENTS.md`'s "Git branch workflow" (branch from the latest
+`develop`) and "Commit granularity" (one commit per passing implementation
+unit, documentation in dedicated commits).

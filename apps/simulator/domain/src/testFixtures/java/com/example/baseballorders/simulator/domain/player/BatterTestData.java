@@ -18,15 +18,6 @@ public final class BatterTestData {
     /** 基準打者の出塁率。 */
     public static final float ON_BASE_PERCENTAGE = 0.400f;
 
-    /** 基準打者の長打率。 */
-    public static final float SLUGGING = 0.550f;
-
-    /** 基準打者のバント成功率。 */
-    public static final float BUNT_SUCCESS_RATE = 0.700f;
-
-    /** 基準打者の盗塁成功率。 */
-    public static final float STEAL_SUCCESS_RATE = 0.800f;
-
     /** 打順の人数。 */
     public static final int LINE_UP_SIZE = 9;
 
@@ -35,7 +26,7 @@ public final class BatterTestData {
      *
      * <p>1 番打者は本塁打、2 番以降は三振になるので、この乱数だけで打順の位置が判別できる。
      */
-    public static final float DISTINCT_LINE_UP_DRAW = 0.35f;
+    public static final float DISTINCT_LINE_UP_DRAW = 0.40f;
 
     private BatterTestData() {}
 
@@ -63,14 +54,13 @@ public final class BatterTestData {
             HittingStrategy hittingStrategy,
             StealStrategy stealStrategy,
             BuntStrategy buntStrategy) {
-        return batter(ON_BASE_PERCENTAGE, SLUGGING, hittingStrategy, stealStrategy, buntStrategy);
+        return batter(ON_BASE_PERCENTAGE, hittingStrategy, stealStrategy, buntStrategy);
     }
 
     /**
      * 成績と戦略を指定して打者を作成する。
      *
      * @param onBasePercentage 出塁率
-     * @param slugging 長打率
      * @param hittingStrategy 打撃戦略
      * @param stealStrategy 盗塁戦略
      * @param buntStrategy バント戦略
@@ -78,18 +68,10 @@ public final class BatterTestData {
      */
     public static BatterEntity batter(
             float onBasePercentage,
-            float slugging,
             HittingStrategy hittingStrategy,
             StealStrategy stealStrategy,
             BuntStrategy buntStrategy) {
-        return new BatterEntity(
-                onBasePercentage,
-                slugging,
-                BUNT_SUCCESS_RATE,
-                STEAL_SUCCESS_RATE,
-                hittingStrategy,
-                stealStrategy,
-                buntStrategy);
+        return new BatterEntity(onBasePercentage, hittingStrategy, stealStrategy, buntStrategy);
     }
 
     /**
@@ -164,7 +146,6 @@ public final class BatterTestData {
                         SimulationRulesTestData.strategies().noBunt());
         BatterEntity strikeOut =
                 batter(
-                        0.300f,
                         0.300f,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().noSteal(),
