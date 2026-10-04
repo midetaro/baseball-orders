@@ -20,7 +20,7 @@ class JdbcDefaultLineupRepositoryTest {
 
     @MockitoBean private SqsTemplate sqsTemplate;
 
-    @Autowired private JdbcDefaultLineupRepository repository;
+    @Autowired private JdbcDefaultLineupRepository sut;
 
     private static final PlayerPersonality STEAL = PlayerPersonality.EAGER_STEAL;
     private static final PlayerPersonality BUNT = PlayerPersonality.EAGER_BUNT;
@@ -68,7 +68,7 @@ class JdbcDefaultLineupRepositoryTest {
     void findsAllTeamsWithDefaultData() {
         // given
         // when
-        List<TeamDefaultLineup> lineups = repository.findAll();
+        List<TeamDefaultLineup> lineups = sut.findAll();
 
         // then
         assertAll(

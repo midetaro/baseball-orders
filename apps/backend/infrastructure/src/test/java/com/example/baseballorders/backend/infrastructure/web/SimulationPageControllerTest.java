@@ -105,10 +105,10 @@ class SimulationPageControllerTest {
     @DisplayName("大規模実行画面を表示すると既存の入力画面を返す")
     void showsLargeScaleSimulationPage() {
         // given
-        var controller = controller();
+        var sut = controller();
 
         // when
-        var page = controller.largeScale();
+        var page = sut.largeScale();
 
         // then
         assertAll(

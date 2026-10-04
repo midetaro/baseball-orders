@@ -42,10 +42,10 @@ class DefaultLineupQueryTest {
                         lineup(TeamStrength.STRONG),
                         lineup(TeamStrength.AVERAGE),
                         lineup(TeamStrength.WEAK));
-        DefaultLineupQuery query = new DefaultLineupQuery(() -> stored);
+        DefaultLineupQuery sut = new DefaultLineupQuery(() -> stored);
 
         // when
-        List<TeamDefaultLineup> teams = query.findAllTeams();
+        List<TeamDefaultLineup> teams = sut.findAllTeams();
 
         // then
         assertAll(
