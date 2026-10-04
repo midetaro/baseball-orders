@@ -127,8 +127,8 @@ assert.match(css, /\.section-head\s*\{\s*display:\s*flex;/, '打順入力の見�
 assert.match(html, /<h2 id="order-heading">打順入力<\/h2>\s*<button class="submit"/, '実行操作を打順入力ラベルの直後に置く');
 assert.ok(html.includes('id="toggle-all-bunt"'), '全員バントを切り替える操作を表示する');
 assert.ok(html.includes('id="toggle-all-steal"'), '全員盗塁を切り替える操作を表示する');
-assert.ok(js.includes('lineup.every(player=>player.buntEnabled)'), '全員バントが有効なら次の操作で全員無効にする');
-assert.ok(js.includes('lineup.every(player=>player.stealEnabled)'), '全員盗塁が有効なら次の操作で全員無効にする');
+assert.ok(js.includes('targets.every(player=>player.buntEnabled)'), '全員バントが有効なら次の操作で全員無効にする');
+assert.ok(js.includes('targets.every(player=>player.stealEnabled)'), '全員盗塁が有効なら次の操作で全員無効にする');
 assert.ok(html.includes('class="simulation-workspace"'), '打順入力画面と結果画面を同一のワークスペース内で切り替える');
 assert.ok(html.includes('<title>打順監督</title>'), 'ブラウザのタブにサービス名を表示する');
 assert.ok(html.includes('<h1>打順監督</h1>'), '画面左上にサービス名を表示する');

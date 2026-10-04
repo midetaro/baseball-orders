@@ -160,6 +160,20 @@ class SimulationPageIntegrationTest {
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("<h2 id=\"order-heading\">打順組み替え</h2>")),
                 () -> assertTrue(response.body().contains("data-lineup-mode=\"reorder\"")),
+                () ->
+                        assertContainsPattern(
+                                response.body(), "<option[^>]*value=\"STRONG\"[^>]*>強</option>"),
+                () ->
+                        assertContainsPattern(
+                                response.body(), "<option[^>]*value=\"AVERAGE\"[^>]*>並</option>"),
+                () ->
+                        assertContainsPattern(
+                                response.body(), "<option[^>]*value=\"WEAK\"[^>]*>弱</option>"),
+                () -> assertTrue(response.body().contains("data-team=\"STRONG\"")),
+                () -> assertTrue(response.body().contains("data-hit-average=\"0.")),
+                () -> assertTrue(response.body().contains("data-personality=")),
+                () -> assertTrue(response.body().contains("id=\"average-hit-average\"")),
+                () -> assertFalse(response.body().contains("id=\"reset-all-personalities\"")),
                 () -> assertTrue(response.body().contains("id=\"menu-toggle\"")),
                 () -> assertTrue(response.body().contains("aria-expanded=\"false\"")),
                 () ->
@@ -422,12 +436,12 @@ class SimulationPageIntegrationTest {
                         assertTrue(
                                 lineupFormResponse
                                         .body()
-                                        .contains("lineup.every(player=>player.buntEnabled)")),
+                                        .contains("targets.every(player=>player.buntEnabled)")),
                 () ->
                         assertTrue(
                                 lineupFormResponse
                                         .body()
-                                        .contains("lineup.every(player=>player.stealEnabled)")),
+                                        .contains("targets.every(player=>player.stealEnabled)")),
                 () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
                 () -> assertFalse(response.body().toLowerCase().contains("pitcher")),
                 () -> assertFalse(jsResponse.body().toLowerCase().contains("pitcher")),

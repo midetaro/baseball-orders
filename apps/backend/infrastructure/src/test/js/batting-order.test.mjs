@@ -19,12 +19,15 @@ assert.ok(
 assert.ok(html.includes('<h2 id="order-heading">打順組み替え</h2>'), '入力欄の見出しを打順組み替えにする');
 assert.ok(html.includes('<div data-lineup-mode="reorder" id="order"></div>'), '打順フォームを組み替えモードで表示する');
 assert.ok(html.includes('id="score-histogram"'), '大規模実行と同じ試合結果を表示する');
-for (const label of ['打順', '打率', '性格', 'バント', '盗塁']) {
+for (const label of ['打順', '打率', '性格', 'バント', '盗塁', 'メモ']) {
   assert.ok(html.includes(`<span>${label}</span>`), `列見出しに${label}を表示する`);
 }
 
 assert.ok(!html.includes('長打率'), '打順組み替え画面に長打率を表示しない');
-assert.match(css, /grid-template-columns: 28px 38px 60px 118px 96px 96px;/, '打順組み替え画面の列から長打率の列を除く');
+assert.match(css, /grid-template-columns: 38px 28px 60px 118px 96px 96px 140px;/, '打順・ドラッグ・打率・性格・バント・盗塁・メモの7列にする');
+assert.ok(html.includes('<span>打順</span><span aria-hidden="true"></span><span>打率</span><span>性格</span><span>バント</span><span>盗塁</span><span>メモ</span>'), '列見出しは打順・ドラッグ・打率・性格・バント・盗塁・メモの順');
+assert.ok(!html.includes('reset-all-personalities'), '組み替え画面に性格初期化を置かない');
+assert.ok(html.includes('id="team-select"') && html.includes('id="average-hit-average"'), 'チーム選択と平均打率を表示する');
 assert.ok(css.includes('touch-action: none'), 'ドラッグハンドルの操作で画面をスクロールさせない');
 
 // --- 打順の組み替え ---
@@ -52,5 +55,22 @@ assert.ok(lineupFormJs.includes('if (reorderMode) { row.append(fieldWrapper(fiel
 assert.ok(lineupFormJs.includes("handle.addEventListener('pointerdown'"), 'マウス・タッチ共通のポインター操作でドラッグを開始する');
 assert.ok(lineupFormJs.includes("handle.addEventListener('pointerup'"), 'ドロップした打順へ打者を移動する');
 assert.ok(lineupFormJs.includes('{ArrowUp:-1,ArrowDown:1}'), 'キーボードの上下キーでも打順を入れ替えられる');
+
+// --- 平均打率・メモ・固定ラベル・チーム既定値 ---
+const averageHitAverage = new Function(`${lineupFormJs.match(/const ranges = \{[^}]*\};/)[0]}\n${extractFunction('valid')}\n${extractFunction('averageHitAverage')}\nreturn averageHitAverage;`)();
+const hit = values => values.map(hitAverage => ({hitAverage}));
+assert.equal(averageHitAverage(hit(['0.300','0.300','0.300','0.300','0.300','0.300','0.300','0.300','0.255'])), '0.295', '平均打率を小数第3位で表示する');
+assert.equal(averageHitAverage(hit(['0.300',''])), '—', '未入力があれば平均打率を表示しない');
+assert.equal(averageHitAverage(hit(['0.300','0.9'])), '—', '範囲外があれば平均打率を表示しない');
+const lineupRequest = new Function(`${extractFunction('lineupRequest')}\nreturn lineupRequest;`)();
+const body = lineupRequest([{hitAverage:'0.300',buntEnabled:true,stealEnabled:false,personality:'DEFAULT',memo:'秘密',buntForced:true}]);
+assert.deepEqual(body, [{hit_average:0.3,bunt_enabled:true,steal_enabled:false,personality:'DEFAULT'}], '送信内容にメモ・固定フラグを含めない');
+const parseDefaultBatters = new Function(`${extractFunction('parseDefaultBatters')}\nreturn parseDefaultBatters;`)();
+const parsed = parseDefaultBatters([{dataset:{hitAverage:'0.300',personality:'EAGER_STEAL',stealForced:'true',buntForced:'false'}},{dataset:{hitAverage:'0.250',personality:'DEFAULT',stealForced:'false',buntForced:'false'}}]);
+assert.deepEqual(parsed[0], {hitAverage:'0.300',personality:'EAGER_STEAL',stealForced:true,buntForced:false,stealEnabled:true,buntEnabled:false,memo:''}, '盗塁固定の打者は盗塁有効で開始する');
+assert.deepEqual([parsed[1].stealEnabled, parsed[1].buntEnabled], [false, false], '固定でない打者は盗塁・バントなしで開始する');
+assert.ok(lineupFormJs.includes('forced-label'), '固定の盗塁・バントは切り替え不可のラベルで表示する');
+assert.ok(lineupFormJs.includes("statLabel(personalityLabels[player.personality])"), '組み替え画面の性格はラベル表示');
+assert.ok(lineupFormJs.includes("maxLength=20"), 'メモの最大長を制限する');
 
 console.log('PASS: 打順組み替え画面');
