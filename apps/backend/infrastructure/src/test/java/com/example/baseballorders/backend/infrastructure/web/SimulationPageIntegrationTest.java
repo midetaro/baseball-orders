@@ -7,25 +7,33 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
- * 実物: HTTPサーバー、SimulationPageController、SimulationGuidePageController、Thymeleaf、静的リソース配信。 モック:
- * SqsTemplate。 担保する疎通: ログインなしのHTTP GET / -> SimulationPageController -> 打順組み替え画面のThymeleaf
- * HTML応答。HTTP GET /large-scale および /single-game -> SimulationPageController -> Thymeleaf
- * HTML応答、HTTP GET /simulation-guide -> SimulationGuidePageController -> Thymeleaf
+ * 実物: HTTPサーバー、SimulationPageController、SimulationGuidePageController、Thymeleaf、静的リソース配信、
+ * TypeScriptからビルド時に生成した画面スクリプト（ES module）。 モック: SqsTemplate。 担保する疎通: ログインなしのHTTP GET / ->
+ * SimulationPageController -> 打順組み替え画面のThymeleaf HTML応答。HTTP GET /large-scale および /single-game ->
+ * SimulationPageController -> Thymeleaf HTML応答、HTTP GET /simulation-guide ->
+ * SimulationGuidePageController -> Thymeleaf
  * HTML応答も担保する。4画面すべてで共通の左メニュー断片（fragments/site-menu.html）が描画され、他画面への導線がメニューにだけあることも担保する。分離したHTTP
- * GET
- * /css/simulation.css、/css/single-game.css、/css/batting-order.css、/css/site-menu.css、/js/lineup-form.js、/js/simulation.js、
- * /js/single-game.js および /js/site-menu.js -> 静的リソース配信 -> CSS・JS応答も担保する。担保しないもの:
- * SQSへのシミュレーション要求送信と結果受信、入力値・ドラッグ操作・メニュー開閉のブラウザ操作。
+ * GET /css/simulation.css、/css/single-game.css、/css/batting-order.css -> 静的リソース配信 ->
+ * CSS応答と、各画面のHTML応答 -> 画面の入口モジュール /js/pages/*.js -> import先のモジュール -> 静的リソース配信 ->
+ * JavaScript応答（ブラウザが読み込むモジュールをすべて取得できること）も担保する。担保しないもの:
+ * SQSへのシミュレーション要求送信と結果受信、画面スクリプトの振る舞い（src/test/js のNodeテストで検査する）、入力値・ドラッグ操作・メニュー開閉のブラウザ操作。
  */
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -39,6 +47,36 @@ class SimulationPageIntegrationTest {
 
     private static void assertContainsPattern(String actual, String pattern) {
         assertTrue(Pattern.compile(pattern).matcher(actual).find());
+    }
+
+    private static final Pattern MODULE_SCRIPT =
+            Pattern.compile("<script src=\"(/js/pages/[a-z-]+\\.js)\" type=\"module\"></script>");
+    private static final Pattern RELATIVE_IMPORT = Pattern.compile("from '(\\.{1,2}/[^']+)'");
+
+    private HttpResponse<String> get(HttpClient client, String path) throws Exception {
+        return client.send(
+                HttpRequest.newBuilder(URI.create("http://localhost:" + port + path)).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+    }
+
+    /** 画面の入口モジュールからimportを辿り、ブラウザが読み込むモジュールをすべて取得する。 */
+    private Map<String, HttpResponse<String>> fetchModuleGraph(HttpClient client, String entry)
+            throws Exception {
+        Map<String, HttpResponse<String>> modules = new LinkedHashMap<>();
+        Deque<String> pending = new ArrayDeque<>(List.of(entry));
+        while (!pending.isEmpty()) {
+            var path = pending.pop();
+            if (modules.containsKey(path)) {
+                continue;
+            }
+            var response = get(client, path);
+            modules.put(path, response);
+            var imports = RELATIVE_IMPORT.matcher(response.body());
+            while (imports.find()) {
+                pending.push(URI.create(path).resolve(imports.group(1)).getPath());
+            }
+        }
+        return modules;
     }
 
     @Test
@@ -117,7 +155,7 @@ class SimulationPageIntegrationTest {
                         assertTrue(
                                 body.contains(
                                         "<link rel=\"stylesheet\" href=\"/css/site-menu.css\">")),
-                () -> assertTrue(body.contains("<script src=\"/js/site-menu.js\"></script>")));
+                () -> assertContainsPattern(body, MODULE_SCRIPT.pattern()));
     }
 
     @Test
@@ -130,7 +168,6 @@ class SimulationPageIntegrationTest {
         // when
         HttpResponse<String> response;
         HttpResponse<String> cssResponse;
-        HttpResponse<String> menuJsResponse;
         try (var client = HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
             cssResponse =
@@ -140,16 +177,6 @@ class SimulationPageIntegrationTest {
                                                     "http://localhost:"
                                                             + port
                                                             + "/css/batting-order.css"))
-                                    .GET()
-                                    .build(),
-                            HttpResponse.BodyHandlers.ofString());
-            menuJsResponse =
-                    client.send(
-                            HttpRequest.newBuilder(
-                                            URI.create(
-                                                    "http://localhost:"
-                                                            + port
-                                                            + "/js/site-menu.js"))
                                     .GET()
                                     .build(),
                             HttpResponse.BodyHandlers.ofString());
@@ -187,13 +214,11 @@ class SimulationPageIntegrationTest {
                         assertTrue(
                                 response.body()
                                         .contains(
-                                                "<script src=\"/js/lineup-form.js\"></script>\n"
-                                                        + "<script src=\"/js/simulation.js\"></script>")),
+                                                "<script src=\"/js/pages/batting-order.js\""
+                                                        + " type=\"module\"></script>")),
                 () -> assertTrue(response.body().contains("id=\"score-histogram\"")),
                 () -> assertEquals(200, cssResponse.statusCode()),
-                () -> assertTrue(cssResponse.body().contains(".drag-handle")),
-                () -> assertEquals(200, menuJsResponse.statusCode()),
-                () -> assertTrue(menuJsResponse.body().contains("function setMenuOpen(")));
+                () -> assertTrue(cssResponse.body().contains(".drag-handle")));
     }
 
     @Test
@@ -208,8 +233,6 @@ class SimulationPageIntegrationTest {
         // when
         HttpResponse<String> response;
         HttpResponse<String> cssResponse;
-        HttpResponse<String> jsResponse;
-        HttpResponse<String> lineupFormResponse;
         try (var client = HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
             cssResponse =
@@ -219,26 +242,6 @@ class SimulationPageIntegrationTest {
                                                     "http://localhost:"
                                                             + port
                                                             + "/css/single-game.css"))
-                                    .GET()
-                                    .build(),
-                            HttpResponse.BodyHandlers.ofString());
-            jsResponse =
-                    client.send(
-                            HttpRequest.newBuilder(
-                                            URI.create(
-                                                    "http://localhost:"
-                                                            + port
-                                                            + "/js/single-game.js"))
-                                    .GET()
-                                    .build(),
-                            HttpResponse.BodyHandlers.ofString());
-            lineupFormResponse =
-                    client.send(
-                            HttpRequest.newBuilder(
-                                            URI.create(
-                                                    "http://localhost:"
-                                                            + port
-                                                            + "/js/lineup-form.js"))
                                     .GET()
                                     .build(),
                             HttpResponse.BodyHandlers.ofString());
@@ -271,7 +274,6 @@ class SimulationPageIntegrationTest {
                         assertTrue(
                                 response.body()
                                         .contains("data-bunt-frame-duration-millis=\"1600\"")),
-                () -> assertTrue(jsResponse.body().contains("function classifyEffect(")),
                 () -> assertTrue(cssResponse.body().contains("@keyframes home-run-headline")),
                 () -> assertTrue(response.body().contains("id=\"order-table-scroll\"")),
                 () -> assertTrue(response.body().contains("href=\"/large-scale\"")),
@@ -286,11 +288,6 @@ class SimulationPageIntegrationTest {
                 () -> assertTrue(response.body().contains("id=\"edit-lineup\"")),
                 () -> assertFalse(response.body().contains("id=\"toggle-lineup\"")),
                 () -> assertFalse(cssResponse.body().contains("BASEBALL ORDER LAB")),
-                () ->
-                        assertTrue(
-                                lineupFormResponse
-                                        .body()
-                                        .contains("function showView(resultsVisible)")),
                 () -> assertFalse(response.body().contains("<style>")),
                 () ->
                         assertTrue(
@@ -310,20 +307,8 @@ class SimulationPageIntegrationTest {
                         assertTrue(
                                 response.body()
                                         .contains(
-                                                "<script"
-                                                        + " src=\"/js/single-game.js\"></script>")),
-                () -> assertEquals(200, jsResponse.statusCode()),
-                () -> assertEquals(200, lineupFormResponse.statusCode()),
-                () ->
-                        assertTrue(
-                                response.body()
-                                        .contains(
-                                                "<script src=\"/js/lineup-form.js\"></script>\n"
-                                                        + "<script src=\"/js/single-game.js\"></script>")),
-                () -> assertTrue(jsResponse.body().contains("endpoint:'/simulations/single-game'")),
-                () -> assertTrue(jsResponse.body().contains("data.transitions")),
-                () -> assertTrue(jsResponse.body().contains("renderGame(data.transitions)")),
-                () -> assertFalse(jsResponse.body().contains("data.statistics")));
+                                                "<script src=\"/js/pages/single-game.js\""
+                                                        + " type=\"module\"></script>")));
     }
 
     @Test
@@ -338,8 +323,6 @@ class SimulationPageIntegrationTest {
         // when
         HttpResponse<String> response;
         HttpResponse<String> cssResponse;
-        HttpResponse<String> jsResponse;
-        HttpResponse<String> lineupFormResponse;
         try (var client = HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
             cssResponse =
@@ -349,26 +332,6 @@ class SimulationPageIntegrationTest {
                                                     "http://localhost:"
                                                             + port
                                                             + "/css/simulation.css"))
-                                    .GET()
-                                    .build(),
-                            HttpResponse.BodyHandlers.ofString());
-            jsResponse =
-                    client.send(
-                            HttpRequest.newBuilder(
-                                            URI.create(
-                                                    "http://localhost:"
-                                                            + port
-                                                            + "/js/simulation.js"))
-                                    .GET()
-                                    .build(),
-                            HttpResponse.BodyHandlers.ofString());
-            lineupFormResponse =
-                    client.send(
-                            HttpRequest.newBuilder(
-                                            URI.create(
-                                                    "http://localhost:"
-                                                            + port
-                                                            + "/js/lineup-form.js"))
                                     .GET()
                                     .build(),
                             HttpResponse.BodyHandlers.ofString());
@@ -394,73 +357,23 @@ class SimulationPageIntegrationTest {
                         assertTrue(
                                 response.body()
                                         .contains(
-                                                "<script"
-                                                        + " src=\"/js/simulation.js\"></script>")),
-                () -> assertEquals(200, jsResponse.statusCode()),
-                () -> assertEquals(200, lineupFormResponse.statusCode()),
-                () ->
-                        assertTrue(
-                                response.body()
-                                        .contains(
-                                                "<script src=\"/js/lineup-form.js\"></script>\n"
-                                                        + "<script src=\"/js/simulation.js\"></script>")),
-                () -> assertTrue(jsResponse.body().contains("endpoint:'/simulations'")),
+                                                "<script src=\"/js/pages/simulation.js\""
+                                                        + " type=\"module\"></script>")),
                 () -> assertTrue(response.body().contains("打率")),
                 () -> assertFalse(response.body().contains("長打率")),
-                () -> assertFalse(lineupFormResponse.body().contains("sluggish")),
-                () ->
-                        assertContainsPattern(
-                                lineupFormResponse.body(),
-                                "position\\.textContent=`\\$\\{index\\+\\d+}番`"),
-                () ->
-                        assertContainsPattern(
-                                lineupFormResponse.body(),
-                                "hitAverage:'\\d+\\.\\d{2}',buntEnabled"),
-                () ->
-                        assertTrue(
-                                lineupFormResponse
-                                        .body()
-                                        .matches(
-                                                "(?s).*key:'hitAverage',label:'打率',min:\\d+\\.\\d+,max:\\d+\\.\\d+.*")),
-                () -> assertFalse(jsResponse.body().contains("盗塁成功率")),
-                () -> assertFalse(jsResponse.body().contains("バント成功率")),
-                () -> assertFalse(jsResponse.body().contains("stealSuccessRate")),
-                () -> assertFalse(jsResponse.body().contains("buntSuccessRate")),
-                () -> assertFalse(lineupFormResponse.body().contains("stealSuccessRate")),
-                () -> assertFalse(lineupFormResponse.body().contains("buntSuccessRate")),
                 () -> assertTrue(response.body().contains("SIMULATIONを実行")),
                 () -> assertTrue(response.body().contains("<h2 id=\"order-heading\">打順入力</h2>")),
                 () -> assertTrue(response.body().contains("id=\"toggle-all-bunt\"")),
                 () -> assertTrue(response.body().contains("id=\"toggle-all-steal\"")),
-                () ->
-                        assertTrue(
-                                lineupFormResponse
-                                        .body()
-                                        .contains("targets.every(player=>player.buntEnabled)")),
-                () ->
-                        assertTrue(
-                                lineupFormResponse
-                                        .body()
-                                        .contains("targets.every(player=>player.stealEnabled)")),
                 () -> assertTrue(response.body().contains("href=\"/simulation-guide\"")),
                 () -> assertFalse(response.body().toLowerCase().contains("pitcher")),
-                () -> assertFalse(jsResponse.body().toLowerCase().contains("pitcher")),
-                () -> assertTrue(lineupFormResponse.body().contains("function validLineup()")),
-                () -> assertFalse(jsResponse.body().contains("lineup.length<=0.35")),
-                () -> assertFalse(jsResponse.body().contains("lineup.length<=0.4")),
                 () -> assertTrue(response.body().contains("本塁打")),
-                () -> assertTrue(jsResponse.body().contains("ソロ")),
-                () -> assertTrue(jsResponse.body().contains("ツーラン")),
-                () -> assertTrue(jsResponse.body().contains("スリーラン")),
-                () -> assertTrue(jsResponse.body().contains("満塁")),
                 () -> assertTrue(response.body().contains("バント")),
                 () -> assertTrue(response.body().contains("盗塁")),
                 () -> assertTrue(response.body().contains("得点サマリー")),
                 () -> assertTrue(response.body().contains("本塁打の内訳")),
                 () -> assertTrue(!response.body().contains("戦術の成否")),
                 () -> assertTrue(response.body().contains("id=\"share-results\"")),
-                () -> assertTrue(jsResponse.body().contains("navigator.share")),
-                () -> assertTrue(jsResponse.body().contains("clipboard.writeText")),
                 () ->
                         assertTrue(
                                 cssResponse
@@ -470,24 +383,7 @@ class SimulationPageIntegrationTest {
                         assertContainsPattern(
                                 cssResponse.body(),
                                 "grid-template-columns:\\d+px\\s+\\d+px\\s+\\d+px\\s+\\d+px\\s+\\d+px"),
-                () -> assertTrue(lineupFormResponse.body().contains("function fieldWrapper(")),
-                () ->
-                        assertTrue(
-                                lineupFormResponse
-                                        .body()
-                                        .contains(
-                                                "input.disabled=inFlight || (field.enabledKey && !player[field.enabledKey]);")),
-                () ->
-                        assertContainsPattern(
-                                lineupFormResponse.body(), "input\\.step='\\d+\\.\\d+'"),
-                () ->
-                        assertTrue(
-                                lineupFormResponse
-                                        .body()
-                                        .contains(
-                                                "input.value.startsWith('.') ? `0${input.value}` : input.value")),
                 () -> assertTrue(cssResponse.body().contains(".section-head {")),
-                () -> assertFalse(jsResponse.body().contains("hasAtMostTwoDecimalPlaces")),
                 () -> assertTrue(response.body().contains("class=\"simulation-workspace\"")),
                 () -> assertTrue(response.body().contains("id=\"input-view\" role=\"tabpanel\"")),
                 () ->
@@ -498,39 +394,19 @@ class SimulationPageIntegrationTest {
                                                         + " hidden id=\"results\" role=\"tabpanel\">")),
                 () -> assertTrue(response.body().contains("id=\"edit-lineup\"")),
                 () -> assertFalse(response.body().contains("id=\"toggle-lineup\"")),
-                () ->
-                        assertTrue(
-                                lineupFormResponse
-                                        .body()
-                                        .contains("function showView(resultsVisible)")),
                 () -> assertTrue(cssResponse.body().contains("--moss: #56704a")),
-                () -> assertTrue(jsResponse.body().contains("'homeRunCount'")),
-                () -> assertTrue(jsResponse.body().contains("scoreDistribution")),
                 () -> assertTrue(response.body().contains("score-histogram")),
                 () -> assertTrue(response.body().contains("score-distribution-axis")),
                 () -> assertTrue(response.body().contains("全試合に対する割合")),
-                () ->
-                        assertContainsPattern(
-                                jsResponse.body(), "Math\\.ceil\\(maximumRate / \\d+\\) \\* \\d+"),
-                () -> assertContainsPattern(jsResponse.body(), "rate / histogramMaximum \\* \\d+"),
-                () -> assertContainsPattern(jsResponse.body(), "histogramMaximum - index \\* \\d+"),
                 () -> assertTrue(response.body().contains("home-run-breakdown")),
                 () -> assertTrue(response.body().contains("home-run-legend")),
                 () -> assertTrue(response.body().contains("本塁打なし")),
                 () -> assertTrue(response.body().contains("バントの内訳")),
-                () -> assertTrue(jsResponse.body().contains("進塁成功")),
-                () -> assertTrue(jsResponse.body().contains("スクイズ成功")),
-                () -> assertTrue(jsResponse.body().contains("進塁失敗")),
-                () -> assertTrue(jsResponse.body().contains("スクイズ失敗")),
                 () -> assertTrue(response.body().contains("盗塁の内訳")),
-                () -> assertTrue(jsResponse.body().contains("二盗成功")),
-                () -> assertTrue(jsResponse.body().contains("三盗成功")),
                 () -> assertTrue(response.body().contains("id=\"bunt-count\"")),
                 () -> assertTrue(response.body().contains("id=\"bunt-failure-count\"")),
                 () -> assertTrue(response.body().contains("id=\"steal-count\"")),
                 () -> assertTrue(response.body().contains("id=\"steal-failure-count\"")),
-                () -> assertTrue(jsResponse.body().contains("const detailTotal=details.reduce")),
-                () -> assertTrue(jsResponse.body().contains("Number(count)/detailTotal*100")),
                 () -> assertTrue(!response.body().contains("tactics-comparison")));
     }
 
@@ -545,53 +421,71 @@ class SimulationPageIntegrationTest {
 
         // when
         HttpResponse<String> response;
-        HttpResponse<String> jsResponse;
-        HttpResponse<String> lineupFormResponse;
         try (var client = HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            jsResponse =
-                    client.send(
-                            HttpRequest.newBuilder(
-                                            URI.create(
-                                                    "http://localhost:"
-                                                            + port
-                                                            + "/js/simulation.js"))
-                                    .GET()
-                                    .build(),
-                            HttpResponse.BodyHandlers.ofString());
-            lineupFormResponse =
-                    client.send(
-                            HttpRequest.newBuilder(
-                                            URI.create(
-                                                    "http://localhost:"
-                                                            + port
-                                                            + "/js/lineup-form.js"))
-                                    .GET()
-                                    .build(),
-                            HttpResponse.BodyHandlers.ofString());
         }
 
         // then
         assertAll(
                 () -> assertEquals(200, response.statusCode()),
                 () -> assertTrue(response.body().contains("id=\"reset-all-personalities\"")),
-                () -> assertTrue(response.body().contains("性格")),
-                () -> assertEquals(200, jsResponse.statusCode()),
-                () -> assertEquals(200, lineupFormResponse.statusCode()),
-                () -> assertTrue(lineupFormResponse.body().contains("DEFAULT:'単打マン'")),
-                () -> assertFalse(lineupFormResponse.body().contains("'標準'")),
-                () -> assertTrue(lineupFormResponse.body().contains("MIDDLE_DISTANCE:'中距離砲'")),
-                () -> assertTrue(lineupFormResponse.body().contains("EAGER_SLUGGISH:'長距離砲'")),
-                () -> assertFalse(lineupFormResponse.body().contains("EAGER_SLUGGISH:'長打重視'")),
-                () -> assertTrue(lineupFormResponse.body().contains("HIGH_ON_BASE:'高出塁率'")),
-                () -> assertTrue(lineupFormResponse.body().contains("EAGER_STEAL:'盗塁重視'")),
-                () -> assertTrue(lineupFormResponse.body().contains("EAGER_BUNT:'バント職人'")),
-                () -> assertFalse(lineupFormResponse.body().contains("バント重視")),
+                () -> assertTrue(response.body().contains("性格")));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "/, /js/pages/batting-order.js, /js/simulation/results-view.js",
+        "/large-scale, /js/pages/simulation.js, /js/simulation/results-view.js",
+        "/single-game, /js/pages/single-game.js, /js/single-game/playback.js",
+        "/simulation-guide, /js/pages/simulation-guide.js, /js/site-menu/site-menu.js"
+    })
+    @DisplayName("各画面が読み込む入口モジュールとimport先のモジュールを、すべてJavaScriptとして取得できる")
+    void servesPageModuleGraph(String route, String entry, String expectedModule) throws Exception {
+        // given
+        var pageRequest = route;
+
+        // when
+        HttpResponse<String> page;
+        Map<String, HttpResponse<String>> modules;
+        try (var client = HttpClient.newHttpClient()) {
+            page = get(client, pageRequest);
+            var script = MODULE_SCRIPT.matcher(page.body());
+            modules = script.find() ? fetchModuleGraph(client, script.group(1)) : Map.of();
+        }
+
+        // then
+        var scripts = Pattern.compile("<script").matcher(page.body()).results().count();
+        assertAll(
+                () -> assertEquals(200, page.statusCode()),
+                () -> assertEquals(1, scripts),
+                () -> assertTrue(modules.containsKey(entry)),
+                () -> assertTrue(modules.containsKey(expectedModule)),
+                () -> assertTrue(modules.containsKey("/js/site-menu/site-menu.js")),
+                () -> assertTrue(modules.containsKey("/js/shared/dom.js")),
                 () ->
-                        assertTrue(
-                                lineupFormResponse
-                                        .body()
-                                        .contains("personality:player.personality")));
+                        assertAll(
+                                modules.entrySet().stream()
+                                        .map(
+                                                SimulationPageIntegrationTest
+                                                        ::assertJavaScriptModule)));
+    }
+
+    /** 配信されたモジュールが、ブラウザが実行できるJavaScriptで、TypeScriptのソースをimportしていないことを検査する。 */
+    private static Executable assertJavaScriptModule(
+            Map.Entry<String, HttpResponse<String>> module) {
+        var path = module.getKey();
+        var response = module.getValue();
+        return () ->
+                assertAll(
+                        path,
+                        () -> assertEquals(200, response.statusCode()),
+                        () ->
+                                assertTrue(
+                                        response.headers()
+                                                .firstValue("Content-Type")
+                                                .orElse("")
+                                                .contains("javascript")),
+                        () -> assertFalse(response.body().contains(".ts'")));
     }
 
     @Test

@@ -1,4 +1,8 @@
-# Backend のローカル起動
+# Backend infrastructure
+
+- [ローカル起動](#dockerでbackendだけを起動する)
+- [ログイン](#ログイン)
+- [画面スクリプト（TypeScript）の設計](#画面スクリプトtypescriptの設計)
 
 ## DockerでBackendだけを起動する
 
@@ -42,3 +46,346 @@ http://localhost:8080/ を開いてください。
 
 ログイン機能はありません。すべての画面（`/`、`/large-scale`、`/single-game`、`/simulation-guide`）と
 `POST /simulations`・`POST /simulations/single-game` はログインなしで利用できます。
+
+## 画面スクリプト（TypeScript）の設計
+
+Thymeleaf 画面のスクリプトは `src/main/typescript` に TypeScript の ES module として書きます。
+`./gradlew :infrastructure:compileTypeScript` が `tsc` で `build/generated/typescript/static/js` へ出力し、
+`/js/**/*.js` として配信します。バンドラーは使いません。import は `./player.ts` のように `.ts` で書き、
+`tsc` が出力時に `.js` へ書き換えます（`tsconfig.json` の `rewriteRelativeImportExtensions`）。
+
+### 設計の方針
+
+- **画面ごとの入口は1つ。** 各テンプレートは `pages/<テンプレート名>.ts` だけを
+  `<script src="/js/pages/<テンプレート名>.js" type="module">` で読み込みます。
+- **読み込んだだけでは画面を操作しない。** 画面を組み立てるのは `pages/` の入口だけです。
+  ほかのモジュールは、関数・クラス・型・定数を公開するだけにします（`src/test/js/scripts/sources.test.mjs` で検査）。
+- **値の計算とDOMの描画を分ける。** `lineup/player.ts`・`simulation/statistics.ts`・`single-game/plays.ts` は
+  DOM に依存しない純粋な関数で、API の応答や入力値を画面に描く値へ変換します。描画するモジュールは、
+  その結果を要素にするだけにします。
+- **要素は外から渡す。** クラスは `document` を直接探さず、コンストラクタで要素（または探す範囲の `root`）を受け取ります。
+  テンプレートに必ずある要素は `requireElement` で取得し、無ければ起動時に例外にします。
+- **状態はクラスに閉じ込める。** 打順（`LineupForm`）、ドラッグ中の打順（`DragReorder`）、再生中のタイマーと速度
+  （`FramePlayer`）だけが状態を持ちます。モジュールのトップレベルに可変な状態は置きません。
+- **TypeScript は型注釈を取り除くだけで JavaScript になる構文に限る**（`erasableSyntaxOnly`）。
+  `enum`・`namespace`・コンストラクタ引数のプロパティ宣言は使いません。Node のテストが `.ts` をそのまま import できます。
+
+### モジュールの依存関係
+
+矢印は「import する」向きです。`shared/dom.ts` はほぼすべてのモジュールが使うため省略しています。
+
+```mermaid
+flowchart LR
+    subgraph pages[pages/ 画面の入口]
+        PBO[batting-order.ts]
+        PSIM[simulation.ts]
+        PSG[single-game.ts]
+        PGUIDE[simulation-guide.ts]
+    end
+    subgraph simulation[simulation/ 大規模実行]
+        SPAGE[simulation-page.ts]
+        SVIEW[results-view.ts]
+        SSHARE[share.ts]
+        SSTAT[statistics.ts]
+    end
+    subgraph singleGame[single-game/ 1試合実行]
+        GPAGE[single-game-page.ts]
+        GPLAY[playback.ts]
+        GFRAME[frame.ts]
+        GLINE[line-score.ts]
+        GTABLE[order-table.ts]
+        GPLAYS[plays.ts]
+    end
+    subgraph lineup[lineup/ 打順入力フォーム]
+        LFORM[lineup-form.ts]
+        LCTRL[controls.ts]
+        LDRAG[drag-reorder.ts]
+        LPLAYER[player.ts]
+    end
+    MENU[site-menu/site-menu.ts]
+
+    PBO --> SPAGE
+    PSIM --> SPAGE
+    PSG --> GPAGE
+    PBO & PSIM & PSG & PGUIDE --> MENU
+    SPAGE --> LFORM & SVIEW & SSHARE
+    SVIEW --> SSTAT
+    GPAGE --> LFORM & GPLAY & GTABLE & GPLAYS
+    GPLAY --> GFRAME & GLINE
+    GFRAME & GLINE & GTABLE --> GPLAYS
+    LFORM --> LCTRL & LDRAG & LPLAYER
+    LCTRL --> LPLAYER
+```
+
+| テンプレート | 入口 | 組み立てる処理 |
+| --- | --- | --- |
+| `batting-order.html`（`/`） | `pages/batting-order.ts` | `startSimulationPage()`（組み替えモード）、`initSiteMenu()` |
+| `simulation.html`（`/large-scale`） | `pages/simulation.ts` | `startSimulationPage()`、`initSiteMenu()` |
+| `single-game.html`（`/single-game`） | `pages/single-game.ts` | `startSingleGamePage()`、`initSiteMenu()` |
+| `simulation-guide.html`（`/simulation-guide`） | `pages/simulation-guide.ts` | `initSiteMenu()` |
+
+打順組み替え画面と大規模実行画面は同じ `startSimulationPage()` を使います。
+`#order` に `data-lineup-mode="reorder"` があると、`LineupForm` が組み替えモードになります。
+
+### lineup/ 打順入力フォーム
+
+3画面で共通の打順入力です。画面ごとに違う文言・送信先・結果の描画は `LineupFormConfig` で受け取ります。
+
+```mermaid
+classDiagram
+    class LineupForm~T~ {
+        -elements: LineupFormElements
+        -config: LineupFormConfig~T~
+        -lineup: LineupPlayer[]
+        -reorderMode: boolean
+        -dragReorder: DragReorder
+        -inFlight: boolean
+        -hasResults: boolean
+        +constructor(elements, config)
+        +start() void
+        -submit() Promise~void~
+        -render() void
+        -update() void
+        -showView(resultsVisible) void
+    }
+    class LineupFormElements {
+        <<interface>>
+        order / submit / feedback
+        toggleAllBunt / toggleAllSteal
+        resetAllPersonalities?: 画面によって無い
+        teamSelect? / teamDefaults? / averageDisplay?
+        inputView / resultsView
+        tabInput / tabResults / editLineup
+    }
+    class LineupFormConfig~T~ {
+        <<interface>>
+        readyMessage: string
+        runningMessage: string
+        endpoint: string
+        onSuccess(data: T) void
+    }
+    class DragReorder {
+        -target: ReorderTarget
+        -dragIndex: number | null
+        +constructor(target)
+        +handle(row, index) HTMLButtonElement
+    }
+    class ReorderTarget {
+        <<interface>>
+        container: HTMLElement
+        isLocked() boolean
+        move(from, to) boolean
+    }
+    class LineupPlayer {
+        <<interface>>
+        hitAverage: string
+        buntEnabled: boolean
+        stealEnabled: boolean
+        personality: Personality
+        buntForced?: boolean
+        stealForced?: boolean
+        memo?: string
+    }
+    class LineupRequestPlayer {
+        <<interface>>
+        hit_average: number
+        bunt_enabled: boolean
+        steal_enabled: boolean
+        personality: Personality
+    }
+    LineupForm --> LineupFormElements
+    LineupForm --> LineupFormConfig
+    LineupForm *-- DragReorder
+    LineupForm ..> ReorderTarget : 自身の打順を操作するオブジェクトを渡す
+    DragReorder --> ReorderTarget
+    LineupForm o-- LineupPlayer
+    LineupPlayer ..> LineupRequestPlayer : toLineupRequest()
+```
+
+| モジュール | 公開するもの | 役割 |
+| --- | --- | --- |
+| `player.ts` | `Personality`、`LineupPlayer`、`LineupRequestPlayer`、`PERSONALITY_LABELS`、`HIT_AVERAGE_RANGE`、`MEMO_MAX_LENGTH`、`createInitialLineup()`、`isValidPlayer()`、`isValidLineup()`、`averageHitAverage()`、`withLeadingZero()`、`formatHitAverage()`、`toLineupRequest()`、`parseDefaultBatters()`、`movePlayer()` | 打者の値・初期打順・打率の検証と整形・API 送信形式への変換。DOM に依存しない |
+| `controls.ts` | `toggleButton()`、`forcedLabel()`、`fieldWrapper()`、`statLabel()`、`hitAverageInput()`、`personalitySelect()`、`memoInput()` | 1行分の入力部品を作る。状態は持たず、変更はコールバックで呼び出し元へ伝える |
+| `drag-reorder.ts` | `ReorderTarget`、`DragReorder` | ポインター操作と上下キーで打者を入れ替える。打順そのものは `ReorderTarget.move()` に任せる |
+| `lineup-form.ts` | `LineupFormElements`、`LineupFormConfig<T>`、`findLineupFormElements()`、`LineupForm<T>` | 打順の状態、入力画面と結果画面の切り替え、一括切り替え、API への POST |
+
+`LineupForm` は打順を変えるたびに `render()` で行を作り直し、`update()` で操作の有効・無効と案内文を更新します。
+入力欄の入力中は再描画せず、`update()` だけを呼びます（入力中のフォーカスを失わないため）。
+`T` は API の応答の型で、`onSuccess` がそのまま受け取ります。
+
+### simulation/ 大規模実行
+
+```mermaid
+classDiagram
+    class SimulationResultsView {
+        -root: ParentNode
+        -resultFeedback: HTMLElement
+        +constructor(root)
+        +render(statistics) void
+        -renderHistogram(statistics) void
+        -renderBreakdown(group) void
+    }
+    class SimulationResponse {
+        <<interface>>
+        statistics: SimulationStatistics
+    }
+    class SimulationStatistics {
+        <<interface>>
+        gameCount? / averageScore? / medianScore? / maximumScore?
+        hitCount? / homeRunCount? / buntCount? / stealCount? ...
+        内訳の件数（singleHitCount? など）
+        scoreDistribution?: Record~string, number~
+    }
+    class BreakdownGroup {
+        <<interface>>
+        prefix: hit | home-run | bunt | steal
+        items: BreakdownItem[]
+    }
+    class BreakdownItem {
+        <<interface>>
+        label: string
+        count: number | undefined
+        kind: string
+    }
+    class BreakdownSegment {
+        <<interface>>
+        label / count / kind
+        rate: number
+    }
+    class ScoreHistogram {
+        <<interface>>
+        maximum: number
+        axisLabels: number[]
+        gridStep: number
+        bars: HistogramBar[]
+    }
+    class HistogramBar {
+        <<interface>>
+        score: string
+        rate: number
+        height: number
+    }
+    SimulationResponse --> SimulationStatistics
+    SimulationResultsView ..> SimulationStatistics : render()
+    SimulationStatistics ..> BreakdownGroup : breakdownGroups()
+    BreakdownGroup *-- BreakdownItem
+    BreakdownItem ..> BreakdownSegment : summarizeBreakdown()
+    SimulationStatistics ..> ScoreHistogram : scoreHistogram()
+    ScoreHistogram *-- HistogramBar
+```
+
+| モジュール | 公開するもの | 役割 |
+| --- | --- | --- |
+| `statistics.ts` | `SimulationStatistics`、`SimulationResponse`、`SUMMARY_KEYS`、`summaryElementId()`、`BreakdownItem`、`BreakdownGroup`、`breakdownGroups()`、`BreakdownSegment`、`summarizeBreakdown()`、`HISTOGRAM_STEP_PERCENT`、`HistogramBar`、`ScoreHistogram`、`scoreHistogram()` | 集計値を、内訳の割合や得点分布の目盛りに変換する。DOM に依存しない |
+| `results-view.ts` | `SimulationResultsView` | 結果パネルへ集計値・得点分布・内訳を描く。要素 ID は `summaryElementId()` と `BreakdownGroup.prefix` から決める |
+| `share.ts` | `shareText()`、`bindShareButton()` | 表示中の結果をネイティブ共有、または非対応ならクリップボードへコピーする |
+| `simulation-page.ts` | `startSimulationPage()` | `LineupForm<SimulationResponse>` を `/simulations` へ送る設定で開始し、成功時に `SimulationResultsView.render()` を呼ぶ |
+
+### single-game/ 1試合実行
+
+API の状況推移（`GameTransition`）をプレー直後の状況（`PlayOutcome`）に直し、打順と演出を付けた
+再生用のプレー（`Play`）にしてから描画します。
+
+```mermaid
+classDiagram
+    class SingleGameView {
+        -frameStage: HTMLElement
+        -lineScore: HTMLElement
+        -orderTableScroll: HTMLElement
+        -player: FramePlayer
+        +constructor(root)
+        +render(transitions) void
+    }
+    class FramePlayer {
+        -stage: HTMLElement
+        -lineScore: HTMLElement
+        -durations: FrameDurations
+        -speed: PlaybackSpeed
+        -timer
+        +constructor(stage, lineScore, durations)
+        +playbackSpeed: PlaybackSpeed
+        +setSpeed(speed) void
+        +play(plays) void
+        +stop() void
+    }
+    class SingleGameResponse {
+        <<interface>>
+        transitions: GameTransition[] | null
+    }
+    class GameTransition {
+        <<interface>>
+        inning: number
+        outCount: number
+        runnerState: string
+        actionResult: string
+        cumulativeScore: number
+    }
+    class PlayOutcome {
+        <<interface>>
+        scoreBefore: number
+    }
+    class Play {
+        <<interface>>
+        battingOrder: number
+        effect: PlayEffect
+        direction: BallDirection
+    }
+    class PlayEffect {
+        <<interface>>
+        kind: EffectKind
+        runs: number
+        bases: number
+    }
+    class LineScoreSummary {
+        <<interface>>
+        innings: Map~number, number~
+        runs: number
+        hits: number
+        errors: number
+    }
+    SingleGameResponse --> GameTransition
+    GameTransition <|-- PlayOutcome
+    PlayOutcome <|-- Play
+    Play *-- PlayEffect
+    SingleGameView *-- FramePlayer
+    SingleGameView ..> Play : toPlays()
+    FramePlayer ..> Play : buildFrame() / renderLineScore()
+    Play ..> LineScoreSummary : summarizeLineScore()
+```
+
+| モジュール | 公開するもの | 役割 |
+| --- | --- | --- |
+| `plays.ts` | `GameTransition`、`SingleGameResponse`、`EffectKind`、`PlayEffect`、`PlayOutcome`、`Play`、`BallDirection`、`BATTING_ORDER_SIZE`、`OUTS_PER_INNING`、`isStealOnly()`、`resolvePlayOutcomes()`、`annotateBattingOrder()`、`classifyEffect()`、`toPlays()` | 推移をプレーに変換し、打順・演出（本塁打・得点・安打・バント・通常）を決める。DOM に依存しない |
+| `frame.ts` | `RUNNER_LAYOUT`、`effectHeadline()`、`outCountMarks()`、`buildFrame()` | 1プレーのアニメーションフレームを作る。乱数を使わず、同じプレーなら同じフレームにする |
+| `line-score.ts` | `LineScoreSummary`、`REGULATION_INNINGS`、`summarizeLineScore()`、`lineScoreInningCount()`、`buildLineScore()`、`renderLineScore()` | イニング別得点と R・H・E のスコアボード。試合全体を表示し、再生中のイニングを強調する |
+| `order-table.ts` | `buildOrderTable()` | 打順×イニングの打席結果表。盗塁だけの推移は含めない |
+| `playback.ts` | `PlaybackSpeed`、`PLAYBACK_SPEED_MULTIPLIERS`、`FrameDurations`、`readFrameDurations()`、`FramePlayer`、`bindPlaybackSpeedOptions()` | フレームのコマ送り再生。表示時間はサーバー設定（`#frame-stage` の data 属性）×再生速度の倍率 |
+| `single-game-page.ts` | `SingleGameView`、`startSingleGamePage()` | 結果パネルの組み立てと、`LineupForm<SingleGameResponse>` を `/simulations/single-game` へ送る設定で開始する |
+
+### site-menu/・shared/
+
+| モジュール | 公開するもの | 役割 |
+| --- | --- | --- |
+| `site-menu/site-menu.ts` | `initSiteMenu()` | 左メニューをメニューボタン・閉じるボタン・メニュー外のクリック・Escape で開閉する |
+| `shared/dom.ts` | `requireElement()`、`optionalElement()`、`createElement()`、`emptyState()` | 要素の取得と生成。`requireElement()` は要素が無ければ例外にする |
+
+### 新しい処理を追加するとき
+
+- 画面を追加するときは、テンプレートと同じ名前の `pages/<テンプレート名>.ts` を作り、テンプレートの末尾で
+  1つだけ読み込みます（`src/test/js/scripts/pages.test.mjs` が対応を検査します）。
+- API の応答や入力値を加工する処理は、DOM に依存しない関数として `player.ts`・`statistics.ts`・`plays.ts`
+  （またはそれに相当する新しいモジュール）に置き、描画するモジュールからは呼び出すだけにします。
+- 調整したい数値（フレーム表示時間など）はサーバー設定から data 属性で渡し、スクリプトに直接書きません。
+  打順の人数・アウト数・9回のような試合のルールは、名前付きの定数にします。
+
+### テスト
+
+| 場所 | 対象 | 方法 |
+| --- | --- | --- |
+| `src/test/js/scripts/<機能>/*.test.mjs` | 各モジュールの振る舞い | `.ts` を直接 import し、DOM は jsdom で検査する（`support/dom.mjs` が実テンプレートを読み込む） |
+| `src/test/js/scripts/pages.test.mjs` | 画面の入口 | テンプレートが読み込む入口と、実テンプレートのDOMで入口が起動できること |
+| `src/test/js/scripts/sources.test.mjs` | ソース全体 | 廃止した項目や乱数が残っていないこと、import の書き方、入口以外が読み込み時に画面を操作しないこと |
+| `src/test/js/*.test.mjs` | テンプレートと CSS | HTML・CSS の内容を検査する |
+| `SimulationPageIntegrationTest` | 配信 | 各画面の入口から import を辿り、すべてのモジュールを JavaScript として取得できること |
+
+`./gradlew :infrastructure:testTypeScript`（`check` に含まれる）で Node のテストをまとめて実行します。

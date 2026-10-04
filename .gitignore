@@ -28,3 +28,6 @@ infra/aws-terraform/terraform.tfvars
 # git rm --cached {ファイル名}
 # または
 # git rm -r --cached {フォルダ名}
+
+# npm dependencies for the backend TypeScript page scripts.
+node_modules/
