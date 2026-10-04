@@ -70,6 +70,98 @@ Thymeleaf 画面のスクリプトは `src/main/typescript` に TypeScript の E
 - **TypeScript は型注釈を取り除くだけで JavaScript になる構文に限る**（`erasableSyntaxOnly`）。
   `enum`・`namespace`・コンストラクタ引数のプロパティ宣言は使いません。Node のテストが `.ts` をそのまま import できます。
 
+### 採用したモダンな TypeScript の実装方針
+
+TypeScript 7 と Node 24 を前提に、「型を取り除けばそのまま動く標準の JavaScript を書く」方針を取っています。
+型は検査のためだけに使い、ビルド時の変換（バンドル・ダウンレベル変換・型による実行時の振る舞い）に頼りません。
+
+#### ビルドとモジュール
+
+| 方針 | 設定・書き方 | 理由 |
+| --- | --- | --- |
+| ブラウザ標準の ES module をそのまま配信する | `"module": "es2022"`、テンプレートは `<script type="module">` | バンドラーを使わず、`tsc` の出力をそのまま静的リソースにできる。読み込みは deferred になり、モジュールは1回だけ評価される |
+| import は `.ts` の拡張子付きで書く | `import { toPlays } from './plays.ts'` と `"rewriteRelativeImportExtensions": true` | 同じソースを、ブラウザ向けには `tsc` が `.js` へ書き換えて出力し、Node のテストはそのまま import できる |
+| 型を取り除くだけで JavaScript になる構文に限る | `"erasableSyntaxOnly": true` | Node 24 の型の除去（type stripping）でテストが `.ts` を直接実行できる。`enum`・`namespace`・コンストラクタ引数のプロパティ宣言は使えない |
+| 型だけの import を明示する | `"verbatimModuleSyntax": true`、`import type { Play } from './plays.ts'`、`import { toPlays, type GameTransition } ...` | 型を取り除いたときに、出力に残る import が書いたとおりになる |
+| 新しい構文を変換せずに出力する | `"target": "es2022"`、`"lib": ["es2023", "dom", "dom.iterable"]` | クラスフィールド・`?.`・`??`・`async`/`await` などを、対応ブラウザ向けにそのまま出力する |
+| 型エラーがあれば JavaScript を出力しない | `"noEmitOnError": true` | 型エラーのあるスクリプトを配信しない |
+
+#### 型の厳密さ
+
+| 方針 | 設定・書き方 |
+| --- | --- |
+| 厳格な型検査と、未使用・暗黙の戻り値・switch のフォールスルーの検出 | `"strict": true`、`noUnusedLocals`、`noUnusedParameters`、`noImplicitReturns`、`noFallthroughCasesInSwitch` |
+| `any` と非 null アサーション（`!`）を使わない | テンプレートの要素は `requireElement()` で存在を確かめてから型付きで返す。省略できる要素は `T \| null` として `?.` で扱う |
+| 外部から来る値は `unknown` で受ける | API の応答は `const data: unknown = await response.json()` で受け、使う場所で型を決める |
+| 変更しない値は `readonly` にする | 引数の配列は `readonly Play[]`、クラスの依存は `private readonly` |
+
+#### `enum` の代わりに文字列リテラルのユニオン型を使う
+
+`Personality`・`EffectKind`・`PlaybackSpeed`・`BallDirection` は、`enum` ではなく文字列リテラルのユニオン型です。
+API の JSON やテンプレートの data 属性の文字列をそのまま扱え、型を取り除いても実行時のオブジェクトが増えません。
+すべての値を扱っているかどうかは、コンパイラが検査します。
+
+```ts
+export type EffectKind = 'none' | 'hit' | 'score' | 'home-run' | 'bunt';
+
+// default を書かない switch。EffectKind に値を足すと、扱っていない値の経路に return が無いため TS2366 でコンパイルエラーになる。
+export function effectHeadline(effect: PlayEffect): string {
+  switch (effect.kind) {
+    case 'home-run': return effect.runs === GRAND_SLAM_RUNS ? 'GRAND SLAM!' : 'HOME RUN!';
+    // ...
+    case 'none': return '';
+  }
+}
+
+// Record<ユニオン型, …> は、すべてのキーが揃っていないとエラーになる（readFrameDurations() の戻り値で TS2741）。
+export type FrameDurations = Record<EffectKind, number>;
+```
+
+#### `as const` と `satisfies` で、値から型を導きつつ形を検査する
+
+定数は `as const` でリテラル型のまま保ち、`satisfies` で期待する形に合っているかだけを検査します。
+型注釈（`: Record<…>`）と違って値の型を広げないため、キーの並びやリテラル値をそのまま使えます。
+
+```ts
+export const PERSONALITY_LABELS = {
+  DEFAULT: '単打マン',
+  // ...
+} as const satisfies Record<Personality, string>; // 性格の追加漏れはエラー、キーの並びは選択肢の並びとして使う
+
+export const SUMMARY_KEYS = ['gameCount', /* ... */] as const satisfies readonly (keyof SimulationStatistics)[];
+export function summaryElementId(key: (typeof SUMMARY_KEYS)[number]): string { /* ... */ } // 配列の要素からユニオン型を導く
+```
+
+#### ジェネリクスとユーティリティ型で、必要な分だけを型にする
+
+| 書き方 | 例 | 効果 |
+| --- | --- | --- |
+| 応答の型を外から決めるクラス | `LineupForm<T>` と `LineupFormConfig<T>.onSuccess(data: T)` | 共通フォームが画面ごとの応答型（`SimulationResponse`・`SingleGameResponse`）を知らずに済む |
+| タグ名から要素の型を決める | `createElement<K extends keyof HTMLElementTagNameMap>(tag: K)` | `createElement('input')` が `HTMLInputElement` を返す |
+| 取得する要素の型を呼び出し側で決める | `requireElement<HTMLButtonElement>('#share-results')` | キャストせずに型付きの要素を得る |
+| 使うプロパティだけを要求する | `isValidPlayer(player: Pick<LineupPlayer, 'hitAverage'>)`、`summarizeLineScore(plays: readonly Pick<Play, 'inning' \| 'effect'>[])` | テストや別の呼び出し元が、必要な値だけを持つオブジェクトを渡せる |
+| 入力の型を保ったまま情報を足す | `annotateBattingOrder<T extends Pick<GameTransition, 'actionResult'>>(…): (T & { battingOrder: number })[]` | 推移の段階（`PlayOutcome` など）を失わずに打順を付ける |
+| インターフェースの継承で段階を表す | `GameTransition` → `PlayOutcome` → `Play` | 「API の値」「プレー直後に直した値」「再生用の値」を型で区別する |
+| 型を関数の型から導く | `ReturnType<typeof setTimeout>` | タイマーIDの型を実装に書き込まない。実行時の値はブラウザでは数値、Node のテストではオブジェクトだが、`clearTimeout()` に渡すだけなのでどちらでも動く |
+
+#### クラスと関数の使い分け
+
+- 状態を持たない処理は、エクスポートした関数にします（`toPlays()`・`scoreHistogram()`・`buildFrame()` など）。
+- 状態や DOM の要素を持ち続けるものだけをクラスにします（`LineupForm`・`DragReorder`・`FramePlayer`・`SimulationResultsView`・`SingleGameView`）。
+  フィールドはクラスフィールド宣言と `private readonly` で書き、コンストラクタで代入します（`erasableSyntaxOnly` のため、
+  コンストラクタ引数のプロパティ宣言は使いません）。
+- クラスどうしは、相手のクラスではなく必要な操作だけのインターフェースでつなぎます。
+  `DragReorder` は `LineupForm` を知らず、`ReorderTarget`（`container`・`isLocked()`・`move()`）だけを受け取ります。
+
+#### 採用していないもの・制約
+
+- **ES の `#private` は使っていません。** 非公開のメンバーは TypeScript の `private` 修飾子で、型検査の時点だけで守っています。
+- **API の応答は実行時に検証していません。** `unknown` で受けたあと、`data as T` で型を決めています。
+  応答の形は、同じ backend の HTTP API（`infrastructure/api`）が返す JSON に合わせる前提です。エラー応答も
+  `data as ErrorResponse` で読んでいます。同様に、テンプレートの data 属性や `<select>` の値も `as Personality`・
+  `as PlaybackSpeed` で型を決めています（`as` による型の断定はこの5か所だけです）。
+- **バンドル・圧縮はしていません。** モジュールごとに配信するため、ブラウザは import を辿って複数のファイルを取得します。
+
 ### モジュールの依存関係
 
 矢印は「import する」向きです。`shared/dom.ts` はほぼすべてのモジュールが使うため省略しています。
