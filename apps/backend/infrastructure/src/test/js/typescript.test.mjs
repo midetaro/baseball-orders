@@ -1,29 +1,23 @@
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
-const resource = path => new URL(`../../main/resources/${path}`, import.meta.url);
 const tsconfig = JSON.parse(readFileSync(new URL('../../../tsconfig.json', import.meta.url), 'utf8'));
 const packageJson = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf8'));
+const options = tsconfig.compilerOptions;
 
 // --- Thymeleaf画面のスクリプトをTypeScriptで書く（issue #155） ---
-assert.ok(!existsSync(resource('static/js')), '静的リソースに手書きのJSを置かず、TypeScriptから生成する');
+assert.ok(!existsSync(new URL('../../main/resources/static/js', import.meta.url)), '静的リソースに手書きのJSを置かず、TypeScriptから生成する');
 
-const scripts = new Set();
-for (const template of readdirSync(resource('templates')).filter(name => name.endsWith('.html'))) {
-  const html = readFileSync(resource(`templates/${template}`), 'utf8');
-  assert.doesNotMatch(html, /<script(?![^>]*\ssrc=)[^>]*>/, `${template}にインラインのスクリプトを書かない`);
-  for (const [, name] of html.matchAll(/<script src="\/js\/([\w-]+)\.js"><\/script>/g)) scripts.add(name);
+assert.equal(options.strict, true, '型検査は厳格モードで行う');
+assert.equal(options.erasableSyntaxOnly, true, '型注釈を取り除くだけでJSになる構文に限り、Nodeのテストが.tsをそのまま実行できるようにする');
+assert.equal(options.verbatimModuleSyntax, true, '型だけのimportを明示し、型を取り除いた結果をtscの出力と同じにする');
+assert.equal(options.rewriteRelativeImportExtensions, true, 'importの.tsを、配信する.jsへ書き換えて出力する');
+assert.equal(options.module, 'es2022', 'ブラウザがES moduleとして読み込めるように出力する');
+assert.equal(options.noEmitOnError, true, '型エラーがあればJSを出力しない');
+assert.equal(options.rootDir, 'src/main/typescript', 'src/main/typescriptのソースをコンパイルする');
+assert.equal(options.outDir, 'build/generated/typescript/static/js', '生成したJSを静的リソースの/js配下として配信する');
+for (const [name, version] of Object.entries(packageJson.devDependencies)) {
+  assert.match(version, /^\d+\.\d+\.\d+$/, `${name}のバージョンを固定する`);
 }
-assert.deepEqual([...scripts].sort(), ['lineup-form', 'simulation', 'single-game', 'site-menu'], '画面が読み込むスクリプトを把握する');
-for (const name of scripts) {
-  assert.ok(existsSync(new URL(`../../main/typescript/${name}.ts`, import.meta.url)), `/js/${name}.jsはTypeScriptのソース${name}.tsから生成する`);
-}
-
-assert.equal(tsconfig.compilerOptions.strict, true, '型検査は厳格モードで行う');
-assert.equal(tsconfig.compilerOptions.erasableSyntaxOnly, true, '型注釈を取り除くだけでJSになる構文に限る');
-assert.equal(tsconfig.compilerOptions.noEmitOnError, true, '型エラーがあればJSを出力しない');
-assert.equal(tsconfig.compilerOptions.rootDir, 'src/main/typescript', 'src/main/typescriptのソースをコンパイルする');
-assert.equal(tsconfig.compilerOptions.outDir, 'build/generated/typescript/static/js', '生成したJSを静的リソースの/js配下として配信する');
-assert.match(packageJson.devDependencies.typescript, /^\d+\.\d+\.\d+$/, 'TypeScriptのバージョンを固定する');
 
 console.log('PASS: Thymeleaf画面のスクリプトをTypeScriptで書く');

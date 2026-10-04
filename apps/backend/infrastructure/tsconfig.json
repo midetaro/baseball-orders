@@ -1,9 +1,17 @@
 {
   "compilerOptions": {
     "target": "es2022",
+    "module": "es2022",
+    "moduleResolution": "bundler",
     "lib": ["es2023", "dom", "dom.iterable"],
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
     "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
     "noEmitOnError": true,
     "removeComments": false,
     "rootDir": "src/main/typescript",
