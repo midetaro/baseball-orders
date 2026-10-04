@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { readScript, toJs } from './typescript-source.mjs';
 
 const html = readFileSync(new URL('../../main/resources/templates/batting-order.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../../main/resources/static/css/batting-order.css', import.meta.url), 'utf8');
-const lineupFormJs = readFileSync(new URL('../../main/resources/static/js/lineup-form.js', import.meta.url), 'utf8');
+const lineupFormJs = readScript('lineup-form');
 
 // --- 打順組み替え画面（issue #146） ---
 assert.ok(!html.includes('<style>'), '打順組み替え画面のCSSをインラインで保持しない');
@@ -32,11 +33,12 @@ assert.ok(css.includes('touch-action: none'), 'ドラッグハンドルの操作
 
 // --- 打順の組み替え ---
 function extractFunction(name) {
-  const start = lineupFormJs.indexOf(`function ${name}(`);
+  // 型引数を持つ関数（function movePlayer<T>(...)）も対象にする。
+  const start = lineupFormJs.search(new RegExp(`function ${name}[(<]`));
   assert.ok(start >= 0, `${name} を定義する`);
   return lineupFormJs.slice(start, lineupFormJs.indexOf('\n', start));
 }
-const movePlayer = new Function(`${extractFunction('movePlayer')}\nreturn movePlayer;`)();
+const movePlayer = new Function(toJs(`${extractFunction('movePlayer')}\nreturn movePlayer;`))();
 const players = () => ['A', 'B', 'C', 'D'];
 const down = players();
 assert.equal(movePlayer(down, 0, 2), true, '下の打順へ移動できる');
@@ -57,15 +59,15 @@ assert.ok(lineupFormJs.includes("handle.addEventListener('pointerup'"), 'ドロ�
 assert.ok(lineupFormJs.includes('{ArrowUp:-1,ArrowDown:1}'), 'キーボードの上下キーでも打順を入れ替えられる');
 
 // --- 平均打率・メモ・固定ラベル・チーム既定値 ---
-const averageHitAverage = new Function(`${lineupFormJs.match(/const ranges = \{[^}]*\};/)[0]}\n${extractFunction('valid')}\n${extractFunction('averageHitAverage')}\nreturn averageHitAverage;`)();
+const averageHitAverage = new Function(toJs(`${lineupFormJs.match(/const ranges = \{[^}]*\}[^;]*;/)[0]}\n${extractFunction('valid')}\n${extractFunction('averageHitAverage')}\nreturn averageHitAverage;`))();
 const hit = values => values.map(hitAverage => ({hitAverage}));
 assert.equal(averageHitAverage(hit(['0.300','0.300','0.300','0.300','0.300','0.300','0.300','0.300','0.255'])), '0.295', '平均打率を小数第3位で表示する');
 assert.equal(averageHitAverage(hit(['0.300',''])), '—', '未入力があれば平均打率を表示しない');
 assert.equal(averageHitAverage(hit(['0.300','0.9'])), '—', '範囲外があれば平均打率を表示しない');
-const lineupRequest = new Function(`${extractFunction('lineupRequest')}\nreturn lineupRequest;`)();
+const lineupRequest = new Function(toJs(`${extractFunction('lineupRequest')}\nreturn lineupRequest;`))();
 const body = lineupRequest([{hitAverage:'0.300',buntEnabled:true,stealEnabled:false,personality:'DEFAULT',memo:'秘密',buntForced:true}]);
 assert.deepEqual(body, [{hit_average:0.3,bunt_enabled:true,steal_enabled:false,personality:'DEFAULT'}], '送信内容にメモ・固定フラグを含めない');
-const parseDefaultBatters = new Function(`${extractFunction('parseDefaultBatters')}\nreturn parseDefaultBatters;`)();
+const parseDefaultBatters = new Function(toJs(`${extractFunction('parseDefaultBatters')}\nreturn parseDefaultBatters;`))();
 const parsed = parseDefaultBatters([{dataset:{hitAverage:'0.300',personality:'EAGER_STEAL',stealForced:'true',buntForced:'false'}},{dataset:{hitAverage:'0.250',personality:'DEFAULT',stealForced:'false',buntForced:'false'}}]);
 assert.deepEqual(parsed[0], {hitAverage:'0.300',personality:'EAGER_STEAL',stealForced:true,buntForced:false,stealEnabled:true,buntEnabled:false,memo:''}, '盗塁固定の打者は盗塁有効で開始する');
 assert.deepEqual([parsed[1].stealEnabled, parsed[1].buntEnabled], [false, false], '固定でない打者は盗塁・バントなしで開始する');

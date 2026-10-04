@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { readScript, toJs } from './typescript-source.mjs';
 
 const html = readFileSync(new URL('../../main/resources/templates/simulation.html', import.meta.url), 'utf8');
 const guideHtml = readFileSync(new URL('../../main/resources/templates/simulation-guide.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../../main/resources/static/css/simulation.css', import.meta.url), 'utf8');
-const pageJs = readFileSync(new URL('../../main/resources/static/js/simulation.js', import.meta.url), 'utf8');
-const lineupFormJs = readFileSync(new URL('../../main/resources/static/js/lineup-form.js', import.meta.url), 'utf8');
+const pageJs = readScript('simulation');
+const lineupFormJs = readScript('lineup-form');
 // 画面で実行されるのは共通の打順入力フォームと画面固有スクリプトを合わせたコードである。
 const js = `${lineupFormJs}\n${pageJs}`;
 
@@ -37,10 +38,10 @@ for (const [page, template] of [
   assert.ok(!template.includes('_csrf'), `${page}でCSRFトークンを参照しない`);
 }
 
-assert.ok(js.includes('const lineup = ['), '9人分の固定打順を作成する');
+assert.ok(js.includes('const lineup: LineupPlayer[] = ['), '9人分の固定打順を作成する');
 assert.ok(!html.includes('th:each="player'), 'DBの選手一覧を画面に表示しない');
 assert.ok(!html.includes('一番〜九番として送信します。'), '不要な固定打順の説明を表示しない');
-assert.ok(js.includes("const lineup = ["), '打順ごとの役割に応じた初期値を用意する');
+assert.ok(js.includes("const lineup: LineupPlayer[] = ["), '打順ごとの役割に応じた初期値を用意する');
 assert.ok(js.includes('position.textContent=`${index+1}番`'), '打順は「{数字}番」の固定表示にする');
 assert.ok(!js.includes('番打者'), '打順表示に「打者」を付けない');
 assert.ok(js.includes("hitAverage:'0.35',buntEnabled"), '一〜五番に制約内の打率を設定する');
@@ -59,7 +60,7 @@ assert.ok(js.includes("function validLineup()"), '打順全体の入力制約を
 assert.ok(!js.includes("lineup.length<=0.35"), '打率の平均に上限を設けない');
 assert.ok(js.includes("input.step='0.01'"), '数値入力は小数第2位刻みにする');
 assert.ok(js.includes("key:'hitAverage',label:'打率',min:0.01,max:0.6"), '打率の上限を60%にする');
-assert.ok(js.includes('function formatPercentage(value)'), '入力値を小数第2位に整形する');
+assert.ok(js.includes('function formatPercentage(value: string)'), '入力値を小数第2位に整形する');
 assert.ok(js.includes('Number(value).toFixed(2)'), '小数第2位のゼロを常に表示する');
 assert.ok(js.includes("input.addEventListener('change'"), '入力の確定時に小数第2位へ整形する');
 assert.ok(!js.includes("hitAverage:'.32'"), '小数点前のゼロを省略しない');
@@ -72,25 +73,25 @@ assert.ok(js.includes("'hitCount'"), 'APIの総安打数を結果へ描画する
 assert.ok(html.includes('安打の内訳'), '安打統計を構造化して表示する');
 assert.ok(html.includes('id="hit-breakdown"'), '安打内訳のグラフを表示する');
 assert.ok(html.includes('id="hit-legend"'), '安打内訳の凡例を表示する');
-assert.ok(js.includes("Array.of('一塁打',statistics.singleHitCount,'single-hit')"), '一塁打数を内訳へ表示する');
-assert.ok(js.includes("Array.of('二塁打',statistics.doubleHitCount,'double-hit')"), '二塁打数を内訳へ表示する');
-assert.ok(js.includes("Array.of('三塁打',statistics.tripleHitCount,'triple-hit')"), '三塁打数を内訳へ表示する');
-assert.ok(js.includes("Array.of('本塁打',statistics.homeRunCount,'home-run')"), '本塁打数を安打内訳へ表示する');
+assert.ok(js.includes("['一塁打',statistics.singleHitCount,'single-hit']"), '一塁打数を内訳へ表示する');
+assert.ok(js.includes("['二塁打',statistics.doubleHitCount,'double-hit']"), '二塁打数を内訳へ表示する');
+assert.ok(js.includes("['三塁打',statistics.tripleHitCount,'triple-hit']"), '三塁打数を内訳へ表示する');
+assert.ok(js.includes("['本塁打',statistics.homeRunCount,'home-run']"), '本塁打数を安打内訳へ表示する');
 assert.ok(js.includes('`${label} ${count} (${rate.toFixed(1)}%)`'), '安打内訳の凡例で件数と割合を表示する');
 assert.ok(!html.includes('戦術の成否'), '重複する戦術統計を表示しない');
-assert.ok(!js.includes("Array.of('成功バント',statistics.buntCount)"), '戦術統計の成功バントを表示しない');
-assert.ok(!js.includes("Array.of('失敗バント',statistics.buntFailureCount)"), '戦術統計の失敗バントを表示しない');
-assert.ok(!js.includes("Array.of('成功盗塁',statistics.stealCount)"), '戦術統計の成功盗塁を表示しない');
-assert.ok(!js.includes("Array.of('失敗盗塁',statistics.stealFailureCount)"), '戦術統計の失敗盗塁を表示しない');
+assert.ok(!js.includes("['成功バント',statistics.buntCount]"), '戦術統計の成功バントを表示しない');
+assert.ok(!js.includes("['失敗バント',statistics.buntFailureCount]"), '戦術統計の失敗バントを表示しない');
+assert.ok(!js.includes("['成功盗塁',statistics.stealCount]"), '戦術統計の成功盗塁を表示しない');
+assert.ok(!js.includes("['失敗盗塁',statistics.stealFailureCount]"), '戦術統計の失敗盗塁を表示しない');
 assert.ok(html.includes('バントの内訳'), 'バント統計を色分けした内訳として表示する');
 assert.ok(html.includes('盗塁の内訳'), '盗塁統計を色分けした内訳として表示する');
-assert.ok(js.includes("Array.of('進塁成功',statistics.advancingBuntCount,'advancing-bunt')"), '進塁バント成功数を表示する');
-assert.ok(js.includes("Array.of('スクイズ成功',statistics.squeezeBuntCount,'squeeze-bunt')"), 'スクイズ成功数を表示する');
-assert.ok(js.includes("Array.of('進塁失敗',statistics.advancingBuntFailureCount,'advancing-bunt-failure')"), '進塁バント失敗数を表示する');
-assert.ok(js.includes("Array.of('スクイズ失敗',statistics.squeezeBuntFailureCount,'squeeze-bunt-failure')"), 'スクイズ失敗数を表示する');
-assert.ok(js.includes("Array.of('二盗成功',statistics.stealToSecondCount,'steal-second')"), '二盗成功数を表示する');
-assert.ok(js.includes("Array.of('三盗成功',statistics.stealToThirdCount,'steal-third')"), '三盗成功数を表示する');
-assert.ok(js.includes("Array.of('失敗',statistics.stealFailureCount,'steal-failure')"), '盗塁失敗数を内訳へ表示する');
+assert.ok(js.includes("['進塁成功',statistics.advancingBuntCount,'advancing-bunt']"), '進塁バント成功数を表示する');
+assert.ok(js.includes("['スクイズ成功',statistics.squeezeBuntCount,'squeeze-bunt']"), 'スクイズ成功数を表示する');
+assert.ok(js.includes("['進塁失敗',statistics.advancingBuntFailureCount,'advancing-bunt-failure']"), '進塁バント失敗数を表示する');
+assert.ok(js.includes("['スクイズ失敗',statistics.squeezeBuntFailureCount,'squeeze-bunt-failure']"), 'スクイズ失敗数を表示する');
+assert.ok(js.includes("['二盗成功',statistics.stealToSecondCount,'steal-second']"), '二盗成功数を表示する');
+assert.ok(js.includes("['三盗成功',statistics.stealToThirdCount,'steal-third']"), '三盗成功数を表示する');
+assert.ok(js.includes("['失敗',statistics.stealFailureCount,'steal-failure']"), '盗塁失敗数を内訳へ表示する');
 assert.ok(js.includes('const detailTotal=details.reduce'), '内訳項目の合計を割合の分母にする');
 assert.ok(js.includes('Number(count)/detailTotal*100'), '集計総数と内訳合計が異なっても内訳比率を誤表示しない');
 assert.ok(html.includes('id="bunt-count"'), '既存の成功バント総数を表示する');
@@ -197,7 +198,7 @@ assert.ok(html.includes('<span class="group-total"><span class="group-total-labe
 assert.ok(html.includes('<span class="group-total"><span class="group-total-label">本塁打</span><span class="group-total-value" id="home-run-count">—</span></span>'), '本塁打を単独行にせず見出し行のバッジへ統合する');
 assert.ok(html.includes('id="score-empty-state">試合結果なし</p>'), '未実行・0試合時に得点サマリーへも内訳グループと同じ空状態表示を出す');
 assert.ok(!html.includes('id="score-empty-state" hidden'), '初期表示から得点結果なしの表示ラベルを隠さない');
-assert.ok(js.includes("querySelector('#score-empty-state').hidden=gameCount!==0"), '得点サマリーの空状態を試合数に応じて切り替える');
+assert.ok(js.includes("querySelector<HTMLElement>('#score-empty-state')!.hidden=gameCount!==0"), '得点サマリーの空状態を試合数に応じて切り替える');
 assert.ok(!js.includes('results.hidden'), '結果パネル全体を毎回消して再描画するとレイアウトが跳ねるため使わない');
 assert.ok(html.includes('class="histogram-scroll"'), '得点分布のバー本数が多くても横スクロールで読める幅を確保する');
 assert.match(css, /\.histogram-scroll\s*\{\s*overflow-x:\s*auto;/, '得点分布ヒストグラムを横スクロール可能にする');
@@ -235,13 +236,13 @@ assert.match(
 );
 assert.ok(html.includes('id="edit-lineup"'), '結果画面から打順入力画面へ戻る操作を用意する');
 assert.ok(html.includes('id="result-feedback" role="status"'), '結果画面に実行結果と共有結果を通知する領域を用意する');
-assert.ok(js.includes('function showView(resultsVisible)'), '入力画面と結果画面を排他的に切り替える関数を用意する');
+assert.ok(js.includes('function showView(resultsVisible: boolean)'), '入力画面と結果画面を排他的に切り替える関数を用意する');
 assert.ok(
   js.includes('inputView.hidden=resultsVisible; resultsView.hidden=!resultsVisible;'),
   '入力画面と結果画面は常にどちらか一方だけを表示する'
 );
 assert.ok(
-  pageJs.includes('onSuccess:data=>{renderResults(data.statistics);}') && lineupFormJs.includes('lineupFormConfig.onSuccess(data);hasResults=true;showView(true);'),
+  pageJs.includes('onSuccess:(data: SimulationResponse)=>{renderResults(data.statistics);}') && lineupFormJs.includes('lineupFormConfig.onSuccess(data);hasResults=true;showView(true);'),
   'シミュレーションが成功したら結果画面へ切り替える'
 );
 assert.ok(js.includes("editLineup.addEventListener('click',()=>showView(false))"), '結果画面から打順入力画面へ戻れる');

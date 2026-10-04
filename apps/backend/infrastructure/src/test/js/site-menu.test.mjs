@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { readScript, toJs } from './typescript-source.mjs';
 
 const read = path => readFileSync(new URL(`../../main/resources/${path}`, import.meta.url), 'utf8');
 const fragment = read('templates/fragments/site-menu.html');
 const css = read('static/css/site-menu.css');
-const siteMenuJs = read('static/js/site-menu.js');
+const siteMenuJs = readScript('site-menu');
 
 // --- 全画面共通の左メニュー（issue #146） ---
 // 画面遷移は左メニューからだけ行う。各画面は共通の断片を読み込み、自身のルートを現在の画面として渡す。
@@ -40,7 +41,7 @@ const listeners = {};
 const element = (name, extra = {}) => Object.defineProperties({addEventListener(type, handler) { listeners[`${name}:${type}`] = handler; }, setAttribute(key, value) { if (key === 'aria-expanded') menuState.expanded = value; }, focus() { menuState.focused = name; }}, Object.getOwnPropertyDescriptors(extra));
 const siteMenu = element('menu', {get hidden() { return menuState.hidden; }, set hidden(value) { menuState.hidden = value; }, querySelector: () => element('first-link')});
 const elements = {'#menu-toggle': element('toggle'), '#site-menu': siteMenu, '#menu-close': element('close'), '#menu-backdrop': element('backdrop', {set hidden(value) { menuState.backdropHidden = value; }})};
-new Function('document', siteMenuJs)({querySelector: selector => elements[selector], addEventListener(type, handler) { listeners[`document:${type}`] = handler; }});
+new Function('document', toJs(siteMenuJs))({querySelector: selector => elements[selector], addEventListener(type, handler) { listeners[`document:${type}`] = handler; }});
 listeners['toggle:click']();
 assert.deepEqual(menuState, {hidden:false, backdropHidden:false, expanded:'true', focused:'first-link'}, 'メニューボタンで左メニューを開く');
 listeners['document:keydown']({key:'Escape'});

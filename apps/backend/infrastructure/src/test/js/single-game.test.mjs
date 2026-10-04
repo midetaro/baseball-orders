@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { readScript, toJs } from './typescript-source.mjs';
 
 const html = readFileSync(new URL('../../main/resources/templates/single-game.html', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../../main/resources/static/css/single-game.css', import.meta.url), 'utf8');
-const pageJs = readFileSync(new URL('../../main/resources/static/js/single-game.js', import.meta.url), 'utf8');
-const lineupFormJs = readFileSync(new URL('../../main/resources/static/js/lineup-form.js', import.meta.url), 'utf8');
+const pageJs = readScript('single-game');
+const lineupFormJs = readScript('lineup-form');
 // 画面で実行されるのは共通の打順入力フォームと画面固有スクリプトを合わせたコードである。
 const js = `${lineupFormJs}\n${pageJs}`;
 
@@ -32,7 +33,7 @@ assert.ok(js.includes("span.className='out-count'"), 'アウト表示に専用�
 for (const name of ['single-game', 'simulation', 'simulation-guide']) {
   const template = readFileSync(new URL(`../../main/resources/templates/${name}.html`, import.meta.url), 'utf8');
   const script = ['single-game', 'simulation'].includes(name)
-    ? `${lineupFormJs}\n${readFileSync(new URL(`../../main/resources/static/js/${name}.js`, import.meta.url), 'utf8')}`
+    ? `${lineupFormJs}\n${readScript(name)}`
     : '';
   assert.ok(template.includes('長距離砲') || script.includes('長距離砲'), `${name}の性格名は長距離砲`);
   assert.ok(!template.includes('ブンブン丸') && !script.includes('ブンブン丸'), `${name}に旧名称を残さない`);
@@ -51,7 +52,7 @@ assert.ok(
   'データ属性からフレーム間隔を読み取る'
 );
 
-assert.ok(js.includes('function annotateBattingOrder('), '状況推移から打順を推測する関数を用意する');
+assert.ok(js.includes('function annotateBattingOrder<'), '状況推移から打順を推測する関数を用意する');
 assert.ok(
   js.includes("actionResult.startsWith('盗塁')"),
   '盗塁のみの推移は打者の打席結果として扱わない'
@@ -135,7 +136,7 @@ assert.ok(html.includes('<button class="all-toggle" id="edit-lineup" type="butto
 assert.ok(!html.includes('id="toggle-lineup"') && !html.includes('入力欄を閉じる'), '「入力欄を閉じる」ボタンを表示しない');
 assert.ok(!html.includes('id="lineup-body"'), '打順入力欄を折りたたみ領域にしない');
 assert.ok(!js.includes('setLineupCollapsed') && !js.includes('lineupBody'), '打順入力欄の折りたたみ処理を持たない');
-assert.ok(js.includes('function showView(resultsVisible)'), '/ と同じくタブの表示を切り替える関数を用意する');
+assert.ok(js.includes('function showView(resultsVisible: boolean)'), '/ と同じくタブの表示を切り替える関数を用意する');
 assert.ok(
   js.includes("tabInput.addEventListener('click',()=>showView(false));") &&
     js.includes("tabResults.addEventListener('click',()=>showView(true));") &&
@@ -192,7 +193,7 @@ function extractFunction(name) {
   assert.ok(start >= 0, `${name} を定義する`);
   return js.slice(start, js.indexOf('\n', start));
 }
-const classifyEffect = new Function(`${js.match(/const HIT_BASES = \{[^}]*\};/)[0]}\n${extractFunction('classifyEffect')}\nreturn classifyEffect;`)();
+const classifyEffect = new Function(toJs(`${js.match(/const HIT_BASES[^=]*= \{[^}]*\};/)[0]}\n${extractFunction('classifyEffect')}\nreturn classifyEffect;`))();
 const transition = (actionResult, cumulativeScore) => ({actionResult, cumulativeScore});
 assert.deepEqual(classifyEffect(transition('本塁打', 1), 0), {kind:'home-run', runs:1, bases:4}, 'ソロ本塁打は本塁打演出にする');
 assert.deepEqual(classifyEffect(transition('本塁打', 6), 2), {kind:'home-run', runs:4, bases:4}, '満塁本塁打は4点の本塁打演出にする');
@@ -202,7 +203,7 @@ assert.deepEqual(classifyEffect(transition('四球', 2), 1), {kind:'score', runs
 assert.deepEqual(classifyEffect(transition('単打', 0), 0), {kind:'hit', runs:0, bases:1}, '得点のない単打は安打演出にする');
 assert.deepEqual(classifyEffect(transition('二塁打', 0), 0), {kind:'hit', runs:0, bases:2}, '得点のない二塁打は安打演出にする');
 assert.deepEqual(classifyEffect(transition('三塁打', 2), 2), {kind:'hit', runs:0, bases:3}, '得点のない三塁打は安打演出にする');
-const resolvePlayOutcomes = new Function(`${extractFunction('resolvePlayOutcomes')}\nreturn resolvePlayOutcomes;`)();
+const resolvePlayOutcomes = new Function(toJs(`${extractFunction('resolvePlayOutcomes')}\nreturn resolvePlayOutcomes;`))();
 const recorded = [
   {inning:1, actionResult:'三塁打', outCount:1, cumulativeScore:0, runnerState:'一・二塁'},
   {inning:1, actionResult:'本塁打', outCount:1, cumulativeScore:2, runnerState:'三塁'},
@@ -279,7 +280,7 @@ assert.ok(
   html.indexOf('class="playback-speed"') < html.indexOf('id="frame-stage"'),
   '再生速度の切り替えはアニメーションの直上に置く'
 );
-const speedMultipliers = new Function(`${js.match(/const PLAYBACK_SPEED_MULTIPLIERS = \{[^}]*\};/)[0]}\nreturn PLAYBACK_SPEED_MULTIPLIERS;`)();
+const speedMultipliers = new Function(toJs(`${js.match(/const PLAYBACK_SPEED_MULTIPLIERS = \{[^}]*\};/)[0]}\nreturn PLAYBACK_SPEED_MULTIPLIERS;`))();
 assert.deepEqual(Object.keys(speedMultipliers), ['slow', 'normal', 'fast'], '再生速度は遅い・普通・速いの3択にする');
 assert.equal(speedMultipliers.normal, 1, '「普通」はサーバー設定どおりの表示時間で再生する');
 assert.equal(speedMultipliers.slow / speedMultipliers.normal, 2, '「遅い」は「普通」の2倍の時間をかけて再生する');
@@ -295,7 +296,7 @@ assert.ok(
   html.indexOf('id="line-score"') < html.indexOf('id="frame-stage"'),
   'スコアボードはアニメーションフレームより上に表示する'
 );
-const summarizeLineScore = new Function(`${extractFunction('summarizeLineScore')}\nreturn summarizeLineScore;`)();
+const summarizeLineScore = new Function(toJs(`${extractFunction('summarizeLineScore')}\nreturn summarizeLineScore;`))();
 const played = (inning, runs, bases) => ({inning, effect:{runs, bases}});
 assert.deepEqual(
   summarizeLineScore([
@@ -322,7 +323,7 @@ assert.ok(!js.includes('renderLineScore(annotated, index + 1)'), 'スコアボ�
 const lineScoreCalls = [];
 const renderLineScore = new Function(
   'lineScore', 'buildLineScore', 'summarizeLineScore', 'REGULATION_INNINGS',
-  `${extractFunction('renderLineScore')}\nreturn renderLineScore;`
+  toJs(`${extractFunction('renderLineScore')}\nreturn renderLineScore;`)
 )(
   {replaceChildren:table=>lineScoreCalls.push(table)},
   (summary, inningCount, currentInning)=>({summary, inningCount, currentInning}),

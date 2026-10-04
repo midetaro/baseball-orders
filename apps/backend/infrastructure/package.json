@@ -1,0 +1,12 @@
+{
+  "name": "baseball-orders-backend-ui",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test": "node --test \"src/test/js/*.test.mjs\""
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}
