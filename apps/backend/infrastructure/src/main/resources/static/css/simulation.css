@@ -730,6 +730,7 @@
             .section-head {
                 align-items: flex-start;
                 flex-wrap: wrap;
+                row-gap: var(--space-2xs);
                 padding: var(--space-md);
             }
 
