@@ -17,12 +17,16 @@ in native Terraform HCL.
   inbound is blocked at the security group level except ALB -> backend on 8080
 - ALB (HTTPS 443, HTTP->HTTPS redirect), ACM certificate with Route 53 DNS
   validation, and an alias record pointing the configured domain at the ALB
-- ECR repositories for the backend and simulator images, with a lifecycle
-  policy (untagged images expire after 7 days; only the most recent 30 tagged
-  images are kept)
+- Lifecycle policies (untagged images expire after 7 days; only the most recent
+  30 tagged images are kept) on the existing `baseball-orders/backend` and
+  `baseball-orders/simulator` ECR repositories. The repositories themselves are
+  created outside Terraform and read through data sources; `push-ecr.yml` pushes
+  the `main`-tagged images the tasks start from
+  (`backend_ecr_repository_name` / `simulator_ecr_repository_name`)
 - ECS cluster (Fargate + Fargate Spot), task definitions, and services for the
-  backend (0.5 vCPU / 1 GB, 1 fixed task, standard Fargate) and simulator
-  (1 vCPU / 2 GB, Fargate Spot, autoscaled)
+  backend (0.5 vCPU / 4 GB, 1 fixed task, standard Fargate) and simulator
+  (1 vCPU / 4 GB, Fargate Spot, autoscaled). Both containers cap the JVM heap
+  at 2 GB with `JAVA_TOOL_OPTIONS=-Xmx2g` (`task_memory` / `jvm_options`)
 - IAM task execution role and least-privilege task roles for the backend and
   simulator workloads
 - CloudWatch log groups (14-day retention) and alarms on both DLQs
@@ -93,13 +97,9 @@ read/write access to the configured state object and its `.tflock` lock object.
 The workflows use the protected `aws-production` GitHub Environment, so create
 that environment and add any required reviewers before the first deployment.
 
-After the first apply, set the `ECR_BACKEND_REPOSITORY` and
-`ECR_SIMULATOR_REPOSITORY` GitHub Actions variables (used by
-`release-ecr.yml`) to `${project_name}-${environment}-backend` /
-`${project_name}-${environment}-simulator` (for example
-`baseball-orders-production-backend`) — the repository name portion of the
-`ecr_backend_repository_url` / `ecr_simulator_repository_url` outputs — so
-release builds push to the repositories this configuration creates.
+To let `release-ecr.yml` push release builds to the same repositories, set the
+`ECR_BACKEND_REPOSITORY` and `ECR_SIMULATOR_REPOSITORY` GitHub Actions variables
+to `baseball-orders/backend` / `baseball-orders/simulator`.
 
 ## Usage
 
