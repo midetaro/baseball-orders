@@ -142,18 +142,29 @@ run "cluster_and_task_definitions" {
   }
 
   assert {
-    condition     = aws_ecs_task_definition.backend.cpu == "512" && aws_ecs_task_definition.backend.memory == "1024"
-    error_message = "The backend task must request 0.5 vCPU / 1 GB, per docs/aws-deployment.md."
+    condition     = aws_ecs_task_definition.backend.cpu == "512" && aws_ecs_task_definition.backend.memory == "4096"
+    error_message = "The backend task must request 0.5 vCPU / 4 GB."
   }
 
   assert {
-    condition     = aws_ecs_task_definition.simulator.cpu == "1024" && aws_ecs_task_definition.simulator.memory == "2048"
-    error_message = "The simulator task must request 1 vCPU / 2 GB, per docs/aws-deployment.md."
+    condition     = aws_ecs_task_definition.simulator.cpu == "1024" && aws_ecs_task_definition.simulator.memory == "4096"
+    error_message = "The simulator task must request 1 vCPU / 4 GB."
   }
 
   assert {
-    condition     = jsondecode(aws_ecs_task_definition.backend.container_definitions)[0].image == "${aws_ecr_repository.backend.repository_url}:latest"
-    error_message = "The backend container must pull its default image from the backend ECR repository."
+    condition = alltrue([
+      { for e in jsondecode(aws_ecs_task_definition.backend.container_definitions)[0].environment : e.name => e.value }["JAVA_TOOL_OPTIONS"] == "-Xmx2g",
+      { for e in jsondecode(aws_ecs_task_definition.simulator.container_definitions)[0].environment : e.name => e.value }["JAVA_TOOL_OPTIONS"] == "-Xmx2g",
+    ])
+    error_message = "Both containers must cap the JVM heap at 2 GB through JAVA_TOOL_OPTIONS."
+  }
+
+  assert {
+    condition = alltrue([
+      jsondecode(aws_ecs_task_definition.backend.container_definitions)[0].image == "${data.aws_ecr_repository.backend.repository_url}:main",
+      jsondecode(aws_ecs_task_definition.simulator.container_definitions)[0].image == "${data.aws_ecr_repository.simulator.repository_url}:main",
+    ])
+    error_message = "Both containers must pull the main-tagged image pushed by push-ecr.yml from the existing ECR repositories."
   }
 
   assert {
