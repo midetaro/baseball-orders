@@ -1,0 +1,73 @@
+name: Build and push images to Amazon ECR
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - "apps/backend/**"
+      - "apps/simulator/**"
+      - "libs/**"
+      - "infra/docker/Dockerfile"
+      - ".github/workflows/push-ecr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: push-ecr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  push:
+    name: Push ${{ matrix.application }} image
+    runs-on: ubuntu-latest
+    environment: aws-production
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - application: backend
+            repository: baseball-orders/backend
+          - application: simulator
+            repository: baseball-orders/simulator
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Configure AWS credentials through GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ECR_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'ap-northeast-1' }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # workflow_dispatch may run on a branch such as feature/x, and "/" is not
+      # allowed in an image tag.
+      - name: Derive branch image tag
+        id: branch-tag
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: echo "name=${REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/Dockerfile
+          push: true
+          build-args: APP=${{ matrix.application }}
+          cache-from: type=gha,scope=${{ matrix.application }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.application }}
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ matrix.repository }}:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ matrix.repository }}:${{ steps.branch-tag.outputs.name }}
