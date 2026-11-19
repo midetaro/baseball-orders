@@ -278,6 +278,16 @@ GitHub Environment `aws-production`に、次のVariablesを設定してくださ
 - `ECR_SIMULATOR_REPOSITORY`: 作成済みのSimulator用ECRリポジトリ名
 
 リリースタグはDockerイメージタグとして利用できる形式（例: `v1.2.3`）にしてください。
+
+## ブランチイメージのECR push
+
+`.github/workflows/push-ecr.yml`は、`develop`または`main`へのpush（Backend・Simulator・`libs`・Dockerfileの変更時）と
+手動実行（`workflow_dispatch`）で、BackendとSimulatorのイメージをビルドし、ECRリポジトリ`baseball-orders/backend`と
+`baseball-orders/simulator`へpushします。各イメージにはコミットSHAと、`/`を`-`に置き換えたブランチ名のタグが付きます。
+
+GitHub Environment `aws-production`の`AWS_ECR_ROLE_ARN`と`AWS_REGION`を使います。このロールには、上記2つの
+リポジトリへのpush権限が必要です。
+
 ## AWSへのデプロイ
 
 AWS 上の構成は `infra/aws-terraform` で管理します。`develop` へのTerraform変更のpushで本番設定に対する
