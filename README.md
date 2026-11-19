@@ -281,9 +281,9 @@ GitHub Environment `aws-production`に、次のVariablesを設定してくださ
 
 ## ブランチイメージのECR push
 
-`.github/workflows/push-ecr.yml`は、`develop`または`main`へのpush（Backend・Simulator・`libs`・Dockerfileの変更時）と
-手動実行（`workflow_dispatch`）で、BackendとSimulatorのイメージをビルドし、ECRリポジトリ`baseball-orders/backend`と
-`baseball-orders/simulator`へpushします。各イメージにはコミットSHAと、`/`を`-`に置き換えたブランチ名のタグが付きます。
+`.github/workflows/push-ecr.yml`は、`main`へのpushまたは手動実行（`workflow_dispatch`）でBackendとSimulatorの
+イメージをビルドし、ECRリポジトリ`baseball-orders/backend`と`baseball-orders/simulator`へpushします。
+各イメージにはコミットSHAと、`/`を`-`に置き換えたブランチ名のタグが付きます。
 
 GitHub Environment `aws-production`の`AWS_ECR_ROLE_ARN`と`AWS_REGION`を使います。このロールには、上記2つの
 リポジトリへのpush権限が必要です。
