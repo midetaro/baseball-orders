@@ -16,6 +16,7 @@ import com.example.baseballorders.simulator.domain.player.LineUpEntity;
 import com.example.baseballorders.simulator.domain.game.BaseStateFactory;
 import com.example.baseballorders.simulator.domain.player.strategy.BehaviorStrategies;
 import com.example.baseballorders.simulator.domain.rule.BattingProbabilitiesBuilder;
+import com.example.baseballorders.simulator.domain.rule.BuntProbabilitiesBuilder;
 import com.example.baseballorders.simulator.domain.rule.HittingDistributionBuilder;
 import com.example.baseballorders.simulator.domain.rule.RunnerAdvanceProbabilitiesBuilder;
 import com.example.baseballorders.simulator.domain.rule.SimulationRules;
@@ -30,19 +31,14 @@ import com.example.baseballorders.simulator.infrastructure.messaging.SqsSimulati
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.floci.testcontainers.FlociContainer;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -53,7 +49,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
- * 実物: backendのHTTPサーバー、Controller、Coordinator、H2、要求Publisher、結果SQS Listener、
+ * 実物: backendのHTTPサーバー、Controller、Coordinator、要求Publisher、結果SQS Listener、
  * WaitingResultRegistry、simulatorのSqsSimulationScheduler、LineUpMapper、SimulateGameUseCase、Floci SQS。
  * モック: AWS SQSをFlociに置換。
  * 担保する疎通: HTTP POST /simulations -> backend -> 要求SQS -> simulatorの受信・試合計算
@@ -69,21 +65,34 @@ class BackendSimulatorFlociIntegrationTest {
                     .walkProbability(0.05f)
                     .strikeoutProbabilityWhenNotOnBase(0.25f)
                     .build())
+            .shortDistanceHitting(HittingDistributionBuilder.hittingDistribution()
+                    .singleWeight(18)
+                    .doubleWeight(2)
+                    .tripleWeight(0)
+                    .homeRunWeight(0)
+                    .build())
             .middleDistanceHitting(HittingDistributionBuilder.hittingDistribution()
-                    .doubleDivisor(6)
-                    .tripleDivisor(6)
-                    .homeRunDivisor(6)
-                    .singleReductionDivisor(2)
+                    .singleWeight(13)
+                    .doubleWeight(3)
+                    .tripleWeight(1)
+                    .homeRunWeight(3)
                     .build())
             .longDistanceHitting(HittingDistributionBuilder.hittingDistribution()
-                    .doubleDivisor(8)
-                    .tripleDivisor(8)
-                    .homeRunDivisor(2)
-                    .singleReductionDivisor(1)
+                    .singleWeight(7)
+                    .doubleWeight(6)
+                    .tripleWeight(1)
+                    .homeRunWeight(6)
                     .build())
+            .highOnBaseHitting(HittingDistributionBuilder.hittingDistribution()
+                    .singleWeight(18)
+                    .doubleWeight(2)
+                    .tripleWeight(0)
+                    .homeRunWeight(0)
+                    .build())
+            .highOnBaseWalkProbability(0.1f)
             .standardSteal(StealAttemptRatesBuilder.stealAttemptRates()
-                    .toDoubleAttemptRate(0.2f)
-                    .toTripleAttemptRate(0.05f)
+                    .toDoubleAttemptRate(0.30f)
+                    .toTripleAttemptRate(0.10f)
                     .build())
             .eagerSteal(StealAttemptRatesBuilder.stealAttemptRates()
                     .toDoubleAttemptRate(0.3f)
@@ -94,45 +103,21 @@ class BackendSimulatorFlociIntegrationTest {
                     .fromSecondProbability(0.2f)
                     .fromThirdProbability(0.1f)
                     .build())
+            .stealSuccessRate(0.70f)
+            .buntProbabilities(BuntProbabilitiesBuilder.buntProbabilities()
+                    .advancingSuccessRate(0.81f)
+                    .squeezeSuccessRate(0.45f)
+                    .squeezeChallengeRate(0.25f)
+                    .build())
             .build();
 
     private static final BehaviorStrategies STRATEGIES = new BehaviorStrategies(SIMULATION_RULES);
 
     private static final SimulationPitcherProperties PITCHER_PROPERTIES =
-            new SimulationPitcherProperties(new Multipliers(1.0f, 1.0f, 1.0f));
-
-
-    private static HttpClient authenticatedClient(int port) throws Exception {
-        var client =
-                HttpClient.newBuilder()
-                        .cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ALL))
-                        .followRedirects(HttpClient.Redirect.NEVER)
-                        .build();
-        var loginPage =
-                client.send(
-                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
-                                .GET()
-                                .build(),
-                        HttpResponse.BodyHandlers.ofString());
-        var csrfMatcher =
-                Pattern.compile("name=\"_csrf\" value=\"([^\"]+)\"").matcher(loginPage.body());
-        assertTrue(csrfMatcher.find(), "ログインページはCSRFトークンを返す");
-        var form =
-                "userId=test&password=password&_csrf="
-                        + URLEncoder.encode(csrfMatcher.group(1), StandardCharsets.UTF_8);
-        var login =
-                client.send(
-                        HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/login"))
-                                .header("Content-Type", "application/x-www-form-urlencoded")
-                                .POST(HttpRequest.BodyPublishers.ofString(form))
-                                .build(),
-                        HttpResponse.BodyHandlers.discarding());
-        assertEquals(302, login.statusCode(), "テスト用ローカルアカウントでログインする");
-        return client;
-    }
+            new SimulationPitcherProperties(new Multipliers(1.0f));
 
     /**
-     * 実物: backend HTTPサーバー・Controller・Coordinator・H2・SQS Publisher/Listener、
+     * 実物: backend HTTPサーバー・Controller・Coordinator・SQS Publisher/Listener、
      * simulatorのLineUpMapper・SimulateGameUseCase・SqsSimulationScheduler、Floci SQS。
      * モック: AWS SQSをFlociに置換。
      * 担保する疎通: HTTP POST -> 要求SQS -> 実試合 -> 結果SQS -> backend Listener -> HTTP応答。
@@ -145,7 +130,7 @@ class BackendSimulatorFlociIntegrationTest {
     }
 
     /**
-     * 実物: backend HTTPサーバー・Coordinator・H2・SQS Publisher/Listener、simulatorの
+     * 実物: backend HTTPサーバー・Coordinator・SQS Publisher/Listener、simulatorの
      * LineUpMapper・SqsSimulationSchedulerとJSONシリアライザ、Floci SQS。
      * モック: AWS SQSをFlociに置換。乱数を使うSimulateGameUseCaseのみ固定統計を返すfakeに置換。
      * 担保する疎通: HTTP POST -> 要求SQS -> simulator結果マッピング・JSON -> 結果SQS
@@ -215,11 +200,9 @@ class BackendSimulatorFlociIntegrationTest {
                                 "--spring.cloud.aws.credentials.access-key=" + floci.getAccessKey(),
                                 "--spring.cloud.aws.credentials.secret-key=" + floci.getSecretKey(),
                                 "--spring.cloud.aws.sqs.endpoint=" + floci.getEndpoint(),
-                                "--spring.datasource.url=jdbc:h2:mem:" + suffix,
                                 "--simulation.sqs.request-queue-name=" + requestQueue,
                                 "--simulation.sqs.result-queue-name=" + resultQueue);
-                        var http = authenticatedClient(
-                                ((WebServerApplicationContext) backend).getWebServer().getPort())) {
+                        var http = HttpClient.newHttpClient()) {
                     var port = ((WebServerApplicationContext) backend).getWebServer().getPort();
                     var registry = backend.getBean(WaitingResultRegistry.class);
                     var mapper = new ObjectMapper();
@@ -236,15 +219,15 @@ class BackendSimulatorFlociIntegrationTest {
                             .timeout(Duration.ofSeconds(30))
                             .header("Content-Type", "application/json")
                             .POST(HttpRequest.BodyPublishers.ofString("""
-                                    [{"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false},
-                                     {"hit_average":0.300,"sluggish":0.400,"bunt_success_rate":0.700,"steal_success_rate":0.700,"bunt_enabled":false,"steal_enabled":false}]
+                                    [{"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false},
+                                     {"hit_average":0.300,"bunt_enabled":false,"steal_enabled":false}]
                                     """))
                             .build();
 

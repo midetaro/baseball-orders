@@ -15,44 +15,28 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-/**
- * 長距離打者の確率仕様。
- *
- * <p>出塁率 0.400 / 長打率 0.550 の基準打者での乱数区間は次のとおり。長打分 0.150 を本塁打へ 1/2、二塁打・三塁打へ 1/8 ずつ配分し、単打を中距離打者より削る。
- *
- * <pre>
- * [0.0000000, 0.0500000) 四球
- * [0.0500000, 0.2913793) 単打
- * [0.2913793, 0.3094828) 二塁打
- * [0.3094828, 0.3275862) 三塁打
- * [0.3275862, 0.4000000) 本塁打
- * [0.4000000, 0.5500000) 三振
- * [0.5500000, 1.0000000] 凡退
- * </pre>
- *
- * <p>中距離打者との違いは本塁打区間が広く単打区間が狭いことにある。境界値でその差を固定する。
- */
+/** 四球を除いた打席に対する打率と、設定された長打配分の確率仕様。 */
 class LongDistanceHittingStrategyTest {
 
-    private static final float ON_BASE_PERCENTAGE = 0.400f;
-    private static final float SLUGGING = 0.550f;
+    private static final float BATTING_AVERAGE = 0.400f;
 
     static Stream<Arguments> battingBoundaries() {
         return Stream.of(
-                arguments("0.0000000は四球区間の下端", 0.0f, BattingResult.WALK),
-                arguments("0.049999997は四球区間の直前", 0.049999997f, BattingResult.WALK),
-                arguments("0.0500000は単打区間の下端", 0.05f, BattingResult.HIT_SINGLE),
-                arguments("0.29137927は単打区間の直前", 0.29137927f, BattingResult.HIT_SINGLE),
-                arguments("0.2913793は二塁打区間の下端", 0.2913793f, BattingResult.HIT_DOUBLE),
-                arguments("0.30948272は二塁打区間の直前", 0.30948272f, BattingResult.HIT_DOUBLE),
-                arguments("0.30948275は三塁打区間の下端", 0.30948275f, BattingResult.HIT_TRIPLE),
-                arguments("0.32758617は三塁打区間の直前", 0.32758617f, BattingResult.HIT_TRIPLE),
-                arguments("0.3275862は本塁打区間の下端", 0.3275862f, BattingResult.HIT_HOMER),
-                arguments("0.39999998は本塁打区間の直前", 0.39999998f, BattingResult.HIT_HOMER),
-                arguments("0.4000000は三振区間の下端で出塁率と等しい", 0.4f, BattingResult.STRIKEOUT),
-                arguments("0.54999995は三振区間の直前", 0.54999995f, BattingResult.STRIKEOUT),
-                arguments("0.5500000は凡退区間の下端", 0.55f, BattingResult.BATTED_OUT),
-                arguments("1.0000000は凡退区間の上端", 1.0f, BattingResult.BATTED_OUT));
+                arguments("乱数0は四球", 0.0f, BattingResult.WALK),
+                arguments("0.05の直前", Math.nextDown(0.05f), BattingResult.WALK),
+                arguments("0.05と等しい境界", 0.05f, BattingResult.HIT_SINGLE),
+                // 安打確率 0.38 を 7:6:1:6 で配分し、単打 0.183、二塁打 0.297、三塁打 0.316 まで。
+                arguments("単打上限の直前", 0.1829f, BattingResult.HIT_SINGLE),
+                arguments("単打上限の直後", 0.1831f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直前", 0.2969f, BattingResult.HIT_DOUBLE),
+                arguments("二塁打上限の直後", 0.2971f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直前", 0.3159f, BattingResult.HIT_TRIPLE),
+                arguments("三塁打上限の直後", 0.3161f, BattingResult.HIT_HOMER),
+                arguments("0.43の直前", Math.nextDown(0.43f), BattingResult.HIT_HOMER),
+                arguments("0.43と等しい境界", 0.43f, BattingResult.STRIKEOUT),
+                arguments("0.5725の直前", Math.nextDown(0.5725f), BattingResult.STRIKEOUT),
+                arguments("0.5725と等しい境界", 0.5725f, BattingResult.BATTED_OUT),
+                arguments("乱数1は凡退", 1.0f, BattingResult.BATTED_OUT));
     }
 
     @DisplayName("長距離打者は乱数区間の境界どおりに打席結果を決定し、乱数を1個だけ消費する")
@@ -69,7 +53,7 @@ class LongDistanceHittingStrategyTest {
         // when
         BattingResult result;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            result = sut.batting(ON_BASE_PERCENTAGE, SLUGGING);
+            result = sut.batting(BATTING_AVERAGE);
 
             // then
             assertAll(
@@ -83,13 +67,13 @@ class LongDistanceHittingStrategyTest {
     static Stream<Arguments> distanceComparisons() {
         return Stream.of(
                 arguments(
-                        "0.30は長距離で二塁打・中距離で単打",
-                        0.30f,
+                        "0.25は長距離で二塁打・中距離で単打",
+                        0.25f,
                         BattingResult.HIT_DOUBLE,
                         BattingResult.HIT_SINGLE),
                 arguments(
-                        "0.34は長距離で本塁打・中距離で二塁打",
-                        0.34f,
+                        "0.33は長距離で本塁打・中距離で二塁打",
+                        0.33f,
                         BattingResult.HIT_HOMER,
                         BattingResult.HIT_DOUBLE),
                 arguments(
@@ -120,12 +104,12 @@ class LongDistanceHittingStrategyTest {
         // when
         BattingResult longResult;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            longResult = sut.batting(ON_BASE_PERCENTAGE, SLUGGING);
+            longResult = sut.batting(BATTING_AVERAGE);
             scriptedRandom.assertFullyConsumed();
         }
         BattingResult middleResult;
         try (ScriptedRandom scriptedRandom = ScriptedRandom.of(random)) {
-            middleResult = middleDistance.batting(ON_BASE_PERCENTAGE, SLUGGING);
+            middleResult = middleDistance.batting(BATTING_AVERAGE);
             scriptedRandom.assertFullyConsumed();
         }
 
@@ -139,21 +123,21 @@ class LongDistanceHittingStrategyTest {
     static Stream<Arguments> configuredDistributions() {
         return Stream.of(
                 arguments(
-                        "既定の配分では0.3500000は本塁打",
+                        "既定の配分では0.3800000は本塁打",
                         SimulationRulesTestData.standard().longDistanceHitting(),
                         BattingResult.HIT_HOMER),
                 arguments(
-                        "本塁打除数を8にすると0.3500000は二塁打",
+                        "本塁打の重みを0にすると0.3800000は二塁打",
                         HittingDistributionBuilder.hittingDistribution()
-                                .doubleDivisor(8)
-                                .tripleDivisor(8)
-                                .homeRunDivisor(8)
-                                .singleReductionDivisor(1)
+                                .singleWeight(7)
+                                .doubleWeight(6)
+                                .tripleWeight(1)
+                                .homeRunWeight(0)
                                 .build(),
                         BattingResult.HIT_DOUBLE));
     }
 
-    @DisplayName("長距離打者の長打配分は設定された除数で決まる")
+    @DisplayName("長距離打者の長打配分は設定された重みで決まる")
     @ParameterizedTest(name = "{0}")
     @MethodSource("configuredDistributions")
     void usesConfiguredHittingDistribution(
@@ -165,8 +149,8 @@ class LongDistanceHittingStrategyTest {
 
         // when
         BattingResult result;
-        try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.35f)) {
-            result = sut.batting(ON_BASE_PERCENTAGE, SLUGGING);
+        try (ScriptedRandom scriptedRandom = ScriptedRandom.of(0.38f)) {
+            result = sut.batting(BATTING_AVERAGE);
 
             // then
             assertAll(

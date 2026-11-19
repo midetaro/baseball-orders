@@ -3,7 +3,7 @@
 This directory manages the AWS resources used to run `baseball-orders`: the
 low-cost deployment (no NAT Gateway) described in
 [docs/aws-deployment-low-cost.md](../../docs/aws-deployment-low-cost.md). It
-applies only when Google SSO and RDBMS persistence are both unused, per that
+applies only when the backend has no login and no RDBMS persistence, per that
 document's applicability conditions. The infrastructure is declared directly
 in native Terraform HCL.
 
@@ -30,9 +30,9 @@ in native Terraform HCL.
   `ApproximateNumberOfMessagesVisible` on `simulation-request`
 - Queue URL/ARN, IAM policy ARN, and ECR repository URL outputs
 
-Google SSO wiring (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` via SSM Parameter
-Store) and `rds.tf` are intentionally not implemented here, per the low-cost
-document's applicability conditions.
+`rds.tf` is intentionally not implemented here, per the low-cost document's
+applicability conditions. The ALB health check uses `GET /`, which the backend
+serves without login.
 
 The default queue names match the names currently used by the backend Java
 application. Override `request_queue_name` and `result_queue_name` only when the

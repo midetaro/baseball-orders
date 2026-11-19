@@ -2,6 +2,7 @@ plugins {
     id 'java-library'
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
+    id 'com.github.node-gradle.node' version '7.1.0'
 }
 
 dependencies {
@@ -10,14 +11,11 @@ dependencies {
     implementation project(':messaging-contract')
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-flyway'
-    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-    implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.0'
-
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     runtimeOnly 'com.h2database:h2'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    runtimeOnly 'com.h2database:h2'
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.0'
 
     compileOnly 'org.projectlombok:lombok:1.18.42'
     annotationProcessor 'org.projectlombok:lombok:1.18.42'
@@ -25,6 +23,46 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:6.0.1'
     testImplementation 'com.tngtech.archunit:archunit:1.4.2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:6.0.1'
+}
+
+// Thymeleaf画面のスクリプトはTypeScriptで書き、tscで出力したJSを静的リソース（/js/*.js）として配信する。
+node {
+    download = true
+    version = '24.21.0'
+    npmInstallCommand = 'ci'
+}
+
+def typeScriptOutput = layout.buildDirectory.dir('generated/typescript')
+
+def compileTypeScript = tasks.register('compileTypeScript', com.github.gradle.node.npm.task.NpmTask) {
+    group = 'build'
+    description = 'Compiles the Thymeleaf page scripts from TypeScript to JavaScript.'
+    dependsOn tasks.named('npmInstall')
+    args = ['run', 'build']
+    inputs.dir('src/main/typescript')
+    inputs.files('tsconfig.json', 'package.json', 'package-lock.json')
+    outputs.dir(typeScriptOutput)
+    doFirst {
+        delete typeScriptOutput
+    }
+}
+
+tasks.named('processResources') {
+    from(compileTypeScript)
+}
+
+def testTypeScript = tasks.register('testTypeScript', com.github.gradle.node.npm.task.NpmTask) {
+    group = 'verification'
+    description = 'Runs the Node tests for the Thymeleaf templates, styles, and page scripts.'
+    dependsOn tasks.named('npmInstall')
+    args = ['test']
+    inputs.dir('src/main/typescript')
+    inputs.dir('src/main/resources')
+    inputs.dir('src/test/js')
+    inputs.files('package.json', 'package-lock.json')
+}
+
+tasks.named('check') {
+    dependsOn testTypeScript
 }

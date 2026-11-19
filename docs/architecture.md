@@ -88,8 +88,8 @@ sequenceDiagram
     participant Listener as SimulationResultListener
     participant Registry as WaitingResultRegistry
 
-    Browser->>API: POST /simulations (PlayerInputRequest x9)
-    API->>Coordinator: simulate(PlayerData x9)
+    Browser->>API: POST /simulations or /simulations/single-game (PlayerInputRequest x9)
+    API->>Coordinator: simulate(PlayerData x9, SimulationMode)
     Coordinator->>Registry: register(simulationId)
     Coordinator->>Publisher: publish(SimulationRequest)
     Publisher->>RequestQ: SimulationRequestMessage
@@ -97,8 +97,8 @@ sequenceDiagram
     RequestQ-->>Scheduler: SimulationRequestMessage body
     Scheduler->>Mapper: map(players)
     Mapper-->>Scheduler: LineUpEntity
-    Scheduler->>UseCase: invoke(lineup)
-    loop configured game count
+    Scheduler->>UseCase: invoke(lineup, SimulationRunMode)
+    loop configured game count (LARGE_SCALE_RUN) or once (SINGLE_GAME_RUN)
         UseCase->>Game: construct and nextAtBat until game over
     end
     UseCase-->>Scheduler: application SimulationResult
@@ -111,8 +111,43 @@ sequenceDiagram
     API-->>Browser: synchronous HTTP response
 ```
 
-The page itself is served by `SimulationPageController` and
-`templates/simulation.html`; its browser script calls the HTTP API above. Spring
+The pages are served by `SimulationPageController`: the default `/` renders
+`templates/batting-order.html`, where the user picks one of three teams whose
+default lineups (hit average, personality, forced steal/bunt) come from the
+backend H2 database (`schema.sql`/`data.sql`, read by
+`infrastructure/persistence/JdbcDefaultLineupRepository` through the
+`DefaultLineupRepository` port and `DefaultLineupQuery`), reorders batters by
+drag (or arrow keys), and changes only non-forced bunt and steal and a
+browser-only memo; it reuses `typescript/simulation/` for the large-scale run and
+results. Navigation between screens happens only through the shared left menu
+(`templates/fragments/site-menu.html`, `static/css/site-menu.css`,
+`typescript/site-menu/site-menu.ts`), closed by default, which every screen includes with
+its own route as the current page; screens carry no other cross-screen links. `/large-scale` renders
+`templates/simulation.html` (`typescript/simulation/`, which posts to
+`/simulations`), and `/single-game` renders `templates/single-game.html`
+(`typescript/single-game/`, which posts to `/simulations/single-game` and
+animates the returned `transitions`). Both pages use
+`typescript/lineup/lineup-form.ts` (`LineupForm`), which owns the shared lineup
+state, input validation, tab switching, bulk toggles, and the POST request; each
+page only passes its messages, endpoint, and result renderer to it.
+`#order[data-lineup-mode="reorder"]` switches the shared form to the
+drag-and-drop reorder mode. Page scripts are written in TypeScript under
+`infrastructure/src/main/typescript` (paths above are relative to
+`infrastructure/src/main`) as ES modules grouped by feature: `lineup/`,
+`simulation/`, `single-game/`, `site-menu/`, and `shared/` export functions and
+classes without touching the page on import, and each template loads exactly one
+entry module, `pages/<template>.ts`, that wires them to its DOM. The
+`compileTypeScript` Gradle task runs `tsc` with a Gradle-downloaded Node and
+serves the output as `/js/**/*.js` (imports written as `.ts` are rewritten to
+`.js`), and `testTypeScript` (part of `check`) runs the Node tests in
+`src/test/js`: template and CSS checks at the top level, and module behavior
+tests under `src/test/js/scripts`, which import the `.ts` sources directly and
+use jsdom for the DOM.
+`SimulationGuidePageController` serves the
+static `/simulation-guide` page. `SimulationMode` in `messaging-contract` selects
+the run mode on the wire; a missing mode means `LARGE_SCALE_RUN`. In
+`SINGLE_GAME_RUN`, the Simulator records one game's per-play transitions through
+`SingleGameTransitionObserver` and `GameTransitionRecorder`. Spring
 composition starts in `BackendApplication` / `InfrastructureConfiguration` and
 `SimulatorApplication` / `SimulationInfrastructureConfiguration`.
 
@@ -123,13 +158,18 @@ implementations after the listed entry points identify them.
 
 | Change intent | Start with production code | Focused tests | Stop boundary |
 | --- | --- | --- | --- |
-| Simulation page, form, or result rendering | [SimulationPageController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageController.java), [simulation.html](../apps/backend/infrastructure/src/main/resources/templates/simulation.html) | [SimulationPageControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageControllerTest.java), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java), [browser test](../apps/backend/infrastructure/src/test/js/simulation.test.mjs) | Do not inspect Simulator rules unless the displayed contract changes. |
+| Large-scale simulation page, form, or result rendering | [SimulationPageController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageController.java), [simulation.html](../apps/backend/infrastructure/src/main/resources/templates/simulation.html) | [SimulationPageControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageControllerTest.java), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java), [browser test](../apps/backend/infrastructure/src/test/js/simulation.test.mjs) | Do not inspect Simulator rules unless the displayed contract changes. |
+| Default batting-order reorder page | [SimulationPageController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageController.java), [batting-order.html](../apps/backend/infrastructure/src/main/resources/templates/batting-order.html), [lineup-form.ts](../apps/backend/infrastructure/src/main/typescript/lineup/lineup-form.ts), [drag-reorder.ts](../apps/backend/infrastructure/src/main/typescript/lineup/drag-reorder.ts), [batting-order.css](../apps/backend/infrastructure/src/main/resources/static/css/batting-order.css) | [SimulationPageControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageControllerTest.java), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java), [browser test](../apps/backend/infrastructure/src/test/js/batting-order.test.mjs) | Results reuse the large-scale renderer in `simulation/`; do not inspect Simulator rules. |
+| Team default lineups (H2) | [data.sql](../apps/backend/infrastructure/src/main/resources/data.sql), [schema.sql](../apps/backend/infrastructure/src/main/resources/schema.sql), [JdbcDefaultLineupRepository](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/persistence/JdbcDefaultLineupRepository.java), [DefaultLineupQuery](../apps/backend/application/src/main/java/com/example/baseballorders/backend/application/DefaultLineupQuery.java) | [JdbcDefaultLineupRepositoryTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/persistence/JdbcDefaultLineupRepositoryTest.java), [DefaultLineupQueryTest](../apps/backend/application/src/test/java/com/example/baseballorders/backend/application/DefaultLineupQueryTest.java) | Only the reorder page (`/`) uses these defaults; `/large-scale` and `/single-game` keep the defaults in `lineup-form.ts`. |
+| Shared left menu (all screen navigation) | [site-menu.html](../apps/backend/infrastructure/src/main/resources/templates/fragments/site-menu.html), [site-menu.css](../apps/backend/infrastructure/src/main/resources/static/css/site-menu.css), [site-menu.ts](../apps/backend/infrastructure/src/main/typescript/site-menu/site-menu.ts) | [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java), [browser test](../apps/backend/infrastructure/src/test/js/site-menu.test.mjs), [behavior test](../apps/backend/infrastructure/src/test/js/scripts/site-menu/site-menu.test.mjs) | Add a screen by adding a menu item and including the fragment; do not add in-page links between screens. |
+| Single-game page, animation, or batting-order table | [SimulationPageController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageController.java), [single-game.html](../apps/backend/infrastructure/src/main/resources/templates/single-game.html), [single-game/](../apps/backend/infrastructure/src/main/typescript/single-game/), [single-game.css](../apps/backend/infrastructure/src/main/resources/static/css/single-game.css) | [SimulationPageControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageControllerTest.java), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java), [browser test](../apps/backend/infrastructure/src/test/js/single-game.test.mjs), [behavior tests](../apps/backend/infrastructure/src/test/js/scripts/single-game/) | Frame durations come from `baseball-orders.rendering.single-game.*`; inspect Simulator transitions only when the displayed transition contract changes. |
+| Lineup input shared by both pages (defaults, validation, tabs, bulk toggles, submit) | [lineup/](../apps/backend/infrastructure/src/main/typescript/lineup/) | [behavior tests](../apps/backend/infrastructure/src/test/js/scripts/lineup/), [simulation.test.mjs](../apps/backend/infrastructure/src/test/js/simulation.test.mjs), [single-game.test.mjs](../apps/backend/infrastructure/src/test/js/single-game.test.mjs), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java) | Keep page-specific messages, endpoints, and result rendering in `simulation/` and `single-game/`. |
 | HTTP request mapping, validation, or errors | [PlayerInputRequest](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/api/PlayerInputRequest.java), [SimulatorRequestController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/api/SimulatorRequestController.java), [SimulationErrorHandler](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/api/SimulationErrorHandler.java) | [SimulatorRequestControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/api/SimulatorRequestControllerTest.java), [SimulationErrorHandlerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/api/SimulationErrorHandlerTest.java) | Stop at `SimulationCoordinator` after confirming the application input. |
 | Backend request/result coordination | [SimulationCoordinator](../apps/backend/application/src/main/java/com/example/baseballorders/backend/application/SimulationCoordinator.java), [WaitingResultRegistry](../apps/backend/application/src/main/java/com/example/baseballorders/backend/application/WaitingResultRegistry.java), [publisher port](../apps/backend/application/src/main/java/com/example/baseballorders/backend/application/adapter/SimulatorMessagePublisher.java) | [SimulationCoordinatorTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/SimulationCoordinatorTest.java), [WaitingResultRegistryTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/WaitingResultRegistryTest.java), [HTTP integration test](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationResultHttpIntegrationTest.java) | Treat SQS clients and wire conversion as infrastructure. |
-| SQS wire contract | [SimulationRequestMessage](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationRequestMessage.java), [SimulationPlayerMessage](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationPlayerMessage.java), [SimulationResultMessage](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationResultMessage.java) | [contract test](../libs/messaging-contract/src/test/java/com/example/baseballorders/messaging/SimulationPlayerMessageTest.java) plus both applications' publisher, listener, and scheduler tests | Do not move application or domain models into the contract. |
+| SQS wire contract | [SimulationRequestMessage](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationRequestMessage.java), [SimulationPlayerMessage](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationPlayerMessage.java), [SimulationResultMessage](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationResultMessage.java), [SimulationMode](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationMode.java) | [contract test](../libs/messaging-contract/src/test/java/com/example/baseballorders/messaging/SimulationPlayerMessageTest.java) plus both applications' publisher, listener, and scheduler tests | Do not move application or domain models into the contract. |
 | Backend SQS send/receive mapping | [SqsSimulatorMessagePublisher](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/messaging/SqsSimulatorMessagePublisher.java), [SimulationResultListener](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/messaging/SimulationResultListener.java) | [SqsSimulatorMessagePublisherTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/SqsSimulatorMessagePublisherTest.java), [SimulationResultListenerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/SimulationResultListenerTest.java) | Stop at shared messages on the wire side and application/domain models on the inside. |
 | Simulator SQS polling and lineup mapping | [SqsSimulationScheduler](../apps/simulator/infrastructure/src/main/java/com/example/baseballorders/simulator/infrastructure/messaging/SqsSimulationScheduler.java), [LineUpMapper](../apps/simulator/infrastructure/src/main/java/com/example/baseballorders/simulator/infrastructure/messaging/LineUpMapper.java) | [SqsSimulationSchedulerTest](../apps/simulator/infrastructure/src/test/java/com/example/baseballorders/simulator/infrastructure/messaging/SqsSimulationSchedulerTest.java), [SQS integration test](../apps/simulator/infrastructure/src/test/java/com/example/baseballorders/simulator/infrastructure/messaging/SqsSimulationSchedulerIntegrationTest.java), [LineUpMapperTest](../apps/simulator/infrastructure/src/test/java/com/example/baseballorders/simulator/infrastructure/messaging/LineUpMapperTest.java) | Stop after delegation to `SimulateGameUseCase`; business rules belong inward. |
-| Simulation count and game orchestration | [SimulateGameUseCase](../apps/simulator/application/src/main/java/com/example/baseballorders/simulator/application/usecase/SimulateGameUseCase.java), [application result](../apps/simulator/application/src/main/java/com/example/baseballorders/simulator/application/contract/SimulationResult.java) | [SimulateGameUseCaseTest](../apps/simulator/application/src/test/java/com/example/baseballorders/simulator/application/SimulateGameUseCaseTest.java) | Read domain internals only for a changed game or aggregation rule. |
+| Simulation count, run mode, and game orchestration | [SimulateGameUseCase](../apps/simulator/application/src/main/java/com/example/baseballorders/simulator/application/usecase/SimulateGameUseCase.java), [application result](../apps/simulator/application/src/main/java/com/example/baseballorders/simulator/application/contract/SimulationResult.java) | [SimulateGameUseCaseTest](../apps/simulator/application/src/test/java/com/example/baseballorders/simulator/application/SimulateGameUseCaseTest.java), [SimulateGameUseCaseSingleGameScenarioTest](../apps/simulator/application/src/test/java/com/example/baseballorders/simulator/application/SimulateGameUseCaseSingleGameScenarioTest.java) | Read domain internals only for a changed game or aggregation rule. |
 | At-bat order, innings, outs, and base transitions | [game package](../apps/simulator/domain/src/main/java/com/example/baseballorders/simulator/domain/game) starting with `GameBattingContext`, `AtBatProcessor`, `AbstractBasesState`, and `BaseStateFactory` | [game tests](../apps/simulator/domain/src/test/java/com/example/baseballorders/simulator/domain/game) starting with `GameBattingContextTest`, `GameStateLifecycleTest`, and `BasesStateTransitionTest` | Read only concrete base states involved in the changed transition. |
 | Batting, bunt, steal, or personality behavior | [BatterEntity](../apps/simulator/domain/src/main/java/com/example/baseballorders/simulator/domain/player/BatterEntity.java), [BehaviorStrategies](../apps/simulator/domain/src/main/java/com/example/baseballorders/simulator/domain/player/strategy/BehaviorStrategies.java), then the relevant sealed strategy interface | [BatterEntityTest](../apps/simulator/domain/src/test/java/com/example/baseballorders/simulator/domain/player/BatterEntityTest.java) and the matching [strategy tests](../apps/simulator/domain/src/test/java/com/example/baseballorders/simulator/domain/player/strategy) | Do not inspect unrelated strategy families. |
 | Per-game or aggregate statistics | [statistics package](../apps/simulator/domain/src/main/java/com/example/baseballorders/simulator/domain/statistics) starting with `GameStatisticsRecorder`, `ScoreAccumulator`, `GameStatistics`, and `ScoreStatistics` | [GameStatisticsRecorderTest](../apps/simulator/domain/src/test/java/com/example/baseballorders/simulator/domain/statistics/GameStatisticsRecorderTest.java), [ScoreAccumulatorTest](../apps/simulator/domain/src/test/java/com/example/baseballorders/simulator/domain/statistics/ScoreAccumulatorTest.java), plus the caller test for any exposed field | Follow a new field outward only through the application result and wire/backend mappers. |
@@ -153,6 +193,11 @@ implementations after the listed entry points identify them.
 - `GameStatisticsRecorder` observes plays within one game. `ScoreAccumulator`
   receives completed games, accumulates all counters in one completion callback,
   and produces aggregate `ScoreStatistics`.
+- `domain.rule` holds the tunable probabilities as value objects without
+  defaults. `SimulationRuleProperties` binds `simulation.rule.*` and
+  `SimulationPitcherProperties` binds `simulation.pitcher.*` in the Simulator
+  infrastructure; they reach `BehaviorStrategies`, `BaseStateFactory`, and
+  `LineUpMapper` through constructors.
 
 ## Keeping the map current
 

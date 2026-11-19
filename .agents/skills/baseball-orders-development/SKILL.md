@@ -34,6 +34,10 @@ Keep queue names configurable and use unique queues in integration tests. Preser
 
 Run `scripts/verify.sh <backend|simulator|all|terraform>`. Report conditional integration tests as skipped unless their endpoint environment variable was present. Finish with `git diff --check` and review the complete diff for accidental generated or IDE files.
 
+Before opening or updating a pull request, run `scripts/session-token-usage.sh <codex|claude>`
+and record its `total_tokens` in the pull request title and its full output in a
+`## Token usage` section of the description, as the root `AGENTS.md` requires.
+
 When this skill is created or changed, run `scripts/validate-skill.sh`. It provisions
 PyYAML in an isolated temporary virtual environment when necessary and runs the
 official Codex `skill-creator/scripts/quick_validate.py`; do not substitute a

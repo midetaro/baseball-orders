@@ -19,26 +19,18 @@ public final class BatterTestDataFactory {
 
     public static List<BatterEntity> mock() {
         return List.of(
-                batter("batter1", 0.4f, 0.4f, eagerStealStrategy),
-                batter("batter2", 0.4f, 0.2f, eagerStealStrategy),
-                batter("batter3", 0.25f, 0.5f, eagerStealStrategy),
-                batter("batter1", 0.2f, 0.7f, nowayStealBehavior),
-                batter("batter2", 0.4f, 0.5f, eagerStealStrategy),
-                batter("batter3", 0.3f, 0.3f, eagerStealStrategy),
-                batter("batter1", 0.3f, 0.6f, eagerStealStrategy),
-                batter("batter2", 0.3f, 0.4f, eagerStealStrategy),
-                batter("batter3", 0.3f, 0.5f, eagerStealStrategy));
+                batter("batter1", 0.4f, eagerStealStrategy),
+                batter("batter2", 0.4f, eagerStealStrategy),
+                batter("batter3", 0.25f, eagerStealStrategy),
+                batter("batter1", 0.2f, nowayStealBehavior),
+                batter("batter2", 0.4f, eagerStealStrategy),
+                batter("batter3", 0.3f, eagerStealStrategy),
+                batter("batter1", 0.3f, eagerStealStrategy),
+                batter("batter2", 0.3f, eagerStealStrategy),
+                batter("batter3", 0.3f, eagerStealStrategy));
     }
 
-    private static BatterEntity batter(
-            String name, float hitAverage, float slugging, StealStrategy stealStrategy) {
-        return new BatterEntity(
-                hitAverage,
-                slugging,
-                0.7f,
-                0.8f,
-                hittingStrategy,
-                stealStrategy,
-                standardBuntStrategy);
+    private static BatterEntity batter(String name, float hitAverage, StealStrategy stealStrategy) {
+        return new BatterEntity(hitAverage, hittingStrategy, stealStrategy, standardBuntStrategy);
     }
 }

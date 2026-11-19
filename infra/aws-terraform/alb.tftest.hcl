@@ -162,8 +162,8 @@ run "alb_and_certificate" {
   }
 
   assert {
-    condition     = aws_lb_target_group.backend.health_check[0].path == "/login"
-    error_message = "The health check must use GET /login: the one path permitAll's in SecurityConfiguration (docs/aws-deployment.md)."
+    condition     = aws_lb_target_group.backend.health_check[0].path == "/"
+    error_message = "The health check must use GET /: the top page served without login (docs/aws-deployment.md)."
   }
 
   assert {
@@ -194,5 +194,56 @@ run "alb_and_certificate" {
   assert {
     condition     = aws_route53_record.app.zone_id == "Z1234567890ABC" && aws_route53_record.app.name == "orders.example.com"
     error_message = "A Route 53 alias record for the domain must point at the ALB."
+  }
+}
+
+run "backend_target_group_name_within_aws_limit" {
+  command = plan
+
+  variables {
+    environment       = "production"
+    domain_name       = "orders.example.com"
+    route53_zone_name = "example.com"
+  }
+
+  override_data {
+    target = data.aws_route53_zone.main
+    values = {
+      zone_id = "Z1234567890ABC"
+      name    = "example.com"
+    }
+  }
+
+  override_data {
+    target = data.aws_availability_zones.available
+    values = {
+      names = ["ap-northeast-1a", "ap-northeast-1c"]
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.ecs_tasks_assume_role
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"}}]}"
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.backend_sqs
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.simulator_sqs
+    values = {
+      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
+    }
+  }
+
+  assert {
+    condition     = length(aws_lb_target_group.backend.name) <= 32
+    error_message = "aws_lb_target_group.backend.name must not exceed the AWS ALB target group 32 character limit."
   }
 }

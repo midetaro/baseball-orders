@@ -346,9 +346,6 @@ class BasesStateTransitionTest {
         var batter =
                 new BatterEntity(
                         0.0f,
-                        0.0f,
-                        1.0f,
-                        0.0f,
                         SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                         SimulationRulesTestData.strategies().noSteal(),
                         SimulationRulesTestData.strategies().standardBunt());
@@ -357,7 +354,11 @@ class BasesStateTransitionTest {
                         context(mask, outCount.ordinal()).inningStateContext().currentBaseState();
 
         // when
-        var result = state.bunt(batter);
+        BuntResult result;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.0f);
+            result = state.bunt(batter);
+        }
 
         // then
         assertAll(

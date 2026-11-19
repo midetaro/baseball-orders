@@ -36,8 +36,8 @@ Inherit the repository rules from `../../AGENTS.md`.
 - Put configurable operational numbers such as game count and SQS polling limits
   in `application-local.yml`, `application-dev.yml`, and `application-prod.yml`.
   Keep defaults in `application.yml` for launches without an active profile.
-- Tunable probability values (walk and strikeout rates, long-hit distribution
-  divisors, steal attempt rates, and runner advance probabilities) also live in
+- Tunable probability values (walk and strikeout rates, hit-type distribution
+  weights, steal attempt rates, and runner advance probabilities) also live in
   those four files under `simulation.rule`, and the pitcher personality
   multipliers under `simulation.pitcher`. `domain` holds no default for them:
   `SimulationRuleProperties` binds them, converts them to the value objects in

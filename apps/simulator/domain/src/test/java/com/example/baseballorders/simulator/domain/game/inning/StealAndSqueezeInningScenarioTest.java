@@ -73,6 +73,7 @@ class StealAndSqueezeInningScenarioTest {
                         Draws.SINGLE, // 1番: 走者なし -> 単打(一塁)
                         Draws.STEAL_TO_SECOND_SUCCESS, // 2番打席前: 一塁走者が二盗成功(二塁)
                         Draws.BUNT_SUCCESS, // 2番: 二塁 -> 進塁バント成功(1死、三塁)
+                        Draws.SQUEEZE_CHALLENGE_TRY, // 3番: 一死三塁 -> スクイズを企図する
                         Draws.BUNT_SUCCESS, // 3番: 一死三塁 -> スクイズ成功(2死、1得点)
                         Draws.STRIKEOUT // 4番: 走者なし -> 三振(3死、イニング完了)
                         )) {
@@ -87,7 +88,11 @@ class StealAndSqueezeInningScenarioTest {
                     () -> assertEquals(2, sut.getInning(), "2回へ進むこと"),
                     () -> assertEquals(expectedStatistics(), statistics),
                     () -> StatisticsAssertions.assertConsistent(statistics),
-                    () -> assertEquals(5, random.consumedCount(), "乱数は打撃2個・盗塁1個・バント2個であること"),
+                    () ->
+                            assertEquals(
+                                    6,
+                                    random.consumedCount(),
+                                    "乱数は打撃2個・盗塁1個・進塁バント1個・スクイズ企図1個・スクイズ成否1個であること"),
                     () -> random.assertFullyConsumed());
         }
     }

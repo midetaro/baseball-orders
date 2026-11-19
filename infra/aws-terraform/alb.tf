@@ -52,7 +52,9 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "backend" {
-  name                 = "${local.name_prefix}-backend"
+  # AWS caps target group names at 32 characters; name_prefix can exceed that in longer
+  # environments (e.g. "production"), so truncate rather than let terraform plan fail.
+  name                 = substr("${local.name_prefix}-backend", 0, 32)
   port                 = 8080
   protocol             = "HTTP"
   vpc_id               = aws_vpc.main.id
@@ -60,7 +62,7 @@ resource "aws_lb_target_group" "backend" {
   deregistration_delay = 35
 
   health_check {
-    path                = "/login"
+    path                = "/"
     matcher             = "200"
     interval            = 30
     timeout             = 5

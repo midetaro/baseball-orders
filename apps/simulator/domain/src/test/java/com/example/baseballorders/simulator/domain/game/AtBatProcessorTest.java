@@ -44,11 +44,8 @@ class AtBatProcessorTest {
                         "満塁では先頭の三塁走者だけが生還する", first, second, third, 0.09f, first, second, null, 1));
     }
 
-    private static BatterEntity batter(float buntSuccessRate, BuntStrategy buntStrategy) {
+    private static BatterEntity batter(BuntStrategy buntStrategy) {
         return new BatterEntity(
-                0.0f,
-                0.0f,
-                buntSuccessRate,
                 0.0f,
                 SimulationRulesTestData.strategies().middleDistanceHittingStrategy(),
                 SimulationRulesTestData.strategies().noSteal(),
@@ -56,7 +53,7 @@ class AtBatProcessorTest {
     }
 
     private static BatterEntity runner() {
-        return batter(0.0f, SimulationRulesTestData.strategies().noBunt());
+        return batter(SimulationRulesTestData.strategies().noBunt());
     }
 
     @Test
@@ -94,11 +91,15 @@ class AtBatProcessorTest {
     @DisplayName("バント機会がなければバントせず打撃する")
     void swingsWithoutBuntOpportunity() {
         // given
-        var batter = batter(1.0f, SimulationRulesTestData.strategies().standardBunt());
+        var batter = batter(SimulationRulesTestData.strategies().standardBunt());
         var context = GameStateTestFixture.game(new LineUpEntity(List.of(batter)));
 
         // when
-        var completed = new AtBatProcessor().process(context.inningStateContext(), batter);
+        boolean completed;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.8f);
+            completed = new AtBatProcessor().process(context.inningStateContext(), batter);
+        }
 
         // then
         assertAll(
@@ -117,13 +118,17 @@ class AtBatProcessorTest {
     @DisplayName("無死でバントが成功すると走者を進めて打撃しない")
     void appliesSuccessfulBuntWithoutSwinging() {
         // given
-        var runner = batter(0.0f, SimulationRulesTestData.strategies().noBunt());
-        var batter = batter(1.0f, SimulationRulesTestData.strategies().standardBunt());
+        var runner = batter(SimulationRulesTestData.strategies().noBunt());
+        var batter = batter(SimulationRulesTestData.strategies().standardBunt());
         var context = GameStateTestFixture.game(new LineUpEntity(List.of(batter)));
         context.inningStateContext().currentBaseState().hitSingle(runner);
 
         // when
-        var completed = new AtBatProcessor().process(context.inningStateContext(), batter);
+        boolean completed;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.0f);
+            completed = new AtBatProcessor().process(context.inningStateContext(), batter);
+        }
 
         // then
         assertAll(
@@ -147,13 +152,16 @@ class AtBatProcessorTest {
     @DisplayName("一塁走者への成功バントを進塁バントとして記録する")
     void recordsSuccessfulAdvancingBunt() {
         // given
-        var runner = batter(0.0f, SimulationRulesTestData.strategies().noBunt());
-        var batter = batter(1.0f, SimulationRulesTestData.strategies().standardBunt());
+        var runner = batter(SimulationRulesTestData.strategies().noBunt());
+        var batter = batter(SimulationRulesTestData.strategies().standardBunt());
         var context = GameStateTestFixture.game(new LineUpEntity(List.of(batter)));
         context.inningStateContext().currentBaseState().hitSingle(runner);
 
         // when
-        context.nextAtBat();
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.0f);
+            context.nextAtBat();
+        }
 
         // then
         assertAll(
@@ -166,13 +174,16 @@ class AtBatProcessorTest {
     @DisplayName("三塁走者への成功バントをスクイズとして記録する")
     void recordsSuccessfulSqueezeBunt() {
         // given
-        var runner = batter(0.0f, SimulationRulesTestData.strategies().noBunt());
-        var batter = batter(1.0f, SimulationRulesTestData.strategies().standardBunt());
+        var runner = batter(SimulationRulesTestData.strategies().noBunt());
+        var batter = batter(SimulationRulesTestData.strategies().standardBunt());
         var context = GameStateTestFixture.game(new LineUpEntity(List.of(batter)));
         context.inningStateContext().currentBaseState().hitTriple(runner);
 
         // when
-        context.nextAtBat();
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.0f);
+            context.nextAtBat();
+        }
 
         // then
         assertAll(
@@ -185,14 +196,18 @@ class AtBatProcessorTest {
     @DisplayName("一死で積極的なバントが成功すると二死になり走者を進める")
     void appliesEagerBuntWithOneOut() {
         // given
-        var runner = batter(0.0f, SimulationRulesTestData.strategies().noBunt());
-        var batter = batter(1.0f, SimulationRulesTestData.strategies().eagerBunt());
+        var runner = batter(SimulationRulesTestData.strategies().noBunt());
+        var batter = batter(SimulationRulesTestData.strategies().eagerBunt());
         var context = GameStateTestFixture.game(new LineUpEntity(List.of(batter)));
         context.inningStateContext().currentBaseState().out();
         context.inningStateContext().currentBaseState().hitSingle(runner);
 
         // when
-        var completed = new AtBatProcessor().process(context.inningStateContext(), batter);
+        boolean completed;
+        try (MockedStatic<RandomGenerator> randomGenerator = mockStatic(RandomGenerator.class)) {
+            randomGenerator.when(RandomGenerator::nextFloat).thenReturn(0.0f);
+            completed = new AtBatProcessor().process(context.inningStateContext(), batter);
+        }
 
         // then
         assertAll(
@@ -226,7 +241,7 @@ class AtBatProcessorTest {
             BatterEntity expectedThird,
             long expectedScore) {
         // given
-        var batter = batter(0.0f, SimulationRulesTestData.strategies().noBunt());
+        var batter = batter(SimulationRulesTestData.strategies().noBunt());
         var context = GameStateTestFixture.context(first, second, third, OutCount.NO_OUT);
 
         // when
@@ -267,7 +282,7 @@ class AtBatProcessorTest {
     @DisplayName("走者なしの凡退では進塁判定をしない")
     void doesNotRollForAdvancementWithoutRunner() {
         // given
-        var batter = batter(0.0f, SimulationRulesTestData.strategies().noBunt());
+        var batter = batter(SimulationRulesTestData.strategies().noBunt());
         var context = GameStateTestFixture.game(new LineUpEntity(List.of(batter)));
 
         // when
@@ -293,7 +308,7 @@ class AtBatProcessorTest {
     @DisplayName("三死目の凡退では走者の進塁判定をせずイニングを終了する")
     void doesNotAdvanceRunnerOnThirdOut() {
         // given
-        var batter = batter(0.0f, SimulationRulesTestData.strategies().noBunt());
+        var batter = batter(SimulationRulesTestData.strategies().noBunt());
         var context = GameStateTestFixture.context(runner(), null, null, OutCount.TWO_OUT);
 
         // when

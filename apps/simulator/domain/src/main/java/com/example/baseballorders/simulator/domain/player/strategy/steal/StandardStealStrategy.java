@@ -11,8 +11,10 @@ public final class StandardStealStrategy implements StealStrategy {
 
     private final StealAttemptRates attemptRates;
 
+    private final float successRate;
+
     @Override
-    public StealResult runToDouble(float successRate) {
+    public StealResult runToDouble() {
         float random = RandomGenerator.nextFloat();
         float tryAverage = attemptRates.toDoubleAttemptRate();
         float notTry = 1 - tryAverage;
@@ -28,7 +30,7 @@ public final class StandardStealStrategy implements StealStrategy {
     }
 
     @Override
-    public StealResult runToTriple(float successRate) {
+    public StealResult runToTriple() {
         float random = RandomGenerator.nextFloat();
         float tryAverage = attemptRates.toTripleAttemptRate();
         float notTry = 1 - tryAverage;

@@ -1,2 +1,0 @@
-ALTER TABLE users ALTER COLUMN username VARCHAR(255);
-ALTER TABLE users DROP COLUMN password_hash;

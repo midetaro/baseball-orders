@@ -38,8 +38,12 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
             com.example.baseballorders.backend.domain.PlayerPersonality personality) {
         return switch (personality) {
             case DEFAULT -> com.example.baseballorders.messaging.PlayerPersonality.DEFAULT;
+            case MIDDLE_DISTANCE ->
+                    com.example.baseballorders.messaging.PlayerPersonality.MIDDLE_DISTANCE;
             case EAGER_SLUGGISH ->
                     com.example.baseballorders.messaging.PlayerPersonality.EAGER_SLUGGISH;
+            case HIGH_ON_BASE ->
+                    com.example.baseballorders.messaging.PlayerPersonality.HIGH_ON_BASE;
             case EAGER_STEAL -> com.example.baseballorders.messaging.PlayerPersonality.EAGER_STEAL;
             case EAGER_BUNT -> com.example.baseballorders.messaging.PlayerPersonality.EAGER_BUNT;
         };
@@ -69,12 +73,7 @@ public final class SqsSimulatorMessagePublisher implements SimulatorMessagePubli
                                                                 .simulationPlayerMessage()
                                                                 .name(player.name())
                                                                 .hitAverage(player.hitAverage())
-                                                                .sluggish(player.sluggish())
-                                                                .buntSuccessRate(
-                                                                        player.buntSuccessRate())
                                                                 .buntEnabled(player.buntEnabled())
-                                                                .stealSuccessRate(
-                                                                        player.stealSuccessRate())
                                                                 .stealEnabled(player.stealEnabled())
                                                                 .personality(
                                                                         toMessagePersonality(

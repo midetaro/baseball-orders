@@ -1,6 +1,6 @@
 # Simulator domain class design
 
-`simulator` の domain 層は、野球のシミュレーション規則を外部 I/O から独立させたモデルです。この文書では、`domain.game`、`domain.player`、`domain.statistics` の3パッケージを単位に、主要クラスの責務と関係を説明します。
+`simulator` の domain 層は、野球のシミュレーション規則を外部 I/O から独立させたモデルです。この文書では、`domain.game`、`domain.player`、`domain.statistics` の3パッケージを単位に、主要クラスの責務と関係を説明します。調整可能な確率値は `domain.rule` の値オブジェクトとして表し、末尾の「[確率設定と投手補正](#domainrule-確率設定と投手補正)」で扱います。
 
 図では同じ役割の具象クラスを代表例へまとめています。矢印の `--|>` は継承またはインターフェース実装、`-->` は利用、`*--` は所有を表します。`domain.play` の enum は3パッケージ間で受け渡すプレー結果なので、関係を理解するために必要な箇所だけ掲載します。
 
@@ -210,10 +210,7 @@ classDiagram
         <<abstract>>
     }
     class BatterEntity {
-        -float onBasePercentage
-        -float sluggish
-        -float buntSuccessRate
-        -float stealSuccessRate
+        -float battingAverage
         -HittingStrategy hittingStrategy
         -StealStrategy stealStrategy
         -BuntStrategy buntStrategy
@@ -230,19 +227,20 @@ classDiagram
 
     class HittingStrategy {
         <<sealed interface>>
-        +batting(float onBasePercentage, float sluggish) BattingResult
+        +batting(float battingAverage) BattingResult
     }
     class MiddleDistanceHittingStrategy
     class OtherHittingStrategies {
         <<concrete strategies>>
         LongDistanceHittingStrategy
         ShortDistanceHittingStrategy
+        HighOnBaseHittingStrategy
     }
 
     class StealStrategy {
         <<sealed interface>>
-        +runToDouble(float successRate) StealResult
-        +runToTriple(float successRate) StealResult
+        +runToDouble() StealResult
+        +runToTriple() StealResult
     }
     class StandardStealStrategy
     class OtherStealStrategies {
@@ -253,7 +251,7 @@ classDiagram
 
     class BuntStrategy {
         <<sealed interface>>
-        +bunt(float successRate, OutCount outCount) BuntResult
+        +bunt(OutCount outCount, BuntType buntType) BuntResult
     }
     class StandardBuntStrategy
     class OtherBuntStrategies {
@@ -263,8 +261,11 @@ classDiagram
     }
 
     class BehaviorStrategies {
-        <<static factory>>
+        <<factory>>
+        -SimulationRules rules
         +middleDistanceHittingStrategy() HittingStrategy
+        +shortDistanceHittingStrategy() HittingStrategy
+        +highOnBaseHittingStrategy() HittingStrategy
         +standardSteal() StealStrategy
         +standardBunt() BuntStrategy
     }
@@ -294,13 +295,14 @@ classDiagram
 
 Strategy パターンの `Context` は `BatterEntity`、Strategy は `HittingStrategy`、`StealStrategy`、`BuntStrategy` の三つです。各インターフェースは sealed で実装候補を限定しています。
 
-- 打撃 Strategy は、出塁率と長打率を四球と4種類の安打へ配分します。四球は出塁率のうち5%まで、非出塁は三振25%と凡退75%に分けます。
-- 盗塁 Strategy は、二塁・三塁への挑戦頻度と成功判定を変えます。
-- バント Strategy は、アウト数に応じて試みるかどうかと成功判定を変えます。
+- 打撃 Strategy は、四球を打数に含めず、四球以外の打席で入力された打率を安打確率として使います。安打の4種類（単打・二塁打・三塁打・本塁打）への配分は、打撃 Strategy ごとの重み `simulation.rule.{short,middle,long}-distance-hitting.*-weight` と `simulation.rule.high-on-base-hitting.*-weight`（既定は単打マン 18:2:0:0、中距離 13:3:1:3、長距離 7:6:1:6、高出塁率 18:2:0:0）の比率で決めます。四球の割合（既定5%）と、非出塁のうち三振になる割合（既定25%、残りは凡退）は `simulation.rule.batting` の設定値です。高出塁率打者（`HighOnBaseHittingStrategy`）だけは打率を変えず、専用の安打配分を使い、四球の割合に `simulation.rule.high-on-base-batting.walk-probability`（既定10%）を使います。
+- 選手の性格と打撃 Strategy の対応は、`DEFAULT`（単打マン）→ `ShortDistanceHittingStrategy`、`MIDDLE_DISTANCE`（中距離砲）・`EAGER_STEAL`（盗塁重視）・`EAGER_BUNT`（バント職人）→ `MiddleDistanceHittingStrategy`、`EAGER_SLUGGISH`（長距離砲）→ `LongDistanceHittingStrategy`、`HIGH_ON_BASE`（高出塁率）→ `HighOnBaseHittingStrategy` です。画面で性格を追加する場合は、対応する `XxxStrategy` クラスを必ず作成します。
+- 盗塁 Strategy は、二塁・三塁への挑戦頻度を変えます。成功率（既定70%）は全選手共通の設定値です。
+- バント Strategy は、アウト数とバント種別（進塁バント／スクイズ）に応じて試みるかどうかを変えます。成功率（進塁81%・スクイズ45%）とスクイズを試みる確率（25%）は全選手共通の設定値です。
 
 たとえば消極的な走塁を表現するために呼び出し側へ `if (stealEnabled)` を追加する必要はありません。`NowayStealStrategy` が常に `NOT_TRY` を返すため、`BatterEntity` と試合進行は同じ呼び出し方を維持できます。この具象 Strategy は Null Object の考え方も兼ねています。
 
-`BehaviorStrategies` は具象クラス名を利用側へ露出せず Strategy を生成する静的ファクトリです。これは生成を一箇所へまとめる補助クラスであり、GoF の Factory Method ではありません。
+`BehaviorStrategies` は具象クラス名を利用側へ露出せず Strategy を生成するファクトリです。確率設定 `SimulationRules` をコンストラクタで受け取り、生成メソッドは引数を取りません。これは生成を一箇所へまとめる補助クラスであり、GoF の Factory Method ではありません。
 
 `BatterEntity.observedBy(...)` は能力値と Strategy を共有し、通知先だけを差し替えた新しい打者を返します。これにより、入力された `LineUpEntity` 自体を変更せず、試合ごとの統計記録先を結び付けられます。盗塁は二塁・三塁の各試行メソッドから盗塁先を通知し、バントは走者配置を知る具象 State が進塁バントまたはスクイズの種別を渡します。
 
@@ -317,6 +319,7 @@ classDiagram
         +onStealResult(StealResult result, StealTarget target)
     }
     class GameStatisticsRecorder {
+        -int hitCount
         -int homeRunCount
         -int buntCount
         -int stealCount
@@ -324,6 +327,10 @@ classDiagram
     }
     class GameStatistics {
         <<immutable record>>
+        +int hitCount
+        +int singleHitCount
+        +int doubleHitCount
+        +int tripleHitCount
         +int homeRunCount
         +int soloHomeRunCount
         +int twoRunHomeRunCount
@@ -359,6 +366,10 @@ classDiagram
         +int maximumScore
         +int gameCount
         +Map~Integer,Integer~ scoreDistribution
+        +int hitCount
+        +int singleHitCount
+        +int doubleHitCount
+        +int tripleHitCount
         +int homeRunCount
         +int soloHomeRunCount
         +int twoRunHomeRunCount
@@ -396,13 +407,49 @@ classDiagram
 
 ### GoF Observer パターン
 
-一試合内では `BatterEntity` が Subject、`GameStatisticsRecorder` が Observer です。打撃結果にはプレー適用前の走者数も通知するため、Recorder はソロ、2ラン、3ラン、満塁本塁打を分類できます。バントと盗塁は `SUCCESS` と `FAILURE` をそれぞれ加算し、`NOT_TRY` は記録しません。
+一試合内では `BatterEntity` が Subject、`GameStatisticsRecorder` が Observer です。Recorder は安打を単打・二塁打・三塁打・本塁打に分けて数えます。打撃結果にはプレー適用前の走者数も通知するため、ソロ、2ラン、3ラン、満塁本塁打も分類できます。バントと盗塁は `SUCCESS` と `FAILURE` をそれぞれ加算し、`NOT_TRY` は記録しません。
 
 複数試合の境界では `GameBattingContext` が Subject、`ScoreAccumulator` が Observer です。九回終了時に Context が最終得点と `GameStatistics` を一度だけ通知し、Accumulator は得点一覧、得点分布、プレー回数を一回の通知処理で同時に加算します。`toScoreStatistics()` は全試合終了後に平均、中央値、最大値を含む結果を生成します。
 
 ここでは Observer の登録・解除を Subject 自身が管理せず、コンストラクタまたは `observedBy(...)` で一つの通知先を注入します。汎用イベント配信機構ではなく、依存方向を `game` / `player` から統計処理のインターフェースへ向けるために Observer の概念を絞って使っています。
 
 `GameStatistics` と `ScoreStatistics` は、可変な Recorder / Accumulator の現在値を切り出す record です。`GameStatistics` は primitive 値だけを持つ不変なスナップショットです。`ScoreStatistics` は得点分布をコピーして Accumulator から分離しますが、保持する `Map` 自体を変更不可にはしていないため、深い不変性までは保証しません。状態を値として切り出す点は GoF の Memento に似ていますが、復元操作を持たないため厳密な Memento パターンではありません。
+
+### 1試合実行の状況推移
+
+1試合実行（`SimulationRunMode.SINGLE_GAME_RUN`）では、`SimulateGameUseCase` が `GameTransitionRecorder` を渡して `GameBattingContext` を1つだけ作ります。Context は `SingleGameTransitionObserver` を `GameStatisticsRecorder` の前段に挟み、プレー結果を統計へそのまま転送しつつ、その時点のイニング・アウト数・累積得点・走者状況と打席結果を不変な `GameTransition` として記録します。各通知はそのプレーの塁状態遷移が適用される直前に届くため、記録される状況は「直前までの全プレー適用後」を表します。大規模実行では推移を記録せず、空の一覧を返します。
+
+```mermaid
+classDiagram
+    class SingleGameTransitionObserver {
+        <<domain.game, package-private>>
+        -PlayResultObserver delegate
+        -GameTransitionRecorder recorder
+    }
+    class GameTransitionRecorder {
+        +record(GameTransition transition)
+        +snapshot() List~GameTransition~
+    }
+    class GameTransition {
+        <<immutable record>>
+        +long inning
+        +String actionResult
+        +int outCount
+        +long cumulativeScore
+        +String runnerState
+    }
+
+    SingleGameTransitionObserver --|> PlayResultObserver
+    SingleGameTransitionObserver --> GameStatisticsRecorder : forwards
+    SingleGameTransitionObserver --> GameTransitionRecorder : records
+    GameTransitionRecorder --> GameTransition : accumulates
+```
+
+## `domain.rule`: 確率設定と投手補正
+
+四球・三振の割合、長打の配分、盗塁を試みる頻度、盗塁・バントの成功率、走者の進塁確率は、`SimulationRules` にまとめた値オブジェクト（`BattingProbabilities`、`HittingDistribution`、`StealAttemptRates`、`BuntProbabilities`、`RunnerAdvanceProbabilities`）として domain へ渡します。domain は既定値を持たず、infrastructure の `SimulationRuleProperties` が `simulation.rule.*` を読み込んで変換し、コンストラクタ経由で `BehaviorStrategies` と `BaseStateFactory` に注入します。
+
+投手の性格ごとの補正倍率は `simulation.pitcher.*` を `SimulationPitcherProperties` が読み込みます。`LineUpMapper` は要求に含まれる投手の性格を使わず、全打者の打率に標準（`standard`、既定1.0）の倍率を掛けてから `BatterEntity` を生成します。既存設定キー `on-base-multiplier` は打率の補正に使用します。
 
 ## パッケージ間の処理フロー
 

@@ -9,17 +9,27 @@ import org.jilt.BuilderStyle;
  * <p>値は外部設定から供給される。ドメインは既定値を持たない。
  *
  * @param batting 打席結果の判定に使う確率
- * @param middleDistanceHitting 中距離打者の長打配分
- * @param longDistanceHitting 長距離打者の長打配分
+ * @param shortDistanceHitting 短距離打者の安打配分
+ * @param middleDistanceHitting 中距離打者の安打配分
+ * @param longDistanceHitting 長距離打者の安打配分
+ * @param highOnBaseHitting 高出塁率打者の安打配分
+ * @param highOnBaseWalkProbability 高出塁率打者が四球となる確率。打率とは独立した設定値
  * @param standardSteal 標準盗塁戦略の企図率
  * @param eagerSteal 積極盗塁戦略の企図率
  * @param runnerAdvance 凡退時の走者進塁確率
+ * @param stealSuccessRate 盗塁成功率
+ * @param buntProbabilities バント戦略の成功率・企図率
  */
 @Builder(style = BuilderStyle.STAGED)
 public record SimulationRules(
         BattingProbabilities batting,
+        HittingDistribution shortDistanceHitting,
         HittingDistribution middleDistanceHitting,
         HittingDistribution longDistanceHitting,
+        HittingDistribution highOnBaseHitting,
+        float highOnBaseWalkProbability,
         StealAttemptRates standardSteal,
         StealAttemptRates eagerSteal,
-        RunnerAdvanceProbabilities runnerAdvance) {}
+        RunnerAdvanceProbabilities runnerAdvance,
+        float stealSuccessRate,
+        BuntProbabilities buntProbabilities) {}

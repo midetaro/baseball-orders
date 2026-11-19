@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 
 class SqsSimulatorMessagePublisherTest {
@@ -39,7 +41,7 @@ class SqsSimulatorMessagePublisherTest {
 
     @Test
     @DisplayName("backendの選手データを性格を含む共有要求へ変換する")
-    void mapsSuccessRatesToSharedRequest() {
+    void mapsStrategyOptionsToSharedRequest() {
         // given
         SqsTemplate sqsTemplate = mock(SqsTemplate.class);
         var publisher = new SqsSimulatorMessagePublisher(sqsTemplate, "test-request-queue");
@@ -51,10 +53,7 @@ class SqsSimulatorMessagePublisherTest {
                                 PlayerDataBuilder.playerData()
                                         .name("選手1")
                                         .hitAverage(0.321f)
-                                        .sluggish(0.400f)
-                                        .buntSuccessRate(0.700f)
                                         .buntEnabled(true)
-                                        .stealSuccessRate(0.678f)
                                         .stealEnabled(true)
                                         .personality(PlayerPersonality.EAGER_BUNT)
                                         .build()));
@@ -68,15 +67,10 @@ class SqsSimulatorMessagePublisherTest {
         assertAll(
                 () ->
                         assertEquals(
-                                0.700f,
-                                messageCaptor.getValue().players().getFirst().buntSuccessRate()),
-                () ->
-                        assertEquals(
                                 true, messageCaptor.getValue().players().getFirst().buntEnabled()),
                 () ->
                         assertEquals(
-                                0.678f,
-                                messageCaptor.getValue().players().getFirst().stealSuccessRate()),
+                                true, messageCaptor.getValue().players().getFirst().stealEnabled()),
                 () ->
                         assertEquals(
                                 com.example.baseballorders.messaging.PlayerPersonality.EAGER_BUNT,
@@ -85,6 +79,44 @@ class SqsSimulatorMessagePublisherTest {
                         assertEquals(
                                 com.example.baseballorders.messaging.PitcherPersonality.DEFAULT,
                                 messageCaptor.getValue().pitcherPersonality()));
+    }
+
+    @ParameterizedTest
+    @EnumSource(PlayerPersonality.class)
+    @DisplayName("backendの全性格を同名の共有contractの性格へ変換する")
+    void mapsEveryPersonalityToSharedContract(PlayerPersonality personality) {
+        // given
+        SqsTemplate sqsTemplate = mock(SqsTemplate.class);
+        var publisher = new SqsSimulatorMessagePublisher(sqsTemplate, "test-request-queue");
+        var request =
+                new SimulationRequest(
+                        UUID.randomUUID(),
+                        "1",
+                        List.of(
+                                PlayerDataBuilder.playerData()
+                                        .name("選手1")
+                                        .hitAverage(0.321f)
+                                        .buntEnabled(true)
+                                        .stealEnabled(true)
+                                        .personality(personality)
+                                        .build()));
+        var messageCaptor = ArgumentCaptor.forClass(SimulationRequestMessage.class);
+
+        // when
+        publisher.publish(request);
+
+        // then
+        verify(sqsTemplate).send(eq("test-request-queue"), messageCaptor.capture());
+        assertAll(
+                () ->
+                        assertEquals(
+                                personality.name(),
+                                messageCaptor
+                                        .getValue()
+                                        .players()
+                                        .getFirst()
+                                        .personality()
+                                        .name()));
     }
 
     @Test

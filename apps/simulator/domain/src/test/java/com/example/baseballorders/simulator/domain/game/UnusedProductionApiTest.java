@@ -66,7 +66,6 @@ class UnusedProductionApiTest {
                 arguments("塁番号 getter", Base.class, "getNumber", new Class<?>[0]),
                 arguments("選手名 getter", BatterEntity.class, "getName", new Class<?>[0]),
                 arguments("出塁率 getter", BatterEntity.class, "getOnBasePercentage", new Class<?>[0]),
-                arguments("長打率 getter", BatterEntity.class, "getSluggish", new Class<?>[0]),
                 arguments(
                         "バント成功率 getter", BatterEntity.class, "getBuntSuccessRate", new Class<?>[0]),
                 arguments(

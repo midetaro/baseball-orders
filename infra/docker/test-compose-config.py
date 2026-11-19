@@ -25,7 +25,7 @@ class ComposeConfigurationTest(unittest.TestCase):
             "application.ymlのsimulation.game-countをComposeで上書きしない",
         )
 
-    def test_forwards_google_oauth_credentials_to_backend(self):
+    def test_does_not_forward_google_oauth_credentials_to_backend(self):
         # given
         compose_files = (
             Path(sys.argv[1]).resolve(),
@@ -49,17 +49,17 @@ class ComposeConfigurationTest(unittest.TestCase):
         # then
         for configuration in configurations:
             with self.subTest(compose_file=configuration["name"]):
-                self.assertEqual(
-                    "test-google-client-id",
-                    configuration["services"]["backend"]["environment"]["GOOGLE_CLIENT_ID"],
-                    "BackendへGoogle OAuthのclient IDを引き継ぐ",
+                backend_environment = configuration["services"]["backend"]["environment"]
+                self.assertNotIn(
+                    "GOOGLE_CLIENT_ID",
+                    backend_environment,
+                    "ログイン機能がないためBackendへGoogle OAuthのclient IDを渡さない",
                 )
-                self.assertEqual(
-                    "test-google-client-secret",
-                    configuration["services"]["backend"]["environment"]["GOOGLE_CLIENT_SECRET"],
-                    "BackendへGoogle OAuthのclient secretを引き継ぐ",
+                self.assertNotIn(
+                    "GOOGLE_CLIENT_SECRET",
+                    backend_environment,
+                    "ログイン機能がないためBackendへGoogle OAuthのclient secretを渡さない",
                 )
-
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:

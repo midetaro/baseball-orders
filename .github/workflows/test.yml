@@ -21,9 +21,9 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           # main.tftest.hcl and friends use override_resource's override_during
-          # argument, added in Terraform 1.11.0; deploy.yml keeps applying with
-          # 1.8.5 (the required_version floor) since that pin is unrelated to
-          # this test-only CLI version.
+          # argument, added in Terraform 1.11.0. terraform init/plan/apply also
+          # parse .tftest.hcl files in the working directory, so deploy.yml and
+          # plan-terraform-deployment.yml must use this same version.
           terraform_version: "1.14.5"
 
       - name: Run Terraform checks

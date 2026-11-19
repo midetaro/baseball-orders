@@ -3,6 +3,7 @@
 .agents
 **/.gradle
 **/build
+**/node_modules
 **/.idea
 **/.ai
 **/.DS_Store

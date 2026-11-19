@@ -25,17 +25,8 @@ public class BatterEntity extends Player {
                 public void onStealResult(StealResult stealResult, StealTarget stealTarget) {}
             };
 
-    /** 出塁率 */
-    private final float onBasePercentage;
-
-    /** 長打率 */
-    private final float sluggish;
-
-    /** バント成功率 */
-    private final float buntSuccessRate;
-
-    /** 盗塁成功率 */
-    private final float stealSuccessRate;
+    /** 打率 */
+    private final float battingAverage;
 
     /** 打撃戦略 */
     private final HittingStrategy hittingStrategy;
@@ -52,31 +43,17 @@ public class BatterEntity extends Player {
     /**
      * Creates a batter without a play-result observer.
      *
-     * @param onBasePercentage on-base percentage
-     * @param sluggish slugging percentage
-     * @param buntSuccessRate bunt success rate
-     * @param stealSuccessRate steal success rate
+     * @param battingAverage batting average excluding walks
      * @param hittingStrategy batting behavior
      * @param stealStrategy steal strategy
      * @param buntStrategy bunt strategy
      */
     public BatterEntity(
-            float onBasePercentage,
-            float sluggish,
-            float buntSuccessRate,
-            float stealSuccessRate,
+            float battingAverage,
             HittingStrategy hittingStrategy,
             StealStrategy stealStrategy,
             BuntStrategy buntStrategy) {
-        this(
-                onBasePercentage,
-                sluggish,
-                buntSuccessRate,
-                stealSuccessRate,
-                hittingStrategy,
-                stealStrategy,
-                buntStrategy,
-                NO_OPERATION_OBSERVER);
+        this(battingAverage, hittingStrategy, stealStrategy, buntStrategy, NO_OPERATION_OBSERVER);
     }
 
     /**
@@ -86,7 +63,7 @@ public class BatterEntity extends Player {
      * @return 打席結果。結果を購読者へ通知する
      */
     public BattingResult swing(int runnerCount) {
-        BattingResult battingResult = hittingStrategy.batting(this.onBasePercentage, this.sluggish);
+        BattingResult battingResult = hittingStrategy.batting(this.battingAverage);
         playResultObserver.onBattingResult(battingResult, runnerCount);
         return battingResult;
     }
@@ -97,7 +74,7 @@ public class BatterEntity extends Player {
      * @return 盗塁結果。結果を購読者へ通知する
      */
     public StealResult stealToDouble() {
-        StealResult stealResult = stealStrategy.runToDouble(stealSuccessRate);
+        StealResult stealResult = stealStrategy.runToDouble();
         playResultObserver.onStealResult(stealResult, StealTarget.SECOND);
         return stealResult;
     }
@@ -108,7 +85,7 @@ public class BatterEntity extends Player {
      * @return 盗塁結果。結果を購読者へ通知する
      */
     public StealResult stealToTriple() {
-        StealResult stealResult = stealStrategy.runToTriple(stealSuccessRate);
+        StealResult stealResult = stealStrategy.runToTriple();
         playResultObserver.onStealResult(stealResult, StealTarget.THIRD);
         return stealResult;
     }
@@ -121,7 +98,7 @@ public class BatterEntity extends Player {
      * @return バント結果。結果を購読者へ通知する
      */
     public BuntResult bunt(OutCount outCount, BuntType buntType) {
-        BuntResult buntResult = buntStrategy.bunt(buntSuccessRate, outCount);
+        BuntResult buntResult = buntStrategy.bunt(outCount, buntType);
         playResultObserver.onBuntResult(buntResult, buntType);
         return buntResult;
     }
@@ -134,10 +111,7 @@ public class BatterEntity extends Player {
      */
     public BatterEntity observedBy(PlayResultObserver observer) {
         return new BatterEntity(
-                onBasePercentage,
-                sluggish,
-                buntSuccessRate,
-                stealSuccessRate,
+                battingAverage,
                 hittingStrategy,
                 stealStrategy,
                 buntStrategy,

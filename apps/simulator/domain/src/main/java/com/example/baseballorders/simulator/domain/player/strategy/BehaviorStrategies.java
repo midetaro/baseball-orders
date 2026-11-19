@@ -1,8 +1,10 @@
 package com.example.baseballorders.simulator.domain.player.strategy;
 
+import com.example.baseballorders.simulator.domain.player.strategy.batting.HighOnBaseHittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.HittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.LongDistanceHittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.batting.MiddleDistanceHittingStrategy;
+import com.example.baseballorders.simulator.domain.player.strategy.batting.ShortDistanceHittingStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.EagerBuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.NowayBuntStrategy;
@@ -11,6 +13,8 @@ import com.example.baseballorders.simulator.domain.player.strategy.steal.EagerSt
 import com.example.baseballorders.simulator.domain.player.strategy.steal.NowayStealStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StandardStealStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
+import com.example.baseballorders.simulator.domain.rule.BattingProbabilities;
+import com.example.baseballorders.simulator.domain.rule.BattingProbabilitiesBuilder;
 import com.example.baseballorders.simulator.domain.rule.SimulationRules;
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +38,30 @@ public final class BehaviorStrategies {
     }
 
     /**
+     * 単打中心の短距離打者の打撃を生成する。
+     *
+     * @return 短距離打者の打撃
+     */
+    public HittingStrategy shortDistanceHittingStrategy() {
+        return new ShortDistanceHittingStrategy(rules.batting(), rules.shortDistanceHitting());
+    }
+
+    /**
+     * 打率は変えず、四球確率を高出塁率打者用の設定値にした打撃を生成する。安打の配分も高出塁率打者用の設定を使う。
+     *
+     * @return 高出塁率打者の打撃
+     */
+    public HittingStrategy highOnBaseHittingStrategy() {
+        BattingProbabilities highOnBaseBatting =
+                BattingProbabilitiesBuilder.battingProbabilities()
+                        .walkProbability(rules.highOnBaseWalkProbability())
+                        .strikeoutProbabilityWhenNotOnBase(
+                                rules.batting().strikeoutProbabilityWhenNotOnBase())
+                        .build();
+        return new HighOnBaseHittingStrategy(highOnBaseBatting, rules.highOnBaseHitting());
+    }
+
+    /**
      * Creates the long-distance batting behavior.
      *
      * @return a long-distance batting behavior
@@ -48,7 +76,7 @@ public final class BehaviorStrategies {
      * @return an eager stealing behavior
      */
     public StealStrategy eagerSteal() {
-        return new EagerStealStrategy(rules.eagerSteal());
+        return new EagerStealStrategy(rules.eagerSteal(), rules.stealSuccessRate());
     }
 
     /**
@@ -57,7 +85,7 @@ public final class BehaviorStrategies {
      * @return a standard stealing behavior
      */
     public StealStrategy standardSteal() {
-        return new StandardStealStrategy(rules.standardSteal());
+        return new StandardStealStrategy(rules.standardSteal(), rules.stealSuccessRate());
     }
 
     /**
@@ -75,7 +103,7 @@ public final class BehaviorStrategies {
      * @return a standard bunt strategy
      */
     public BuntStrategy standardBunt() {
-        return new StandardBuntStrategy();
+        return new StandardBuntStrategy(rules.buntProbabilities());
     }
 
     /**
@@ -84,7 +112,7 @@ public final class BehaviorStrategies {
      * @return an eager bunt strategy
      */
     public BuntStrategy eagerBunt() {
-        return new EagerBuntStrategy();
+        return new EagerBuntStrategy(rules.buntProbabilities());
     }
 
     /**

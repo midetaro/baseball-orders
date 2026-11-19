@@ -84,6 +84,7 @@ class SqueezeFailureInningScenarioTest {
                         Draws.SINGLE, // 1番: 走者なし -> 単打(一塁)
                         Draws.SINGLE, // 2番: 一塁 -> 単打(一二塁)
                         Draws.SINGLE, // 3番: 一二塁 -> 単打(満塁)
+                        Draws.SQUEEZE_CHALLENGE_TRY, // 4番: 無死満塁 -> スクイズを企図する
                         Draws.BUNT_FAILURE, // 4番: 無死満塁 -> スクイズ失敗(2死、一二塁)
                         Draws.STRIKEOUT // 5番: 二死一二塁 -> 三振(3死、イニング完了)
                         )) {
@@ -98,7 +99,7 @@ class SqueezeFailureInningScenarioTest {
                     () -> assertEquals(2, sut.getInning(), "2回へ進むこと"),
                     () -> assertEquals(expectedStatistics(), statistics),
                     () -> StatisticsAssertions.assertConsistent(statistics),
-                    () -> assertEquals(5, random.consumedCount(), "乱数は打撃4個・バント1個であること"),
+                    () -> assertEquals(6, random.consumedCount(), "乱数は打撃4個・スクイズ企図1個・バント1個であること"),
                     () -> random.assertFullyConsumed());
         }
     }

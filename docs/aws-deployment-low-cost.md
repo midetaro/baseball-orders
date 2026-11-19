@@ -1,18 +1,18 @@
 # AWS デプロイ構成（低コスト版・NAT Gateway 不使用）
 
 [aws-deployment.md](aws-deployment.md) の標準構成から **NAT Gateway を取り除いた** 代替構成をまとめる。
-前提・アプリケーション側の制約・本番公開前対応・デプロイ手順は標準構成と同一であるため、この文書では
+前提・アプリケーション側の制約・デプロイ手順は標準構成と同一であるため、この文書では
 差分（ネットワーク構成とコスト）のみを扱う。共通部分は都度 [aws-deployment.md](aws-deployment.md) を参照すること。
 
 適用条件は同じ：
 
-- **Google SSO を使わない構成**（`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` 未設定）。
+- **認証なしの構成**（backend にログイン機能は無い）。
 - **RDBMS を使わない構成**（[永続化の前提](aws-deployment.md#永続化の前提)が成り立つ場合のみ）。
 
 ## 標準構成との違い
 
-標準構成は private subnet の ECS タスクが NAT Gateway 経由で SQS・ECR・CloudWatch Logs・
-（Google SSO 有効時は）`accounts.google.com` へ outbound する。この文書の構成は private subnet と
+標準構成は private subnet の ECS タスクが NAT Gateway 経由で SQS・ECR・CloudWatch Logs へ
+outbound する。この文書の構成は private subnet と
 NAT Gateway を廃止し、**ECS タスクを public subnet に置いてパブリック IP から直接 outbound する**。
 [NAT Gateway の代替](aws-deployment.md#nat-gateway-の代替)の比較表で挙げた 3 択のうち、最も安価な
 「public subnet + パブリック IP、inbound は SG で全遮断」を採用したものが本構成である。
@@ -36,7 +36,7 @@ flowchart TB
                 alb["ALB x1<br/>HTTPS 443<br/>idle_timeout 65s"]
 
                 subgraph cluster["ECS cluster (Fargate)<br/>assign_public_ip = true"]
-                    backend["backend service<br/>0.5 vCPU / 1 GB<br/>desired 1<br/>H2 in-memory"]
+                    backend["backend service<br/>0.5 vCPU / 1 GB<br/>desired 1"]
                     simulator["simulator service<br/>1 vCPU / 2 GB<br/>Fargate Spot / min 1"]
                 end
             end
@@ -49,7 +49,7 @@ flowchart TB
     browser -->|HTTPS 443| r53
     r53 --> alb
     acm -.-> alb
-    alb -->|"HTTP 8080 / health check GET /login"| backend
+    alb -->|"HTTP 8080 / health check GET /"| backend
     backend -->|SendMessage| requestq
     requestq -->|"ReceiveMessage (poll 1s)"| simulator
     simulator -->|SendMessage| resultq
@@ -66,8 +66,7 @@ flowchart TB
   Internet Gateway を直接経由する。
 - **inbound は Security Group で全遮断する**。パブリック IP を持つことと、外部から到達できることは
   別である。ECS タスク用 SG の ingress は ALB SG からの `tcp/8080` のみを許可し、それ以外の inbound は
-  一切許可しない。egress は SQS・ECR・CloudWatch Logs（および Google SSO 有効時は
-  `accounts.google.com`）向けに `0.0.0.0/0` を許可する。
+  一切許可しない。egress は SQS・ECR・CloudWatch Logs 向けに `0.0.0.0/0` を許可する。
 - **ALB の設定・タスク定義の環境変数・SQS まわりの制約は標準構成と同一**。
   [ALB の設定値](aws-deployment.md#alb-の設定値)、[タスク定義の環境変数](aws-deployment.md#タスク定義の環境変数)、
   [この構成が受け入れている制約](aws-deployment.md#この構成が受け入れている制約)をそのまま参照すること。
