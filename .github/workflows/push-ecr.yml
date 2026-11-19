@@ -3,14 +3,7 @@ name: Build and push images to Amazon ECR
 on:
   push:
     branches:
-      - develop
       - main
-    paths:
-      - "apps/backend/**"
-      - "apps/simulator/**"
-      - "libs/**"
-      - "infra/docker/Dockerfile"
-      - ".github/workflows/push-ecr.yml"
   workflow_dispatch:
 
 permissions:
