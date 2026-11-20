@@ -29,8 +29,8 @@ flowchart TB
 
             subgraph pri["private subnet x2 AZ"]
                 subgraph cluster["ECS cluster (Fargate)"]
-                    backend["backend service<br/>0.5 vCPU / 1 GB<br/>desired 1"]
-                    simulator["simulator service<br/>1 vCPU / 2 GB<br/>Fargate Spot / min 1"]
+                    backend["backend service<br/>0.5 vCPU / 4 GB<br/>desired 1"]
+                    simulator["simulator service<br/>1 vCPU / 4 GB<br/>Fargate Spot / min 1"]
                 end
             end
         end
@@ -166,11 +166,11 @@ ap-northeast-1、月額の概算。
 | 項目 | 標準 | コスト最適化 |
 | --- | --- | --- |
 | ALB | $20 | $20 |
-| Fargate backend (0.5 vCPU / 1 GB 常時) | $18 | $18 |
-| Fargate simulator (1 vCPU / 2 GB 常時) | $36 | $11（Spot） |
+| Fargate backend (0.5 vCPU / 4 GB 常時) | $35 | $35 |
+| Fargate simulator (1 vCPU / 4 GB 常時) | $53 | $16（Spot） |
 | NAT Gateway | $35 | $0（public subnet + パブリック IP、inbound は SG で遮断） |
 | SQS / CloudWatch Logs / ECR | $2 | $2 |
-| 合計 | 約 $111 | 約 $51 |
+| 合計 | 約 $145 | 約 $73 |
 
 さらに下げる場合、EC2 1 台に既存の `compose.yaml` をそのまま載せる選択肢がある（月 $12〜15）。
 backend が 1 タスク固定である制約は同じなので機能面の損失はほぼ無く、サービス単位のスケール、
