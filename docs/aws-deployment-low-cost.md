@@ -36,8 +36,8 @@ flowchart TB
                 alb["ALB x1<br/>HTTPS 443<br/>idle_timeout 65s"]
 
                 subgraph cluster["ECS cluster (Fargate)<br/>assign_public_ip = true"]
-                    backend["backend service<br/>0.5 vCPU / 1 GB<br/>desired 1"]
-                    simulator["simulator service<br/>1 vCPU / 2 GB<br/>Fargate Spot / min 1"]
+                    backend["backend service<br/>0.5 vCPU / 4 GB<br/>desired 1"]
+                    simulator["simulator service<br/>1 vCPU / 4 GB<br/>Fargate Spot / min 1"]
                 end
             end
         end
@@ -102,11 +102,11 @@ ap-northeast-1、月額の概算（[aws-deployment.md の費用の目安](aws-de
 | 項目 | 金額 |
 | --- | --- |
 | ALB | $20 |
-| Fargate backend (0.5 vCPU / 1 GB 常時) | $18 |
-| Fargate simulator (1 vCPU / 2 GB 常時、Spot) | $11 |
+| Fargate backend (0.5 vCPU / 4 GB 常時) | $35 |
+| Fargate simulator (1 vCPU / 4 GB 常時、Spot) | $16 |
 | NAT Gateway | $0（不使用） |
 | SQS / CloudWatch Logs / ECR | $2 |
-| 合計 | 約 $51 |
+| 合計 | 約 $73 |
 
 さらに下げる場合、EC2 1 台に既存の `compose.yaml` をそのまま載せる選択肢がある（月 $12〜15、
 [aws-deployment.md](aws-deployment.md#費用の目安)を参照）。backend が 1 タスク固定である制約は

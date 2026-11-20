@@ -1,3 +1,15 @@
+variable "backend_ecr_repository_name" {
+  description = "Existing ECR repository that push-ecr.yml pushes backend images to. Terraform reads it and does not create it."
+  type        = string
+  default     = "baseball-orders/backend"
+}
+
+variable "simulator_ecr_repository_name" {
+  description = "Existing ECR repository that push-ecr.yml pushes simulator images to. Terraform reads it and does not create it."
+  type        = string
+  default     = "baseball-orders/simulator"
+}
+
 locals {
   ecr_lifecycle_policy = jsonencode({
     rules = [
@@ -31,40 +43,30 @@ locals {
   })
 }
 
-resource "aws_ecr_repository" "backend" {
-  name                 = "${local.name_prefix}-backend"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
+data "aws_ecr_repository" "backend" {
+  name = var.backend_ecr_repository_name
 }
 
-resource "aws_ecr_repository" "simulator" {
-  name                 = "${local.name_prefix}-simulator"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
+data "aws_ecr_repository" "simulator" {
+  name = var.simulator_ecr_repository_name
 }
 
 resource "aws_ecr_lifecycle_policy" "backend" {
-  repository = aws_ecr_repository.backend.name
+  repository = data.aws_ecr_repository.backend.name
   policy     = local.ecr_lifecycle_policy
 }
 
 resource "aws_ecr_lifecycle_policy" "simulator" {
-  repository = aws_ecr_repository.simulator.name
+  repository = data.aws_ecr_repository.simulator.name
   policy     = local.ecr_lifecycle_policy
 }
 
 output "ecr_backend_repository_url" {
-  description = "Push backend images here; also set the ECR_BACKEND_REPOSITORY GitHub Actions variable to this repository's name."
-  value       = aws_ecr_repository.backend.repository_url
+  description = "Repository the backend task pulls its image from."
+  value       = data.aws_ecr_repository.backend.repository_url
 }
 
 output "ecr_simulator_repository_url" {
-  description = "Push simulator images here; also set the ECR_SIMULATOR_REPOSITORY GitHub Actions variable to this repository's name."
-  value       = aws_ecr_repository.simulator.repository_url
+  description = "Repository the simulator task pulls its image from."
+  value       = data.aws_ecr_repository.simulator.repository_url
 }

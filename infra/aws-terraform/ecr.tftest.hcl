@@ -132,21 +132,19 @@ run "ecr_repositories" {
   }
 
   assert {
-    condition     = aws_ecr_repository.backend.name == "baseball-orders-dev-backend"
-    error_message = "The backend ECR repository must use the project and environment prefix."
-  }
-
-  assert {
-    condition     = aws_ecr_repository.simulator.name == "baseball-orders-dev-simulator"
-    error_message = "The simulator ECR repository must use the project and environment prefix."
+    condition = alltrue([
+      data.aws_ecr_repository.backend.name == "baseball-orders/backend",
+      data.aws_ecr_repository.simulator.name == "baseball-orders/simulator",
+    ])
+    error_message = "Terraform must read the existing baseball-orders/backend and baseball-orders/simulator repositories that push-ecr.yml pushes to."
   }
 
   assert {
     condition = alltrue([
-      aws_ecr_repository.backend.image_scanning_configuration[0].scan_on_push,
-      aws_ecr_repository.simulator.image_scanning_configuration[0].scan_on_push,
+      aws_ecr_lifecycle_policy.backend.repository == "baseball-orders/backend",
+      aws_ecr_lifecycle_policy.simulator.repository == "baseball-orders/simulator",
     ])
-    error_message = "Every ECR repository must scan images on push."
+    error_message = "The lifecycle policies must apply to the existing repositories."
   }
 
   assert {

@@ -1,13 +1,25 @@
 variable "backend_image_tag" {
-  description = "Backend container image tag used on the first apply. deploy.yml swaps the running image afterward; lifecycle.ignore_changes on container_definitions keeps Terraform from reverting it."
+  description = "Backend container image tag used on the first apply. push-ecr.yml tags every main build as main; lifecycle.ignore_changes on container_definitions keeps Terraform from reverting a later image swap."
   type        = string
-  default     = "latest"
+  default     = "main"
 }
 
 variable "simulator_image_tag" {
   description = "Simulator container image tag used on the first apply. See backend_image_tag."
   type        = string
-  default     = "latest"
+  default     = "main"
+}
+
+variable "task_memory" {
+  description = "Fargate task memory in MiB for both the backend and the simulator."
+  type        = string
+  default     = "4096"
+}
+
+variable "jvm_options" {
+  description = "JAVA_TOOL_OPTIONS for both containers. -Xmx2g caps the heap at 2 GB and leaves the rest of task_memory for metaspace, threads, and native memory."
+  type        = string
+  default     = "-Xmx2g"
 }
 
 variable "sqs_poll_fixed_delay" {
@@ -30,14 +42,14 @@ resource "aws_ecs_task_definition" "backend" {
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "512"
-  memory                   = "1024"
+  memory                   = var.task_memory
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
   task_role_arn            = aws_iam_role.backend_task.arn
 
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image     = "${aws_ecr_repository.backend.repository_url}:${var.backend_image_tag}"
+      image     = "${data.aws_ecr_repository.backend.repository_url}:${var.backend_image_tag}"
       essential = true
 
       portMappings = [
@@ -49,6 +61,7 @@ resource "aws_ecs_task_definition" "backend" {
 
       environment = [
         { name = "SPRING_PROFILES_ACTIVE", value = "prod" },
+        { name = "JAVA_TOOL_OPTIONS", value = var.jvm_options },
         { name = "SIMULATION_REQUEST_QUEUE_NAME", value = aws_sqs_queue.simulation_request.name },
         { name = "SIMULATION_RESULT_QUEUE_NAME", value = aws_sqs_queue.simulation_result.name },
       ]
@@ -74,18 +87,19 @@ resource "aws_ecs_task_definition" "simulator" {
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "1024"
-  memory                   = "2048"
+  memory                   = var.task_memory
   execution_role_arn       = aws_iam_role.ecs_task_execution.arn
   task_role_arn            = aws_iam_role.simulator_task.arn
 
   container_definitions = jsonencode([
     {
       name      = "simulator"
-      image     = "${aws_ecr_repository.simulator.repository_url}:${var.simulator_image_tag}"
+      image     = "${data.aws_ecr_repository.simulator.repository_url}:${var.simulator_image_tag}"
       essential = true
 
       environment = [
         { name = "SPRING_PROFILES_ACTIVE", value = "prod" },
+        { name = "JAVA_TOOL_OPTIONS", value = var.jvm_options },
         { name = "SIMULATION_REQUEST_QUEUE_NAME", value = aws_sqs_queue.simulation_request.name },
         { name = "SIMULATION_RESULT_QUEUE_NAME", value = aws_sqs_queue.simulation_result.name },
         { name = "SIMULATION_SQS_POLL_FIXED_DELAY", value = var.sqs_poll_fixed_delay },
