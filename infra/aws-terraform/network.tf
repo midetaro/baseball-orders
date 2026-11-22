@@ -80,7 +80,7 @@ resource "aws_security_group" "alb" {
 
 resource "aws_security_group" "backend" {
   name        = "${local.name_prefix}-backend"
-  description = "Backend ECS tasks: inbound only from the ALB on 8080, outbound to SQS/ECR/CloudWatch Logs."
+  description = "Backend ECS tasks: inbound only from the ALB on 8080, outbound to the simulator, ECR, and CloudWatch Logs."
   vpc_id      = aws_vpc.main.id
 
   tags = {
@@ -90,7 +90,7 @@ resource "aws_security_group" "backend" {
 
 resource "aws_security_group" "simulator" {
   name        = "${local.name_prefix}-simulator"
-  description = "Simulator ECS tasks: no inbound, outbound to SQS/ECR/CloudWatch Logs only."
+  description = "Simulator ECS tasks: inbound only from the backend on the gRPC port, outbound to ECR/CloudWatch Logs only."
   vpc_id      = aws_vpc.main.id
 
   tags = {
@@ -127,14 +127,23 @@ resource "aws_vpc_security_group_ingress_rule" "backend_from_alb" {
 
 resource "aws_vpc_security_group_egress_rule" "backend_outbound" {
   security_group_id = aws_security_group.backend.id
-  description       = "SQS, ECR, and CloudWatch Logs are outside the VPC and reached over the Internet Gateway (no NAT Gateway in this configuration)."
+  description       = "ECR and CloudWatch Logs are outside the VPC and reached over the Internet Gateway (no NAT Gateway in this configuration)."
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
 
 resource "aws_vpc_security_group_egress_rule" "simulator_outbound" {
   security_group_id = aws_security_group.simulator.id
-  description       = "SQS, ECR, and CloudWatch Logs are outside the VPC and reached over the Internet Gateway (no NAT Gateway in this configuration)."
+  description       = "ECR and CloudWatch Logs are outside the VPC and reached over the Internet Gateway (no NAT Gateway in this configuration)."
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "simulator_grpc_from_backend" {
+  security_group_id            = aws_security_group.simulator.id
+  description                  = "Only the backend may reach the simulator gRPC port (through ECS Service Connect)."
+  referenced_security_group_id = aws_security_group.backend.id
+  ip_protocol                  = "tcp"
+  from_port                    = var.simulator_grpc_port
+  to_port                      = var.simulator_grpc_port
 }

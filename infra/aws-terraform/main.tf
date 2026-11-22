@@ -47,29 +47,6 @@ variable "environment" {
   }
 }
 
-variable "request_queue_name" {
-  description = "Simulation request queue name. The default matches the backend application."
-  type        = string
-  default     = "simulation-request"
-}
-
-variable "result_queue_name" {
-  description = "Simulation result queue name. The default matches the backend application."
-  type        = string
-  default     = "simulation-result"
-}
-
-variable "message_retention_seconds" {
-  description = "Retention period for request and result messages."
-  type        = number
-  default     = 345600
-
-  validation {
-    condition     = var.message_retention_seconds >= 60 && var.message_retention_seconds <= 1209600
-    error_message = "message_retention_seconds must be between 60 and 1209600."
-  }
-}
-
 provider "aws" {
   region  = var.aws_region
   profile = var.aws_profile
@@ -85,52 +62,4 @@ provider "aws" {
 
 locals {
   name_prefix = "${var.project_name}-${var.environment}"
-}
-
-data "aws_iam_policy_document" "backend_sqs" {
-  statement {
-    sid       = "SendSimulationRequests"
-    actions   = ["sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:SendMessage"]
-    resources = [aws_sqs_queue.simulation_request.arn]
-  }
-
-  statement {
-    sid       = "ConsumeSimulationResults"
-    actions   = ["sqs:ChangeMessageVisibility", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:ReceiveMessage"]
-    resources = [aws_sqs_queue.simulation_result.arn]
-  }
-}
-
-resource "aws_iam_policy" "backend_sqs" {
-  name        = "${local.name_prefix}-backend-sqs"
-  description = "Least-privilege SQS access for the baseball-orders backend."
-  policy      = data.aws_iam_policy_document.backend_sqs.json
-}
-
-data "aws_iam_policy_document" "simulator_sqs" {
-  statement {
-    sid       = "ConsumeSimulationRequests"
-    actions   = ["sqs:ChangeMessageVisibility", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:ReceiveMessage"]
-    resources = [aws_sqs_queue.simulation_request.arn]
-  }
-
-  statement {
-    sid       = "SendSimulationResults"
-    actions   = ["sqs:GetQueueAttributes", "sqs:GetQueueUrl", "sqs:SendMessage"]
-    resources = [aws_sqs_queue.simulation_result.arn]
-  }
-}
-
-resource "aws_iam_policy" "simulator_sqs" {
-  name        = "${local.name_prefix}-simulator-sqs"
-  description = "Least-privilege SQS access for the baseball-orders simulator."
-  policy      = data.aws_iam_policy_document.simulator_sqs.json
-}
-
-output "backend_sqs_policy_arn" {
-  value = aws_iam_policy.backend_sqs.arn
-}
-
-output "simulator_sqs_policy_arn" {
-  value = aws_iam_policy.simulator_sqs.arn
 }

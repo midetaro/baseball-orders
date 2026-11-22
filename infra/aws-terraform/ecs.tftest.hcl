@@ -9,20 +9,6 @@ run "cluster_and_task_definitions" {
   command = apply
 
   override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_out
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:11111111-1111-1111-1111-111111111111:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-out"
-    }
-  }
-
-  override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_in
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:22222222-2222-2222-2222-222222222222:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-in"
-    }
-  }
-
-  override_resource {
     target = aws_iam_role.ecs_task_execution
     values = {
       arn = "arn:aws:iam::123456789012:role/baseball-orders-dev-ecs-task-execution"
@@ -51,20 +37,6 @@ run "cluster_and_task_definitions" {
   }
 
   override_data {
-    target = data.aws_iam_policy_document.backend_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.simulator_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
     target = data.aws_iam_policy_document.ecs_tasks_assume_role
     values = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"}}]}"
@@ -76,20 +48,6 @@ run "cluster_and_task_definitions" {
     values = {
       zone_id = "Z1234567890ABC"
       name    = "example.com"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.backend_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-backend-sqs"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.simulator_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-simulator-sqs"
     }
   }
 
@@ -178,11 +136,33 @@ run "cluster_and_task_definitions" {
   }
 
   assert {
-    condition = contains(
-      [for e in jsondecode(aws_ecs_task_definition.simulator.container_definitions)[0].environment : e.name],
-      "SIMULATION_SQS_POLL_FIXED_DELAY"
-    )
-    error_message = "The simulator container must set SIMULATION_SQS_POLL_FIXED_DELAY explicitly; the application-prod.yml default (60s) exceeds the backend's 30s wait (docs/aws-deployment.md)."
+    condition     = { for e in jsondecode(aws_ecs_task_definition.simulator.container_definitions)[0].environment : e.name => e.value }["SIMULATION_GRPC_PORT"] == "9090"
+    error_message = "The simulator container must listen for gRPC on 9090 (SIMULATION_GRPC_PORT)."
+  }
+
+  assert {
+    condition = alltrue([
+      { for e in jsondecode(aws_ecs_task_definition.backend.container_definitions)[0].environment : e.name => e.value }["SIMULATOR_GRPC_HOST"] == "simulator",
+      { for e in jsondecode(aws_ecs_task_definition.backend.container_definitions)[0].environment : e.name => e.value }["SIMULATOR_GRPC_PORT"] == "9090",
+    ])
+    error_message = "The backend container must reach the simulator at simulator:9090 (SIMULATOR_GRPC_HOST/SIMULATOR_GRPC_PORT)."
+  }
+
+  assert {
+    condition = alltrue([
+      jsondecode(aws_ecs_task_definition.simulator.container_definitions)[0].portMappings[0].name == "grpc",
+      jsondecode(aws_ecs_task_definition.simulator.container_definitions)[0].portMappings[0].containerPort == 9090,
+      jsondecode(aws_ecs_task_definition.simulator.container_definitions)[0].portMappings[0].appProtocol == "grpc",
+    ])
+    error_message = "The simulator container must expose a named grpc port mapping on 9090 with appProtocol grpc for Service Connect."
+  }
+
+  assert {
+    condition = alltrue([
+      length([for e in jsondecode(aws_ecs_task_definition.backend.container_definitions)[0].environment : e.name if strcontains(upper(e.name), "SQS")]) == 0,
+      length([for e in jsondecode(aws_ecs_task_definition.simulator.container_definitions)[0].environment : e.name if strcontains(upper(e.name), "SQS")]) == 0,
+    ])
+    error_message = "No container may carry messaging-queue environment variables any more."
   }
 
   assert {
@@ -193,20 +173,6 @@ run "cluster_and_task_definitions" {
 
 run "services" {
   command = apply
-
-  override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_out
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:11111111-1111-1111-1111-111111111111:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-out"
-    }
-  }
-
-  override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_in
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:22222222-2222-2222-2222-222222222222:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-in"
-    }
-  }
 
   override_resource {
     target = aws_iam_role.ecs_task_execution
@@ -237,20 +203,6 @@ run "services" {
   }
 
   override_data {
-    target = data.aws_iam_policy_document.backend_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.simulator_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
     target = data.aws_iam_policy_document.ecs_tasks_assume_role
     values = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"}}]}"
@@ -262,20 +214,6 @@ run "services" {
     values = {
       zone_id = "Z1234567890ABC"
       name    = "example.com"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.backend_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-backend-sqs"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.simulator_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-simulator-sqs"
     }
   }
 
@@ -354,11 +292,27 @@ run "services" {
 
   assert {
     condition     = contains(aws_ecs_service.simulator.network_configuration[0].security_groups, aws_security_group.simulator.id)
-    error_message = "The simulator service must use the simulator security group (no inbound rules)."
+    error_message = "The simulator service must use the simulator security group (inbound gRPC only from the backend)."
   }
 
   assert {
     condition     = length(aws_ecs_service.simulator.load_balancer) == 0
     error_message = "The simulator service has no HTTP endpoint and must not be registered with the ALB."
+  }
+
+  assert {
+    condition     = aws_ecs_service.backend.service_connect_configuration[0].enabled && length(aws_ecs_service.backend.service_connect_configuration[0].service) == 0
+    error_message = "The backend service must join Service Connect as a client only."
+  }
+
+  assert {
+    condition = alltrue([
+      aws_ecs_service.simulator.service_connect_configuration[0].enabled,
+      one(aws_ecs_service.simulator.service_connect_configuration[0].service).port_name == "grpc",
+      one(aws_ecs_service.simulator.service_connect_configuration[0].service).discovery_name == "simulator",
+      one(one(aws_ecs_service.simulator.service_connect_configuration[0].service).client_alias).dns_name == "simulator",
+      one(one(aws_ecs_service.simulator.service_connect_configuration[0].service).client_alias).port == 9090,
+    ])
+    error_message = "The simulator service must publish the grpc port through Service Connect as simulator:9090."
   }
 }

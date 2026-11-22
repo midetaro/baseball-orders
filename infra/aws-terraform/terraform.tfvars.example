@@ -6,3 +6,10 @@ aws_profile = "baseball-orders"
 # Both are required; there is no default.
 domain_name       = "orders.example.com"
 route53_zone_name = "example.com"
+
+# Simulator autoscaling (ECS service-average CPU target tracking) and gRPC port.
+simulator_max_count                  = 4
+simulator_cpu_target_percent         = 60
+simulator_scale_out_cooldown_seconds = 120
+simulator_scale_in_cooldown_seconds  = 300
+simulator_grpc_port                  = 9090

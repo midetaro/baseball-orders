@@ -9,20 +9,6 @@ run "task_roles" {
   command = apply
 
   override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_out
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:11111111-1111-1111-1111-111111111111:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-out"
-    }
-  }
-
-  override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_in
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:22222222-2222-2222-2222-222222222222:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-in"
-    }
-  }
-
-  override_resource {
     target = aws_iam_role.ecs_task_execution
     values = {
       arn = "arn:aws:iam::123456789012:role/baseball-orders-dev-ecs-task-execution"
@@ -90,20 +76,6 @@ run "task_roles" {
   }
 
   override_data {
-    target = data.aws_iam_policy_document.backend_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.simulator_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
     target = data.aws_availability_zones.available
     values = {
       names = ["ap-northeast-1a", "ap-northeast-1c"]
@@ -114,20 +86,6 @@ run "task_roles" {
     target = data.aws_iam_policy_document.ecs_tasks_assume_role
     values = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"}}]}"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.backend_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-backend-sqs"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.simulator_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-simulator-sqs"
     }
   }
 
@@ -147,17 +105,12 @@ run "task_roles" {
   }
 
   assert {
-    condition     = aws_iam_role_policy_attachment.backend_task_sqs.policy_arn == aws_iam_policy.backend_sqs.arn
-    error_message = "The backend task role must carry the existing least-privilege backend SQS policy."
-  }
-
-  assert {
     condition     = jsondecode(aws_iam_role.simulator_task.assume_role_policy).Statement[0].Principal.Service == "ecs-tasks.amazonaws.com"
     error_message = "The simulator task role must be assumable only by ECS tasks."
   }
 
   assert {
-    condition     = aws_iam_role_policy_attachment.simulator_task_sqs.policy_arn == aws_iam_policy.simulator_sqs.arn
-    error_message = "The simulator task role must carry the existing least-privilege simulator SQS policy."
+    condition     = length(aws_iam_role.backend_task.managed_policy_arns) == 0 && length(aws_iam_role.simulator_task.managed_policy_arns) == 0
+    error_message = "The task roles carry no AWS permissions: the backend -> simulator call is gRPC over Service Connect, not an AWS API."
   }
 }
