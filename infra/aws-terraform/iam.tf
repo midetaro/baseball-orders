@@ -24,17 +24,7 @@ resource "aws_iam_role" "backend_task" {
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume_role.json
 }
 
-resource "aws_iam_role_policy_attachment" "backend_task_sqs" {
-  role       = aws_iam_role.backend_task.name
-  policy_arn = aws_iam_policy.backend_sqs.arn
-}
-
 resource "aws_iam_role" "simulator_task" {
   name               = "${local.name_prefix}-simulator-task"
   assume_role_policy = data.aws_iam_policy_document.ecs_tasks_assume_role.json
-}
-
-resource "aws_iam_role_policy_attachment" "simulator_task_sqs" {
-  role       = aws_iam_role.simulator_task.name
-  policy_arn = aws_iam_policy.simulator_sqs.arn
 }

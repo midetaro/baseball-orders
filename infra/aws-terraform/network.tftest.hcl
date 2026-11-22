@@ -9,20 +9,6 @@ run "network_configuration" {
   command = apply
 
   override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_out
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:11111111-1111-1111-1111-111111111111:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-out"
-    }
-  }
-
-  override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_in
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:22222222-2222-2222-2222-222222222222:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-in"
-    }
-  }
-
-  override_resource {
     target = aws_iam_role.ecs_task_execution
     values = {
       arn = "arn:aws:iam::123456789012:role/baseball-orders-dev-ecs-task-execution"
@@ -55,20 +41,6 @@ run "network_configuration" {
     values = {
       zone_id = "Z1234567890ABC"
       name    = "example.com"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.backend_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-backend-sqs"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.simulator_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-simulator-sqs"
     }
   }
 
@@ -114,20 +86,6 @@ run "network_configuration" {
     target = data.aws_availability_zones.available
     values = {
       names = ["ap-northeast-1a", "ap-northeast-1c"]
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.backend_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.simulator_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
     }
   }
 
@@ -176,20 +134,6 @@ run "security_groups" {
   command = apply
 
   override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_out
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:11111111-1111-1111-1111-111111111111:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-out"
-    }
-  }
-
-  override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_in
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:22222222-2222-2222-2222-222222222222:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-in"
-    }
-  }
-
-  override_resource {
     target = aws_iam_role.ecs_task_execution
     values = {
       arn = "arn:aws:iam::123456789012:role/baseball-orders-dev-ecs-task-execution"
@@ -222,20 +166,6 @@ run "security_groups" {
     values = {
       zone_id = "Z1234567890ABC"
       name    = "example.com"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.backend_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-backend-sqs"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.simulator_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-simulator-sqs"
     }
   }
 
@@ -284,20 +214,6 @@ run "security_groups" {
     }
   }
 
-  override_data {
-    target = data.aws_iam_policy_document.backend_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.simulator_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
   assert {
     condition     = aws_security_group.alb.vpc_id == aws_vpc.main.id
     error_message = "The ALB security group must belong to the deployment VPC."
@@ -331,5 +247,16 @@ run "security_groups" {
   assert {
     condition     = aws_vpc_security_group_ingress_rule.backend_from_alb.from_port == 8080 && aws_vpc_security_group_ingress_rule.backend_from_alb.to_port == 8080
     error_message = "The backend ingress rule must allow only port 8080, matching the container port."
+  }
+
+  assert {
+    condition = alltrue([
+      aws_vpc_security_group_ingress_rule.simulator_grpc_from_backend.security_group_id == aws_security_group.simulator.id,
+      aws_vpc_security_group_ingress_rule.simulator_grpc_from_backend.referenced_security_group_id == aws_security_group.backend.id,
+      aws_vpc_security_group_ingress_rule.simulator_grpc_from_backend.ip_protocol == "tcp",
+      aws_vpc_security_group_ingress_rule.simulator_grpc_from_backend.from_port == 9090,
+      aws_vpc_security_group_ingress_rule.simulator_grpc_from_backend.to_port == 9090,
+    ])
+    error_message = "The simulator must accept TCP 9090 only from the backend security group."
   }
 }

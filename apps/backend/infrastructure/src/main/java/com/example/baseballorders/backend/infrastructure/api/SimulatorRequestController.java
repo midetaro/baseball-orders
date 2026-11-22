@@ -22,7 +22,7 @@ public final class SimulatorRequestController {
     @NonNull private final SimulationCoordinator coordinator;
 
     /**
-     * 画面で入力された打順データを受け取り、SQS結果を受信するまでHTTP要求を待機して結果を返す。
+     * 画面で入力された打順データを受け取り、simulatorの応答を受け取るまでHTTP要求を待機して結果を返す。
      *
      * @param players 打順どおりに並んだ9人の打撃データとバント・盗塁選択
      * @return simulatorから返されたシミュレーション結果
@@ -33,7 +33,7 @@ public final class SimulatorRequestController {
     }
 
     /**
-     * 画面で入力された打順データを受け取り、1試合実行モードでSQS結果を受信するまでHTTP要求を待機して結果を返す。
+     * 画面で入力された打順データを受け取り、1試合実行モードでsimulatorの応答を受け取るまでHTTP要求を待機して結果を返す。
      *
      * @param players 打順どおりに並んだ9人の打撃データとバント・盗塁選択
      * @return simulatorから返された1試合分の状況推移を含むシミュレーション結果

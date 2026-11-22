@@ -17,14 +17,14 @@ class LocalBackendApplicationTest {
     @Autowired private ApplicationContext context;
 
     @Test
-    @DisplayName("localプロファイルではSQSへの接続なしで起動できる")
-    void startsWithoutSqsConnection() {
+    @DisplayName("localプロファイルではsimulatorへ接続せずにgRPCクライアントを構成して起動できる")
+    void startsWithoutSimulatorConnection() {
         // given
 
         // when
-        boolean publisherExists = context.containsBean("sqsSimulatorMessagePublisher");
+        boolean clientExists = context.containsBean("grpcSimulatorClient");
 
         // then
-        assertAll(() -> assertTrue(publisherExists));
+        assertAll(() -> assertTrue(clientExists));
     }
 }

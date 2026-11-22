@@ -475,4 +475,4 @@ domain 層を変更した場合は、リポジトリ共通の検証スクリプ�
 ../../.agents/skills/baseball-orders-development/scripts/verify.sh simulator
 ```
 
-`ELASTICMQ_ENDPOINT_URL` が未設定の場合、ElasticMQ を使う integration test は実行されません。
+gRPC アダプタのテストは外部サービスを必要としません。Backend との疎通は `integration-test` が検証します。

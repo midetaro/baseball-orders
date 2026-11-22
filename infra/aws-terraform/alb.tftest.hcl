@@ -4,20 +4,6 @@ run "alb_and_certificate" {
   command = apply
 
   override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_out
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:11111111-1111-1111-1111-111111111111:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-out"
-    }
-  }
-
-  override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_in
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:22222222-2222-2222-2222-222222222222:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-in"
-    }
-  }
-
-  override_resource {
     target = aws_iam_role.ecs_task_execution
     values = {
       arn = "arn:aws:iam::123456789012:role/baseball-orders-dev-ecs-task-execution"
@@ -44,20 +30,6 @@ run "alb_and_certificate" {
   }
 
   override_data {
-    target = data.aws_iam_policy_document.backend_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.simulator_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
     target = data.aws_availability_zones.available
     values = {
       names = ["ap-northeast-1a", "ap-northeast-1c"]
@@ -76,20 +48,6 @@ run "alb_and_certificate" {
     values = {
       zone_id = "Z1234567890ABC"
       name    = "example.com"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.backend_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-backend-sqs"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.simulator_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-simulator-sqs"
     }
   }
 
@@ -225,20 +183,6 @@ run "backend_target_group_name_within_aws_limit" {
     target = data.aws_iam_policy_document.ecs_tasks_assume_role
     values = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"}}]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.backend_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.simulator_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
     }
   }
 

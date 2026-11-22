@@ -29,7 +29,7 @@ class SimulationErrorHandlerTest {
     }
 
     @Test
-    @DisplayName("SQS送信失敗は説明を含むHTTP 502応答へ変換される")
+    @DisplayName("simulator呼び出しの失敗は説明を含むHTTP 502応答へ変換される")
     void convertsSendFailureToBadGateway() {
         // given
         var handler = new SimulationErrorHandler();

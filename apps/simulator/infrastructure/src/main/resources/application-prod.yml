@@ -1,9 +1,8 @@
 simulation:
   game-count: 100
-  sqs:
-    max-messages-per-poll: 10
-    long-poll-seconds: 10
-    poll-fixed-delay: ${SIMULATION_SQS_POLL_FIXED_DELAY:60s}
+  grpc:
+    port: 9090
+    shutdown-grace-period: 10s
   rule:
     batting:
       walk-probability: 0.05

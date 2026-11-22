@@ -3,12 +3,12 @@ package com.example.baseballorders.simulator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/** SQSを定期受信するSimulatorの単独起動エントリーポイント。 */
+/** gRPCでシミュレーション要求を受け付けるSimulatorの単独起動エントリーポイント。 */
 @SpringBootApplication
 public class SimulatorApplication {
 
     /**
-     * Simulatorを起動し、SQS要求の定期受信を開始する。
+     * Simulatorを起動し、gRPCサーバーを起動して要求の受付を開始する。
      *
      * @param args Spring Bootの起動引数
      */

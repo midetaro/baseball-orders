@@ -1,0 +1,136 @@
+// backendとsimulatorが共有するgRPCのワイヤー契約。
+//
+// backendはSimulationService.Simulateをunary RPCとして呼び出し、simulatorの応答を同期的に待機する。
+// 列挙型は値0を従来の既定値に割り当て、未指定の値が既定値として読み取られるようにする。
+syntax = "proto3";
+
+package baseballorders.messaging;
+
+option java_multiple_files = true;
+option java_package = "com.example.baseballorders.messaging";
+option java_outer_classname = "SimulationProto";
+
+// シミュレーションを実行して結果を返すsimulatorのサービス。
+service SimulationService {
+  // 打順を受け取り、シミュレーション結果を返す。
+  rpc Simulate(SimulationRequestMessage) returns (SimulationResultMessage);
+}
+
+// backendとsimulatorが共有する試合実行モード。未指定は大規模実行を表す。
+enum SimulationMode {
+  SIMULATION_MODE_LARGE_SCALE_RUN = 0;
+  SIMULATION_MODE_SINGLE_GAME_RUN = 1;
+}
+
+// シミュレーションで選手に割り当てる行動傾向。未指定は単打マンを表す。
+enum PlayerPersonality {
+  // 単打マン。
+  PLAYER_PERSONALITY_DEFAULT = 0;
+  // 中距離砲。
+  PLAYER_PERSONALITY_MIDDLE_DISTANCE = 1;
+  // 長距離砲。
+  PLAYER_PERSONALITY_EAGER_SLUGGISH = 2;
+  // 高出塁率。
+  PLAYER_PERSONALITY_HIGH_ON_BASE = 3;
+  // 盗塁重視。
+  PLAYER_PERSONALITY_EAGER_STEAL = 4;
+  // バント職人。
+  PLAYER_PERSONALITY_EAGER_BUNT = 5;
+}
+
+// 投手が打者の各確率へ与える補正種別。未指定は既定の投手を表す。
+enum PitcherPersonality {
+  PITCHER_PERSONALITY_DEFAULT = 0;
+  PITCHER_PERSONALITY_BOLD = 1;
+  PITCHER_PERSONALITY_TECHNICAL = 2;
+  PITCHER_PERSONALITY_CAUTIOUS = 3;
+}
+
+// シミュレーション要求で共有する選手データ。
+message SimulationPlayerMessage {
+  // 選手名。
+  string name = 1;
+  // 打率。
+  float hit_average = 2;
+  // バントを試みるかどうか。
+  bool bunt_enabled = 3;
+  // 盗塁を試みるかどうか。
+  bool steal_enabled = 4;
+  // 選手の行動傾向。
+  PlayerPersonality personality = 5;
+}
+
+// backendからsimulatorへ送る要求。
+message SimulationRequestMessage {
+  // ログ上で要求と結果を対応付ける一意なID。
+  string simulation_id = 1;
+  // 打順どおりの9人の選手。
+  repeated SimulationPlayerMessage players = 2;
+  // 対戦する投手の性格。
+  PitcherPersonality pitcher_personality = 3;
+  // 大規模実行と1試合実行を見分ける試合実行モード。
+  SimulationMode mode = 4;
+}
+
+// 全試合の得点統計。
+message GameScoreStatistics {
+  // 平均得点。
+  double average_score = 1;
+  // 中央値得点。
+  double median_score = 2;
+  // 最大得点。
+  int32 maximum_score = 3;
+  // シミュレーションした試合数。
+  int32 game_count = 4;
+  // 得点ごとの試合数。
+  map<int32, int32> score_distribution = 5;
+}
+
+// 全試合のプレー内容統計。
+message GameContentStatistics {
+  int32 hit_count = 1;
+  int32 single_hit_count = 2;
+  int32 double_hit_count = 3;
+  int32 triple_hit_count = 4;
+  int32 home_run_count = 5;
+  int32 solo_home_run_count = 6;
+  int32 two_run_home_run_count = 7;
+  int32 three_run_home_run_count = 8;
+  int32 grand_slam_count = 9;
+  int32 bunt_count = 10;
+  int32 steal_count = 11;
+  int32 bunt_failure_count = 12;
+  int32 steal_failure_count = 13;
+  int32 advancing_bunt_count = 14;
+  int32 squeeze_bunt_count = 15;
+  int32 advancing_bunt_failure_count = 16;
+  int32 squeeze_bunt_failure_count = 17;
+  int32 steal_to_second_count = 18;
+  int32 steal_to_third_count = 19;
+}
+
+// 1試合実行における1つの状況推移。
+message GameTransitionMessage {
+  // イニング。
+  int64 inning = 1;
+  // 打者または走者の振る舞い結果。
+  string action_result = 2;
+  // アウトカウント。
+  int32 out_count = 3;
+  // 累積得点。
+  int64 cumulative_score = 4;
+  // 走者状況。
+  string runner_state = 5;
+}
+
+// simulatorからbackendへ返す結果。
+message SimulationResultMessage {
+  // 要求と同じID。
+  string simulation_id = 1;
+  // 全試合の得点統計。
+  GameScoreStatistics game_score_statistics = 2;
+  // 全試合のプレー内容統計。
+  GameContentStatistics game_content_statistics = 3;
+  // 1試合実行における状況推移。大規模実行では空。
+  repeated GameTransitionMessage game_transitions = 4;
+}

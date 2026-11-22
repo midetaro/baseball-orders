@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""実物: Docker上のBackend・Simulator・Flociと本番の試合計算。
-モック: AWS SQSをFlociに置換。それ以外はなし。
-担保する疎通: HTTP -> Backend -> 要求SQS -> 自動起動したSimulator
--> 結果SQS -> Backend -> HTTP応答。
-担保しないもの: AWSのIAM・ネットワーク、乱数の統計的正当性、異常系・再配信。
+"""実物: Docker上のBackend・Simulatorと本番の試合計算。
+モック: なし。
+担保する疎通: HTTP -> Backend -> gRPC(simulator:9090) -> Simulator
+-> gRPC応答 -> Backend -> HTTP応答。
+担保しないもの: AWS ECS Service Connect・IAM・ネットワーク、乱数の統計的正当性、異常系・タイムアウト。
 """
 
 import json
@@ -37,7 +37,7 @@ def main():
     statistics = result["statistics"]
     assert isinstance(statistics["gameCount"], int) and statistics["gameCount"] > 0, result
     assert sum(statistics["scoreDistribution"].values()) == statistics["gameCount"], result
-    print("PASS: Backend -> Floci -> Simulator -> Floci -> Backend")
+    print("PASS: Backend -> gRPC -> Simulator -> gRPC -> Backend")
     print(json.dumps(statistics, ensure_ascii=False))
 
 

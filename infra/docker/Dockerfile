@@ -12,6 +12,8 @@ ARG APP
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
+# The simulator serves gRPC on 9090; the backend serves HTTP on 8080.
+EXPOSE 8080 9090
 COPY --from=build /workspace/apps/${APP}/infrastructure/build/libs/*-SNAPSHOT.jar app.jar
 USER 10001:10001
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

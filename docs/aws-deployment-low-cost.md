@@ -11,7 +11,7 @@
 
 ## 標準構成との違い
 
-標準構成は private subnet の ECS タスクが NAT Gateway 経由で SQS・ECR・CloudWatch Logs へ
+標準構成は private subnet の ECS タスクが NAT Gateway 経由で ECR・CloudWatch Logs へ
 outbound する。この文書の構成は private subnet と
 NAT Gateway を廃止し、**ECS タスクを public subnet に置いてパブリック IP から直接 outbound する**。
 [NAT Gateway の代替](aws-deployment.md#nat-gateway-の代替)の比較表で挙げた 3 択のうち、最も安価な
@@ -27,7 +27,7 @@ flowchart TB
         r53["Route 53"]
         acm["ACM certificate"]
         ecr[("ECR<br/>backend / simulator")]
-        logs["CloudWatch Logs<br/>+ Alarms"]
+        logs["CloudWatch Logs"]
 
         subgraph vpc["VPC 10.0.0.0/16"]
             igw["Internet Gateway"]
@@ -41,20 +41,14 @@ flowchart TB
                 end
             end
         end
-
-        requestq[["simulation-request<br/>+ DLQ"]]
-        resultq[["simulation-result<br/>+ DLQ"]]
     end
 
     browser -->|HTTPS 443| r53
     r53 --> alb
     acm -.-> alb
     alb -->|"HTTP 8080 / health check GET /"| backend
-    backend -->|SendMessage| requestq
-    requestq -->|"ReceiveMessage (poll 1s)"| simulator
-    simulator -->|SendMessage| resultq
-    resultq -->|SqsListener| backend
-    cluster -->|"SQS / ECR / Logs への outbound"| igw
+    backend -->|"gRPC Simulate (Service Connect simulator:9090)"| simulator
+    cluster -->|"ECR / Logs への outbound"| igw
     ecr -.->|image pull| cluster
     cluster -.-> logs
 ```
@@ -66,8 +60,8 @@ flowchart TB
   Internet Gateway を直接経由する。
 - **inbound は Security Group で全遮断する**。パブリック IP を持つことと、外部から到達できることは
   別である。ECS タスク用 SG の ingress は ALB SG からの `tcp/8080` のみを許可し、それ以外の inbound は
-  一切許可しない。egress は SQS・ECR・CloudWatch Logs 向けに `0.0.0.0/0` を許可する。
-- **ALB の設定・タスク定義の環境変数・SQS まわりの制約は標準構成と同一**。
+  一切許可しない（simulator 用 SG は backend SG からの gRPC `tcp/9090` のみ許可する）。egress は ECR・CloudWatch Logs 向けに `0.0.0.0/0` を許可する。
+- **ALB の設定・タスク定義の環境変数・gRPC まわりの制約は標準構成と同一**。
   [ALB の設定値](aws-deployment.md#alb-の設定値)、[タスク定義の環境変数](aws-deployment.md#タスク定義の環境変数)、
   [この構成が受け入れている制約](aws-deployment.md#この構成が受け入れている制約)をそのまま参照すること。
 
@@ -105,7 +99,7 @@ ap-northeast-1、月額の概算（[aws-deployment.md の費用の目安](aws-de
 | Fargate backend (0.5 vCPU / 4 GB 常時) | $35 |
 | Fargate simulator (1 vCPU / 4 GB 常時、Spot) | $16 |
 | NAT Gateway | $0（不使用） |
-| SQS / CloudWatch Logs / ECR | $2 |
+| CloudWatch Logs / ECR | $2 |
 | 合計 | 約 $73 |
 
 さらに下げる場合、EC2 1 台に既存の `compose.yaml` をそのまま載せる選択肢がある（月 $12〜15、

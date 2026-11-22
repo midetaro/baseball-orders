@@ -12,6 +12,10 @@ baseball-orders:
   simulation:
     result-timeout: 30s
     maximum-average-hit-average: 0.35
+  simulator:
+    grpc:
+      host: ${SIMULATOR_GRPC_HOST:simulator}
+      port: ${SIMULATOR_GRPC_PORT:9090}
   rendering:
     single-game:
       frame-duration-millis: 1000

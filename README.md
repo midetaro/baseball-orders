@@ -3,8 +3,8 @@
 ## アプリケーション概要
 
 Baseball Orders は、打者の能力と打順を設定し、試合シミュレーションの結果を確認できるアプリケーションです。
-ブラウザから受け付けたシミュレーション要求を SQS 互換のメッセージキューへ送り、独立した Simulator が
-試合を計算します。計算結果は同じメッセージキューを経由して Backend に戻り、画面へ同期的に返されます。
+ブラウザから受け付けたシミュレーション要求を gRPC（unary RPC）で独立した Simulator へ送り、Simulator が
+試合を計算します。計算結果は同じ RPC の応答として Backend に戻り、画面へ同期的に返されます。
 
 9人分の打者能力（出塁率）、各打者の性格、バント・盗塁の可否を入力して、次の2つのモードで実行できます。
 バント・盗塁の成功率と対戦投手の補正は、利用者が入力する値ではなく Simulator の設定値です。
@@ -60,38 +60,39 @@ Baseball Orders は、打者の能力と打順を設定し、試合シミュレ�
 | 領域 | 採用技術 |
 | --- | --- |
 | 言語・ビルド | Java 25、Gradle composite build（`includeBuild`）、Spotless（google-java-format AOSP） |
-| Backend | Spring Boot 4.0.0、Spring MVC、Thymeleaf、Spring Cloud AWS SQS、素の JavaScript / CSS（画面スクリプトとアニメーション） |
-| Simulator | Spring Framework 7.0.1（Spring Boot の Web スタックなし）、AWS SDK for Java v2 (SQS)、Jackson |
+| Backend | Spring Boot 4.0.0、Spring MVC、Thymeleaf、gRPC クライアント（grpc-java）、素の JavaScript / CSS（画面スクリプトとアニメーション） |
+| Simulator | Spring Framework 7.0.1（Spring Boot の Web スタックなし）、gRPC サーバー（grpc-java・Netty） |
+| 通信契約 | Protocol Buffers（`libs/messaging-contract/src/main/proto/simulation.proto`）、gRPC 1.85.1 |
 | コード生成 | Lombok（`@Getter` / `@RequiredArgsConstructor` / `@Slf4j`）、Jilt（STAGED Builder） |
-| テスト | JUnit 6.0.1、Mockito、ArchUnit、ElasticMQ、JaCoCo |
-| 実行基盤 | Docker Compose（Floci を SQS 互換として使用）、Terraform（SQS・ECS Fargate・ALB・ECR など）、GitHub Actions（テスト / ECR push / デプロイ） |
+| テスト | JUnit 6.0.1、Mockito、ArchUnit、JaCoCo |
+| 実行基盤 | Docker Compose、Terraform（ECS Fargate・ECS Service Connect・ALB・ECR など）、GitHub Actions（テスト / ECR push / デプロイ） |
 
 ## 実装方針
 
 ### 設計の狙い
 
-「同期的な画面操作」と「非同期な計算処理」を、1つのアプリケーションに押し込めずに分離することを主眼に置いています。
-UI を持つ Backend と、試合規則だけを持つ Simulator を独立したデプロイ単位とし、両者はメッセージキュー経由でのみ
-つながります。互いのクラスには一切依存せず、共有するのは `libs/messaging-contract` の wire 型だけです。
+「画面操作」と「計算処理」を、1つのアプリケーションに押し込めずに分離することを主眼に置いています。
+UI を持つ Backend と、試合規則だけを持つ Simulator を独立したデプロイ単位とし、両者は gRPC 経由でのみ
+つながります。互いのクラスには一切依存せず、共有するのは `libs/messaging-contract` の `simulation.proto`（とその生成コード）だけです。
 
 ### プロジェクト構成
 
 ```text
 baseball-orders/
 ├── apps/
-│   ├── backend/                  # 同期HTTP API・Thymeleaf UI・SQSアダプタ
+│   ├── backend/                  # 同期HTTP API・Thymeleaf UI・gRPCクライアントアダプタ
 │   │   ├── domain/               # 業務データと結果モデル（フレームワーク非依存）
 │   │   ├── application/          # ユースケース調整・ポート定義・結果待機
 │   │   └── infrastructure/       # api / web / messaging
-│   └── simulator/                # 非同期の試合計算ワーカー
+│   └── simulator/                # 試合計算ワーカー（gRPCサーバー）
 │       ├── domain/               # 試合規則（game / player / play / rule / statistics）
 │       ├── application/          # シミュレーションユースケース
-│       └── infrastructure/       # SQSポーリング・シリアライズ・wireマッピング
-├── libs/messaging-contract/      # SQSのwire契約（両アプリが物理的に共有）
-├── integration-test/             # backend -> SQS -> simulator -> SQS -> backend の疎通検証
+│       └── infrastructure/       # gRPCサーバー・wireマッピング
+├── libs/messaging-contract/      # gRPCのwire契約（simulation.proto・両アプリが物理的に共有）
+├── integration-test/             # HTTP -> backend -> gRPC -> simulator -> HTTP の疎通検証
 ├── infra/
 │   ├── docker/                   # ローカル実行環境
-│   └── aws-terraform/            # AWSリソース（SQS・ECS・ALB など）
+│   └── aws-terraform/            # AWSリソース（ECS・Service Connect・ALB など）
 └── docs/                         # アーキテクチャマップ・デプロイ手順・機能仕様・画像
 ```
 
@@ -101,11 +102,11 @@ baseball-orders/
 ### レイヤと依存方向
 
 各アプリケーション内部の依存は `infrastructure -> application -> domain` の一方向に固定します。
-domain にはフレームワーク・Thymeleaf・SQS・HTTP・永続化の型を持ち込みません。
+domain にはフレームワーク・Thymeleaf・gRPC・HTTP・永続化の型を持ち込みません。
 
 ```mermaid
 flowchart LR
-    contract["libs/messaging-contract<br/>SQS wire契約"]
+    contract["libs/messaging-contract<br/>gRPC wire契約（protobuf）"]
 
     subgraph backend["apps/backend"]
         bi["infrastructure<br/>api / web / messaging"] --> ba["application"]
@@ -124,40 +125,38 @@ flowchart LR
 Backend の `infrastructure` では、`api` / `web` / `messaging` の各アダプタが互いを直接参照することを
 禁じ、必ず `application` のユースケースかポートを経由させます。この制約は ArchUnit テストで機械的に検証しています。
 
-### 同期HTTP と非同期SQS の橋渡し
+### 同期HTTP と同期gRPC の橋渡し
 
-画面は「実行して結果が返る」同期操作ですが、計算は別プロセスで非同期に走ります。両者は相関IDで対応付けます。
+画面は「実行して結果が返る」同期操作で、計算は別プロセスの Simulator が行います。両者は gRPC の unary RPC
+（`SimulationService/Simulate`）で直接つなぎ、Backend は応答が返るまで待機します。
 
 1. `SimulatorRequestController` が9人分の入力を受け取り、`SimulationCoordinator` に委譲する。
    大規模実行は `POST /simulations`、1試合実行は `POST /simulations/single-game` で、後者は要求メッセージの
    `mode` に `SINGLE_GAME_RUN` を指定する。
-2. Coordinator が `simulationId`（UUID）を採番し、`WaitingResultRegistry` に待機を登録してから要求をキューへ送る。
-3. Simulator が要求を取り出し、モードに応じて設定試合数の集計または1試合分の推移を計算して結果キューへ送る。**結果の送信に成功してから要求メッセージを削除する**ため、
-   途中で落ちた要求は再配信される。
-4. `SimulationResultListener` が結果を受け取り、`simulationId` が一致する待機を解放する。
-5. Coordinator が最大30秒まで待機し、HTTP レスポンスとして返す。相関しない結果や時間切れ後の結果は破棄する。
+2. Coordinator が入力を検証し、ポート `SimulatorClient` を呼び出す。実装の `GrpcSimulatorClient` は
+   `baseball-orders.simulation.result-timeout`（既定30秒）をデッドラインとしてブロッキング呼び出しを行う。
+3. Simulator の `GrpcSimulationService` が要求を受け取り、モードに応じて設定試合数の集計または1試合分の推移を計算して、
+   同じ RPC の応答として返す。不正な入力は `INVALID_ARGUMENT`、それ以外の失敗は `INTERNAL` で返す。
+4. Coordinator が結果を HTTP レスポンスとして返す。デッドライン超過は `SimulationTimeoutException`（HTTP 504）、
+   その他の通信失敗は `SimulationSendException`（HTTP 502）になる。
 
 ```mermaid
 sequenceDiagram
     actor Browser
     participant API as SimulatorRequestController
     participant Coordinator as SimulationCoordinator
-    participant Registry as WaitingResultRegistry
-    participant RequestQ as 要求キュー
-    participant Simulator
-    participant ResultQ as 結果キュー
-    participant Listener as SimulationResultListener
+    participant Client as GrpcSimulatorClient
+    participant Service as GrpcSimulationService
+    participant UseCase as SimulateGameUseCase
 
     Browser->>API: POST /simulations
     API->>Coordinator: simulate(PlayerData x9)
-    Coordinator->>Registry: register(simulationId)
-    Coordinator->>RequestQ: SimulationRequestMessage
-    RequestQ->>Simulator: poll
-    Simulator->>ResultQ: SimulationResultMessage
-    Simulator->>RequestQ: 送信成功後に削除
-    ResultQ->>Listener: SimulationResultMessage
-    Listener->>Registry: complete(simulationId, result)
-    Registry-->>Coordinator: 一致する待機を解放
+    Coordinator->>Client: simulate(SimulationRequest)
+    Client->>Service: gRPC Simulate(SimulationRequestMessage)
+    Service->>UseCase: 試合計算
+    UseCase-->>Service: 結果
+    Service-->>Client: SimulationResultMessage
+    Client-->>Coordinator: SimulationResult
     Coordinator-->>API: SimulationResult
     API-->>Browser: 同期HTTPレスポンス
 ```
@@ -186,10 +185,9 @@ enum の分岐は `switch` 式で全定数を明示し、`default` を置かな�
 「レビューで気をつける」ではなく、壊れたら落ちる仕組みに寄せています。
 
 - **ArchUnit**: レイヤの依存方向、domain の技術非依存、`infrastructure` アダプタ間の直接参照禁止を検証します。
-- **結合テスト**: `integration-test` が backend -> SQS -> simulator -> SQS -> backend の往復を実際に通します。
+- **結合テスト**: `integration-test` の `BackendSimulatorGrpcIntegrationTest` が HTTP -> backend -> gRPC -> simulator -> HTTP の往復を実際に通します。
   各結合テストには「実物 / モック / 担保する疎通 / 担保しないもの」を日本語で明記する規約を設けています。
-- **ElasticMQ**: SQS アダプタは実際のキュー実装に対して検証します。
-- **JaCoCo**: メッセージ処理の中核である `SqsSimulationScheduler` に、行・分岐カバレッジ100%を強制します。
+- **JaCoCo**: gRPC 受信の中核である `GrpcSimulationService` に、行・分岐カバレッジ100%を強制します。
 - **Spotless**: google-java-format (AOSP) を `test` タスクの前提として実行し、整形差分を CI で落とします。
 - **Terraform**: `fmt -check` / `validate` / `test` を CI で実行します。
 
@@ -203,12 +201,12 @@ enum の分岐は `switch` 式で全定数を明示し、`default` を置かな�
 
 ### 設定方針
 
-試合数やポーリング間隔などの調整可能な数値は、コード内のリテラルではなく名前付きプロパティとして持ち、
+試合数や gRPC のシャットダウン猶予などの調整可能な数値は、コード内のリテラルではなく名前付きプロパティとして持ち、
 プロファイルごとに値を定義します。一方、9回・3アウトのような固定規則を表す数値はコード側に残します。
 
-- Simulator（local / dev / prod）: 試合数 `simulation.game-count`（`SIMULATION_GAME_COUNT`、既定100試合）、
+- Simulator（local / dev / prod）: 試合数 `simulation.game-count`（`SIMULATION_GAME_COUNT`、既定100試合）、gRPC の待ち受けポート `simulation.grpc.port`（`SIMULATION_GRPC_PORT`、既定9090）、
   四球・三振率や盗塁・バントの成功率などの確率 `simulation.rule.*`、投手の性格ごとの補正倍率 `simulation.pitcher.*`。
-- Backend（local / prod）: 結果待ちのタイムアウト `baseball-orders.simulation.result-timeout`（既定30秒）、
+- Backend（local / dev / prod）: simulator の接続先 `baseball-orders.simulator.grpc.host` / `.port`（`SIMULATOR_GRPC_HOST` / `SIMULATOR_GRPC_PORT`）、結果待ちのタイムアウト `baseball-orders.simulation.result-timeout`（既定30秒）、
   打線の平均出塁率の上限、1試合実行の通常・安打・得点・本塁打フレームの表示時間
   `baseball-orders.rendering.single-game.*`。
 
@@ -217,16 +215,12 @@ enum の分岐は `switch` 式で全定数を明示し、`default` を置かな�
 ```mermaid
 flowchart LR
     browser["ブラウザ"] -->|"HTTP"| backend["Backend<br/>UI・HTTP API"]
-    backend -->|"シミュレーション要求"| requestQueue["Floci<br/>要求 SQS"]
-    requestQueue --> simulator["Simulator<br/>試合計算ワーカー"]
-    simulator -->|"シミュレーション結果"| resultQueue["Floci<br/>結果 SQS"]
-    resultQueue --> backend
-    queues["queues<br/>キュー初期化コンテナ"] -.-> requestQueue
-    queues -.-> resultQueue
+    backend -->|"gRPC Simulate（unary）"| simulator["Simulator<br/>試合計算サーバー"]
+    simulator -->|"gRPC 応答"| backend
 ```
 
-Docker Compose では、Floci が AWS SQS をローカルで代替します。Backend だけをホストへ公開し、
-Simulator・Floci・キュー初期化コンテナは Docker ネットワーク内で通信します。
+Docker Compose では Backend と Simulator の2サービスだけを起動します。Backend だけをホストへ公開し、
+Simulator は `9090` 番ポートを Docker ネットワーク内に公開して、Backend が `SIMULATOR_GRPC_HOST=simulator` で接続します。
 
 ## Docker を使ったローカル実行
 
@@ -252,7 +246,7 @@ BACKEND_PORT=18080 docker compose up -d --build --wait --wait-timeout 180
 
 ```sh
 python3 infra/docker/smoke-test.py
-docker compose logs --tail=100 backend simulator queues
+docker compose logs --tail=100 backend simulator
 docker compose down
 ```
 
@@ -262,7 +256,7 @@ docker compose down
 BACKEND_PORT=18080 python3 infra/docker/smoke-test.py
 ```
 
-構成、キュー名の変更、トラブルシューティングなどは
+構成、接続先の変更、トラブルシューティングなどは
 [ローカル Docker 環境の詳細](infra/docker/README.md)を参照してください。
 
 ## リリースイメージのECR公開

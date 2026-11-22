@@ -151,8 +151,7 @@ for identity, decl in sorted(declarations.items()):
 
 keys = {
     "simulation.game-count": (1, None),
-    "simulation.sqs.max-messages-per-poll": (1, 10),
-    "simulation.sqs.long-poll-seconds": (0, 20),
+    "simulation.grpc.port": (1, 65535),
 }
 resources = simulator / "infrastructure/src/main/resources"
 
@@ -198,20 +197,18 @@ for profile in ("local", "dev", "prod"):
             errors.append(f"{path.name}: {key}={number} outside {minimum}..{maximum or 'unbounded'}")
 
 bindings = {
-    "simulation.game-count": simulator / "application/src/main/java/com/example/baseballorders/simulator/application/usecase/SimulateGameUseCase.java",
-    "simulation.sqs.max-messages-per-poll": simulator / "infrastructure/src/main/java/com/example/baseballorders/simulator/infrastructure/messaging/SqsSimulationScheduler.java",
-    "simulation.sqs.long-poll-seconds": simulator / "infrastructure/src/main/java/com/example/baseballorders/simulator/infrastructure/messaging/SqsSimulationScheduler.java",
+    "simulation.game-count": (
+        simulator / "application/src/main/java/com/example/baseballorders/simulator/application/usecase/SimulateGameUseCase.java",
+        "${simulation.game-count}",
+    ),
+    "simulation.grpc.port": (
+        simulator / "infrastructure/src/main/java/com/example/baseballorders/simulator/infrastructure/config/SimulationGrpcProperties.java",
+        'prefix = "simulation.grpc"',
+    ),
 }
-for key, path in bindings.items():
-    if not path.is_file() or "${" + key + "}" not in path.read_text(encoding="utf-8"):
+for key, (path, needle) in bindings.items():
+    if not path.is_file() or needle not in path.read_text(encoding="utf-8"):
         errors.append(f"{path.relative_to(root)}: missing binding for {key}")
-
-scheduler = bindings["simulation.sqs.max-messages-per-poll"]
-if scheduler.is_file():
-    text = source_text(scheduler)
-    for constant in ("MAX_MESSAGES_PER_POLL", "LONG_POLL_SECONDS"):
-        if re.search(rf"\b{constant}\s*=\s*\d+\s*;", text):
-            errors.append(f"{scheduler.relative_to(root)}: {constant} remains a numeric constant")
 
 if errors:
     for error in errors:

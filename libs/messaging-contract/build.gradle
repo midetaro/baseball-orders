@@ -1,14 +1,47 @@
 plugins {
     id 'java-library'
+    id 'com.google.protobuf' version '0.10.1'
 }
 
 // Both included builds use these sources; keep their task outputs independent.
 layout.buildDirectory = layout.projectDirectory.dir("build/${rootProject.name}")
 
+def grpcVersion = '1.85.1'
+def protobufVersion = '4.36.2'
+
 dependencies {
-    api 'com.fasterxml.jackson.core:jackson-annotations:2.20'
+    api "com.google.protobuf:protobuf-java:${protobufVersion}"
+    api "io.grpc:grpc-protobuf:${grpcVersion}"
+    api "io.grpc:grpc-stub:${grpcVersion}"
+    // grpc-javaの生成スタブが参照する@Generatedを解決する。
+    compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
 
     testImplementation platform('org.junit:junit-bom:6.0.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${protobufVersion}"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+    }
+    generateProtoTasks {
+        all().configureEach {
+            plugins {
+                grpc {}
+            }
+        }
+    }
+}
+
+// protocの生成コードはフォーマット対象外とする。
+spotless {
+    java {
+        targetExclude 'build/**'
+    }
 }

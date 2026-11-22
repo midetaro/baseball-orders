@@ -20,7 +20,7 @@ import org.springframework.web.context.WebApplicationContext;
  * モック: HTTPサーブレット環境をMockMvcで代替。 担保する疎通: ログインなしのHTTP GET
  * /・/single-game・/large-scale・/simulation-guide -> Controller -> Thymeleaf
  * HTML応答、ログインなし・CSRFトークンなしのHTTP POST /simulations/single-game -> SimulatorRequestController ->
- * 入力検証エラー応答、およびHTTP GET /login -> 404。 担保しないもの: SQSへのシミュレーション要求送信と結果受信。
+ * 入力検証エラー応答、およびHTTP GET /login -> 404。 担保しないもの: simulatorへのgRPCによるシミュレーション要求と結果受信。
  */
 @SpringBootTest
 class AnonymousAccessIntegrationTest {

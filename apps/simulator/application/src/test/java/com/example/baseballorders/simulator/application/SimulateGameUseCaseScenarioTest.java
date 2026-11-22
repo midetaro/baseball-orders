@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
  * <p>担保する疎通: ユースケース -> 試合の反復実行 -> GameBattingContext -> 試合終了通知 -> ScoreAccumulator ->
  * ScoreStatistics の平均・中央値・最大・試合数・得点分布・各カウンタの合算
  *
- * <p>担保しないもの: 走者配置ごとの進塁・得点規則（L2 の各 {@code BasesState} テストが担保する）、 SQS との疎通（infrastructure と
+ * <p>担保しないもの: 走者配置ごとの進塁・得点規則（L2 の各 {@code BasesState} テストが担保する）、 gRPC との疎通（infrastructure と
  * integration-test の担当）
  *
  * <p>既存の {@code SimulateGameUseCaseTest} は実乱数での恒等式だけを見るスモークテストとして残し、

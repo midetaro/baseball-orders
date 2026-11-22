@@ -1,4 +1,4 @@
-# Flociを使うローカルアプリ環境
+# ローカルアプリ環境（gRPC）
 
 Docker Desktop / Docker EngineとDocker Composeを起動し、リポジトリルートで実行します。
 JavaとGradleはDocker内で用意されるため、ホストへのインストールは不要です。
@@ -14,37 +14,24 @@ http://127.0.0.1:18080/ を開いてください。
 
 ## 構成
 
-- `floci`: Floci 2.0.1。AWS SQSをローカルで代替します。
-- `queues`: Flociの正常起動後に要求・結果キューを作成し、正常終了する初期化コンテナ。
-- `simulator`: 本番の試合計算を行う独立したJavaプロセス。SQSを自動ポーリングします。
-- `backend`: HTTP/UI。要求をSQSへ送信し、結果リスナーが受信した結果をHTTPで返します。
+- `simulator`: 本番の試合計算を行う独立したJavaプロセス。gRPCサーバーとして`9090`番ポートで待ち受けます（Dockerネットワーク内のみに公開）。
+- `backend`: HTTP/UI。要求をgRPCの`SimulationService/Simulate`で`simulator`へ送り、応答をHTTPで返します。
 
-Backend -> 要求SQS (Floci) -> Simulator -> 結果SQS (Floci) -> Backend
+HTTP -> Backend -> gRPC (unary) -> Simulator -> gRPC応答 -> Backend -> HTTPレスポンス
 
-Dockerでは明示的に`docker`プロファイルを指定し、Backendの`local`プロファイルによる
-リスナー停止を回避します。Simulatorの試合数は
+Dockerでは明示的に`docker`プロファイルを指定します。Backendは`SIMULATOR_GRPC_HOST=simulator`、
+`SIMULATOR_GRPC_PORT`（既定9090）でSimulatorへ接続します。Simulatorの試合数は
 `apps/simulator/infrastructure/src/main/resources/application.yml`の
 `simulation.game-count`（既定100、環境変数`SIMULATION_GAME_COUNT`）に従います。変更後はSimulatorを再ビルド・再作成してください。
-ポーリング間隔は1秒で、`SIMULATION_SQS_POLL_FIXED_DELAY`をCompose内で変更できます。
+待ち受けポートは`SIMULATION_GRPC_PORT`で変更でき、Compose内の両サービスに同じ値が渡ります。
 
-Composeが試合数を上書きしないことは、`python3 infra/docker/test-compose-config.py`で検証できます。
+Composeが試合数を上書きしないこと、およびキューを持たないgRPC構成であることは、`python3 infra/docker/test-compose-config.py`で検証できます。
 
-実AWSの認証情報は不要です。コンテナにはローカル専用の`test`認証情報を渡します。
-FlociはDocker内部の`http://floci:4566`に配置し、ホストにはBackendのみを公開します。
-`FLOCI_HOSTNAME`を指定して、返却されるSQS QueueUrlもコンテナ間で解決できるようにします。
-[Floci公式ドキュメント](https://github.com/floci-io/floci#multi-container-docker-compose)
-
-キュー名を変更する場合は、起動時に`SIMULATION_REQUEST_QUEUE_NAME`と
-`SIMULATION_RESULT_QUEUE_NAME`を設定します。初期化と両アプリに同じ値が渡ります。
-
-データは開発用の一時データです。Flociのキューとメッセージは
-Flociプロセス終了で失われます。起動時にキューを再作成します。
-Flociだけを再起動するとキューが失われるため、環境全体を`down`してから`up`してください。
+メッセージ基盤やAWS認証情報は不要で、ホストにはBackendのみを公開します。
 
 ## 疎通確認
 
 Python 3があるホストで実行します。画面のHTTP 200と、9選手を`POST /simulations`へ送った実シミュレーション応答（相関ID、試合数、得点分布）を検証します。
-定期ポーリングも本番実装が自動で実行し、テストから`poll()`を直接呼びません。
 
 ```sh
 python3 infra/docker/smoke-test.py
@@ -60,19 +47,18 @@ BACKEND_PORT=18080 python3 infra/docker/smoke-test.py
 
 ```sh
 docker compose ps -a
-docker compose logs --tail=100 backend simulator queues
+docker compose logs --tail=100 backend simulator
 docker compose down
 ```
 
-`queues`の`Exited (0)`は正常です。ソース変更を反映する場合は、再度`up -d --build --wait`を実行します。
+ソース変更を反映する場合は、再度`up -d --build --wait`を実行します。
 初回ビルド後はDockerのGradleキャッシュを再利用します。
 
-既存の各アプリの`infrastructure/compose.yaml`は、条件付きElasticMQテスト用です。
 アプリをまとめて動かす場合は、リポジトリルートの`compose.yaml`を使用してください。
 
-## 画面でシミュレーション送信に失敗する場合
+## 画面でシミュレーション呼び出しに失敗する場合
 
-`simulation request could not be sent: {UUID}` が表示される場合は、まず画面のURLが
+`simulation request could not be sent: {UUID}`（HTTP 502）が表示される場合は、まず画面のURLが
 `http://127.0.0.1:8080/`（ポート変更時はそのポート）になっているか確認してください。
 ComposeはIPv4の`127.0.0.1`に公開しています。`localhost`はIPv6の`::1`に解決されることがあり、
 IDEなどで起動した別のJavaプロセスが同じポートで待ち受けていると、そちらに接続してしまいます。

@@ -5,7 +5,7 @@ variables {
   route53_zone_name = "example.com"
 }
 
-run "simulator_queue_depth_scaling" {
+run "simulator_cpu_scaling" {
   command = apply
 
   override_resource {
@@ -37,20 +37,6 @@ run "simulator_queue_depth_scaling" {
   }
 
   override_data {
-    target = data.aws_iam_policy_document.backend_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
-    target = data.aws_iam_policy_document.simulator_sqs
-    values = {
-      json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
-    }
-  }
-
-  override_data {
     target = data.aws_iam_policy_document.ecs_tasks_assume_role
     values = {
       json = "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"}}]}"
@@ -62,20 +48,6 @@ run "simulator_queue_depth_scaling" {
     values = {
       zone_id = "Z1234567890ABC"
       name    = "example.com"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.backend_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-backend-sqs"
-    }
-  }
-
-  override_resource {
-    target = aws_iam_policy.simulator_sqs
-    values = {
-      arn = "arn:aws:iam::123456789012:policy/baseball-orders-dev-simulator-sqs"
     }
   }
 
@@ -117,20 +89,6 @@ run "simulator_queue_depth_scaling" {
     }
   }
 
-  override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_out
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:11111111-1111-1111-1111-111111111111:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-out"
-    }
-  }
-
-  override_resource {
-    target = aws_appautoscaling_policy.simulator_scale_in
-    values = {
-      arn = "arn:aws:autoscaling:ap-northeast-1:123456789012:scalingPolicy:22222222-2222-2222-2222-222222222222:resource/ecs/service/baseball-orders-dev-cluster/baseball-orders-dev-simulator:policyName/baseball-orders-dev-simulator-scale-in"
-    }
-  }
-
   assert {
     condition     = aws_appautoscaling_target.simulator.resource_id == "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.simulator.name}"
     error_message = "The autoscaling target must track the simulator ECS service."
@@ -147,32 +105,15 @@ run "simulator_queue_depth_scaling" {
   }
 
   assert {
-    condition     = aws_cloudwatch_metric_alarm.simulator_scale_out.dimensions["QueueName"] == aws_sqs_queue.simulation_request.name
-    error_message = "The scale-out alarm must watch the simulation-request queue depth (ApproximateNumberOfMessagesVisible)."
+    condition     = aws_appautoscaling_policy.simulator_cpu.policy_type == "TargetTrackingScaling"
+    error_message = "The simulator must scale with a target-tracking policy."
   }
 
   assert {
-    condition     = aws_cloudwatch_metric_alarm.simulator_scale_out.metric_name == "ApproximateNumberOfMessagesVisible" && aws_cloudwatch_metric_alarm.simulator_scale_out.namespace == "AWS/SQS"
-    error_message = "The scale-out alarm must be based on the request queue's visible message count."
-  }
-
-  assert {
-    condition     = contains(aws_cloudwatch_metric_alarm.simulator_scale_out.alarm_actions, aws_appautoscaling_policy.simulator_scale_out.arn)
-    error_message = "The scale-out alarm must trigger the scale-out Application Auto Scaling policy."
-  }
-
-  assert {
-    condition     = contains(aws_cloudwatch_metric_alarm.simulator_scale_in.alarm_actions, aws_appautoscaling_policy.simulator_scale_in.arn)
-    error_message = "The scale-in alarm must trigger the scale-in Application Auto Scaling policy."
-  }
-
-  assert {
-    condition     = one(one(aws_appautoscaling_policy.simulator_scale_out.step_scaling_policy_configuration).step_adjustment).scaling_adjustment > 0
-    error_message = "The scale-out policy must increase desired count when the request queue backs up."
-  }
-
-  assert {
-    condition     = one(one(aws_appautoscaling_policy.simulator_scale_in.step_scaling_policy_configuration).step_adjustment).scaling_adjustment < 0
-    error_message = "The scale-in policy must decrease desired count once the request queue drains."
+    condition = alltrue([
+      one(one(aws_appautoscaling_policy.simulator_cpu.target_tracking_scaling_policy_configuration).predefined_metric_specification).predefined_metric_type == "ECSServiceAverageCPUUtilization",
+      one(aws_appautoscaling_policy.simulator_cpu.target_tracking_scaling_policy_configuration).target_value == var.simulator_cpu_target_percent,
+    ])
+    error_message = "The simulator policy must track ECS service-average CPU utilization at the configured target."
   }
 }

@@ -2,7 +2,7 @@ package com.example.baseballorders.backend.application.exception;
 
 import java.util.UUID;
 
-/** 許容時間内にsimulation-resultを取得できなかったことを表す。 */
+/** 許容時間内にsimulatorからシミュレーション結果を受け取れなかったことを表す。 */
 public final class SimulationTimeoutException extends RuntimeException {
 
     /**

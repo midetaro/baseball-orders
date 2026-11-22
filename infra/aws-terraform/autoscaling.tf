@@ -1,13 +1,25 @@
 variable "simulator_max_count" {
-  description = "Maximum simulator task count when the simulation-request queue backs up."
+  description = "Maximum simulator task count when simulator CPU utilization stays above simulator_cpu_target_percent."
   type        = number
   default     = 4
 }
 
-variable "simulator_scale_out_threshold" {
-  description = "ApproximateNumberOfMessagesVisible on simulation-request that triggers a simulator scale-out."
+variable "simulator_cpu_target_percent" {
+  description = "Target ECSServiceAverageCPUUtilization (percent) that the simulator service is scaled to hold."
   type        = number
-  default     = 5
+  default     = 60
+}
+
+variable "simulator_scale_out_cooldown_seconds" {
+  description = "Seconds to wait after a scale-out before another scale-out may start."
+  type        = number
+  default     = 120
+}
+
+variable "simulator_scale_in_cooldown_seconds" {
+  description = "Seconds to wait after a scale-in before another scale-in may start."
+  type        = number
+  default     = 300
 }
 
 resource "aws_appautoscaling_target" "simulator" {
@@ -18,76 +30,20 @@ resource "aws_appautoscaling_target" "simulator" {
   max_capacity       = var.simulator_max_count
 }
 
-resource "aws_appautoscaling_policy" "simulator_scale_out" {
-  name               = "${local.name_prefix}-simulator-scale-out"
-  policy_type        = "StepScaling"
+resource "aws_appautoscaling_policy" "simulator_cpu" {
+  name               = "${local.name_prefix}-simulator-cpu"
+  policy_type        = "TargetTrackingScaling"
   service_namespace  = aws_appautoscaling_target.simulator.service_namespace
   resource_id        = aws_appautoscaling_target.simulator.resource_id
   scalable_dimension = aws_appautoscaling_target.simulator.scalable_dimension
 
-  step_scaling_policy_configuration {
-    adjustment_type         = "ChangeInCapacity"
-    cooldown                = 120
-    metric_aggregation_type = "Maximum"
+  target_tracking_scaling_policy_configuration {
+    target_value       = var.simulator_cpu_target_percent
+    scale_out_cooldown = var.simulator_scale_out_cooldown_seconds
+    scale_in_cooldown  = var.simulator_scale_in_cooldown_seconds
 
-    step_adjustment {
-      scaling_adjustment          = 1
-      metric_interval_lower_bound = 0
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
   }
-}
-
-resource "aws_appautoscaling_policy" "simulator_scale_in" {
-  name               = "${local.name_prefix}-simulator-scale-in"
-  policy_type        = "StepScaling"
-  service_namespace  = aws_appautoscaling_target.simulator.service_namespace
-  resource_id        = aws_appautoscaling_target.simulator.resource_id
-  scalable_dimension = aws_appautoscaling_target.simulator.scalable_dimension
-
-  step_scaling_policy_configuration {
-    adjustment_type         = "ChangeInCapacity"
-    cooldown                = 300
-    metric_aggregation_type = "Maximum"
-
-    step_adjustment {
-      scaling_adjustment          = -1
-      metric_interval_upper_bound = 0
-    }
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "simulator_scale_out" {
-  alarm_name          = "${local.name_prefix}-simulator-queue-depth-high"
-  alarm_description   = "The simulation-request queue is backing up; scale the simulator out."
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 2
-  metric_name         = "ApproximateNumberOfMessagesVisible"
-  namespace           = "AWS/SQS"
-  period              = 60
-  statistic           = "Average"
-  threshold           = var.simulator_scale_out_threshold
-
-  dimensions = {
-    QueueName = aws_sqs_queue.simulation_request.name
-  }
-
-  alarm_actions = [aws_appautoscaling_policy.simulator_scale_out.arn]
-}
-
-resource "aws_cloudwatch_metric_alarm" "simulator_scale_in" {
-  alarm_name          = "${local.name_prefix}-simulator-queue-depth-low"
-  alarm_description   = "The simulation-request queue has drained; scale the simulator back in."
-  comparison_operator = "LessThanOrEqualToThreshold"
-  evaluation_periods  = 3
-  metric_name         = "ApproximateNumberOfMessagesVisible"
-  namespace           = "AWS/SQS"
-  period              = 60
-  statistic           = "Average"
-  threshold           = 0
-
-  dimensions = {
-    QueueName = aws_sqs_queue.simulation_request.name
-  }
-
-  alarm_actions = [aws_appautoscaling_policy.simulator_scale_in.arn]
 }

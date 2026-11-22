@@ -5,8 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.SimulationLimits;
 import com.example.baseballorders.backend.application.SimulationLimitsBuilder;
-import com.example.baseballorders.backend.application.WaitingResultRegistry;
-import com.example.baseballorders.backend.application.adapter.SimulatorMessagePublisher;
+import com.example.baseballorders.backend.application.adapter.SimulatorClient;
 import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.application.exception.SimulationSendException;
 import com.example.baseballorders.backend.application.exception.SimulationTimeoutException;
@@ -15,21 +14,17 @@ import com.example.baseballorders.backend.domain.PlayerDataBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
 import com.example.baseballorders.backend.domain.SimulationMode;
 import com.example.baseballorders.backend.domain.SimulationResult;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class SimulationCoordinatorTest {
 
     /** application.ymlの既定値と同じ上限を組み立てる。 */
-    private static SimulationLimits limits(Duration resultTimeout) {
-        return SimulationLimitsBuilder.simulationLimits()
-                .resultTimeout(resultTimeout)
-                .maximumAverageHitAverage(0.350f)
-                .build();
+    private static SimulationLimits limits() {
+        return SimulationLimitsBuilder.simulationLimits().maximumAverageHitAverage(0.350f).build();
     }
 
     private static List<PlayerData> players(int size) {
@@ -46,162 +41,124 @@ class SimulationCoordinatorTest {
                 .toList();
     }
 
+    /** 要求を記録し、同じsimulation IDの結果を同期的に返すsimulatorの代役。 */
+    private static SimulatorClient recordingClient(List<SimulationRequest> requests) {
+        return request -> {
+            requests.add(request);
+            return new SimulationResult(
+                    request.simulationId(), new SimulationResult.Statistics(5, 5, 5));
+        };
+    }
+
+    /** 呼び出されたら失敗させ、検証で拒否された要求がsimulatorへ届かないことを示すsimulatorの代役。 */
+    private static SimulatorClient unreachableClient() {
+        return _ -> {
+            throw new AssertionError("simulator must not be called");
+        };
+    }
+
     @Test
-    @DisplayName("画面入力の選手を共有contractへ変換して送信し同じsimulation IDの結果を返す")
-    void sendsContractAndReturnsCorrelatedResult() {
+    @DisplayName("画面入力の選手を要求へ変換してsimulatorへ送り、その応答を結果として返す")
+    void sendsRequestAndReturnsSimulatorResult() {
         // given
-        var registry = new WaitingResultRegistry();
-        var published = new ArrayList<SimulationRequest>();
-        SimulatorMessagePublisher publisher =
-                request -> {
-                    published.add(request);
-                    registry.complete(
-                            request.simulationId(),
-                            new SimulationResult(
-                                    request.simulationId(),
-                                    List.of(new SimulationResult.Result(5, 4)),
-                                    new SimulationResult.Statistics(5, 5, 5)));
-                };
-        var coordinator =
-                new SimulationCoordinator(publisher, registry, limits(Duration.ofSeconds(1)));
+        var requests = new ArrayList<SimulationRequest>();
+        var sut = new SimulationCoordinator(recordingClient(requests), limits());
 
         // when
-        SimulationResult result = coordinator.simulate(players(9));
+        SimulationResult result = sut.simulate(players(9));
 
         // then
         assertAll(
-                () -> assertEquals(result.simulationId(), published.getFirst().simulationId()),
-                () -> assertEquals("1", published.getFirst().version()),
-                () -> assertEquals("山田", published.getFirst().players().getFirst().name()),
-                () -> assertEquals(0.301f, published.getFirst().players().getFirst().hitAverage()),
-                () -> assertEquals(true, published.getFirst().players().getFirst().buntEnabled()),
-                () -> assertEquals(true, published.getFirst().players().getFirst().stealEnabled()),
+                () -> assertEquals(1, requests.size()),
+                () -> assertEquals(result.simulationId(), requests.getFirst().simulationId()),
+                () -> assertEquals("山田", requests.getFirst().players().getFirst().name()),
+                () -> assertEquals(0.301f, requests.getFirst().players().getFirst().hitAverage()),
+                () -> assertTrue(requests.getFirst().players().getFirst().buntEnabled()),
+                () -> assertTrue(requests.getFirst().players().getFirst().stealEnabled()),
                 () -> assertEquals(5, result.statistics().maximumScore()),
-                () -> assertEquals(SimulationMode.LARGE_SCALE_RUN, published.getFirst().mode()),
-                () -> assertEquals(0, registry.pendingCount()));
+                () -> assertEquals(SimulationMode.LARGE_SCALE_RUN, requests.getFirst().mode()));
+    }
+
+    @Test
+    @DisplayName("要求ごとに異なるsimulation IDを割り当てる")
+    void assignsDistinctSimulationIds() {
+        // given
+        var requests = new ArrayList<SimulationRequest>();
+        var sut = new SimulationCoordinator(recordingClient(requests), limits());
+
+        // when
+        sut.simulate(players(9));
+        sut.simulate(players(9));
+
+        // then
+        assertAll(
+                () ->
+                        assertNotEquals(
+                                requests.get(0).simulationId(), requests.get(1).simulationId()));
     }
 
     @Test
     @DisplayName("1試合実行モードを指定すると要求に1試合実行モードが設定される")
     void sendsSingleGameModeWhenRequested() {
         // given
-        var registry = new WaitingResultRegistry();
-        var published = new ArrayList<SimulationRequest>();
-        SimulatorMessagePublisher publisher =
-                request -> {
-                    published.add(request);
-                    registry.complete(
-                            request.simulationId(),
-                            new SimulationResult(
-                                    request.simulationId(),
-                                    List.of(new SimulationResult.Result(5, 4)),
-                                    new SimulationResult.Statistics(5, 5, 5)));
+        var requests = new ArrayList<SimulationRequest>();
+        var sut = new SimulationCoordinator(recordingClient(requests), limits());
+
+        // when
+        sut.simulate(players(9), SimulationMode.SINGLE_GAME_RUN);
+
+        // then
+        assertAll(() -> assertEquals(SimulationMode.SINGLE_GAME_RUN, requests.getFirst().mode()));
+    }
+
+    @Test
+    @DisplayName("simulatorが時間内に応答しない場合はtimeout例外をそのまま返す")
+    void propagatesTimeout() {
+        // given
+        var timeout = new SimulationTimeoutException(UUID.randomUUID());
+        SimulatorClient client =
+                _ -> {
+                    throw timeout;
                 };
-        var coordinator =
-                new SimulationCoordinator(publisher, registry, limits(Duration.ofSeconds(1)));
-
-        // when
-        coordinator.simulate(players(9), SimulationMode.SINGLE_GAME_RUN);
-
-        // then
-        assertAll(() -> assertEquals(SimulationMode.SINGLE_GAME_RUN, published.getFirst().mode()));
-    }
-
-    @Test
-    @DisplayName("結果をtimeoutまで受信できない場合は待機を削除する")
-    void removesWaitAfterTimeout() {
-        // given
-        var registry = new WaitingResultRegistry();
-        var coordinator =
-                new SimulationCoordinator(request -> {}, registry, limits(Duration.ofMillis(1)));
+        var sut = new SimulationCoordinator(client, limits());
 
         // when
         var exception =
-                assertThrows(
-                        SimulationTimeoutException.class, () -> coordinator.simulate(players(9)));
+                assertThrows(SimulationTimeoutException.class, () -> sut.simulate(players(9)));
 
         // then
-        assertAll(
-                () ->
-                        assertEquals(
-                                true,
-                                exception
-                                        .getMessage()
-                                        .startsWith(
-                                                "simulation result was not received within the allowed time:")),
-                () -> assertEquals(0, registry.pendingCount()));
+        assertAll(() -> assertSame(timeout, exception));
     }
 
     @Test
-    @DisplayName("SQS送信に失敗した場合は待機を削除して同じ失敗を返す")
-    void removesWaitAfterSendFailure() {
+    @DisplayName("simulatorへの送信に失敗した場合は送信失敗例外をそのまま返す")
+    void propagatesSendFailure() {
         // given
-        var registry = new WaitingResultRegistry();
-        var failure = new IllegalStateException("send failed");
-        var coordinator =
-                new SimulationCoordinator(
-                        request -> {
-                            throw failure;
-                        },
-                        registry,
-                        limits(Duration.ofSeconds(1)));
+        var failure =
+                new SimulationSendException(
+                        UUID.randomUUID(), new IllegalStateException("unavailable"));
+        SimulatorClient client =
+                _ -> {
+                    throw failure;
+                };
+        var sut = new SimulationCoordinator(client, limits());
 
         // when
-        var exception =
-                assertThrows(SimulationSendException.class, () -> coordinator.simulate(players(9)));
+        var exception = assertThrows(SimulationSendException.class, () -> sut.simulate(players(9)));
 
         // then
-        assertAll(
-                () -> assertEquals(failure, exception.getCause()),
-                () -> assertEquals(0, registry.pendingCount()));
+        assertAll(() -> assertSame(failure, exception));
     }
 
     @Test
-    @DisplayName("待機スレッドが割り込まれると割込状態を復元して待機を削除する")
-    void restoresInterruptAndRemovesWait() {
-        // given
-        var registry = new WaitingResultRegistry();
-        var failure = new AtomicReference<Throwable>();
-        var coordinator =
-                new SimulationCoordinator(request -> {}, registry, limits(Duration.ofSeconds(5)));
-        Thread thread =
-                Thread.ofPlatform()
-                        .unstarted(
-                                () -> {
-                                    try {
-                                        coordinator.simulate(players(9));
-                                    } catch (Throwable exception) {
-                                        failure.set(exception);
-                                    }
-                                });
-        thread.start();
-
-        // when
-        thread.interrupt();
-        try {
-            thread.join();
-        } catch (InterruptedException exception) {
-            throw new AssertionError(exception);
-        }
-
-        // then
-        assertAll(
-                () -> assertEquals(IllegalStateException.class, failure.get().getClass()),
-                () -> assertEquals(0, registry.pendingCount()));
-    }
-
-    @Test
-    @DisplayName("入力選手が8件の場合はSQS送信をせず拒否する")
+    @DisplayName("入力選手が8件の場合はsimulatorへ送らず拒否する")
     void rejectsEightPlayers() {
         // given
-        var coordinator =
-                new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofSeconds(1)));
+        var sut = new SimulationCoordinator(unreachableClient(), limits());
 
         // when
         var exception =
-                assertThrows(
-                        IllegalArgumentException.class, () -> coordinator.simulate(players(8)));
+                assertThrows(IllegalArgumentException.class, () -> sut.simulate(players(8)));
 
         // then
         assertAll(
@@ -211,17 +168,14 @@ class SimulationCoordinatorTest {
     }
 
     @Test
-    @DisplayName("入力選手が10件の場合はSQS送信をせず拒否する")
+    @DisplayName("入力選手が10件の場合はsimulatorへ送らず拒否する")
     void rejectsTenPlayers() {
         // given
-        var coordinator =
-                new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofSeconds(1)));
+        var sut = new SimulationCoordinator(unreachableClient(), limits());
 
         // when
         var exception =
-                assertThrows(
-                        IllegalArgumentException.class, () -> coordinator.simulate(players(10)));
+                assertThrows(IllegalArgumentException.class, () -> sut.simulate(players(10)));
 
         // then
         assertAll(
@@ -231,12 +185,10 @@ class SimulationCoordinatorTest {
     }
 
     @Test
-    @DisplayName("9人の出塁率平均が上限を超える場合はSQS送信をせず拒否する")
+    @DisplayName("9人の出塁率平均が上限を超える場合はsimulatorへ送らず拒否する")
     void rejectsLineupWithExcessiveHitAverage() {
         // given
-        var coordinator =
-                new SimulationCoordinator(
-                        request -> {}, new WaitingResultRegistry(), limits(Duration.ofMillis(1)));
+        var sut = new SimulationCoordinator(unreachableClient(), limits());
         var excessivePlayers =
                 java.util.stream.IntStream.range(0, 9)
                         .mapToObj(
@@ -252,9 +204,7 @@ class SimulationCoordinatorTest {
 
         // when
         var exception =
-                assertThrows(
-                        IllegalArgumentException.class,
-                        () -> coordinator.simulate(excessivePlayers));
+                assertThrows(IllegalArgumentException.class, () -> sut.simulate(excessivePlayers));
 
         // then
         assertAll(

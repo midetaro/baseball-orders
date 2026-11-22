@@ -22,10 +22,10 @@ variable "jvm_options" {
   default     = "-Xmx2g"
 }
 
-variable "sqs_poll_fixed_delay" {
-  description = "SIMULATION_SQS_POLL_FIXED_DELAY for the simulator. Must stay below the backend's 30s synchronous wait (docs/aws-deployment.md); the application-prod.yml default of 60s is unsafe here."
-  type        = string
-  default     = "1s"
+variable "simulator_grpc_port" {
+  description = "Container port on which the simulator serves gRPC (SIMULATION_GRPC_PORT). The backend reaches it as simulator:<port> through ECS Service Connect (SIMULATOR_GRPC_HOST/SIMULATOR_GRPC_PORT)."
+  type        = number
+  default     = 9090
 }
 
 resource "aws_ecs_cluster" "main" {
@@ -35,6 +35,16 @@ resource "aws_ecs_cluster" "main" {
 resource "aws_ecs_cluster_capacity_providers" "main" {
   cluster_name       = aws_ecs_cluster.main.name
   capacity_providers = ["FARGATE", "FARGATE_SPOT"]
+}
+
+locals {
+  simulator_grpc_port_name   = "grpc"
+  simulator_service_dns_name = "simulator"
+}
+
+resource "aws_service_discovery_http_namespace" "main" {
+  name        = "${local.name_prefix}.internal"
+  description = "ECS Service Connect namespace for the backend -> simulator gRPC call."
 }
 
 resource "aws_ecs_task_definition" "backend" {
@@ -62,8 +72,8 @@ resource "aws_ecs_task_definition" "backend" {
       environment = [
         { name = "SPRING_PROFILES_ACTIVE", value = "prod" },
         { name = "JAVA_TOOL_OPTIONS", value = var.jvm_options },
-        { name = "SIMULATION_REQUEST_QUEUE_NAME", value = aws_sqs_queue.simulation_request.name },
-        { name = "SIMULATION_RESULT_QUEUE_NAME", value = aws_sqs_queue.simulation_result.name },
+        { name = "SIMULATOR_GRPC_HOST", value = local.simulator_service_dns_name },
+        { name = "SIMULATOR_GRPC_PORT", value = tostring(var.simulator_grpc_port) },
       ]
 
       logConfiguration = {
@@ -97,12 +107,19 @@ resource "aws_ecs_task_definition" "simulator" {
       image     = "${data.aws_ecr_repository.simulator.repository_url}:${var.simulator_image_tag}"
       essential = true
 
+      portMappings = [
+        {
+          name          = local.simulator_grpc_port_name
+          containerPort = var.simulator_grpc_port
+          protocol      = "tcp"
+          appProtocol   = "grpc"
+        },
+      ]
+
       environment = [
         { name = "SPRING_PROFILES_ACTIVE", value = "prod" },
         { name = "JAVA_TOOL_OPTIONS", value = var.jvm_options },
-        { name = "SIMULATION_REQUEST_QUEUE_NAME", value = aws_sqs_queue.simulation_request.name },
-        { name = "SIMULATION_RESULT_QUEUE_NAME", value = aws_sqs_queue.simulation_result.name },
-        { name = "SIMULATION_SQS_POLL_FIXED_DELAY", value = var.sqs_poll_fixed_delay },
+        { name = "SIMULATION_GRPC_PORT", value = tostring(var.simulator_grpc_port) },
       ]
 
       logConfiguration = {
@@ -140,6 +157,11 @@ resource "aws_ecs_service" "backend" {
     container_port   = 8080
   }
 
+  service_connect_configuration {
+    enabled   = true
+    namespace = aws_service_discovery_http_namespace.main.arn
+  }
+
   depends_on = [aws_lb_listener.https]
 }
 
@@ -158,5 +180,20 @@ resource "aws_ecs_service" "simulator" {
     subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.simulator.id]
     assign_public_ip = true
+  }
+
+  service_connect_configuration {
+    enabled   = true
+    namespace = aws_service_discovery_http_namespace.main.arn
+
+    service {
+      port_name      = local.simulator_grpc_port_name
+      discovery_name = local.simulator_service_dns_name
+
+      client_alias {
+        port     = var.simulator_grpc_port
+        dns_name = local.simulator_service_dns_name
+      }
+    }
   }
 }

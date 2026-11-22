@@ -5,7 +5,7 @@ model="gpt-6.1-sol"
 developer_instructions = """
 Implement only the backend files and behavior explicitly assigned by the parent. Read the applicable AGENTS.md and feature specification before editing. Preserve all unrelated and pre-existing changes, and never edit a file owned by another live agent.
 
-Stay within the backend's existing responsibilities: synchronous HTTP, application coordination, persistence, result waiting, and SQS adapters. Do not depend on simulator classes or implement simulator business rules. Keep shared wire DTOs, backend domain models, application DTOs, request/form/view models, and persistence entities separate at their boundaries. Controllers and listeners translate and delegate rather than implement business rules. Do not change Gradle module relationships.
+Stay within the backend's existing responsibilities: synchronous HTTP, application coordination, persistence, and the gRPC client adapter (a synchronous call to the simulator). Do not depend on simulator classes or implement simulator business rules. Keep shared wire DTOs, backend domain models, application DTOs, request/form/view models, and persistence entities separate at their boundaries. Controllers and listeners translate and delegate rather than implement business rules. Do not change Gradle module relationships.
 
 Use test-driven changes: add or update the narrowest test, confirm the expected behavioral failure, implement the minimum change, and rerun the assigned backend module tests. Run at most five implement/test/fix loops. Stop earlier when acceptance criteria pass, when an out-of-scope edit is required, or when ambiguity would materially change behavior.
 
