@@ -62,10 +62,10 @@ class SimulationCoordinatorTest {
     void sendsRequestAndReturnsSimulatorResult() {
         // given
         var requests = new ArrayList<SimulationRequest>();
-        var coordinator = new SimulationCoordinator(recordingClient(requests), limits());
+        var sut = new SimulationCoordinator(recordingClient(requests), limits());
 
         // when
-        SimulationResult result = coordinator.simulate(players(9));
+        SimulationResult result = sut.simulate(players(9));
 
         // then
         assertAll(
@@ -84,11 +84,11 @@ class SimulationCoordinatorTest {
     void assignsDistinctSimulationIds() {
         // given
         var requests = new ArrayList<SimulationRequest>();
-        var coordinator = new SimulationCoordinator(recordingClient(requests), limits());
+        var sut = new SimulationCoordinator(recordingClient(requests), limits());
 
         // when
-        coordinator.simulate(players(9));
-        coordinator.simulate(players(9));
+        sut.simulate(players(9));
+        sut.simulate(players(9));
 
         // then
         assertAll(
@@ -102,10 +102,10 @@ class SimulationCoordinatorTest {
     void sendsSingleGameModeWhenRequested() {
         // given
         var requests = new ArrayList<SimulationRequest>();
-        var coordinator = new SimulationCoordinator(recordingClient(requests), limits());
+        var sut = new SimulationCoordinator(recordingClient(requests), limits());
 
         // when
-        coordinator.simulate(players(9), SimulationMode.SINGLE_GAME_RUN);
+        sut.simulate(players(9), SimulationMode.SINGLE_GAME_RUN);
 
         // then
         assertAll(() -> assertEquals(SimulationMode.SINGLE_GAME_RUN, requests.getFirst().mode()));
@@ -120,12 +120,11 @@ class SimulationCoordinatorTest {
                 _ -> {
                     throw timeout;
                 };
-        var coordinator = new SimulationCoordinator(client, limits());
+        var sut = new SimulationCoordinator(client, limits());
 
         // when
         var exception =
-                assertThrows(
-                        SimulationTimeoutException.class, () -> coordinator.simulate(players(9)));
+                assertThrows(SimulationTimeoutException.class, () -> sut.simulate(players(9)));
 
         // then
         assertAll(() -> assertSame(timeout, exception));
@@ -142,11 +141,10 @@ class SimulationCoordinatorTest {
                 _ -> {
                     throw failure;
                 };
-        var coordinator = new SimulationCoordinator(client, limits());
+        var sut = new SimulationCoordinator(client, limits());
 
         // when
-        var exception =
-                assertThrows(SimulationSendException.class, () -> coordinator.simulate(players(9)));
+        var exception = assertThrows(SimulationSendException.class, () -> sut.simulate(players(9)));
 
         // then
         assertAll(() -> assertSame(failure, exception));
@@ -156,12 +154,11 @@ class SimulationCoordinatorTest {
     @DisplayName("入力選手が8件の場合はsimulatorへ送らず拒否する")
     void rejectsEightPlayers() {
         // given
-        var coordinator = new SimulationCoordinator(unreachableClient(), limits());
+        var sut = new SimulationCoordinator(unreachableClient(), limits());
 
         // when
         var exception =
-                assertThrows(
-                        IllegalArgumentException.class, () -> coordinator.simulate(players(8)));
+                assertThrows(IllegalArgumentException.class, () -> sut.simulate(players(8)));
 
         // then
         assertAll(
@@ -174,12 +171,11 @@ class SimulationCoordinatorTest {
     @DisplayName("入力選手が10件の場合はsimulatorへ送らず拒否する")
     void rejectsTenPlayers() {
         // given
-        var coordinator = new SimulationCoordinator(unreachableClient(), limits());
+        var sut = new SimulationCoordinator(unreachableClient(), limits());
 
         // when
         var exception =
-                assertThrows(
-                        IllegalArgumentException.class, () -> coordinator.simulate(players(10)));
+                assertThrows(IllegalArgumentException.class, () -> sut.simulate(players(10)));
 
         // then
         assertAll(
@@ -192,7 +188,7 @@ class SimulationCoordinatorTest {
     @DisplayName("9人の出塁率平均が上限を超える場合はsimulatorへ送らず拒否する")
     void rejectsLineupWithExcessiveHitAverage() {
         // given
-        var coordinator = new SimulationCoordinator(unreachableClient(), limits());
+        var sut = new SimulationCoordinator(unreachableClient(), limits());
         var excessivePlayers =
                 java.util.stream.IntStream.range(0, 9)
                         .mapToObj(
@@ -208,9 +204,7 @@ class SimulationCoordinatorTest {
 
         // when
         var exception =
-                assertThrows(
-                        IllegalArgumentException.class,
-                        () -> coordinator.simulate(excessivePlayers));
+                assertThrows(IllegalArgumentException.class, () -> sut.simulate(excessivePlayers));
 
         // then
         assertAll(

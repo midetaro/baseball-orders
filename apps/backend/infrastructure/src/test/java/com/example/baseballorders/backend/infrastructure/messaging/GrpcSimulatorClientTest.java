@@ -159,7 +159,7 @@ class GrpcSimulatorClientTest {
     void mapsRequestToContractMessage() throws IOException {
         // given
         var received = new AtomicReference<SimulationRequestMessage>();
-        var client =
+        var sut =
                 startClient(
                         (message, observer) -> {
                             received.set(message);
@@ -169,7 +169,7 @@ class GrpcSimulatorClientTest {
                         Duration.ofSeconds(5));
 
         // when
-        client.simulate(request(SimulationMode.SINGLE_GAME_RUN));
+        sut.simulate(request(SimulationMode.SINGLE_GAME_RUN));
 
         // then
         var message = received.get();
@@ -218,7 +218,7 @@ class GrpcSimulatorClientTest {
     void mapsLargeScaleMode() throws IOException {
         // given
         var received = new AtomicReference<SimulationRequestMessage>();
-        var client =
+        var sut =
                 startClient(
                         (message, observer) -> {
                             received.set(message);
@@ -228,7 +228,7 @@ class GrpcSimulatorClientTest {
                         Duration.ofSeconds(5));
 
         // when
-        client.simulate(request(SimulationMode.LARGE_SCALE_RUN));
+        sut.simulate(request(SimulationMode.LARGE_SCALE_RUN));
 
         // then
         assertAll(
@@ -243,7 +243,7 @@ class GrpcSimulatorClientTest {
     @DisplayName("simulatorが不正なシミュレーションIDを返しても要求のIDで結果を返す")
     void usesRequestSimulationIdEvenWhenResponseIdIsInvalid() throws IOException {
         // given
-        var client =
+        var sut =
                 startClient(
                         (message, observer) -> {
                             observer.onNext(resultMessage("not-a-uuid"));
@@ -252,7 +252,7 @@ class GrpcSimulatorClientTest {
                         Duration.ofSeconds(5));
 
         // when
-        var result = client.simulate(request(SimulationMode.LARGE_SCALE_RUN));
+        var result = sut.simulate(request(SimulationMode.LARGE_SCALE_RUN));
 
         // then
         assertAll(() -> assertEquals(SIMULATION_ID, result.simulationId()));
@@ -262,7 +262,7 @@ class GrpcSimulatorClientTest {
     @DisplayName("simulatorの応答をbackendのシミュレーション結果へ変換して返す")
     void mapsResultMessageToDomainResult() throws IOException {
         // given
-        var client =
+        var sut =
                 startClient(
                         (message, observer) -> {
                             observer.onNext(resultMessage(message.getSimulationId()));
@@ -271,7 +271,7 @@ class GrpcSimulatorClientTest {
                         Duration.ofSeconds(5));
 
         // when
-        var result = client.simulate(request(SimulationMode.SINGLE_GAME_RUN));
+        var result = sut.simulate(request(SimulationMode.SINGLE_GAME_RUN));
 
         // then
         var statistics = result.statistics();
@@ -314,7 +314,7 @@ class GrpcSimulatorClientTest {
     @DisplayName("得点統計を含まない応答は送信失敗として扱う")
     void rejectsResultWithoutStatistics() throws IOException {
         // given
-        var client =
+        var sut =
                 startClient(
                         (message, observer) -> {
                             observer.onNext(
@@ -329,7 +329,7 @@ class GrpcSimulatorClientTest {
         var exception =
                 assertThrows(
                         SimulationSendException.class,
-                        () -> client.simulate(request(SimulationMode.LARGE_SCALE_RUN)));
+                        () -> sut.simulate(request(SimulationMode.LARGE_SCALE_RUN)));
 
         // then
         assertAll(() -> assertTrue(exception.getMessage().contains(SIMULATION_ID.toString())));
@@ -340,13 +340,13 @@ class GrpcSimulatorClientTest {
     void convertsDeadlineExceededToTimeout() throws IOException {
         // given
         // 要求を受け取っても応答を返さない代役simulatorの処理
-        var client = startClient((_, _) -> {}, Duration.ofMillis(50));
+        var sut = startClient((_, _) -> {}, Duration.ofMillis(50));
 
         // when
         var exception =
                 assertThrows(
                         SimulationTimeoutException.class,
-                        () -> client.simulate(request(SimulationMode.LARGE_SCALE_RUN)));
+                        () -> sut.simulate(request(SimulationMode.LARGE_SCALE_RUN)));
 
         // then
         assertAll(
@@ -363,7 +363,7 @@ class GrpcSimulatorClientTest {
     @DisplayName("simulatorへ到達できない場合は送信失敗例外へ変換する")
     void convertsUnavailableToSendFailure() throws IOException {
         // given
-        var client =
+        var sut =
                 startClient(
                         (_, observer) ->
                                 observer.onError(
@@ -376,7 +376,7 @@ class GrpcSimulatorClientTest {
         var exception =
                 assertThrows(
                         SimulationSendException.class,
-                        () -> client.simulate(request(SimulationMode.LARGE_SCALE_RUN)));
+                        () -> sut.simulate(request(SimulationMode.LARGE_SCALE_RUN)));
 
         // then
         assertAll(
@@ -391,7 +391,7 @@ class GrpcSimulatorClientTest {
     @DisplayName("simulatorがエラー状態を返した場合は送信失敗例外へ変換する")
     void convertsErrorStatusToSendFailure() throws IOException {
         // given
-        var client =
+        var sut =
                 startClient(
                         (_, observer) ->
                                 observer.onError(
@@ -404,7 +404,7 @@ class GrpcSimulatorClientTest {
         var exception =
                 assertThrows(
                         SimulationSendException.class,
-                        () -> client.simulate(request(SimulationMode.LARGE_SCALE_RUN)));
+                        () -> sut.simulate(request(SimulationMode.LARGE_SCALE_RUN)));
 
         // then
         assertAll(
