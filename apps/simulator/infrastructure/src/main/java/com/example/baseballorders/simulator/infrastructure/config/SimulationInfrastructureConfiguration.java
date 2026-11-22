@@ -6,18 +6,21 @@ import com.example.baseballorders.simulator.domain.player.strategy.batting.Hitti
 import com.example.baseballorders.simulator.domain.player.strategy.bunt.BuntStrategy;
 import com.example.baseballorders.simulator.domain.player.strategy.steal.StealStrategy;
 import com.example.baseballorders.simulator.domain.rule.SimulationRules;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import software.amazon.awssdk.services.sqs.SqsClient;
 
-/** Configures infrastructure and domain collaborators required to consume simulation requests. */
+/**
+ * Configures infrastructure and domain collaborators required to serve simulation requests over
+ * gRPC.
+ */
 @Configuration
-@EnableScheduling
-@EnableConfigurationProperties({SimulationRuleProperties.class, SimulationPitcherProperties.class})
+@EnableConfigurationProperties({
+    SimulationRuleProperties.class,
+    SimulationPitcherProperties.class,
+    SimulationGrpcProperties.class
+})
 @RequiredArgsConstructor
 public class SimulationInfrastructureConfiguration {
 
@@ -42,26 +45,6 @@ public class SimulationInfrastructureConfiguration {
     @Bean
     public BehaviorStrategies behaviorStrategies() {
         return new BehaviorStrategies(simulationRules());
-    }
-
-    /**
-     * Creates the JSON object mapper used for SQS request bodies.
-     *
-     * @return SQS message object mapper
-     */
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
-
-    /**
-     * Creates the AWS SQS client using the standard AWS configuration chain.
-     *
-     * @return configured SQS client
-     */
-    @Bean(destroyMethod = "close")
-    public SqsClient sqsClient() {
-        return SqsClient.create();
     }
 
     /**

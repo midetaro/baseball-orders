@@ -4,16 +4,17 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.example.baseballorders.simulator.infrastructure.config.SimulationInfrastructureConfiguration;
+import com.example.baseballorders.simulator.infrastructure.messaging.GrpcServerLifecycle;
+import com.example.baseballorders.simulator.infrastructure.messaging.GrpcSimulationService;
 import com.example.baseballorders.simulator.infrastructure.messaging.LineUpMapper;
-import com.example.baseballorders.simulator.infrastructure.messaging.SqsSimulationScheduler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class InfrastructurePlacementTest {
 
     @Test
-    @DisplayName("SQS境界クラスとインフラ設定を責務別パッケージに配置する")
-    void placesSqsBoundaryTypesInInfrastructure() {
+    @DisplayName("gRPC境界クラスとインフラ設定を責務別パッケージに配置する")
+    void placesGrpcBoundaryTypesInInfrastructure() {
         // given
         var expectedConfigurationPackage =
                 "com.example.baseballorders.simulator.infrastructure.config";
@@ -23,12 +24,14 @@ class InfrastructurePlacementTest {
         // when
         var configurationPackage = SimulationInfrastructureConfiguration.class.getPackageName();
         var mapperPackage = LineUpMapper.class.getPackageName();
-        var schedulerPackage = SqsSimulationScheduler.class.getPackageName();
+        var servicePackage = GrpcSimulationService.class.getPackageName();
+        var lifecyclePackage = GrpcServerLifecycle.class.getPackageName();
 
         // then
         assertAll(
                 () -> assertEquals(expectedConfigurationPackage, configurationPackage),
                 () -> assertEquals(expectedMessagingPackage, mapperPackage),
-                () -> assertEquals(expectedMessagingPackage, schedulerPackage));
+                () -> assertEquals(expectedMessagingPackage, servicePackage),
+                () -> assertEquals(expectedMessagingPackage, lifecyclePackage));
     }
 }

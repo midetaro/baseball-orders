@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
  * SingleGameTransitionObserver -> GameTransitionRecorder -> SimulationResult.transitions() の発生順・内容、
  * および試合終了通知 -> ScoreAccumulator -> SimulationResult.statistics()
  *
- * <p>担保しないもの: 走者配置ごとの進塁・得点規則（L2 の各 {@code BasesState} テストが担保する）、 SQS との疎通（infrastructure と
+ * <p>担保しないもの: 走者配置ごとの進塁・得点規則（L2 の各 {@code BasesState} テストが担保する）、 gRPC との疎通（infrastructure と
  * integration-test の担当）、バント・盗塁を含む推移の内容（{@code SingleGameTransitionObserverTest} が担保する）
  */
 class SimulateGameUseCaseSingleGameScenarioTest {

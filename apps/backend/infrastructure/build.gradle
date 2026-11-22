@@ -13,9 +13,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     runtimeOnly 'com.h2database:h2'
-    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
-    runtimeOnly 'com.h2database:h2'
-    implementation 'io.awspring.cloud:spring-cloud-aws-starter-sqs:4.0.0'
+    // simulatorのgRPCサーバーへ平文で接続するトランスポート。
+    runtimeOnly 'io.grpc:grpc-netty-shaded:1.85.1'
 
     compileOnly 'org.projectlombok:lombok:1.18.42'
     annotationProcessor 'org.projectlombok:lombok:1.18.42'
@@ -23,6 +22,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:6.0.1'
     testImplementation 'com.tngtech.archunit:archunit:1.4.2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.grpc:grpc-inprocess:1.85.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:6.0.1'
 }
 

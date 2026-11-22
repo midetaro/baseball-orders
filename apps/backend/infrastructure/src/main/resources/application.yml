@@ -8,6 +8,10 @@ baseball-orders:
   simulation:
     result-timeout: ${SIMULATION_RESULT_TIMEOUT:30s}
     maximum-average-hit-average: ${SIMULATION_MAXIMUM_AVERAGE_HIT_AVERAGE:0.35}
+  simulator:
+    grpc:
+      host: ${SIMULATOR_GRPC_HOST:simulator}
+      port: ${SIMULATOR_GRPC_PORT:9090}
   rendering:
     single-game:
       frame-duration-millis: ${SINGLE_GAME_FRAME_DURATION_MILLIS:1000}
@@ -15,14 +19,6 @@ baseball-orders:
       score-frame-duration-millis: ${SINGLE_GAME_SCORE_FRAME_DURATION_MILLIS:2200}
       home-run-frame-duration-millis: ${SINGLE_GAME_HOME_RUN_FRAME_DURATION_MILLIS:3600}
       bunt-frame-duration-millis: ${SINGLE_GAME_BUNT_FRAME_DURATION_MILLIS:1600}
-spring.cloud.aws:
-  region:
-    static: ap-northeast-1
-
-simulation:
-  sqs:
-    request-queue-name: ${SIMULATION_REQUEST_QUEUE_NAME:simulation-request}
-    result-queue-name: ${SIMULATION_RESULT_QUEUE_NAME:simulation-result}
 
 logging:
   level:

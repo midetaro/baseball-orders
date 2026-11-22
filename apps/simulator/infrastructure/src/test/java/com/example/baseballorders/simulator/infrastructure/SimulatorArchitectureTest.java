@@ -33,6 +33,8 @@ class SimulatorArchitectureTest {
                                 "org.springframework..",
                                 "software.amazon..",
                                 "com.fasterxml..",
+                                "io.grpc..",
+                                "com.google.protobuf..",
                                 "com.example.baseballorders.messaging..",
                                 "com.example.baseballorders.backend..",
                                 "java.net.http..",
@@ -62,6 +64,8 @@ class SimulatorArchitectureTest {
                                 "com.example.baseballorders.backend..",
                                 "com.example.baseballorders.messaging..",
                                 "software.amazon..",
+                                "io.grpc..",
+                                "com.google.protobuf..",
                                 "com.fasterxml..");
         var infrastructureRule =
                 noClasses()
@@ -69,7 +73,8 @@ class SimulatorArchitectureTest {
                         .resideInAPackage(INFRASTRUCTURE)
                         .should()
                         .dependOnClassesThat()
-                        .resideInAnyPackage("com.example.baseballorders.backend..");
+                        .resideInAnyPackage(
+                                "com.example.baseballorders.backend..", "software.amazon..");
 
         // when
         domainRule.check(classes);

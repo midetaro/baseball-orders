@@ -5,13 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.example.baseballorders.backend.application.SimulationCoordinator;
 import com.example.baseballorders.backend.application.SimulationLimits;
 import com.example.baseballorders.backend.application.SimulationLimitsBuilder;
-import com.example.baseballorders.backend.application.WaitingResultRegistry;
+import com.example.baseballorders.backend.application.dto.SimulationRequest;
 import com.example.baseballorders.backend.domain.GameTransitionBuilder;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
 import com.example.baseballorders.backend.domain.SimulationMode;
 import com.example.baseballorders.backend.domain.SimulationResult;
 import com.example.baseballorders.backend.domain.SimulationResultBuilder;
-import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,31 +25,20 @@ class SimulatorRequestControllerTest {
         "false,true",
         "false,false"
     })
-    @DisplayName("画面の盗塁・バント選択と性格を共有メッセージまで保持する")
+    @DisplayName("画面の盗塁・バント選択と性格をsimulatorへの要求まで保持する")
     void propagatesStrategyOptions(boolean stealEnabled, boolean buntEnabled) {
         // given
-        var template = org.mockito.Mockito.mock(io.awspring.cloud.sqs.operations.SqsTemplate.class);
-        var publisher =
-                new com.example.baseballorders.backend.infrastructure.messaging
-                        .SqsSimulatorMessagePublisher(template, "request");
-        var registry = new WaitingResultRegistry();
+        var requests = new java.util.ArrayList<SimulationRequest>();
         var controller =
                 new SimulatorRequestController(
                         new SimulationCoordinator(
                                 request -> {
-                                    publisher.publish(request);
-                                    registry.complete(
+                                    requests.add(request);
+                                    return new SimulationResult(
                                             request.simulationId(),
-                                            new SimulationResult(
-                                                    request.simulationId(),
-                                                    List.of(new SimulationResult.Result(0, 0)),
-                                                    new SimulationResult.Statistics(0, 0, 0)));
+                                            new SimulationResult.Statistics(0, 0, 0));
                                 },
-                                registry,
                                 limits()));
-        var captor =
-                org.mockito.ArgumentCaptor.forClass(
-                        com.example.baseballorders.messaging.SimulationRequestMessage.class);
 
         // when
         controller.send(
@@ -59,42 +47,26 @@ class SimulatorRequestControllerTest {
                                 0.3f, buntEnabled, stealEnabled, PlayerPersonality.EAGER_STEAL)));
 
         // then
-        org.mockito.Mockito.verify(template)
-                .send(org.mockito.ArgumentMatchers.eq("request"), captor.capture());
-        var json = new tools.jackson.databind.ObjectMapper().valueToTree(captor.getValue());
+        var players = requests.getFirst().players();
         assertAll(
-                () -> assertFalse(json.path("players").get(0).has("sluggish")),
-                () ->
-                        assertEquals(
-                                stealEnabled,
-                                json.path("players").get(0).required("stealEnabled").asBoolean()),
-                () ->
-                        assertEquals(
-                                buntEnabled,
-                                json.path("players").get(0).required("buntEnabled").asBoolean()),
-                () ->
-                        assertEquals(
-                                "EAGER_STEAL",
-                                json.path("players").get(0).required("personality").asText()),
-                () -> assertEquals("1番", captor.getValue().players().getFirst().name()),
-                () -> assertEquals(9, captor.getValue().players().size()));
+                () -> assertEquals(stealEnabled, players.getFirst().stealEnabled()),
+                () -> assertEquals(buntEnabled, players.getFirst().buntEnabled()),
+                () -> assertEquals(PlayerPersonality.EAGER_STEAL, players.getFirst().personality()),
+                () -> assertEquals("1番", players.getFirst().name()),
+                () -> assertEquals("9番", players.getLast().name()),
+                () -> assertEquals(9, players.size()));
     }
 
     @Test
-    @DisplayName("画面入力した打順データをSQS結果を待機して同期的に返す")
+    @DisplayName("画面入力した打順データをsimulatorの応答を待機して同期的に返す")
     void returnsSynchronousSimulationResult() {
         // given
-        var registry = new WaitingResultRegistry();
         var coordinator =
                 new SimulationCoordinator(
                         request ->
-                                registry.complete(
+                                new SimulationResult(
                                         request.simulationId(),
-                                        new SimulationResult(
-                                                request.simulationId(),
-                                                List.of(new SimulationResult.Result(5, 4)),
-                                                new SimulationResult.Statistics(5, 5, 5))),
-                        registry,
+                                        new SimulationResult.Statistics(5, 5, 5)),
                         limits());
         var controller = new SimulatorRequestController(coordinator);
 
@@ -115,29 +87,25 @@ class SimulatorRequestControllerTest {
     @DisplayName("1試合実行エンドポイントは1試合実行モードで要求し状況推移を含む結果を返す")
     void returnsSingleGameResultWithTransitions() {
         // given
-        var registry = new WaitingResultRegistry();
         var requestedMode = new java.util.concurrent.atomic.AtomicReference<SimulationMode>();
         var coordinator =
                 new SimulationCoordinator(
                         request -> {
                             requestedMode.set(request.mode());
-                            registry.complete(
-                                    request.simulationId(),
-                                    SimulationResultBuilder.simulationResult()
-                                            .simulationId(request.simulationId())
-                                            .statistics(new SimulationResult.Statistics(5, 5, 5))
-                                            .transitions(
-                                                    List.of(
-                                                            GameTransitionBuilder.gameTransition()
-                                                                    .inning(1)
-                                                                    .actionResult("中前安打")
-                                                                    .outCount(0)
-                                                                    .cumulativeScore(0)
-                                                                    .runnerState("一塁")
-                                                                    .build()))
-                                            .build());
+                            return SimulationResultBuilder.simulationResult()
+                                    .simulationId(request.simulationId())
+                                    .statistics(new SimulationResult.Statistics(5, 5, 5))
+                                    .transitions(
+                                            List.of(
+                                                    GameTransitionBuilder.gameTransition()
+                                                            .inning(1)
+                                                            .actionResult("中前安打")
+                                                            .outCount(0)
+                                                            .cumulativeScore(0)
+                                                            .runnerState("一塁")
+                                                            .build()))
+                                    .build();
                         },
-                        registry,
                         limits());
         var controller = new SimulatorRequestController(coordinator);
 
@@ -159,10 +127,13 @@ class SimulatorRequestControllerTest {
     @DisplayName("範囲外または未入力の打撃データを拒否する")
     void rejectsInvalidPlayerInput() {
         // given
-        var registry = new WaitingResultRegistry();
         var controller =
                 new SimulatorRequestController(
-                        new SimulationCoordinator(request -> {}, registry, limits()));
+                        new SimulationCoordinator(
+                                _ -> {
+                                    throw new AssertionError("simulator must not be called");
+                                },
+                                limits()));
 
         // when
         var hitAverageException =
@@ -208,13 +179,10 @@ class SimulatorRequestControllerTest {
 
     /** application.ymlの既定値と同じ上限を組み立てる。 */
     private static SimulationLimits limits() {
-        return SimulationLimitsBuilder.simulationLimits()
-                .resultTimeout(Duration.ofSeconds(30))
-                .maximumAverageHitAverage(0.350f)
-                .build();
+        return SimulationLimitsBuilder.simulationLimits().maximumAverageHitAverage(0.350f).build();
     }
 
     private List<PlayerInputRequest> playersWith(PlayerInputRequest player) {
-        return java.util.stream.IntStream.range(0, 9).mapToObj(ignored -> player).toList();
+        return java.util.stream.IntStream.range(0, 9).mapToObj(_ -> player).toList();
     }
 }

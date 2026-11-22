@@ -7,18 +7,14 @@ import com.example.baseballorders.backend.domain.DefaultBatter;
 import com.example.baseballorders.backend.domain.PlayerPersonality;
 import com.example.baseballorders.backend.domain.TeamDefaultLineup;
 import com.example.baseballorders.backend.domain.TeamStrength;
-import io.awspring.cloud.sqs.operations.SqsTemplate;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest(properties = "spring.cloud.aws.sqs.enabled=false")
+@SpringBootTest
 class JdbcDefaultLineupRepositoryTest {
-
-    @MockitoBean private SqsTemplate sqsTemplate;
 
     @Autowired private JdbcDefaultLineupRepository sut;
 

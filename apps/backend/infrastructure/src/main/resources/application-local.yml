@@ -8,12 +8,14 @@ spring:
     init:
       mode: always
 
-spring.cloud.aws.sqs.listener.auto-startup: false
-
 baseball-orders:
   simulation:
     result-timeout: 30s
     maximum-average-hit-average: 0.35
+  simulator:
+    grpc:
+      host: ${SIMULATOR_GRPC_HOST:localhost}
+      port: ${SIMULATOR_GRPC_PORT:9090}
   rendering:
     single-game:
       frame-duration-millis: 1000

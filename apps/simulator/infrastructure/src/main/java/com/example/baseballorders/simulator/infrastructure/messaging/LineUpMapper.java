@@ -12,7 +12,7 @@ import com.example.baseballorders.simulator.infrastructure.config.SimulationPitc
 import java.util.List;
 import org.springframework.stereotype.Component;
 
-/** Maps player data received through SQS to the simulation domain model. */
+/** Maps player data received through gRPC to the simulation domain model. */
 @Component
 public class LineUpMapper {
 
@@ -54,17 +54,18 @@ public class LineUpMapper {
     }
 
     /**
-     * Converts SQS player data to a domain lineup, disabling steals and bunts according to each
+     * Converts gRPC player data to a domain lineup, disabling steals and bunts according to each
      * player's selection. The {@code DEFAULT} personality (single hitter) uses short-distance
      * batting, and the high on-base personality uses its dedicated walk probability. The legacy
-     * {@code hitAverage} wire field is interpreted as the domain batting average excluding walks to
-     * retain the existing message contract. The opposing pitcher's personality carried by a request
-     * is ignored; every batter receives the same standard probability adjustment. Bunt and steal
-     * success rates are fixed simulation constants supplied through configuration rather than
+     * {@code hit_average} wire field is interpreted as the domain batting average excluding walks
+     * to retain the existing message contract. The opposing pitcher's personality carried by a
+     * request is ignored; every batter receives the same standard probability adjustment. Bunt and
+     * steal success rates are fixed simulation constants supplied through configuration rather than
      * per-player wire data.
      *
      * @param players players contained in a simulation request
      * @return lineup containing mapped batter entities in request order
+     * @throws IllegalArgumentException when a player carries an unrecognized personality
      */
     public LineUpEntity map(List<SimulationPlayerMessage> players) {
         List<BatterEntity> batters =
@@ -72,13 +73,13 @@ public class LineUpMapper {
                         .map(
                                 player ->
                                         new BatterEntity(
-                                                player.hitAverage() * battingAverageMultiplier(),
-                                                battingBehaviorFor(player.personality()),
-                                                player.stealEnabled()
-                                                        ? stealStrategyFor(player.personality())
+                                                player.getHitAverage() * battingAverageMultiplier(),
+                                                battingBehaviorFor(player.getPersonality()),
+                                                player.getStealEnabled()
+                                                        ? stealStrategyFor(player.getPersonality())
                                                         : noStealStrategy,
-                                                player.buntEnabled()
-                                                        ? buntStrategyFor(player.personality())
+                                                player.getBuntEnabled()
+                                                        ? buntStrategyFor(player.getPersonality())
                                                         : noBuntStrategy))
                         .toList();
         return new LineUpEntity(batters);
@@ -90,26 +91,44 @@ public class LineUpMapper {
 
     private HittingStrategy battingBehaviorFor(PlayerPersonality personality) {
         return switch (personality) {
-            case DEFAULT -> shortDistanceHittingStrategy;
-            case MIDDLE_DISTANCE, EAGER_STEAL, EAGER_BUNT -> hittingStrategy;
-            case EAGER_SLUGGISH -> behaviorStrategies.longDistanceAtBat();
-            case HIGH_ON_BASE -> highOnBaseHittingStrategy;
+            case PLAYER_PERSONALITY_DEFAULT -> shortDistanceHittingStrategy;
+            case PLAYER_PERSONALITY_MIDDLE_DISTANCE,
+                    PLAYER_PERSONALITY_EAGER_STEAL,
+                    PLAYER_PERSONALITY_EAGER_BUNT ->
+                    hittingStrategy;
+            case PLAYER_PERSONALITY_EAGER_SLUGGISH -> behaviorStrategies.longDistanceAtBat();
+            case PLAYER_PERSONALITY_HIGH_ON_BASE -> highOnBaseHittingStrategy;
+            case UNRECOGNIZED -> throw unrecognized(personality);
         };
     }
 
     private StealStrategy stealStrategyFor(PlayerPersonality personality) {
         return switch (personality) {
-            case DEFAULT, MIDDLE_DISTANCE, EAGER_SLUGGISH, HIGH_ON_BASE, EAGER_BUNT ->
+            case PLAYER_PERSONALITY_DEFAULT,
+                    PLAYER_PERSONALITY_MIDDLE_DISTANCE,
+                    PLAYER_PERSONALITY_EAGER_SLUGGISH,
+                    PLAYER_PERSONALITY_HIGH_ON_BASE,
+                    PLAYER_PERSONALITY_EAGER_BUNT ->
                     stealStrategy;
-            case EAGER_STEAL -> behaviorStrategies.eagerSteal();
+            case PLAYER_PERSONALITY_EAGER_STEAL -> behaviorStrategies.eagerSteal();
+            case UNRECOGNIZED -> throw unrecognized(personality);
         };
     }
 
     private BuntStrategy buntStrategyFor(PlayerPersonality personality) {
         return switch (personality) {
-            case DEFAULT, MIDDLE_DISTANCE, EAGER_SLUGGISH, HIGH_ON_BASE, EAGER_STEAL ->
+            case PLAYER_PERSONALITY_DEFAULT,
+                    PLAYER_PERSONALITY_MIDDLE_DISTANCE,
+                    PLAYER_PERSONALITY_EAGER_SLUGGISH,
+                    PLAYER_PERSONALITY_HIGH_ON_BASE,
+                    PLAYER_PERSONALITY_EAGER_STEAL ->
                     buntStrategy;
-            case EAGER_BUNT -> behaviorStrategies.eagerBunt();
+            case PLAYER_PERSONALITY_EAGER_BUNT -> behaviorStrategies.eagerBunt();
+            case UNRECOGNIZED -> throw unrecognized(personality);
         };
+    }
+
+    private static IllegalArgumentException unrecognized(PlayerPersonality personality) {
+        return new IllegalArgumentException("Unrecognized player personality: " + personality);
     }
 }

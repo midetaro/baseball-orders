@@ -2,7 +2,6 @@ package com.example.baseballorders.backend.infrastructure.web;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.awspring.cloud.sqs.operations.SqsTemplate;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -21,11 +20,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * 実物: HTTPサーバー、SimulationPageController、SimulationGuidePageController、Thymeleaf、静的リソース配信、
- * TypeScriptからビルド時に生成した画面スクリプト（ES module）。 モック: SqsTemplate。 担保する疎通: ログインなしのHTTP GET / ->
+ * TypeScriptからビルド時に生成した画面スクリプト（ES module）。 モック: なし。 担保する疎通: ログインなしのHTTP GET / ->
  * SimulationPageController -> 打順組み替え画面のThymeleaf HTML応答。HTTP GET /large-scale および /single-game ->
  * SimulationPageController -> Thymeleaf HTML応答、HTTP GET /simulation-guide ->
  * SimulationGuidePageController -> Thymeleaf
@@ -33,15 +31,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * GET /css/simulation.css、/css/single-game.css、/css/batting-order.css -> 静的リソース配信 ->
  * CSS応答と、各画面のHTML応答 -> 画面の入口モジュール /js/pages/*.js -> import先のモジュール -> 静的リソース配信 ->
  * JavaScript応答（ブラウザが読み込むモジュールをすべて取得できること）も担保する。担保しないもの:
- * SQSへのシミュレーション要求送信と結果受信、画面スクリプトの振る舞い（src/test/js のNodeテストで検査する）、入力値・ドラッグ操作・メニュー開閉のブラウザ操作。
+ * simulatorへのgRPCによるシミュレーション要求と結果受信、画面スクリプトの振る舞い（src/test/js
+ * のNodeテストで検査する）、入力値・ドラッグ操作・メニュー開閉のブラウザ操作。
  */
-@SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "spring.cloud.aws.sqs.enabled=false")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class SimulationPageIntegrationTest {
-
-    // GUI表示では使用しないSqsTemplateをモックする
-    @MockitoBean private SqsTemplate sqsTemplate;
 
     @LocalServerPort private int port;
 

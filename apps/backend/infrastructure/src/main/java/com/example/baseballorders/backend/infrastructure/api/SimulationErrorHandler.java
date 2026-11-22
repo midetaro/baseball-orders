@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/** 同期シミュレーションAPIのtimeoutとSQS送信失敗をHTTPエラーへ変換する。 */
+/** 同期シミュレーションAPIのtimeoutとsimulator呼び出し失敗をHTTPエラーへ変換する。 */
 @RestControllerAdvice
 public final class SimulationErrorHandler {
 
@@ -25,7 +25,7 @@ public final class SimulationErrorHandler {
     }
 
     /**
-     * SQS送信失敗を502 Bad Gatewayとして返す。
+     * simulator呼び出し失敗を502 Bad Gatewayとして返す。
      *
      * @param exception 送信失敗例外
      * @return エラー内容を持つHTTP 502応答
