@@ -62,14 +62,17 @@ flowchart LR
 
 Boundary summary:
 
-- Backend infrastructure owns HTTP, Thymeleaf, SQS, and composition. Backend
-  application coordinates request publication and correlated result waiting.
-- Simulator infrastructure owns SQS polling, serialization, and wire mapping.
-  Simulator application runs the use case; Simulator domain owns game rules.
-- `messaging-contract` contains only the SQS wire types. Backend and Simulator
-  internal models remain separate from these records.
+- Backend infrastructure owns HTTP, Thymeleaf, the gRPC client adapter, and
+  composition. Backend application validates the request and calls the
+  `SimulatorClient` port, which returns the result synchronously.
+- Simulator infrastructure owns the gRPC server (`GrpcSimulationService`,
+  `GrpcServerLifecycle`) and wire mapping. Simulator application runs the use
+  case; Simulator domain owns game rules.
+- `messaging-contract` contains only `simulation.proto` (protobuf messages and the
+  grpc-java stubs generated from it). Backend and Simulator internal models
+  remain separate from these generated types.
 - Backend and Simulator do not depend on each other's classes. Their production
-  integration is the request and result queues.
+  integration is the unary gRPC call `SimulationService/Simulate`.
 
 ## End-to-end execution path
 
@@ -78,35 +81,25 @@ sequenceDiagram
     actor Browser
     participant API as SimulatorRequestController
     participant Coordinator as SimulationCoordinator
-    participant Publisher as SqsSimulatorMessagePublisher
-    participant RequestQ as simulation request queue
-    participant Scheduler as SqsSimulationScheduler
+    participant Client as GrpcSimulatorClient
+    participant Service as GrpcSimulationService
     participant Mapper as LineUpMapper
     participant UseCase as SimulateGameUseCase
     participant Game as GameBattingContext
-    participant ResultQ as simulation result queue
-    participant Listener as SimulationResultListener
-    participant Registry as WaitingResultRegistry
 
     Browser->>API: POST /simulations or /simulations/single-game (PlayerInputRequest x9)
     API->>Coordinator: simulate(PlayerData x9, SimulationMode)
-    Coordinator->>Registry: register(simulationId)
-    Coordinator->>Publisher: publish(SimulationRequest)
-    Publisher->>RequestQ: SimulationRequestMessage
-    Scheduler->>RequestQ: poll
-    RequestQ-->>Scheduler: SimulationRequestMessage body
-    Scheduler->>Mapper: map(players)
-    Mapper-->>Scheduler: LineUpEntity
-    Scheduler->>UseCase: invoke(lineup, SimulationRunMode)
+    Coordinator->>Client: simulate(SimulationRequest)
+    Client->>Service: gRPC Simulate(SimulationRequestMessage), deadline = result-timeout
+    Service->>Mapper: map(players)
+    Mapper-->>Service: LineUpEntity
+    Service->>UseCase: invoke(lineup, SimulationRunMode)
     loop configured game count (LARGE_SCALE_RUN) or once (SINGLE_GAME_RUN)
         UseCase->>Game: construct and nextAtBat until game over
     end
-    UseCase-->>Scheduler: application SimulationResult
-    Scheduler->>ResultQ: SimulationResultMessage
-    Scheduler->>RequestQ: delete only after result send succeeds
-    ResultQ-->>Listener: SimulationResultMessage
-    Listener->>Registry: complete(simulationId, backend SimulationResult)
-    Registry-->>Coordinator: release matching waiter
+    UseCase-->>Service: application SimulationResult
+    Service-->>Client: SimulationResultMessage
+    Client-->>Coordinator: backend SimulationResult
     Coordinator-->>API: backend SimulationResult
     API-->>Browser: synchronous HTTP response
 ```
@@ -165,15 +158,15 @@ implementations after the listed entry points identify them.
 | Single-game page, animation, or batting-order table | [SimulationPageController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageController.java), [single-game.html](../apps/backend/infrastructure/src/main/resources/templates/single-game.html), [single-game/](../apps/backend/infrastructure/src/main/typescript/single-game/), [single-game.css](../apps/backend/infrastructure/src/main/resources/static/css/single-game.css) | [SimulationPageControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageControllerTest.java), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java), [browser test](../apps/backend/infrastructure/src/test/js/single-game.test.mjs), [behavior tests](../apps/backend/infrastructure/src/test/js/scripts/single-game/) | Frame durations come from `baseball-orders.rendering.single-game.*`; inspect Simulator transitions only when the displayed transition contract changes. |
 | Lineup input shared by both pages (defaults, validation, tabs, bulk toggles, submit) | [lineup/](../apps/backend/infrastructure/src/main/typescript/lineup/) | [behavior tests](../apps/backend/infrastructure/src/test/js/scripts/lineup/), [simulation.test.mjs](../apps/backend/infrastructure/src/test/js/simulation.test.mjs), [single-game.test.mjs](../apps/backend/infrastructure/src/test/js/single-game.test.mjs), [SimulationPageIntegrationTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationPageIntegrationTest.java) | Keep page-specific messages, endpoints, and result rendering in `simulation/` and `single-game/`. |
 | HTTP request mapping, validation, or errors | [PlayerInputRequest](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/api/PlayerInputRequest.java), [SimulatorRequestController](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/api/SimulatorRequestController.java), [SimulationErrorHandler](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/api/SimulationErrorHandler.java) | [SimulatorRequestControllerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/api/SimulatorRequestControllerTest.java), [SimulationErrorHandlerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/api/SimulationErrorHandlerTest.java) | Stop at `SimulationCoordinator` after confirming the application input. |
-| Backend request/result coordination | [SimulationCoordinator](../apps/backend/application/src/main/java/com/example/baseballorders/backend/application/SimulationCoordinator.java), [WaitingResultRegistry](../apps/backend/application/src/main/java/com/example/baseballorders/backend/application/WaitingResultRegistry.java), [publisher port](../apps/backend/application/src/main/java/com/example/baseballorders/backend/application/adapter/SimulatorMessagePublisher.java) | [SimulationCoordinatorTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/SimulationCoordinatorTest.java), [WaitingResultRegistryTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/WaitingResultRegistryTest.java), [HTTP integration test](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationResultHttpIntegrationTest.java) | Treat SQS clients and wire conversion as infrastructure. |
-| SQS wire contract | [SimulationRequestMessage](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationRequestMessage.java), [SimulationPlayerMessage](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationPlayerMessage.java), [SimulationResultMessage](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationResultMessage.java), [SimulationMode](../libs/messaging-contract/src/main/java/com/example/baseballorders/messaging/SimulationMode.java) | [contract test](../libs/messaging-contract/src/test/java/com/example/baseballorders/messaging/SimulationPlayerMessageTest.java) plus both applications' publisher, listener, and scheduler tests | Do not move application or domain models into the contract. |
-| Backend SQS send/receive mapping | [SqsSimulatorMessagePublisher](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/messaging/SqsSimulatorMessagePublisher.java), [SimulationResultListener](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/messaging/SimulationResultListener.java) | [SqsSimulatorMessagePublisherTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/SqsSimulatorMessagePublisherTest.java), [SimulationResultListenerTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/SimulationResultListenerTest.java) | Stop at shared messages on the wire side and application/domain models on the inside. |
-| Simulator SQS polling and lineup mapping | [SqsSimulationScheduler](../apps/simulator/infrastructure/src/main/java/com/example/baseballorders/simulator/infrastructure/messaging/SqsSimulationScheduler.java), [LineUpMapper](../apps/simulator/infrastructure/src/main/java/com/example/baseballorders/simulator/infrastructure/messaging/LineUpMapper.java) | [SqsSimulationSchedulerTest](../apps/simulator/infrastructure/src/test/java/com/example/baseballorders/simulator/infrastructure/messaging/SqsSimulationSchedulerTest.java), [SQS integration test](../apps/simulator/infrastructure/src/test/java/com/example/baseballorders/simulator/infrastructure/messaging/SqsSimulationSchedulerIntegrationTest.java), [LineUpMapperTest](../apps/simulator/infrastructure/src/test/java/com/example/baseballorders/simulator/infrastructure/messaging/LineUpMapperTest.java) | Stop after delegation to `SimulateGameUseCase`; business rules belong inward. |
+| Backend request coordination | [SimulationCoordinator](../apps/backend/application/src/main/java/com/example/baseballorders/backend/application/SimulationCoordinator.java), [SimulatorClient port](../apps/backend/application/src/main/java/com/example/baseballorders/backend/application/adapter/SimulatorClient.java) | [SimulationCoordinatorTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/SimulationCoordinatorTest.java), [HTTP integration test](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/web/SimulationResultHttpIntegrationTest.java) | Treat the gRPC client and wire conversion as infrastructure. |
+| gRPC wire contract | [simulation.proto](../libs/messaging-contract/src/main/proto/simulation.proto) | [contract test](../libs/messaging-contract/src/test/java/com/example/baseballorders/messaging/SimulationContractTest.java) plus [GrpcSimulatorClientTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/GrpcSimulatorClientTest.java) and [GrpcSimulationServiceTest](../apps/simulator/infrastructure/src/test/java/com/example/baseballorders/simulator/infrastructure/messaging/GrpcSimulationServiceTest.java) | Do not move application or domain models into the contract. |
+| Backend gRPC call and error mapping | [GrpcSimulatorClient](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/messaging/GrpcSimulatorClient.java), [SimulatorGrpcChannelConfiguration](../apps/backend/infrastructure/src/main/java/com/example/baseballorders/backend/infrastructure/messaging/SimulatorGrpcChannelConfiguration.java) | [GrpcSimulatorClientTest](../apps/backend/infrastructure/src/test/java/com/example/baseballorders/backend/infrastructure/messaging/GrpcSimulatorClientTest.java) | Stop at shared messages on the wire side and application/domain models on the inside. |
+| Simulator gRPC server and lineup mapping | [GrpcSimulationService](../apps/simulator/infrastructure/src/main/java/com/example/baseballorders/simulator/infrastructure/messaging/GrpcSimulationService.java), [GrpcServerLifecycle](../apps/simulator/infrastructure/src/main/java/com/example/baseballorders/simulator/infrastructure/messaging/GrpcServerLifecycle.java), [LineUpMapper](../apps/simulator/infrastructure/src/main/java/com/example/baseballorders/simulator/infrastructure/messaging/LineUpMapper.java) | [GrpcSimulationServiceTest](../apps/simulator/infrastructure/src/test/java/com/example/baseballorders/simulator/infrastructure/messaging/GrpcSimulationServiceTest.java), [GrpcServerLifecycleTest](../apps/simulator/infrastructure/src/test/java/com/example/baseballorders/simulator/infrastructure/messaging/GrpcServerLifecycleTest.java), [LineUpMapperTest](../apps/simulator/infrastructure/src/test/java/com/example/baseballorders/simulator/infrastructure/messaging/LineUpMapperTest.java) | Stop after delegation to `SimulateGameUseCase`; business rules belong inward. |
 | Simulation count, run mode, and game orchestration | [SimulateGameUseCase](../apps/simulator/application/src/main/java/com/example/baseballorders/simulator/application/usecase/SimulateGameUseCase.java), [application result](../apps/simulator/application/src/main/java/com/example/baseballorders/simulator/application/contract/SimulationResult.java) | [SimulateGameUseCaseTest](../apps/simulator/application/src/test/java/com/example/baseballorders/simulator/application/SimulateGameUseCaseTest.java), [SimulateGameUseCaseSingleGameScenarioTest](../apps/simulator/application/src/test/java/com/example/baseballorders/simulator/application/SimulateGameUseCaseSingleGameScenarioTest.java) | Read domain internals only for a changed game or aggregation rule. |
 | At-bat order, innings, outs, and base transitions | [game package](../apps/simulator/domain/src/main/java/com/example/baseballorders/simulator/domain/game) starting with `GameBattingContext`, `AtBatProcessor`, `AbstractBasesState`, and `BaseStateFactory` | [game tests](../apps/simulator/domain/src/test/java/com/example/baseballorders/simulator/domain/game) starting with `GameBattingContextTest`, `GameStateLifecycleTest`, and `BasesStateTransitionTest` | Read only concrete base states involved in the changed transition. |
 | Batting, bunt, steal, or personality behavior | [BatterEntity](../apps/simulator/domain/src/main/java/com/example/baseballorders/simulator/domain/player/BatterEntity.java), [BehaviorStrategies](../apps/simulator/domain/src/main/java/com/example/baseballorders/simulator/domain/player/strategy/BehaviorStrategies.java), then the relevant sealed strategy interface | [BatterEntityTest](../apps/simulator/domain/src/test/java/com/example/baseballorders/simulator/domain/player/BatterEntityTest.java) and the matching [strategy tests](../apps/simulator/domain/src/test/java/com/example/baseballorders/simulator/domain/player/strategy) | Do not inspect unrelated strategy families. |
 | Per-game or aggregate statistics | [statistics package](../apps/simulator/domain/src/main/java/com/example/baseballorders/simulator/domain/statistics) starting with `GameStatisticsRecorder`, `ScoreAccumulator`, `GameStatistics`, and `ScoreStatistics` | [GameStatisticsRecorderTest](../apps/simulator/domain/src/test/java/com/example/baseballorders/simulator/domain/statistics/GameStatisticsRecorderTest.java), [ScoreAccumulatorTest](../apps/simulator/domain/src/test/java/com/example/baseballorders/simulator/domain/statistics/ScoreAccumulatorTest.java), plus the caller test for any exposed field | Follow a new field outward only through the application result and wire/backend mappers. |
-| Full Backend-to-Simulator communication | The end-to-end path above and [compose.yaml](../compose.yaml) | [BackendSimulatorFlociIntegrationTest](../integration-test/src/test/java/com/example/baseballorders/integration/BackendSimulatorFlociIntegrationTest.java), then [smoke-test.py](../infra/docker/smoke-test.py) when Docker verification is in scope | Use this set only for genuinely cross-application behavior. |
+| Full Backend-to-Simulator communication | The end-to-end path above and [compose.yaml](../compose.yaml) | [BackendSimulatorGrpcIntegrationTest](../integration-test/src/test/java/com/example/baseballorders/integration/BackendSimulatorGrpcIntegrationTest.java), then [smoke-test.py](../infra/docker/smoke-test.py) when Docker verification is in scope | Use this set only for genuinely cross-application behavior. |
 
 ## Domain hotspots
 
@@ -204,8 +197,8 @@ implementations after the listed entry points identify them.
 Update this file in the same change when any of the following occurs:
 
 - a module or declared project dependency changes;
-- an HTTP, SQS, application, or domain entry point is replaced or moved;
-- the request/result flow or delete-after-send behavior changes;
+- an HTTP, gRPC, application, or domain entry point is replaced or moved;
+- the request/response flow or the gRPC deadline/error mapping changes;
 - a new major domain responsibility no longer fits a reading-set row;
 - focused tests named here are renamed or removed.
 

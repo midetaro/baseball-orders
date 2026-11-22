@@ -2,10 +2,10 @@
 
 ## Repository map
 
-- `apps/backend`: synchronous HTTP API, persistence, and SQS producer/consumer.
-- `apps/simulator`: asynchronous simulation worker and SQS producer/consumer.
-- `libs/messaging-contract`: the single source of truth for messages exchanged through SQS.
-- `infra/aws-terraform`: native HCL for AWS messaging resources.
+- `apps/backend`: synchronous HTTP API, persistence, and the gRPC client to the simulator.
+- `apps/simulator`: simulation worker exposing a gRPC server.
+- `libs/messaging-contract`: the single source of truth (`simulation.proto`) for the gRPC contract between backend and simulator.
+- `infra/aws-terraform`: native HCL for AWS deployment resources (ECS, ALB, ECR, Service Connect).
 - `.agents/skills/baseball-orders-development`: task workflow and verification commands.
 
 Before a broad implementation search, use `docs/architecture.md` to select the
@@ -14,7 +14,7 @@ against the current source and Gradle files; the map is navigation guidance, not
 a substitute for the code.
 
 Read the nearest nested `AGENTS.md` before changing an application. Use the
-`baseball-orders-development` skill for Java, SQS-contract, cross-application, or
+`baseball-orders-development` skill for Java, gRPC-contract, cross-application, or
 Terraform changes.
 
 ## Working agreement
@@ -22,7 +22,7 @@ Terraform changes.
 - Inspect `git status` first and preserve unrelated user changes.
 - Make the safest in-scope assumption when ambiguity does not materially alter behavior; report it.
 - Do not wait on interactive commands, foreground servers, credentials, or selectors.
-- Keep SQS wire types in `libs/messaging-contract`; do not create application-local copies.
+- Keep gRPC contract types (protobuf messages and generated stubs) in `libs/messaging-contract`; do not create application-local copies.
 - Keep domain and application models independent from transport types unless the boundary mapper itself consumes a shared message.
 - Before implementation, inspect the related production path, tests, specifications,
   and build files. Protect existing code and all uncommitted user changes; never
@@ -31,18 +31,18 @@ Terraform changes.
 ## Application and module boundaries
 
 - `apps/backend` owns the synchronous HTTP API, server-rendered Thymeleaf UI,
-  application coordination, result waiting, and SQS adapters. It must not contain
+  application coordination, and the gRPC client adapter that waits synchronously for the simulator's response. It must not contain
   simulator business rules or directly depend on simulator classes.
-- `apps/simulator` owns simulation use cases and business rules and consumes and
-  produces SQS messages through adapters. It must not directly depend on backend
+- `apps/simulator` owns simulation use cases and business rules and serves the
+  gRPC `SimulationService` through an adapter. It must not directly depend on backend
   classes.
-- `libs/messaging-contract` is limited to the existing SQS wire contract. Do not
+- `libs/messaging-contract` is limited to the existing gRPC wire contract. Do not
   move domain models, persistence entities, forms, or view models into it.
-- `integration-test` verifies the assembled backend -> SQS -> simulator -> SQS ->
-  backend path. `infra` owns deployment and local-environment definitions.
+- `integration-test` verifies the assembled HTTP -> backend -> gRPC -> simulator ->
+  HTTP response path. `infra` owns deployment and local-environment definitions.
 - Within each application, dependencies point inward: `infrastructure ->
   application -> domain`. Existing direct dependencies declared in Gradle are the
-  authority; do not introduce a reverse dependency. Framework, Thymeleaf, SQS,
+  authority; do not introduce a reverse dependency. Framework, Thymeleaf, gRPC,
   HTTP, and persistence details are forbidden in domain code.
 - Controllers and listeners translate and delegate. They must not implement
   business rules. Keep transport DTOs, backend internal models, simulator internal
@@ -429,7 +429,7 @@ one commit for the whole issue.
   description before opening or updating it.
 - Capture screenshots against the real rendered screen (through its actual
   route and controller), not a static file opened directly.
-- A change that only affects non-visual behavior (backend logic, SQS
+- A change that only affects non-visual behavior (backend logic, gRPC
   messaging, Terraform, tests) with no template/CSS/view-model diff does not
   require screenshots.
 - When updating an already-open pull request for a screen change made after

@@ -1,6 +1,6 @@
 ---
 name: baseball-orders-development
-description: Implement and verify Java, SQS messaging-contract, cross-application, and Terraform changes in the baseball-orders repository. Use for changes under apps, libs/messaging-contract, or infra/aws-terraform; do not use for prose-only questions.
+description: Implement and verify Java, gRPC messaging-contract, cross-application, and Terraform changes in the baseball-orders repository. Use for changes under apps, libs/messaging-contract, or infra/aws-terraform; do not use for prose-only questions.
 ---
 
 # Baseball Orders Development
@@ -11,28 +11,29 @@ Start by reading the root and nearest nested `AGENTS.md`, then inspect the workt
 
 - Backend-only: work from `apps/backend` and verify `backend`.
 - Simulator-only: work from `apps/simulator` and verify `simulator`.
-- SQS wire-format or queue behavior: treat `libs/messaging-contract` as authoritative, inspect both adapters, and verify `all`.
+- gRPC wire-format or call behavior: treat `libs/messaging-contract/src/main/proto/simulation.proto` as authoritative, inspect both adapters, and verify `all`.
 - Terraform: edit native HCL directly and verify `terraform`; never reintroduce a generator.
 
 ## Execute
 
 Use red-green-refactor. A valid red run must reach the relevant test and fail because behavior is missing. If Gradle, credentials, Docker, or sandbox setup fails first, fix or report that execution problem separately.
 
-For SQS changes, trace the complete path before editing:
+For gRPC changes, trace the complete path before editing:
 
 ```text
 backend persistence/domain
-  -> SimulationRequestMessage
-  -> SqsSimulationScheduler
+  -> SimulationCoordinator -> SimulatorClient
+  -> GrpcSimulatorClient -> SimulationRequestMessage
+  -> GrpcSimulationService
   -> SimulationResultMessage
-  -> backend listener/registry
+  -> GrpcSimulatorClient (synchronous return)
 ```
 
-Keep queue names configurable and use unique queues in integration tests. Preserve request messages when deserialization, simulation, serialization, or result sending fails.
+Keep the simulator address (`SIMULATOR_GRPC_HOST`/`SIMULATOR_GRPC_PORT`) and listen port (`SIMULATION_GRPC_PORT`) configurable, and use ephemeral ports in integration tests. Map failures to gRPC status codes (`INVALID_ARGUMENT` for invalid input, `INTERNAL` otherwise) and keep the backend deadline error mapping (HTTP 504 on timeout, 502 on other failures).
 
 ## Verify
 
-Run `scripts/verify.sh <backend|simulator|all|terraform>`. Report conditional integration tests as skipped unless their endpoint environment variable was present. Finish with `git diff --check` and review the complete diff for accidental generated or IDE files.
+Run `scripts/verify.sh <backend|simulator|all|terraform>`. Report any conditionally skipped integration test explicitly. Finish with `git diff --check` and review the complete diff for accidental generated or IDE files.
 
 Before opening or updating a pull request, run `scripts/session-token-usage.sh <codex|claude>`
 and record its `total_tokens` in the pull request title and its full output in a

@@ -19,7 +19,7 @@ flowchart TB
         r53["Route 53"]
         acm["ACM certificate"]
         ecr[("ECR<br/>backend / simulator")]
-        logs["CloudWatch Logs<br/>+ Alarms"]
+        logs["CloudWatch Logs"]
 
         subgraph vpc["VPC 10.0.0.0/16"]
             subgraph pub["public subnet x2 AZ"]
@@ -34,38 +34,33 @@ flowchart TB
                 end
             end
         end
-
-        requestq[["simulation-request<br/>+ DLQ"]]
-        resultq[["simulation-result<br/>+ DLQ"]]
     end
 
     browser -->|HTTPS 443| r53
     r53 --> alb
     acm -.-> alb
     alb -->|"HTTP 8080 / health check GET /"| backend
-    backend -->|SendMessage| requestq
-    requestq -->|"ReceiveMessage (poll 1s)"| simulator
-    simulator -->|SendMessage| resultq
-    resultq -->|SqsListener| backend
-    cluster -->|"SQS / ECR / Logs への outbound"| nat
+    backend -->|"gRPC Simulate (Service Connect simulator:9090)"| simulator
+    cluster -->|"ECR / Logs への outbound"| nat
     ecr -.->|image pull| cluster
     cluster -.-> logs
 ```
 
-SQS を挟んだ 1 リクエストの流れは同期的で、`SimulationCoordinator` が **30 秒**まで
-HTTP スレッドをブロックして結果を待つ。この 30 秒がタイムアウト系の設定値すべての基準になる。
+backend から simulator への 1 リクエストは gRPC の unary RPC（`SimulationService/Simulate`）で、
+`SimulationCoordinator` が **30 秒**（gRPC のデッドライン）まで HTTP スレッドをブロックして応答を待つ。
+超過は HTTP 504、その他の通信失敗は HTTP 502 になる。この 30 秒がタイムアウト系の設定値すべての基準になる。
 
 図の読み方で誤解しやすい点を 3 つ補足する。
 
 - **ALB は 1 台**である。`public subnet x2 AZ` は ALB が 2 台あるという意味ではなく、1 つの ALB が
   2 つの AZ にまたがって配置されていることを示す。ALB は作成時に異なる 2 AZ のサブネットを最低 2 つ
   要求するため、この x2 は削減できない。削減できるのは ECS タスク側の AZ 数である。
-- **SQS・ECR・CloudWatch Logs は VPC の外にある**。同じ `AWS ap-northeast-1` の枠内に描いているのは
+- **ECR・CloudWatch Logs は VPC の外にある**。同じ `AWS ap-northeast-1` の枠内に描いているのは
   同一リージョンのマネージドサービスであることを示すためで、VPC の内側にいるわけではない。
   private subnet からこれらを呼ぶには外向きの経路が必要で、それが NAT Gateway である。
-  `backend --> simulation-request` などの矢印は論理的なメッセージの流れを表し、
-  実際の通信経路は NAT Gateway を経由する。
-- **認証が無くても NAT Gateway は不要にならない**。上記の通り SQS・ECR・Logs への outbound が
+  backend -> simulator の gRPC 呼び出しは VPC 内（ECS Service Connect）で完結し、NAT Gateway を経由しない。
+  ECR・Logs への通信は NAT Gateway を経由する。
+- **認証が無くても NAT Gateway は不要にならない**。上記の通り ECR・Logs への outbound が
   必要なため。NAT を無くす選択肢は [NAT Gateway の代替](#nat-gateway-の代替) を参照。
 
 ### NAT Gateway の代替
@@ -73,7 +68,7 @@ HTTP スレッドをブロックして結果を待つ。この 30 秒がタイ�
 | 方法 | 月額 | 評価 |
 | --- | --- | --- |
 | NAT Gateway | 約 $35 | private subnet を維持でき、経路の説明が最も単純 |
-| VPC エンドポイント（ECR api / ECR dkr / Logs / SQS の interface 4 種 + S3 gateway） | 約 $41〜82 | interface 型は 1 種あたり 1 AZ で月 $10 前後。この規模では NAT より高い |
+| VPC エンドポイント（ECR api / ECR dkr / Logs の interface 3 種 + S3 gateway） | 約 $31〜62 | interface 型は 1 種あたり 1 AZ で月 $10 前後。この規模では NAT より高い |
 | public subnet + パブリック IP、inbound は SG で全遮断 | $0 | private subnet が無くなる代わりに最も安い |
 
 この規模では VPC エンドポイントは割に合わない。NAT を維持するか、全タスクを public subnet に置くかの
@@ -81,18 +76,18 @@ HTTP スレッドをブロックして結果を待つ。この 30 秒がタイ�
 
 ## リソース構成
 
-`infra/aws-terraform/` に追加するファイル単位で示す。既存の `sqs.tf`（キュー・DLQ・IAM ポリシー）は
-そのまま利用し、その `backend_sqs_policy_arn` / `simulator_sqs_policy_arn` output を新しいタスクロールに attach する。
+`infra/aws-terraform/` に追加するファイル単位で示す。メッセージキューは使わないため、`sqs.tf` とその IAM ポリシーは存在しない。backend と simulator は
+ECS Service Connect（`aws_service_discovery_http_namespace`）で接続する。
 
 | ファイル | 内容 |
 | --- | --- |
-| `network.tf` | VPC、public/private subnet x2 AZ、IGW、NAT Gateway、SG 3 種（alb / backend / simulator） |
+| `network.tf` | VPC、public/private subnet x2 AZ、IGW、NAT Gateway、SG 3 種（alb / backend / simulator。simulator は backend SG からの TCP 9090 のみ許可） |
 | `ecr.tf` | repository x2、lifecycle policy（untagged 7 日・直近 30 イメージ）、イメージスキャン |
 | `alb.tf` | ALB、ACM、HTTPS listener、HTTP→HTTPS リダイレクト、target group |
-| `ecs.tf` | cluster（FARGATE + FARGATE_SPOT）、task definition x2、service x2 |
+| `ecs.tf` | cluster（FARGATE + FARGATE_SPOT）、Service Connect namespace、task definition x2、service x2 |
 | `iam.tf` | task execution role（ECR pull / Logs / `ssm:GetParameters`）、task role x2 |
-| `autoscaling.tf` | simulator を `ApproximateNumberOfMessagesVisible` で 1→N にスケール |
-| `observability.tf` | ロググループ x2（保持 14 日）、アラーム |
+| `autoscaling.tf` | simulator を CPU 使用率のターゲット追跡で 1→N にスケール |
+| `observability.tf` | ロググループ x2（保持 14 日） |
 
 RDBMS を使わないため、`rds.tf`・DB サブネットグループ・DB 用 SG・`DATABASE_*` の秘匿値管理は存在しない。
 
@@ -109,16 +104,15 @@ RDBMS を使わないため、`rds.tf`・DB サブネットグループ・DB 用
 | 変数 | backend | simulator | 供給元 |
 | --- | --- | --- | --- |
 | `SPRING_PROFILES_ACTIVE` | `prod` | `prod` | task definition |
-| `SIMULATION_REQUEST_QUEUE_NAME` | 必要 | 必要 | Terraform output |
-| `SIMULATION_RESULT_QUEUE_NAME` | 必要 | 必要 | Terraform output |
-| `SIMULATION_SQS_POLL_FIXED_DELAY` | — | `1s` | task definition |
+| `SIMULATOR_GRPC_HOST` / `SIMULATOR_GRPC_PORT` | `simulator` / `9090` | — | task definition（Service Connect の client alias） |
+| `SIMULATION_GRPC_PORT` | — | `9090` | task definition |
 
 アプリケーションが必要とする秘匿値は無い。
 
 ## 永続化の前提
 
 backend は DB を持たない。ログイン機能を削除したため、永続化対象だった `users` テーブルも存在しない。
-**シミュレーション結果も DB に保存されない**（SQS で往復し HTTP レスポンスで返すだけ）。
+**シミュレーション結果も DB に保存されない**（gRPC の応答を HTTP レスポンスで返すだけ）。
 そのためタスク再起動で失われる永続データは無い。
 
 シミュレーション結果の保存や履歴など、再起動後も保持すべきデータが要件になった時点で
@@ -126,22 +120,18 @@ RDS（PostgreSQL など）の追加を別の feature specification として検�
 
 ## この構成が受け入れている制約
 
-構成図の `desired 1` や `poll 1s` はアプリケーション側の現在の実装から決まっている。
+構成図の `desired 1` や 30 秒のデッドラインはアプリケーション側の現在の実装から決まっている。
 
-- **backend は 1 タスク固定**。`simulation-result` は共有の標準キューであり、どのタスクが受信するかは不定。
-  一方 `WaitingResultRegistry` はタスクローカルな `ConcurrentHashMap` のため、2 タスク以上にすると
-  待機していないタスクに結果が届き、送信元は 30 秒でタイムアウトする。
-  恒久対応は結果を永続化して画面を `GET /simulations/{id}` のポーリングに変更する方向が最も素直で、
-  同期 HTTP 保持そのものを無くせる。別の feature specification として扱う。
-- **simulator の最小タスク数は 1**。キュー長によるスケールアウトは 0→1 の起動に 1〜2 分かかり、
-  backend の 30 秒タイムアウトに間に合わない。常時費用は Fargate Spot で抑える。
-  `SqsSimulationScheduler` は結果送信が成功してから要求メッセージを削除するため、
-  Spot の中断で処理中のメッセージが失われることはなく再配信される。
-- **`SIMULATION_SQS_POLL_FIXED_DELAY` の明示指定が必須**。`application-prod.yml` の既定は 60 秒で、
-  backend の待機 30 秒を超える。未指定のまま本番に出すと高確率でタイムアウトする。
-- **visibility timeout と 1 ポーリングの処理時間の関係**。`max-messages-per-poll: 10` を逐次処理する一方で
-  キューの `visibility_timeout_seconds` は 60。10 件の処理が 60 秒を超えると再配信され二重実行になる。
-  `max-messages-per-poll` を下げるか visibility timeout を上げるかの判断が要る。
+- **backend は 1 タスク固定**（費用上の選択）。結果の相関をタスクローカルに保持する仕組み
+  （旧 `WaitingResultRegistry`）は gRPC 化で無くなったため、技術的には 2 タスク以上にできる。
+  ただし画面は同期 HTTP を保持し続けるため、増やす場合は ALB のタイムアウトとの整合を確認する。
+- **simulator の最小タスク数は 1**。0→1 の起動には 1〜2 分かかり、backend の 30 秒デッドラインに
+  間に合わない。常時費用は Fargate Spot で抑える。Spot の中断で処理中のリクエストは
+  gRPC エラー（HTTP 502）になり、キューによる再配信は無い。利用者の再実行で回復する。
+- **simulator のスケールは CPU 使用率に基づく**（`simulator_cpu_target_percent`）。Service Connect は
+  gRPC のリクエスト単位で simulator タスクへ負荷分散する。
+- **task definition の改訂が必要**。task definition は `lifecycle.ignore_changes = [container_definitions]` のため、
+  既存環境へ gRPC 化を適用するには `grpc` ポートマッピングと環境変数を含む新しい revision の登録が要る。
 
 ## デプロイ
 
@@ -169,7 +159,7 @@ ap-northeast-1、月額の概算。
 | Fargate backend (0.5 vCPU / 4 GB 常時) | $35 | $35 |
 | Fargate simulator (1 vCPU / 4 GB 常時) | $53 | $16（Spot） |
 | NAT Gateway | $35 | $0（public subnet + パブリック IP、inbound は SG で遮断） |
-| SQS / CloudWatch Logs / ECR | $2 | $2 |
+| CloudWatch Logs / ECR | $2 | $2 |
 | 合計 | 約 $145 | 約 $73 |
 
 さらに下げる場合、EC2 1 台に既存の `compose.yaml` をそのまま載せる選択肢がある（月 $12〜15）。
@@ -178,6 +168,6 @@ backend が 1 タスク固定である制約は同じなので機能面の損失
 
 ## この文書の更新条件
 
-- ECS サービス構成、ネットワーク、キューのパラメータを変更したとき
-- backend の待機時間、simulator のポーリング間隔、visibility timeout のいずれかを変更したとき
+- ECS サービス構成、ネットワーク、Service Connect・gRPC のパラメータを変更したとき
+- backend の待機時間（gRPC デッドライン）や simulator のスケール設定を変更したとき
 - 永続化要件が変わり RDBMS を追加したとき

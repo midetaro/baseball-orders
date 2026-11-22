@@ -75,7 +75,7 @@ State を直接操作する経路を使う。
 
 - **L1 / L2 を厚く、L3 / L4 は本数を絞る。** L3・L4 は「代表シナリオの回帰」であって網羅の場ではない。
 - L3・L4 は決定論的シナリオである。**確率的な期待値検証（大量試行して平均を見る等）は禁止**。フレーキーになる。
-- Spring / SQS を domain・application のテストに持ち込まない。それは infrastructure と `integration-test` の担当。
+- Spring / gRPC を domain・application のテストに持ち込まない。それは infrastructure と `integration-test` の担当。
 
 ---
 

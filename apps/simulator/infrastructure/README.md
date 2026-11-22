@@ -1,19 +1,10 @@
 # Simulator のローカル起動
 
-Backend・Simulator・FlociをまとめてDockerで動かす場合は、
+Backend・SimulatorをまとめてDockerで動かす場合は、
 [ローカルDocker環境](../../../infra/docker/README.md)を参照してください。
 
-## Infrastructure integration test
+Simulator は gRPC サーバー（`SimulationService/Simulate`）として起動し、既定では `9090` 番ポートで待ち受けます。
+ポートは `SIMULATION_GRPC_PORT`（`simulation.grpc.port`）で変更できます。
 
-The integration test exercises `SqsSimulationScheduler` against ElasticMQ running in Docker.
-
-```shell
-docker compose -f infrastructure/compose.yaml up -d
-ELASTICMQ_ENDPOINT_URL=http://localhost:9324 ./gradlew \
-  :infrastructure:test \
-  --tests '*SqsSimulationSchedulerIntegrationTest'
-docker compose -f infrastructure/compose.yaml down
-```
-
-When `ELASTICMQ_ENDPOINT_URL` is not set, the integration test is skipped so the regular unit-test suite does not
-require Docker.
+gRPC アダプタ（`GrpcSimulationService`・`GrpcServerLifecycle`）の単体テストは外部サービスを必要とせず、
+通常の `./gradlew :infrastructure:test` で実行されます。Backend との疎通は `integration-test` が検証します。

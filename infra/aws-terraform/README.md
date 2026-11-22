@@ -9,9 +9,12 @@ in native Terraform HCL.
 
 ## Managed resources
 
-- `simulation-request` and `simulation-result` SQS standard queues, each with
-  a dead-letter queue (maximum receive count 5), SQS-managed server-side
-  encryption, and long polling
+- ECS Service Connect: an `aws_service_discovery_http_namespace` named
+  `<prefix>.internal`; the simulator exposes its `grpc` port mapping
+  (`simulator_grpc_port`, default 9090, `appProtocol` grpc) with the client
+  alias `simulator:9090`, and the backend is a client only. The security group
+  rule `simulator_grpc_from_backend` allows TCP 9090 into the simulator from the
+  backend security group only
 - VPC with two public subnets (one per AZ) and an Internet Gateway; no private
   subnet or NAT Gateway. ECS tasks run in the public subnets with public IPs;
   inbound is blocked at the security group level except ALB -> backend on 8080
@@ -25,33 +28,27 @@ in native Terraform HCL.
   (`backend_ecr_repository_name` / `simulator_ecr_repository_name`)
 - ECS cluster (Fargate + Fargate Spot), task definitions, and services for the
   backend (0.5 vCPU / 4 GB, 1 fixed task, standard Fargate) and simulator
-  (1 vCPU / 4 GB, Fargate Spot, autoscaled). Both containers cap the JVM heap
+  (1 vCPU / 4 GB, Fargate Spot, CPU-autoscaled). Both containers cap the JVM heap
   at 2 GB with `JAVA_TOOL_OPTIONS=-Xmx2g` (`task_memory` / `jvm_options`)
 - IAM task execution role and least-privilege task roles for the backend and
   simulator workloads
-- CloudWatch log groups (14-day retention) and alarms on both DLQs
-- Application Auto Scaling for the simulator service, driven by
-  `ApproximateNumberOfMessagesVisible` on `simulation-request`
-- Queue URL/ARN, IAM policy ARN, and ECR repository URL outputs
+- CloudWatch log groups (14-day retention)
+- Application Auto Scaling for the simulator service: CPU target tracking
+  (`simulator_cpu_target_percent`, `simulator_scale_out_cooldown_seconds`,
+  `simulator_scale_in_cooldown_seconds`)
+- IAM policy ARN and ECR repository URL outputs
 
 `rds.tf` is intentionally not implemented here, per the low-cost document's
 applicability conditions. The ALB health check uses `GET /`, which the backend
 serves without login.
 
-The default queue names match the names currently used by the backend Java
-application. Override `request_queue_name` and `result_queue_name` only when the
-application configuration is changed at the same time.
-
-Set the same queue names for both local applications when overriding the
-Terraform defaults:
-
-```sh
-export SIMULATION_REQUEST_QUEUE_NAME=my-simulation-request
-export SIMULATION_RESULT_QUEUE_NAME=my-simulation-result
-```
-
-Both applications default to `simulation-request` and `simulation-result` when
-these environment variables are absent.
+The backend reaches the simulator at `simulator:9090` through the Service
+Connect alias (`SIMULATOR_GRPC_HOST` / `SIMULATOR_GRPC_PORT`; the simulator
+listens on `SIMULATION_GRPC_PORT`). The task definitions use
+`lifecycle.ignore_changes = [container_definitions]`, so an existing deployment
+needs a new task definition revision (for example by running the image push and
+deploy workflows) before the `grpc` port mapping and these environment variables
+take effect.
 
 ## Prerequisites
 
@@ -91,8 +88,8 @@ Set these GitHub Actions variables before enabling deployments:
 - `TF_STATE_KEY` (optional): state object key; defaults to
   `baseball-orders/production/terraform.tfstate`.
 
-The assumed role needs access to the managed VPC, ALB, ECR, ECS, IAM, SQS,
-CloudWatch, Application Auto Scaling, ACM, and Route 53 resources, and
+The assumed role needs access to the managed VPC, ALB, ECR, ECS, IAM, Cloud Map
+(Service Connect namespace), CloudWatch, Application Auto Scaling, ACM, and Route 53 resources, and
 read/write access to the configured state object and its `.tflock` lock object.
 The workflows use the protected `aws-production` GitHub Environment, so create
 that environment and add any required reviewers before the first deployment.

@@ -30,13 +30,13 @@ worker nodes within the same issue using the file-ownership rules below.
 - Simulator dependencies are `application -> domain, messaging-contract` and
   `infrastructure -> application`. Simulator infrastructure has a test-only
   dependency on domain.
-- Backend owns synchronous HTTP, the result-waiting application flow, SQS
-  publishing/listening, and Thymeleaf presentation. Templates live under
+- Backend owns synchronous HTTP, the request-coordination application flow, the gRPC
+  client adapter (a synchronous unary call), and Thymeleaf presentation. Templates live under
   `apps/backend/infrastructure/src/main/resources/templates`; the empty
   `apps/web` directory is not a module.
-- Simulator owns the simulation use case and domain rules. SQS mapping and polling
+- Simulator owns the simulation use case and domain rules. gRPC server and wire mapping
   live in simulator infrastructure.
-- `libs/messaging-contract` contains only SQS wire messages. `integration-test`
+- `libs/messaging-contract` contains only the gRPC contract (`simulation.proto`). `integration-test`
   verifies the composed applications.
 - The current simulator randomness uses `Math.random()` and accepts no seed. It is
   not currently possible to prove same-seed reproducibility. A feature that adds a
@@ -48,7 +48,7 @@ worker nodes within the same issue using the file-ownership rules below.
 | Agent | Mode | Responsibility | Must not do |
 | --- | --- | --- | --- |
 | `explorer` | read-only | Trace execution paths, dependencies, tests, candidate files, ownership conflicts, and true graph dependencies. | Edit files or turn assumptions into architecture. |
-| `domain-worker` | write | Implement assigned simulator domain and explicitly assigned simulator application behavior as pure inward-facing Java, with narrow tests. | Edit infrastructure/backend, use Spring/SQS/Thymeleaf/DB in domain, or change another node's files. |
+| `domain-worker` | write | Implement assigned simulator domain and explicitly assigned simulator application behavior as pure inward-facing Java, with narrow tests. | Edit infrastructure/backend, use Spring/gRPC/Thymeleaf/DB in domain, or change another node's files. |
 | `backend-worker` | write | Implement assigned backend domain/application and non-Thymeleaf adapters within existing backend responsibilities. | Depend on simulator classes, implement simulation rules, or conflate wire DTOs and internal models. |
 | `ui-worker` | write | Implement assigned backend web controllers, forms/view models, Thymeleaf templates, browser-facing behavior, and presentation tests. | Expose entities/domain objects directly to templates or put business rules in controllers/templates. |
 | `integrator` | write | Start after required workers, connect their outputs, own explicitly assigned integration wiring/tests, and classify failures. | Invent business rules or silently fix an unassigned area. |
@@ -117,7 +117,7 @@ planned centrally across both applications.
 | Exploration | `explorer` (read-only) | Entire repository |
 | Simulator domain | `domain-worker` | `apps/simulator/domain/**` |
 | Simulator use case, when assigned | `domain-worker` | `apps/simulator/application/**` |
-| Backend domain/application/API/SQS | `backend-worker` | `apps/backend/domain/**`, `apps/backend/application/**`, assigned non-web files below `apps/backend/infrastructure/**` |
+| Backend domain/application/API/gRPC client | `backend-worker` | `apps/backend/domain/**`, `apps/backend/application/**`, assigned non-web files below `apps/backend/infrastructure/**` |
 | Backend presentation | `ui-worker` | `apps/backend/infrastructure/**/web/**`, `apps/backend/infrastructure/src/main/resources/templates/**`, explicitly assigned form/view-model and tests |
 | Shared wire contract | parent-assigned single upstream owner | `libs/messaging-contract/**` |
 | Cross-application integration | `integrator` | `integration-test/**` and explicitly assigned wiring/test files |
@@ -131,12 +131,12 @@ An agent stops instead of editing outside its allocation.
 ### Simulator
 
 - `domain`: game state, players, strategies, play results, and statistics. It may
-  use its declared general-purpose libraries but cannot reference Spring, SQS,
+  use its declared general-purpose libraries but cannot reference Spring, gRPC,
   Thymeleaf, HTTP, DB, backend, or messaging-contract types.
 - `application`: simulation use-case coordination and internal response contracts.
   It depends inward on domain and currently sees the shared messaging contract;
   do not expand transport coupling into domain.
-- `infrastructure`: Spring bootstrapping, SQS client/polling, serialization, and
+- `infrastructure`: Spring bootstrapping, the gRPC server and its lifecycle, and
   wire-to-internal mapping. It depends on application and must not place business
   rules in listeners or mappers.
 - Determinism: features that accept a seed pass one explicit random source through
@@ -147,12 +147,12 @@ An agent stops instead of editing outside its allocation.
 ### Backend
 
 - `domain`: framework-independent player and result data. It must not reference
-  Spring, HTTP, SQS, Thymeleaf, persistence, or simulator code.
-- `application`: request coordination, result correlation/waiting, application
+  Spring, HTTP, gRPC, Thymeleaf, persistence, or simulator code.
+- `application`: request coordination, application
   DTOs, exceptions, and outbound ports. It depends on backend domain, not adapters.
 - `infrastructure/api`: HTTP request/response and error translation.
 - `infrastructure/web` plus templates: server-rendered presentation.
-- `infrastructure/messaging`: mapping and SQS adapters. Shared messages remain wire
+- `infrastructure/messaging`: mapping and the gRPC client adapter. Shared messages remain wire
   DTOs and are mapped to backend internal models.
 - `InfrastructureConfiguration`: composition root only.
 - Backend never directly depends on simulator classes and never implements
@@ -216,9 +216,9 @@ For a shared contract or cross-application feature, use:
 ./gradlew :integration-test:test
 ```
 
-ElasticMQ-dependent backend and simulator tests are conditional on `SQS_ENDPOINT`
-and `ELASTICMQ_ENDPOINT_URL` respectively. Report them as skipped when the matching
-variable is absent. Never hide a test failure.
+The backend, simulator, and `integration-test` suites need no external service
+(the gRPC integration test starts the real servers in process). Report any
+conditionally skipped test explicitly. Never hide a test failure.
 
 ## Integration and review
 
@@ -254,9 +254,9 @@ and write deterministic acceptance criteria. Example graph:
 explorer: trace request, message, simulator, result, and UI paths
 parent contract node: update one shared message and its tests
 domain-worker: consume the agreed internal input and implement domain behavior
-backend-worker: map backend request/result without simulator class dependencies
+backend-worker: call the simulator through the gRPC client without simulator class dependencies
 ui-worker: render the already-agreed backend view model
-integrator: prove backend -> SQS -> simulator -> SQS -> backend
+integrator: prove HTTP -> backend -> gRPC -> simulator -> HTTP
 reviewer: check the final diff and evidence in a fresh read-only context
 parent: fix findings and run full verification
 ```

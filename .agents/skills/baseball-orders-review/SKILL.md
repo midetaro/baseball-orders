@@ -21,7 +21,7 @@ Verify required annotations, entry points, and message correlation with executab
 
 ## Diff and architecture review
 
-Compare each changed behavior with the specification's goal, expected behavior, out-of-scope list, and acceptance criteria. Inspect layering: infrastructure delegates to application, application delegates to domain, backend and simulator communicate only through the shared SQS contract, and domain has no framework or transport concerns. Check for excessive abstractions, unrelated refactors, swallowed exceptions, and behavior changes to specified timeout, duplicate, or late-message handling.
+Compare each changed behavior with the specification's goal, expected behavior, out-of-scope list, and acceptance criteria. Inspect layering: infrastructure delegates to application, application delegates to domain, backend and simulator communicate only through the shared gRPC contract, and domain has no framework or transport concerns. Check for excessive abstractions, unrelated refactors, swallowed exceptions, and behavior changes to specified timeout and error-status handling.
 
 For integration tests changed during the session, compare the Japanese `実物`, `モック`, `担保する疎通`, and `担保しないもの` comments with the implementation. List every replaced dependency. A test cannot claim a path through a mocked component. Review fixed sleeps and other flaky synchronization only when they affect the changed classes.
 
